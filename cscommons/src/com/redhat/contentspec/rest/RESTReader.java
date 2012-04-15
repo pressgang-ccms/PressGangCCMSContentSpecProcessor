@@ -289,6 +289,52 @@ public class RESTReader {
 	}
 	
 	/*
+	 * Gets a list of Revision's from the TopicIndex database for a specific topic
+	 */
+	public List<Object[]> getTopicRevisionsById(Integer topicId) {
+		List<Object[]> results = new ArrayList<Object[]>();
+		try {
+			final List<String> additionalKeys = CollectionUtilities.toArrayList("revisions", "topic" + topicId);
+			final BaseRestCollectionV1<TopicV1> topicRevisions;
+			if (collectionsCache.containsKey(TopicV1.class, additionalKeys)) {
+				topicRevisions = collectionsCache.get(TopicV1.class, additionalKeys);
+			} else {
+				/* We need to expand the Revisions collection */
+				final ExpandDataTrunk expand = new ExpandDataTrunk();
+				final ExpandDataTrunk expandTags = new ExpandDataTrunk(new ExpandDataDetails("tags"));
+				final ExpandDataTrunk expandRevs = new ExpandDataTrunk(new ExpandDataDetails("revisions"));
+				expandTags.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails("categories"))));
+				expandRevs.setBranches(CollectionUtilities.toArrayList(expandTags, new ExpandDataTrunk(new ExpandDataDetails("sourceUrls")), 
+						new ExpandDataTrunk(new ExpandDataDetails("properties")), new ExpandDataTrunk(new ExpandDataDetails("outgoingRelationships")),
+						new ExpandDataTrunk(new ExpandDataDetails("incomingRelationships"))));
+				expand.setBranches(CollectionUtilities.toArrayList(expandRevs));
+
+				final String expandString = mapper.writeValueAsString(expand);
+				final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
+
+				final TopicV1 topic = client.getJSONTopic(topicId, expandEncodedString);
+				collectionsCache.add(TopicV1.class, topic.getRevisions(), additionalKeys);
+				topicRevisions = topic.getRevisions();
+			}
+
+			// Create the custom revisions list
+			if (topicRevisions != null && topicRevisions.getItems() != null) {
+				for (TopicV1 topicRev: topicRevisions.getItems()) {
+					Object[] revision =  new Object[2];
+					revision[0] = topicRev.getRevision();
+					revision[1] = topicRev.getLastModified();
+					results.add(revision);
+				}
+			}
+			return results;
+		} catch (Exception e) {
+			log.debug(e.getMessage());
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	/*
 	 * Gets a List of TopicSourceUrl tuples for a specified its TopicID relationship through TopicToTopicSourceUrl.
 	 */
 	public List<TopicSourceUrlV1> getSourceUrlsByTopicId(int topicId) {
@@ -403,7 +449,7 @@ public class RESTReader {
 	public List<Object[]> getContentSpecRevisionsById(Integer csId) {
 		List<Object[]> results = new ArrayList<Object[]>();
 		try {
-			final List<String> additionalKeys = CollectionUtilities.toArrayList("revision");
+			final List<String> additionalKeys = CollectionUtilities.toArrayList("revision", "topic" + csId);
 			final BaseRestCollectionV1<TopicV1> topicRevisions;
 			if (collectionsCache.containsKey(TopicV1.class, additionalKeys)) {
 				topicRevisions = collectionsCache.get(TopicV1.class, additionalKeys);
