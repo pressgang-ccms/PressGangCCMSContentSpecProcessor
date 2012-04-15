@@ -14,7 +14,8 @@ import org.jboss.resteasy.specimpl.PathSegmentImpl;
 
 import com.redhat.contentspec.constants.CSConstants;
 import com.redhat.contentspec.entities.*;
-import com.redhat.contentspec.rest.utils.RESTCache;
+import com.redhat.contentspec.rest.utils.RESTCollectionCache;
+import com.redhat.contentspec.rest.utils.RESTEntityCache;
 import com.redhat.contentspec.utils.ExceptionUtilities;
 import com.redhat.topicindex.rest.collections.BaseRestCollectionV1;
 import com.redhat.topicindex.rest.entities.*;
@@ -23,18 +24,19 @@ import com.redhat.topicindex.rest.expand.ExpandDataTrunk;
 import com.redhat.topicindex.rest.sharedinterface.RESTInterfaceV1;
 import com.redhat.ecs.commonutils.CollectionUtilities;
 
-@SuppressWarnings("unchecked")
 public class RESTReader {
 	
 	private final Logger log = Logger.getLogger(RESTReader.class);
 	
 	private final RESTInterfaceV1 client;
 	private final ObjectMapper mapper = new ObjectMapper();
-	private final RESTCache cache;
+	private final RESTEntityCache entityCache;
+	private final RESTCollectionCache collectionsCache;
 	
-	public RESTReader(RESTInterfaceV1 client, RESTCache cache) {
+	public RESTReader(RESTInterfaceV1 client, RESTEntityCache entityCache, RESTCollectionCache collectionsCache) {
 	    this.client = client;
-	    this.cache = cache;
+	    this.entityCache = entityCache;
+	    this.collectionsCache = collectionsCache;
 	}
 	
 	// CATEGORY QUERIES
@@ -44,11 +46,11 @@ public class RESTReader {
 	 */
 	public CategoryV1 getCategoryById(int id) {
 		try {
-			if (cache.containsKey("CategoryID-" + id)) {
-				return (CategoryV1)cache.get("CategoryID-" + id);
+			if (entityCache.containsKeyValue(CategoryV1.class, id)) {
+				return (CategoryV1)entityCache.get(CategoryV1.class, id);
 			} else {
 				CategoryV1 category = client.getJSONCategory(id, null);
-				cache.add("CategoryID-" + id, category);
+				entityCache.add(category);
 				return category;
 			}
 		} catch (Exception e) {
@@ -62,14 +64,12 @@ public class RESTReader {
 	 * Gets a List of all categories tuples for a specified name.
 	 */
 	public List<CategoryV1> getCategoriesByName(String name) {
-		List<CategoryV1> output = new ArrayList<CategoryV1>();
+		final List<CategoryV1> output = new ArrayList<CategoryV1>();
 		
 		try {
 			
-			final BaseRestCollectionV1<CategoryV1> categories;
-			if (cache.containsKey("Categories")) {
-				categories = (BaseRestCollectionV1<CategoryV1>)cache.get("Categories");
-			} else {
+			BaseRestCollectionV1<CategoryV1> categories = collectionsCache.get(CategoryV1.class);
+			if (categories.getItems() == null) {
 				/* We need to expand the Categories collection */
 				final ExpandDataTrunk expand = new ExpandDataTrunk();
 				expand.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails("categories"))));
@@ -78,7 +78,7 @@ public class RESTReader {
 				final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
 				
 				categories = client.getJSONCategories(expandEncodedString);
-				cache.add("Categories", categories);
+				collectionsCache.add(CategoryV1.class, categories);
 			}
 		
 			if (categories != null) {
@@ -113,8 +113,8 @@ public class RESTReader {
 	 */
 	public TagV1 getTagById(int id) {
 		try {
-			if (cache.containsKey("TagID-" + id)) {
-				return (TagV1)cache.get("TagID-" + id);
+			if (entityCache.containsKeyValue(TagV1.class, id)) {
+				return entityCache.get(TagV1.class, id);
 			} else {
 				/* We need to expand the Categories collection in most cases so expand it anyway*/
 				final ExpandDataTrunk expand = new ExpandDataTrunk();
@@ -123,7 +123,7 @@ public class RESTReader {
 				final String expandString = mapper.writeValueAsString(expand);
 				final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
 				TagV1 tag = client.getJSONTag(id, expandEncodedString);
-				cache.add("TagID-" + id, tag);
+				entityCache.add(tag);
 				return tag;
 			}
 		} catch (Exception e) {
@@ -140,10 +140,8 @@ public class RESTReader {
 		
 		try {
 			
-			final BaseRestCollectionV1<TagV1> tags;
-			if (cache.containsKey("Tags")) {
-				tags = (BaseRestCollectionV1<TagV1>)cache.get("Tags");
-			} else {
+			BaseRestCollectionV1<TagV1> tags = collectionsCache.get(TagV1.class);
+			if (tags.getItems() == null) {
 				/* We need to expand the Tags & Categories collection */
 				final ExpandDataTrunk expand = new ExpandDataTrunk();
 				final ExpandDataTrunk expandTags = new ExpandDataTrunk(new ExpandDataDetails("tags"));
@@ -154,7 +152,7 @@ public class RESTReader {
 				final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
 				
 				tags = client.getJSONTags(expandEncodedString);
-				cache.add("Tags", tags);
+				collectionsCache.add(TagV1.class, tags);
 			}
 			
 			// Iterate through the list of tags and check if the tag is a Type and matches the name.
@@ -178,8 +176,8 @@ public class RESTReader {
 	 */
 	public List<TagV1> getTagsByTopicId(int topicId) {
 		final TopicV1 topic;
-		if (cache.containsKey("TopicID-" + topicId)) {
-			topic = (TopicV1)cache.get("TopicID-" + topicId);
+		if (entityCache.containsKeyValue(TopicV1.class, topicId)) {
+			topic = entityCache.get(TopicV1.class, topicId);
 		} else {
 			topic = getTopicById(topicId, null);
 		}
@@ -195,10 +193,10 @@ public class RESTReader {
 	public TopicV1 getTopicById(int id, Integer rev) {
 		try {
 			TopicV1 topic = null;
-			if (rev == null) {
-				if (cache.containsKey("TopicID-" + id)) {
-					topic = (TopicV1)cache.get("TopicID-" + id);
-				} else {
+			if (entityCache.containsKeyValue(TopicV1.class, id, rev)) {
+				topic = entityCache.get(TopicV1.class, id, rev);
+			} else {
+				if (rev == null) {
 					/* We need to expand the all the items in the topic collection */
 					final ExpandDataTrunk expand = new ExpandDataTrunk();
 					final ExpandDataTrunk expandTags = new ExpandDataTrunk(new ExpandDataDetails("tags"));
@@ -210,15 +208,9 @@ public class RESTReader {
 					final String expandString = mapper.writeValueAsString(expand);
 					final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
 					topic = client.getJSONTopic(id, expandEncodedString);
-					cache.add("TopicID-" + id, topic);
-				}
-				return topic;
-			} else {
-				// Get the data for a revision so only expand all the details in the revisions
-				TopicV1 currentTopic = null;
-				if (cache.containsKey("TopicRevisionID-" + id)) {
-					currentTopic = (TopicV1)cache.get("TopicRevisionID-" + id);
+					entityCache.add(topic);
 				} else {
+					TopicV1 currentTopic;
 					/* We need to expand the all the items in the topic collection */
 					final ExpandDataTrunk expand = new ExpandDataTrunk();
 					final ExpandDataTrunk expandTags = new ExpandDataTrunk(new ExpandDataDetails("tags"));
@@ -232,62 +224,66 @@ public class RESTReader {
 					final String expandString = mapper.writeValueAsString(expand);
 					final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
 					currentTopic = client.getJSONTopic(id, expandEncodedString);
-					cache.add("TopicRevisionID-" + id, currentTopic);
-				}
-				// Get the revison of the topic that is closest to the rev number but is still less then the revision number
-				for (TopicV1 topicRev: currentTopic.getRevisions().getItems()) {
-					if ((Integer)topicRev.getRevision() <= rev) {
-						if (topic != null && (Integer)topic.getRevision() < (Integer)topicRev.getRevision()) {
-							topic = topicRev;
-						} else if (topic == null) {
-							topic = topicRev;
+					entityCache.add(currentTopic);
+					
+					// Get the revison of the topic that is closest to the rev number but is still less then the revision number
+					for (TopicV1 topicRev: currentTopic.getRevisions().getItems()) {
+						if ((Integer)topicRev.getRevision() <= rev) {
+							if (topic != null && (Integer)topic.getRevision() < (Integer)topicRev.getRevision()) {
+								topic = topicRev;
+							} else if (topic == null) {
+								topic = topicRev;
+							}
 						}
 					}
 				}
-				return topic;
 			}
+			return topic;
 		} catch (Exception e) {
 			log.error(ExceptionUtilities.getStackTrace(e));
 		}
 		return null;
 	}
 	
-	/*
-	 * Gets a list of Revision's from the TopicIndex database for a specific topic
-	 */
-	public List<Object[]> getTopicRevisionsById(Integer topicId) {
-		List<Object[]> results = new ArrayList<Object[]>();
+	@SuppressWarnings("serial")
+	public BaseRestCollectionV1<TopicV1> getTopicsByIds(List<Integer> ids) {
 		try {
-			
-			final TopicV1 topic;
-			if (cache.containsKey("TopicRevisionIDs-" + topicId)) {
-				topic = (TopicV1)cache.get("TopicRevisionIDs-" + topicId);
-			} else if (cache.containsKey("TopicRevisionID-" + topicId)){
-				topic = (TopicV1) cache.get("TopicRevisionID-" + topicId);
-			} else {
-				/* We need to expand the Revisions collection */
-				final ExpandDataTrunk expand = new ExpandDataTrunk();
-				expand.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails("revisions"))));
-				
-				final String expandString = mapper.writeValueAsString(expand);
-				final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
-				
-				topic = client.getJSONTopic(topicId, expandEncodedString);
-				cache.add("TopicRevisionIDs-" + topicId, topic);
-			}
-			
-			if (topic != null) {
-				for (TopicV1 topicRev: topic.getRevisions().getItems()) {
-					Object[] revision =  new Object[2];
-					revision[0] = topicRev.getRevision();
-					revision[1] = topicRev.getLastModified();
-					results.add(revision);
+			BaseRestCollectionV1<TopicV1> topics = new BaseRestCollectionV1<TopicV1>();
+			PathSegment path = new PathSegmentImpl("ids", false);
+			for (Integer id: ids) {
+				if (!entityCache.containsKeyValue(TopicV1.class, id)) {
+					path.getMatrixParameters().put(   
+		                    id.toString(), 
+		                    new ArrayList<String>(){{add("");}});
+				} else {
+					topics.addItem(entityCache.get(TopicV1.class, id));
 				}
 			}
-			return results;
+			
+			/* We need to expand the all the items in the topic collection */
+			final ExpandDataTrunk expand = new ExpandDataTrunk();
+			final ExpandDataTrunk expandTopics = new ExpandDataTrunk(new ExpandDataDetails("topics")); 
+			final ExpandDataTrunk expandTags = new ExpandDataTrunk(new ExpandDataDetails("tags"));
+			expandTags.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails("categories")), new ExpandDataTrunk(new ExpandDataDetails("properties"))));
+			expandTopics.setBranches(CollectionUtilities.toArrayList(expandTags, new ExpandDataTrunk(new ExpandDataDetails("sourceUrls")), 
+					new ExpandDataTrunk(new ExpandDataDetails("properties")), new ExpandDataTrunk(new ExpandDataDetails("outgoingRelationships")),
+					new ExpandDataTrunk(new ExpandDataDetails("incomingRelationships"))));
+			expand.setBranches(CollectionUtilities.toArrayList(expandTopics));
+			
+			final String expandString = mapper.writeValueAsString(expand);
+			final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
+			BaseRestCollectionV1<TopicV1> downloadedTopics = client.getJSONTopicsWithQuery(path, expandEncodedString);
+			
+			/* Transfer the downloaded data to the current topic list */
+			if (downloadedTopics != null && downloadedTopics.getItems() != null) {
+				for (TopicV1 item: downloadedTopics.getItems()) {
+					topics.addItem(item);
+				}
+			}
+			
+			return topics;
 		} catch (Exception e) {
-			log.debug(e.getMessage());
-			e.printStackTrace();
+			log.error(ExceptionUtilities.getStackTrace(e));
 		}
 		return null;
 	}
@@ -297,8 +293,8 @@ public class RESTReader {
 	 */
 	public List<TopicSourceUrlV1> getSourceUrlsByTopicId(int topicId) {
 		final TopicV1 topic;
-		if (cache.containsKey("TopicID-" + topicId)) {
-			topic = (TopicV1)cache.get("TopicID-" + topicId);
+		if (entityCache.containsKeyValue(TopicV1.class, topicId)) {
+			topic = entityCache.get(TopicV1.class, topicId);
 		} else {
 			topic = getTopicById(topicId, null);
 		}
@@ -310,8 +306,8 @@ public class RESTReader {
 	public SnapshotV1 getTopicSnapshotById(Integer id) {
 		try {
 			final SnapshotV1 snapshot;
-			if (cache.containsKey("SnapshotID-" + id)) {
-				snapshot = (SnapshotV1)cache.get("SnapshotID-" + id);
+			if (entityCache.containsKeyValue(SnapshotV1.class, id)) {
+				snapshot = entityCache.get(SnapshotV1.class, id);
 			} else {
 				/* We need to expand the all the items in the topic collection */
 				final ExpandDataTrunk expand = new ExpandDataTrunk();
@@ -320,7 +316,7 @@ public class RESTReader {
 				final String expandString = mapper.writeValueAsString(expand);
 				String expandEncodedString = null;expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
 				snapshot = client.getJSONSnapshot(id, expandEncodedString);
-				cache.add("SnapshotID-" + id, snapshot);
+				entityCache.add(snapshot);
 			}
 			return snapshot == null ? null : snapshot;
 		} catch (Exception e) {
@@ -340,8 +336,8 @@ public class RESTReader {
 		try {
 			
 			final BaseRestCollectionV1<UserV1> users;
-			if (cache.containsKey("Users")) {
-				users = (BaseRestCollectionV1<UserV1>)cache.get("Users");
+			if (collectionsCache.containsKey(UserV1.class)) {
+				users = collectionsCache.get(UserV1.class);
 			} else {
 				/* We need to expand the Users collection */
 				final ExpandDataTrunk expand = new ExpandDataTrunk();
@@ -350,7 +346,7 @@ public class RESTReader {
 				final String expandString = mapper.writeValueAsString(expand);
 				final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
 				users = client.getJSONUsers(expandEncodedString);
-				cache.add("Users", users);
+				collectionsCache.add(UserV1.class, users);
 			}
 			
 			if (users != null) { 
@@ -373,11 +369,11 @@ public class RESTReader {
 	 */
 	public UserV1 getUserById(int id) {
 		try {
-			if (cache.containsKey("UserID-" + id)) {
-				return (UserV1)cache.get("UserID-" + id);
+			if (entityCache.containsKeyValue(UserV1.class, id)) {
+				return (UserV1)entityCache.get(UserV1.class, id);
 			} else {
 				UserV1 user = client.getJSONUser(id, null);
-				cache.add("UserID-" + id, user);
+				entityCache.add(user);
 				return user;
 			}
 		} catch (Exception e) {
@@ -407,29 +403,36 @@ public class RESTReader {
 	public List<Object[]> getContentSpecRevisionsById(Integer csId) {
 		List<Object[]> results = new ArrayList<Object[]>();
 		try {
-			final TopicV1 topic;
-			if (cache.containsKey("TopicRevisionIDs-" + csId)) {
-				topic = (TopicV1)cache.get("TopicRevisionIDs-" + csId);
-			} else if (cache.containsKey("TopicRevisionID-" + csId)){
-				topic = (TopicV1) cache.get("TopicRevisionID-" + csId);
+			final List<String> additionalKeys = CollectionUtilities.toArrayList("revision");
+			final BaseRestCollectionV1<TopicV1> topicRevisions;
+			if (collectionsCache.containsKey(TopicV1.class, additionalKeys)) {
+				topicRevisions = collectionsCache.get(TopicV1.class, additionalKeys);
 			} else {
 				/* We need to expand the Revisions collection */
 				final ExpandDataTrunk expand = new ExpandDataTrunk();
-				expand.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails("revisions")), new ExpandDataTrunk(new ExpandDataDetails("tags"))));
+				final ExpandDataTrunk expandTags = new ExpandDataTrunk(new ExpandDataDetails("tags"));
+				final ExpandDataTrunk expandRevs = new ExpandDataTrunk(new ExpandDataDetails("revisions"));
+				expandTags.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails("categories"))));
+				expandRevs.setBranches(CollectionUtilities.toArrayList(expandTags, new ExpandDataTrunk(new ExpandDataDetails("sourceUrls")), 
+						new ExpandDataTrunk(new ExpandDataDetails("properties")), new ExpandDataTrunk(new ExpandDataDetails("outgoingRelationships")),
+						new ExpandDataTrunk(new ExpandDataDetails("incomingRelationships"))));
+				expand.setBranches(CollectionUtilities.toArrayList(expandTags, expandRevs));
 				
 				final String expandString = mapper.writeValueAsString(expand);
 				final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
 				
-				topic = client.getJSONTopic(csId, expandEncodedString);
+				final TopicV1 topic = client.getJSONTopic(csId, expandEncodedString);
 				// Check that the topic is a content spec
 				if (!topic.isTaggedWith(CSConstants.CONTENT_SPEC_TAG_ID)) return null;
 				
-				// Add the content spec to the cache
-				cache.add("TopicRevisionIDs-" + csId, topic);
+				// Add the content spec revisions to the cache
+				collectionsCache.add(TopicV1.class, topic.getRevisions(), additionalKeys);
+				topicRevisions = topic.getRevisions();
 			}
 			
-			if (topic != null) {
-				for (TopicV1 topicRev: topic.getRevisions().getItems()) {
+			// Create the unique array from the revisions
+			if (topicRevisions != null && topicRevisions.getItems() != null) {
+				for (TopicV1 topicRev: topicRevisions.getItems()) {
 					Object[] revision =  new Object[2];
 					revision[0] = topicRev.getRevision();
 					revision[1] = topicRev.getLastModified();
@@ -456,9 +459,9 @@ public class RESTReader {
 			startPos = startPos == null ? 0 : startPos;
 			limit = limit == null ? 0 : limit;
 			
-			String key = "ContentSpecs-start-" + startPos + "-end-" + (startPos + limit);
-			if (cache.containsKey(key)) {
-				topics = (BaseRestCollectionV1<TopicV1>) cache.get(key);
+			final List<String> additionalKeys = CollectionUtilities.toArrayList("start-" + startPos, "end-" + (startPos + limit));
+			if (collectionsCache.containsKey(TopicV1.class, additionalKeys)) {
+				topics = collectionsCache.get(TopicV1.class, additionalKeys);
 			} else {
 				/* We need to expand the topics collection */
 				final ExpandDataTrunk expand = new ExpandDataTrunk();
@@ -482,7 +485,7 @@ public class RESTReader {
 	
 				PathSegment path = new PathSegmentImpl("query;tag" + CSConstants.CONTENT_SPEC_TAG_ID + "=1;", false);
 				topics = client.getJSONTopicsWithQuery(path, expandEncodedString);
-				cache.add(key, topics);
+				collectionsCache.add(TopicV1.class, topics, additionalKeys);
 			}
 			
 			return topics.getItems();
@@ -742,21 +745,21 @@ public class RESTReader {
 		return new ArrayList<CSSnapshot>();
 	}*/
 	
-	public SnapshotTopicV1 getSnapshotTopicByTopicAndRevId(Integer topicId, Integer rev) {
+	/*public SnapshotTopicV1 getSnapshotTopicByTopicAndRevId(Integer topicId, Integer rev) {
 		try {
 			final BaseRestCollectionV1<SnapshotTopicV1> snapshotTopics;
-			if (cache.containsKey("SnapshotTopics")) {
-				snapshotTopics = (BaseRestCollectionV1<SnapshotTopicV1>)cache.get("SnapshotTopics");
+			if (entityCache.containsKey("SnapshotTopics")) {
+				snapshotTopics = (BaseRestCollectionV1<SnapshotTopicV1>)entityCache.get("SnapshotTopics");
 			} else {
 				/* We need to expand the Snapshot Topics collection */
-				final ExpandDataTrunk expand = new ExpandDataTrunk();
+				/*final ExpandDataTrunk expand = new ExpandDataTrunk();
 				expand.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails("snapshottopics"))));
 				
 				final String expandString = mapper.writeValueAsString(expand);
 				final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
 				
 				snapshotTopics = client.getJSONSnapshotTopics(expandEncodedString);
-				cache.add("SnapshotTopics", snapshotTopics);
+				entityCache.add("SnapshotTopics", snapshotTopics);
 			}
 		
 			// List through the snapshotTopics and see if a topic exists for the Topic Id and Revision
@@ -771,5 +774,5 @@ public class RESTReader {
 			log.error(ExceptionUtilities.getStackTrace(e));
 		}
 		return null;
-	}
+	}*/
 }

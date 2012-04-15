@@ -4,7 +4,8 @@ import org.jboss.resteasy.client.ProxyFactory;
 import org.jboss.resteasy.plugins.providers.RegisterBuiltin;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
-import com.redhat.contentspec.rest.utils.RESTCache;
+import com.redhat.contentspec.rest.utils.RESTCollectionCache;
+import com.redhat.contentspec.rest.utils.RESTEntityCache;
 import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
 import com.redhat.topicindex.rest.sharedinterface.RESTInterfaceV1;
 
@@ -16,13 +17,14 @@ public class RESTManager {
 	private final RESTReader reader;
 	private final RESTWriter writer;
 	private final RESTInterfaceV1 client;
-	private final RESTCache cache = new RESTCache();
+	private final RESTEntityCache entityCache = new RESTEntityCache();
+	private final RESTCollectionCache collectionCache = new RESTCollectionCache(entityCache);
 	
 	public RESTManager(ErrorLoggerManager elm, String serverUrl) {
 		RegisterBuiltin.register(ResteasyProviderFactory.getInstance());
 		client = ProxyFactory.create(RESTInterfaceV1.class, (serverUrl.endsWith("/") ? serverUrl : (serverUrl + "/")) + "seam/resource/rest");
-		reader = new RESTReader(client, cache);
-		writer = new RESTWriter(reader, client, cache);
+		reader = new RESTReader(client, entityCache, collectionCache);
+		writer = new RESTWriter(reader, client, entityCache, collectionCache);
 	}
 	
 	public RESTReader getReader() {

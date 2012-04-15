@@ -10,7 +10,8 @@ import javax.ws.rs.core.PathSegment;
 import org.jboss.resteasy.specimpl.PathSegmentImpl;
 
 import com.redhat.contentspec.constants.CSConstants;
-import com.redhat.contentspec.rest.utils.RESTCache;
+import com.redhat.contentspec.rest.utils.RESTCollectionCache;
+import com.redhat.contentspec.rest.utils.RESTEntityCache;
 import com.redhat.contentspec.utils.ExceptionUtilities;
 import com.redhat.ecs.commonutils.CollectionUtilities;
 import com.redhat.topicindex.rest.collections.BaseRestCollectionV1;
@@ -26,12 +27,14 @@ public class RESTWriter {
 	private final RESTInterfaceV1 client;
 	private final RESTReader reader;
 	private final ObjectMapper mapper = new ObjectMapper();
-	private final RESTCache cache;
+	private final RESTEntityCache entityCache;
+	private final RESTCollectionCache collectionsCache;
 	
-	public RESTWriter(RESTReader reader, RESTInterfaceV1 client, RESTCache cache) {
+	public RESTWriter(RESTReader reader, RESTInterfaceV1 client, RESTEntityCache cache, RESTCollectionCache collectionsCache) {
 		this.reader = reader;
 		this.client = client;
-		this.cache = cache;
+		this.entityCache = cache;
+		this.collectionsCache = collectionsCache;
 	}
 	
 	/*
@@ -46,7 +49,7 @@ public class RESTWriter {
 			
 			category = client.createJSONCategory(null, category);
 			insertId = category.getId();
-			cache.expire("Categories");
+			collectionsCache.expire(CategoryV1.class);
 		} catch(Exception e) {
 			log.debug(e.getMessage());
 			e.printStackTrace();
@@ -70,7 +73,7 @@ public class RESTWriter {
 			
 			tag = client.createJSONTag(null, tag);
 			insertId = tag.getId();
-			cache.expire("Tags");
+			collectionsCache.expire(TagV1.class);
 		} catch(Exception e) {
 			log.error(ExceptionUtilities.getStackTrace(e));
 		}
@@ -139,7 +142,7 @@ public class RESTWriter {
 		  	
 		  	topic = client.createJSONTopic(null, topic);
 		  	insertId = topic.getId();
-		  	cache.expire("Topics");
+		  	collectionsCache.expire(TopicV1.class);
 		} catch(Exception e) {
 			log.error(ExceptionUtilities.getStackTrace(e));
 		}
@@ -212,9 +215,8 @@ public class RESTWriter {
 		  	
 		  	topic = client.createJSONTopic(null, topic);
 		  	insertId = topic.getId();
-		  	cache.expire("TopicID-" + insertId);
-		  	cache.expire("TopicRevisionsID-" + insertId);
-		  	cache.expire("TopicRevisionID-" + insertId);
+		  	entityCache.expire(TopicV1.class, insertId);
+		  	collectionsCache.expire(TopicV1.class);
 		} catch(Exception e) {
 			log.error(ExceptionUtilities.getStackTrace(e));
 		}
@@ -260,8 +262,7 @@ public class RESTWriter {
 			
 			contentSpec = client.createJSONTopic("", contentSpec);
 			if (contentSpec != null) return contentSpec.getId();
-			cache.expire("Topics");
-			cache.expireByRegex("^ContentSpecs-.*");
+			collectionsCache.expire(TopicV1.class);
 		} catch (Exception e) {
 			log.error(ExceptionUtilities.getStackTrace(e));
 		}
@@ -323,10 +324,8 @@ public class RESTWriter {
 			
 			contentSpec = client.updateJSONTopic("", contentSpec);
 			if (contentSpec != null) {
-				cache.expire("TopicID-" + id);
-				cache.expire("TopicRevisionsID-" + id);
-			  	cache.expire("TopicRevisionID-" + id);
-			  	cache.expireByRegex("^ContentSpecs-.*");
+				entityCache.expire(TopicV1.class, id);
+				collectionsCache.expire(TopicV1.class);
 				return true;
 			}
 		} catch (Exception e) {
@@ -367,10 +366,8 @@ public class RESTWriter {
 			
 			contentSpec = client.updateJSONTopic("", contentSpec);
 			if (contentSpec != null) {
-				cache.expire("TopicID-" + id);
-				cache.expire("TopicRevisionsID-" + id);
-			  	cache.expire("TopicRevisionID-" + id);
-			  	cache.expireByRegex("^ContentSpecs-.*");
+				entityCache.expire(TopicV1.class, id);
+				collectionsCache.expire(TopicV1.class);
 				return true;
 			}
 		} catch (Exception e) {
@@ -385,10 +382,8 @@ public class RESTWriter {
 	public boolean deleteContentSpec(Integer id) {
 		try {
 			client.deleteJSONTopic(id, null);
-			cache.expire("TopicID-" + id);
-			cache.expire("TopicRevisionsID-" + id);
-		  	cache.expire("TopicRevisionID-" + id);
-		  	cache.expireByRegex("^ContentSpecs-.*");
+			entityCache.expire(TopicV1.class, id);
+			collectionsCache.expire(TopicV1.class);
 			return true;
 		} catch (Exception e) {
 			log.error(ExceptionUtilities.getStackTrace(e));
@@ -399,7 +394,7 @@ public class RESTWriter {
 	/*
 	 * Writes a Category tuple to the database using the data provided.
 	 */
-	@SuppressWarnings("serial")
+	/*@SuppressWarnings("serial")
 	public Integer createTopicSnapshot(int id, String name, Set<Integer> topicIds) {
 		Integer insertId = null;
 		BaseRestCollectionV1<SnapshotTopicV1> newSnapshotTopics = new BaseRestCollectionV1<SnapshotTopicV1>();
@@ -479,7 +474,7 @@ public class RESTWriter {
 			snapshot = client.createJSONSnapshot(expandEncodedString, snapshot);
 
 		  	insertId = snapshot.getId();
-		  	cache.expire("SnapshotTopics");
+		  	entityCache.expire("SnapshotTopics");
 		} catch(Exception e) {
 			log.error(ExceptionUtilities.getStackTrace(e));
 			// Clean up the data on the TopicIndex server
@@ -511,6 +506,6 @@ public class RESTWriter {
 			return null;
 		}
 		return insertId;
-	}
+	}*/
 	
 }
