@@ -142,6 +142,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 			return false;
 		}
 		
+		// Download the list of topics in one go to reduce I/O overhead
+		reader.getTopicsByIds(csp.getReferencedTopicIds());
+		
+		// Check if the app should be shutdown
+		if (isShuttingDown.get()) {
+			shutdown.set(true);
+			return false;
+		}
+		
 		// Validate the content specification
 		validator = new ContentSpecValidator(elm, dbManager, permissiveMode, ignoreSpecRevision);
 		if (error || !validator.validateContentSpec(csp.getContentSpec(), csp.getSpecTopics()) || !validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics())) {
