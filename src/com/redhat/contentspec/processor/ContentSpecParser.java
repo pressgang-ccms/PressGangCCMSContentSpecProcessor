@@ -15,6 +15,7 @@ import com.redhat.contentspec.Appendix;
 import com.redhat.contentspec.Chapter;
 import com.redhat.contentspec.ContentSpec;
 import com.redhat.contentspec.Level;
+import com.redhat.contentspec.Part;
 import com.redhat.contentspec.Process;
 import com.redhat.contentspec.entities.Relationship;
 import com.redhat.contentspec.Section;
@@ -662,62 +663,8 @@ public class ContentSpecParser {
 				log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
 				return false;
 			}
-		} else if (input.toUpperCase().matches("^PROCESS[ ]*((:.*)|$)")) {
-			//log.error(String.format(ProcessorConstants.LINE + "Processes currently unsupported." + ProcessorConstants.CSLINE_MSG, lineCounter, input));
-			//return false;
-			String tempInput[] = StringUtilities.split(input, ':', 2);
-			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
-			if (tempInput.length == 2) {
-				level = curLevel + 1;
-				Process process = new Process(null, lineCounter, input);
-				lvl.appendChild(process);
-				processes.add(process);
-				lvl = process;
-				if (tempInput.length >= 2) {
-					lvl.setTitle(StringUtilities.replaceEscapeChars(getTitle(tempInput[1], '[')));
-					String[] variables = new String[0];
-					try {
-						// Get the mapping of variables
-						HashMap<RelationshipType, String[]> variableMap = getLineVariables(tempInput[1], '[', ']', ',', false);
-						if (variableMap.containsKey(RelationshipType.NONE)) {
-							variables = variableMap.get(RelationshipType.NONE);
-						}
-						// Add targets for the level
-						if (variableMap.containsKey(RelationshipType.TARGET)) {
-							if (targetTopics.containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
-								log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetTopics.get(variableMap.get(RelationshipType.TARGET)[0]).getLineNumber(), targetTopics.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter, input));
-								return false;
-							} else if (targetLevels.containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
-								log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetLevels.get(variableMap.get(RelationshipType.TARGET)[0]).getLineNumber(), targetLevels.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter, input));
-								return false;
-							} else {
-								targetLevels.put(variableMap.get(RelationshipType.TARGET)[0], lvl);
-								lvl.setTargetId(variableMap.get(RelationshipType.TARGET)[0]);
-							}
-						}
-						// Check that no relationships were specified for the section
-						if (variableMap.containsKey(RelationshipType.RELATED) || variableMap.containsKey(RelationshipType.PREREQUISITE) || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType.PREVIOUS)) {
-							log.error(String.format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineCounter, CSConstants.SECTION, CSConstants.SECTION, input));
-							return false;
-						}
-					} catch (Exception e) {
-						log.error(e.getMessage());
-						return false;
-					}
-					
-					// Process the options
-					if (variables.length >= 1) {
-						if (!addOptions(lvl, variables, 0, input)) {
-							return false;
-						}
-					}	
-				}
-			} else {
-				log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
-				return false;
-			}
-		} else if ((input.toUpperCase().matches("^CHAPTER[ ]*((:.*)|$)") || input.toUpperCase().matches("^SECTION[ ]*((:.*)|$)") || input.toUpperCase().matches("^APPENDIX[ ]*((:.*)|$)"))) {
+		} else if (input.toUpperCase().matches("^CHAPTER[ ]*((:.*)|$)") || input.toUpperCase().matches("^SECTION[ ]*((:.*)|$)") || input.toUpperCase().matches("^APPENDIX[ ]*((:.*)|$)") 
+				|| input.toUpperCase().matches("^PART[ ]*((:.*)|$)") || input.toUpperCase().matches("^PROCESS[ ]*((:.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, ':', 2);
 			// Remove the whitespace from each value in the split array
 			tempInput = StringUtilities.trimArray(tempInput);
@@ -725,7 +672,7 @@ public class ContentSpecParser {
 			if (tempInput.length >= 1) {
 				// Process the chapter, it's level and title
 				if (tempInput[0].equalsIgnoreCase("Chapter")) {
-					Level newLevel = processChapter(lineCounter, curLevel, LevelType.CHAPTER, input);
+					Level newLevel = processLevel(lineCounter, LevelType.CHAPTER, input);
 					if (newLevel == null) {
 						// Create a basic level so the rest of the spec can be processed
 						Chapter chapter = new Chapter(null, lineCounter, input);
@@ -739,62 +686,54 @@ public class ContentSpecParser {
 					}
 				// Processes the section, it's level and title
 				} else if (tempInput[0].equalsIgnoreCase("Section")) {
-					if (level > 0) {
-						level = curLevel + 1;
+					Level newLevel = processLevel(lineCounter, LevelType.SECTION, input);
+					if (newLevel == null) {
+						// Create a basic level so the rest of the spec can be processed
 						Section section = new Section(null, lineCounter, input);
 						lvl.appendChild(section);
 						lvl = section;
-						if (tempInput.length >= 2) {
-							lvl.setTitle(StringUtilities.replaceEscapeChars(getTitle(tempInput[1], '[')));
-							String[] variables = new String[0];
-							try {
-								// Get the mapping of variables
-								HashMap<RelationshipType, String[]> variableMap = getLineVariables(tempInput[1], '[', ']', ',', false);
-								if (variableMap.containsKey(RelationshipType.NONE)) {
-									variables = variableMap.get(RelationshipType.NONE);
-								}
-								// Add targets for the level
-								if (variableMap.containsKey(RelationshipType.TARGET)) {
-									if (targetTopics.containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
-										log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetTopics.get(variableMap.get(RelationshipType.TARGET)[0]).getLineNumber(), targetTopics.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter, input));
-										return false;
-									} else if (targetLevels.containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
-										log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetLevels.get(variableMap.get(RelationshipType.TARGET)[0]).getLineNumber(), targetLevels.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter, input));
-										return false;
-									} else {
-										targetLevels.put(variableMap.get(RelationshipType.TARGET)[0], lvl);
-										lvl.setTargetId(variableMap.get(RelationshipType.TARGET)[0]);
-									}
-								}
-								// Check that no relationships were specified for the section
-								if (variableMap.containsKey(RelationshipType.RELATED) || variableMap.containsKey(RelationshipType.PREREQUISITE) || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType.PREVIOUS)) {
-									log.error(String.format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineCounter, CSConstants.SECTION, CSConstants.SECTION, input));
-									return false;
-								}
-							} catch (Exception e) {
-								log.error(e.getMessage());
-								return false;
-							}
-							
-							// Process the options
-							if (variables.length >= 1) {
-								if (!addOptions(lvl, variables, 0, input)) {
-									return false;
-								}
-							}	
-						}
-					} else {
-						log.error(String.format(ProcessorConstants.ERROR_CS_SECTION_NO_CHAPTER_MSG, lineCounter, input));
 						return false;
+					} else {
+						level = curLevel + 1;
+						lvl.appendChild(newLevel);
+						lvl = newLevel;
 					}
 				// Process an appendix (its done in the same fashion as a chapter
 				} else if (tempInput[0].equalsIgnoreCase("Appendix")) {
-					Level newLevel = processChapter(lineCounter, curLevel, LevelType.APPENDIX, input);
+					Level newLevel = processLevel(lineCounter, LevelType.APPENDIX, input);
 					if (newLevel == null) {
 						// Create a basic level so the rest of the spec can be processed
 						Appendix appendix = new Appendix(null, lineCounter, input);
 						lvl.appendChild(appendix);
 						lvl = appendix;
+						return false;
+					} else {
+						level = curLevel + 1;
+						lvl.appendChild(newLevel);
+						lvl = newLevel;
+					}
+				// Process a Process
+				} else if (tempInput[0].equalsIgnoreCase("Process")) {
+					Level newLevel = processLevel(lineCounter, LevelType.PROCESS, input);
+					if (newLevel == null) {
+						// Create a basic level so the rest of the spec can be processed
+						Process process = new Process(null, lineCounter, input);
+						lvl.appendChild(process);
+						lvl = process;
+						return false;
+					} else {
+						level = curLevel + 1;
+						lvl.appendChild(newLevel);
+						lvl = newLevel;
+					}
+				// Process a Part
+				} else if (tempInput[0].equalsIgnoreCase("Part")) {
+					Level newLevel = processLevel(lineCounter, LevelType.PART, input);
+					if (newLevel == null) {
+						// Create a basic level so the rest of the spec can be processed
+						Part part = new Part(null, lineCounter, input);
+						lvl.appendChild(part);
+						lvl = part;
 						return false;
 					} else {
 						level = curLevel + 1;
@@ -1000,64 +939,80 @@ public class ContentSpecParser {
 	}
 	
 	/**
-	 * Processes and creates a chapter based on the level type.
+	 * Processes and creates a level based on the level type.
 	 * 
-	 * @param line The line number the chapter is on.
-	 * @param curLevel The current level the chapter lies on.
-	 * @param step The chapter step in a content specification
-	 * @param levelType The type the the chapter will represent. ie. A Chapter or Appendix
+	 * @param line The line number the level is on.
+	 * @param levelType The type the level will represent. ie. A Chapter or Appendix
 	 * @param input The chapter string in the content specification.
 	 * @return The created level or null if an error occurred.
 	 */
-	private Level processChapter(int line, int curLevel, LevelType levelType, String input) {
+	private Level processLevel(int line, LevelType levelType, String input) {
 		String splitVars[] = StringUtilities.split(input, ':', 2);
 		// Remove the whitespace from each value in the split array
 		splitVars = StringUtilities.trimArray(splitVars);
-		if (level == 0) {
-			Level newLvl = new Level(null, line, input, levelType);
-			if (splitVars.length >= 2) {
-				String[] variables = new String[0];
-				newLvl.setTitle(StringUtilities.replaceEscapeChars(getTitle(splitVars[1], '[')));
-				try {
-					// Get the mapping of variables
-					HashMap<RelationshipType, String[]> variableMap = getLineVariables(splitVars[1], '[', ']', ',', false);
-					if (variableMap.containsKey(RelationshipType.NONE)) {
-						variables = variableMap.get(RelationshipType.NONE);
-					}
-					// Add targets for the level
-					if (variableMap.containsKey(RelationshipType.TARGET)) {
-						if (targetTopics.containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
-							log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetTopics.get(variableMap.get(RelationshipType.TARGET)[0]).getLineNumber(), targetTopics.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter, input));
-							return null;
-						} else if (targetLevels.containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
-							log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetLevels.get(variableMap.get(RelationshipType.TARGET)[0]).getLineNumber(), targetLevels.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter, input));
-							return null;
-						} else {
-							targetLevels.put(variableMap.get(RelationshipType.TARGET)[0], newLvl);
-							newLvl.setTargetId(variableMap.get(RelationshipType.TARGET)[0]);
-						}
-					}
-					// Check that no relationships were specified for the appendix
-					if (variableMap.containsKey(RelationshipType.RELATED) || variableMap.containsKey(RelationshipType.PREREQUISITE) || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType.PREVIOUS)) {
-						log.error(String.format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineCounter, CSConstants.CHAPTER, CSConstants.CHAPTER, input));
+		
+		// Create the level based on the type
+		Level newLvl;
+		switch (levelType) {
+		case APPENDIX:
+			newLvl = new Appendix(null, line, input);
+			break;
+		case CHAPTER:
+			newLvl = new Chapter(null, line, input);
+			break;
+		case SECTION:
+			newLvl = new Section(null, line, input);
+			break;
+		case PART:
+			newLvl = new Part(null, line, input);
+			break;
+		case PROCESS:
+			newLvl = new Process(null, line, input);
+			break;
+		default:
+			newLvl = new Level(null, line, input, levelType);
+		}
+		
+		// Parse the input
+		if (splitVars.length >= 2) {
+			String[] variables = new String[0];
+			newLvl.setTitle(StringUtilities.replaceEscapeChars(getTitle(splitVars[1], '[')));
+			try {
+				// Get the mapping of variables
+				HashMap<RelationshipType, String[]> variableMap = getLineVariables(splitVars[1], '[', ']', ',', false);
+				if (variableMap.containsKey(RelationshipType.NONE)) {
+					variables = variableMap.get(RelationshipType.NONE);
+				}
+				// Add targets for the level
+				if (variableMap.containsKey(RelationshipType.TARGET)) {
+					if (targetTopics.containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
+						log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetTopics.get(variableMap.get(RelationshipType.TARGET)[0]).getLineNumber(), targetTopics.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter, input));
 						return null;
+					} else if (targetLevels.containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
+						log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetLevels.get(variableMap.get(RelationshipType.TARGET)[0]).getLineNumber(), targetLevels.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter, input));
+						return null;
+					} else {
+						targetLevels.put(variableMap.get(RelationshipType.TARGET)[0], newLvl);
+						newLvl.setTargetId(variableMap.get(RelationshipType.TARGET)[0]);
 					}
-				} catch (Exception e) {
-					log.error(e.getMessage());
+				}
+				// Check that no relationships were specified for the appendix
+				if (variableMap.containsKey(RelationshipType.RELATED) || variableMap.containsKey(RelationshipType.PREREQUISITE) || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType.PREVIOUS)) {
+					log.error(String.format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineCounter, CSConstants.CHAPTER, CSConstants.CHAPTER, input));
 					return null;
 				}
-				// Process the options
-				if (variables.length >= 1) {
-					if (!addOptions(newLvl, variables, 0, input)) {
-						return null;
-					}
+			} catch (Exception e) {
+				log.error(e.getMessage());
+				return null;
+			}
+			// Process the options
+			if (variables.length >= 1) {
+				if (!addOptions(newLvl, variables, 0, input)) {
+					return null;
 				}
 			}
-			return newLvl;
-		} else {
-			log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_CHAPTER_MSG, lineCounter, input));
-			return null;
 		}
+		return newLvl;
 	}
 	
 	/**
