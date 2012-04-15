@@ -245,20 +245,26 @@ public class RESTReader {
 		return null;
 	}
 	
-	@SuppressWarnings("serial")
 	public BaseRestCollectionV1<TopicV1> getTopicsByIds(List<Integer> ids) {
+		if (ids.isEmpty()) return null;
+		
 		try {
-			BaseRestCollectionV1<TopicV1> topics = new BaseRestCollectionV1<TopicV1>();
-			PathSegment path = new PathSegmentImpl("ids", false);
+			final BaseRestCollectionV1<TopicV1> topics = new BaseRestCollectionV1<TopicV1>();
+			final StringBuffer urlVars = new StringBuffer("query;topicIds=");
+			final String encodedComma = URLEncoder.encode(",", "UTF-8");
+			
 			for (Integer id: ids) {
 				if (!entityCache.containsKeyValue(TopicV1.class, id)) {
-					path.getMatrixParameters().put(   
-		                    id.toString(), 
-		                    new ArrayList<String>(){{add("");}});
+					urlVars.append(id + encodedComma);
 				} else {
 					topics.addItem(entityCache.get(TopicV1.class, id));
 				}
 			}
+			
+			String query = urlVars.toString();
+			query = query.substring(0, query.length() - encodedComma.length());
+			
+			PathSegment path = new PathSegmentImpl(query, false);
 			
 			/* We need to expand the all the items in the topic collection */
 			final ExpandDataTrunk expand = new ExpandDataTrunk();
@@ -273,6 +279,7 @@ public class RESTReader {
 			final String expandString = mapper.writeValueAsString(expand);
 			final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
 			BaseRestCollectionV1<TopicV1> downloadedTopics = client.getJSONTopicsWithQuery(path, expandEncodedString);
+			entityCache.add(downloadedTopics);
 			
 			/* Transfer the downloaded data to the current topic list */
 			if (downloadedTopics != null && downloadedTopics.getItems() != null) {

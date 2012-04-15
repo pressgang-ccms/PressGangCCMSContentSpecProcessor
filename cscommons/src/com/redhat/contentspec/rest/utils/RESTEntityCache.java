@@ -23,7 +23,7 @@ public class RESTEntityCache {
 
 	public <T extends BaseRESTEntityV1<T>> boolean containsKeyValue(Class<T> clazz, Integer id, Number revision) {
 		if (singleEntities.containsKey(clazz))
-			return revision == null ? singleEntities.containsKey(clazz.getSimpleName() + "-" + id) : singleEntities.containsKey(clazz.getSimpleName() + "-" + id + "-" + revision);
+			return revision == null ? singleEntities.get(clazz).containsKey(clazz.getSimpleName() + "-" + id) : singleEntities.get(clazz).containsKey(clazz.getSimpleName() + "-" + id + "-" + revision);
 		else
 			return false;
 	}
@@ -68,7 +68,7 @@ public class RESTEntityCache {
 	
 	public <T extends BaseRESTEntityV1<T>> T get(Class<T> clazz, Integer id, Number revision) {
 		if (!containsKeyValue(clazz, id, revision)) return null;
-		return clazz.cast(singleEntities.get(clazz).get(clazz.getSimpleName() + "-" + id + "-" + revision));
+		return clazz.cast(revision == null ? singleEntities.get(clazz).get(clazz.getSimpleName() + "-" + id) : singleEntities.get(clazz).get(clazz.getSimpleName() + "-" + id + "-" + revision));
 	}
 	
 	public <T extends BaseRESTEntityV1<T>> void expire(Class<T> clazz, Integer id) {
