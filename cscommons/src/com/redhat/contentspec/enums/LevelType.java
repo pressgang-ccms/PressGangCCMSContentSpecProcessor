@@ -9,7 +9,8 @@ import com.redhat.contentspec.constants.CSConstants;
  *
  */
 public enum LevelType {
-	BASE(CSConstants.LEVEL_BASE), CHAPTER(CSConstants.LEVEL_CHAPTER), APPENDIX(CSConstants.LEVEL_APPENDIX), PROCESS(CSConstants.LEVEL_PROCESS), SECTION(CSConstants.LEVEL_SECTION);
+	BASE(CSConstants.LEVEL_BASE), CHAPTER(CSConstants.LEVEL_CHAPTER), APPENDIX(CSConstants.LEVEL_APPENDIX), PROCESS(CSConstants.LEVEL_PROCESS), SECTION(CSConstants.LEVEL_SECTION),
+	PART(CSConstants.LEVEL_PART);
 	
 	private final int type;
 	
@@ -41,6 +42,8 @@ public enum LevelType {
 			return CSConstants.APPENDIX;
 		case CSConstants.LEVEL_PROCESS:
 			return CSConstants.PROCESS;
+		case CSConstants.LEVEL_PART:
+			return CSConstants.PART;
 		default:
 			return null;
 		}

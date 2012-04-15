@@ -19,6 +19,7 @@ public class CSConstants {
 	public static final int LEVEL_APPENDIX 	= 3;
 	public static final int LEVEL_BASE 		= 4;
 	public static final int LEVEL_PROCESS 	= 5;
+	public static final int LEVEL_PART	 	= 6;
 	
 	// Other
 	public static final int CSP_PROPERTY_ID			= 15;
@@ -48,6 +49,7 @@ public class CSConstants {
 	public static final String APPENDIX = "Appendix";
 	public static final String SECTION = "Section";
 	public static final String PROCESS = "Process";
+	public static final String PART = "Part";
 	
 	/** The Concept tag ID */
 	public static final Integer CONCEPT_TAG_ID = 5;
