@@ -123,11 +123,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 		}
 		// If editing then check that the ID exists & the SpecRevision match
 		if (contentSpec.getId() != 0) {
-			if (reader.getContentSpecById(contentSpec.getId(), null) == null) {
+			final TopicV1 contentSpecTopic = reader.getContentSpecById(contentSpec.getId(), null);
+			if (contentSpecTopic == null) {
 				log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
 				valid = false;
-			} else if (!ignoreSpecRevisions) {
-				TopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(), null);
+			}
+			
+			// Check that the revision is valid
+			if (!ignoreSpecRevisions && contentSpecTopic != null) {
 				String currentChecksum = HashUtilities.generateMD5(contentSpecTopic.getXml().replaceFirst("CHECKSUM[ ]*=.*\n", ""));
 				if (contentSpec.getChecksum() != null) {
 					if (!contentSpec.getChecksum().equals(currentChecksum)) {
@@ -143,6 +146,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 					}
 				} else {
 					log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_CHECKSUM_MSG, null, currentChecksum));
+					valid = false;
+				}
+			}
+			
+			// Check that the Content Spec isn't read only
+			if (contentSpecTopic != null && contentSpecTopic.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID) != null) {
+				if (!contentSpecTopic.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID).getValue().matches("(^|.*,)" + contentSpec.getCreatedBy() + "(,.*|$)")) {
+					log.error(ProcessorConstants.ERROR_CS_READ_ONLY_MSG);
 					valid = false;
 				}
 			}

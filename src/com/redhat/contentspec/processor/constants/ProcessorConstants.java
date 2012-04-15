@@ -61,6 +61,7 @@ public class ProcessorConstants {
 	public static final String ERROR_INVALID_INJECTION_TYPE_MSG		= INVALID_CS + " The injection type \"%s\" doesn't exist or isn't a Type.";
 	public static final String ERROR_DUPLICATE_ID_MSG				= LINE + INVALID_CS + " Duplicate topic ID ( %s )." + CSLINE_MSG;
 	public static final String ERROR_INVALID_BUG_LINKS_MSG			= LINE + INVALID_CS + " The setting for bug links must be On or Off." + CSLINE_MSG;
+	public static final String ERROR_CS_READ_ONLY_MSG				= INVALID_CS + " The content specification is read-only.";
 	
 	public static final String ERROR_INCORRECT_TOPIC_ID_LOCATION_MSG 	= LINE + INVALID_CS + " Topic ID specified in the wrong location." + CSLINE_MSG;
 
