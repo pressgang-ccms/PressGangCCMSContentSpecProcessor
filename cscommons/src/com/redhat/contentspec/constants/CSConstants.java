@@ -94,6 +94,8 @@ public class CSConstants {
 	public static final Integer DTD_PROPERTY_TAG_ID = 16;
 	/** The Content Specification Type Property Tag ID */
 	public static final Integer CSP_TYPE_PROPERTY_TAG_ID = 17;
+	/** The Content Specification Read-Only Property Tag ID */
+	public static final Integer CSP_READ_ONLY_PROPERTY_TAG_ID = 25;
 	
 	/** The initial name for a snapshot revision */
 	public static final String INITIAL_SNAPSHOT_REVISION_NAME = "Initial Untranslated Revision";
