@@ -298,14 +298,43 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 		for (SpecTopic t: level.getSpecTopics()) {
 			if (!validateTopic(t, specTopics)) valid = false;;
 		}
-		// If the level is a process validate it has no childLevels
-		if (level.getType() == LevelType.PROCESS) {
+		
+		// Validate certain requirements depending on the type of level
+		switch (level.getType()) {
+		case APPENDIX:
+			if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.PART)) {
+				log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_APPENDIX_MSG, level.getLineNumber(), level.getText()));
+				valid = false;
+			}
+			break;
+		case CHAPTER:
+			if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.PART)) {
+				log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_CHAPTER_MSG, level.getLineNumber(), level.getText()));
+				valid = false;
+			}
+			break;
+		case PROCESS:
+			// Check that the process has no children
 			Process process = (Process) level;
 			if (process.getNumberOfChildLevels() != 0) {
 				log.error(String.format(ProcessorConstants.ERROR_PROCESS_HAS_LEVELS_MSG, process.getLineNumber(), process.getText()));
 				valid = false;
 			}
+			break;
+		case PART:
+			if (level.getParent().getType() != LevelType.BASE) {
+				log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_PART_MSG, level.getLineNumber(), level.getText()));
+				valid = false;
+			}
+			break;
+		case SECTION:
+			if (!(level.getParent().getType() == LevelType.APPENDIX || level.getParent().getType() == LevelType.CHAPTER || level.getParent().getType() == LevelType.SECTION)) {
+				log.error(String.format(ProcessorConstants.ERROR_CS_SECTION_NO_CHAPTER_MSG, level.getLineNumber(), level.getText()));
+				valid = false;
+			}
+			break;
 		}
+		
 		return valid;
 	}
 	

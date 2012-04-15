@@ -52,9 +52,10 @@ public class ProcessorConstants {
 	public static final String ERROR_TAG_NONEXIST_MSG				= LINE + INVALID_CS + " Tag doesn't exist." + CSLINE_MSG;
 	public static final String ERROR_MULTI_TAG_DUPLICATED_MSG		= LINE + INVALID_CS + " One or more tags don't exist or are duplicated." + CSLINE_MSG;
 	public static final String ERROR_CS_EMPTY_MSG					= LINE + INVALID_CS + " The content specification can't be empty.";
-	public static final String ERROR_CS_SECTION_NO_CHAPTER_MSG		= LINE + INVALID_CS + " A Section can't be outside of a Chapter." + CSLINE_MSG;
-	public static final String ERROR_CS_NESTED_CHAPTER_MSG		 	= LINE + INVALID_CS + " A Chapter must not be indented." + CSLINE_MSG;
-	public static final String ERROR_CS_NESTED_APPENDIX_MSG		 	= LINE + INVALID_CS + " An Appendix must not be indented." + CSLINE_MSG;
+	public static final String ERROR_CS_SECTION_NO_CHAPTER_MSG		= LINE + INVALID_CS + " A Section can't be outside of a Chapter or Appendix." + CSLINE_MSG;
+	public static final String ERROR_CS_NESTED_CHAPTER_MSG		 	= LINE + INVALID_CS + " A Chapter must be within a \"Part\" or have no indentation." + CSLINE_MSG;
+	public static final String ERROR_CS_NESTED_APPENDIX_MSG		 	= LINE + INVALID_CS + " An Appendix must be within a \"Part\" or have no indentation." + CSLINE_MSG;
+	public static final String ERROR_CS_NESTED_PART_MSG		 		= LINE + INVALID_CS + " A Part must have no indentation." + CSLINE_MSG;
 	public static final String ERROR_CS_NO_COPYRIGHT_MSG			= INVALID_CS + " A Copyright Holder must be specified.";
 	public static final String ERROR_INVALID_INJECTION_MSG			= LINE + INVALID_CS + " The setting for inline injection must be On or Off." + CSLINE_MSG;
 	public static final String ERROR_INVALID_INJECTION_TYPE_MSG		= INVALID_CS + " The injection type \"%s\" doesn't exist or isn't a Type.";
