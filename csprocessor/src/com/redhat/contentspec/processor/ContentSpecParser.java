@@ -189,9 +189,9 @@ public class ContentSpecParser {
 	}
 	
 	/**
-	 * Gets the RelationshipProcessor that is used when parsing the Content Specification.
+	 * Gets the relationships that were created when parsing the Content Specification.
 	 * 
-	 * @return The RelationshipProcessor
+	 * @return The map of Unique id's to relationships
 	 */
 	public HashMap<String, List<Relationship>> getProcessedRelationships() {
 		return relationships;
