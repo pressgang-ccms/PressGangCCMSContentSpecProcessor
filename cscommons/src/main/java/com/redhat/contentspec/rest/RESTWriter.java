@@ -1,23 +1,15 @@
 package com.redhat.contentspec.rest;
 
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.map.ObjectMapper;
-import java.net.URLEncoder;
+
 import java.util.*;
-
-import javax.ws.rs.core.PathSegment;
-
-import org.jboss.resteasy.specimpl.PathSegmentImpl;
 
 import com.redhat.contentspec.constants.CSConstants;
 import com.redhat.contentspec.rest.utils.RESTCollectionCache;
 import com.redhat.contentspec.rest.utils.RESTEntityCache;
 import com.redhat.contentspec.utils.ExceptionUtilities;
-import com.redhat.ecs.commonutils.CollectionUtilities;
 import com.redhat.topicindex.rest.collections.BaseRestCollectionV1;
 import com.redhat.topicindex.rest.entities.*;
-import com.redhat.topicindex.rest.expand.ExpandDataDetails;
-import com.redhat.topicindex.rest.expand.ExpandDataTrunk;
 import com.redhat.topicindex.rest.sharedinterface.RESTInterfaceV1;
 
 public class RESTWriter {
@@ -26,7 +18,6 @@ public class RESTWriter {
 	
 	private final RESTInterfaceV1 client;
 	private final RESTReader reader;
-	private final ObjectMapper mapper = new ObjectMapper();
 	private final RESTEntityCache entityCache;
 	private final RESTCollectionCache collectionsCache;
 	

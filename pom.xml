@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.redhat.contentspec</groupId>
+  <artifactId>contentspec</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>ECS Content Specification Tools</name>
+  
+  <repositories>
+	<repository>
+		<id>JBoss</id>
+		<url>https://repository.jboss.org/nexus/</url>
+	</repository>
+	<repository>
+		<id>Apache</id>
+		<url>http://repository.apache.org</url>
+	</repository>
+	<repository>
+		<id>Zanata</id>
+		<url>http://repository-zanata.forge.cloudbees.com/release/</url>
+	</repository>
+	<repository>
+		<id>ECS Maven</id>
+		<url>http://ecsmaven.usersys.redhat.com/nexus/</url>
+	</repository>
+  </repositories>
+  
+  <build>
+	<plugins>
+		<plugin>
+        		<groupId>org.apache.maven.plugins</groupId>
+        		<artifactId>maven-compiler-plugin</artifactId>
+			<version>2.3.1</version>
+        		<configuration>
+          			<source>1.6</source>
+          			<target>1.6</target>
+        		</configuration>
+      		</plugin>
+		<!-- build standalone exe jar -->
+         	<plugin>
+            		<artifactId>maven-assembly-plugin</artifactId>
+            		<configuration>
+		       		<descriptorRefs>
+		          		<descriptorRef>jar-with-dependencies</descriptorRef>
+		       		</descriptorRefs>
+            		</configuration>
+         	</plugin>
+   	</plugins>
+  </build>
+
+  
+  <dependencies>
+  	<!-- Commons Library -->
+	<dependency>
+		<groupId>com.redhat</groupId>
+		<artifactId>Commonutilities</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</dependency>
+  </dependencies>
+</project>

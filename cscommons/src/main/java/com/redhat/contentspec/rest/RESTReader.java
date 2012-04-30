@@ -356,14 +356,14 @@ public class RESTReader {
 	
 	// SNAPSHOT TOPIC QUERIES
 	
-	public SnapshotV1 getTopicSnapshotById(Integer id) {
+	/*public SnapshotV1 getTopicSnapshotById(Integer id) {
 		try {
 			final SnapshotV1 snapshot;
 			if (entityCache.containsKeyValue(SnapshotV1.class, id)) {
 				snapshot = entityCache.get(SnapshotV1.class, id);
 			} else {
 				/* We need to expand the all the items in the topic collection */
-				final ExpandDataTrunk expand = new ExpandDataTrunk();
+				/*final ExpandDataTrunk expand = new ExpandDataTrunk();
 				expand.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails("snapshottopics"))));
 				
 				final String expandString = mapper.writeValueAsString(expand);
@@ -376,7 +376,7 @@ public class RESTReader {
 			log.error(ExceptionUtilities.getStackTrace(e));
 		}
 		return null;
-	}
+	}*/
 	
 	// USER QUERIES
 	
