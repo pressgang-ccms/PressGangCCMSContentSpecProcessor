@@ -11,6 +11,6 @@
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
-        <javaElement handleIdentifier="=cscommons/src"/>
+        <javaElement handleIdentifier="=cscommons/src\/main\/java"/>
     </selectedElements>
 </jardesc>
