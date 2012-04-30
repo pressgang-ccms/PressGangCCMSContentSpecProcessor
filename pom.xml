@@ -85,4 +85,11 @@
   		<version>2.0-m04</version>
   	</dependency>
   </dependencies>
+
+  <modules>
+	<module>csprocessor-commons</module>
+	<module>csprocessor-processor</module>
+	<module>csprocessor-builder</module>
+	<module>csprocessor-client</module>
+  </modules>
 </project>
