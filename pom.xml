@@ -35,9 +35,10 @@
         		<configuration>
           			<source>1.6</source>
           			<target>1.6</target>
+				<optimize>true</optimize>
         		</configuration>
       		</plugin>
-		<!-- build standalone exe jar -->
+		<!-- build standalone jar -->
          	<plugin>
             		<artifactId>maven-assembly-plugin</artifactId>
             		<configuration>
@@ -61,5 +62,27 @@
 		<artifactId>Commonutilities</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</dependency>
+
+	<!-- RESTEasy Libraries -->
+  	<dependency>
+  		<groupId>org.jboss.resteasy</groupId>
+  		<artifactId>resteasy-atom-provider</artifactId>
+  		<version>2.2.3.GA</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.jboss.resteasy</groupId>
+  		<artifactId>resteasy-jackson-provider</artifactId>
+  		<version>2.2.3.GA</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.jboss.resteasy</groupId>
+  		<artifactId>resteasy-jaxrs</artifactId>
+  		<version>2.2.3.GA</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>javax.ws.rs</groupId>
+  		<artifactId>javax.ws.rs-api</artifactId>
+  		<version>2.0-m04</version>
+  	</dependency>
   </dependencies>
 </project>
