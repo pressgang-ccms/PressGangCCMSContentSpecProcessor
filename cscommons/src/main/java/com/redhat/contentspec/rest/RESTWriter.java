@@ -1,7 +1,6 @@
 package com.redhat.contentspec.rest;
 
 import org.apache.log4j.Logger;
-
 import java.util.*;
 
 import com.redhat.contentspec.constants.CSConstants;
