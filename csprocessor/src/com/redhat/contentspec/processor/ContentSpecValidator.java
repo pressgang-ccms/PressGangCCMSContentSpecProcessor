@@ -131,7 +131,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 			
 			// Check that the revision is valid
 			if (!ignoreSpecRevisions && contentSpecTopic != null) {
-				String currentChecksum = HashUtilities.generateMD5(contentSpecTopic.getXml().replaceFirst("CHECKSUM[ ]*=.*\n", ""));
+				String currentChecksum = HashUtilities.generateMD5(contentSpecTopic.getXml().replaceFirst("CHECKSUM[ ]*=.*(\r)?\n", ""));
 				if (contentSpec.getChecksum() != null) {
 					if (!contentSpec.getChecksum().equals(currentChecksum)) {
 						log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_CHECKSUM_MSG, contentSpec.getChecksum(), currentChecksum));
