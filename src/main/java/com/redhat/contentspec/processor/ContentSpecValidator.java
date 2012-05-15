@@ -16,15 +16,20 @@ import com.redhat.contentspec.enums.RelationshipType;
 import com.redhat.contentspec.interfaces.ShutdownAbleApp;
 import com.redhat.contentspec.constants.CSConstants;
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
+import com.redhat.contentspec.processor.structures.ProcessingOptions;
 import com.redhat.contentspec.processor.utils.ProcessorUtilities;
 import com.redhat.contentspec.rest.RESTManager;
 import com.redhat.contentspec.rest.RESTReader;
-import com.redhat.contentspec.utils.HashUtilities;
 import com.redhat.contentspec.utils.logging.ErrorLogger;
 import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
+import com.redhat.ecs.commonutils.DocBookUtilities;
+import com.redhat.ecs.commonutils.HashUtilities;
+import com.redhat.ecs.constants.CommonConstants;
+import com.redhat.topicindex.rest.entities.BaseTopicV1;
 import com.redhat.topicindex.rest.entities.CategoryV1;
 import com.redhat.topicindex.rest.entities.TagV1;
 import com.redhat.topicindex.rest.entities.TopicV1;
+import com.redhat.topicindex.rest.entities.TranslatedTopicV1;
 
 /**
  * A class that is used to validate a Content Specification and the objects within a Content Specification. It provides methods for 
@@ -33,14 +38,18 @@ import com.redhat.topicindex.rest.entities.TopicV1;
  * @author lnewson
  *
  */
-public class ContentSpecValidator implements ShutdownAbleApp {
+public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownAbleApp {
 	
 	private final RESTReader reader;
 	private final ErrorLogger log;
 	private final boolean permissiveMode;
 	private final boolean ignoreSpecRevisions;
+	private final boolean allowEmptyLevels;
 	private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 	private final AtomicBoolean shutdown = new AtomicBoolean(false);
+	private final Class<T> clazz;
+	
+	private String locale;
 	
 	@Override
 	public void shutdown() {
@@ -60,11 +69,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 	 * @param permissiveMode Whether validation should be done in permissive mode.
 	 * @param ignoreSpecRevisions Whether the Checksum/SpecRevision attribute should be ignored.
 	 */
-	public ContentSpecValidator(ErrorLoggerManager elm, RESTManager restManager, boolean permissiveMode, boolean ignoreSpecRevisions) {
+	public ContentSpecValidator(final Class<T> clazz, final ErrorLoggerManager elm, final RESTManager restManager, final ProcessingOptions processingOptions) {
+		this.clazz = clazz;
 		log = elm.getLogger(ContentSpecValidator.class);
 		reader = restManager.getReader();
-		this.permissiveMode = permissiveMode;
-		this.ignoreSpecRevisions = ignoreSpecRevisions;
+		this.permissiveMode = processingOptions.isPermissiveMode();
+		this.ignoreSpecRevisions = processingOptions.isIgnoreSpecRevision();
+		this.allowEmptyLevels = processingOptions.isAllowEmptyLevels();
+		this.locale = CommonConstants.DEFAULT_LOCALE;
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -75,7 +87,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 	 * @param specTopics The list of topics that exist within the content specification.
 	 * @return True if the content specification is valid, otherwise false.
 	 */
-	public boolean validateContentSpec(ContentSpec contentSpec, Map<String, SpecTopic> specTopics) {
+	public boolean validateContentSpec(ContentSpec contentSpec, Map<String, SpecTopic> specTopics)
+	{
+		locale = contentSpec.getLocale() == null ? locale : contentSpec.getLocale();
 		
 		// Check if the app should be shutdown
 		if (isShuttingDown.get()) {
@@ -177,6 +191,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 		
 		// Check that each level is valid
 		if (!validateLevel(contentSpec.getBaseLevel(), specTopics)) valid = false;
+		
+		// reset the locale back to its default
+		this.locale = CommonConstants.DEFAULT_LOCALE;
 
 		return valid;
 	}
@@ -289,37 +306,51 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 		}
 		
 		boolean valid = true;
-		if (level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 0) {
+		
+		// Check that the level isn't empty
+		if (level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 0 && !allowEmptyLevels)
+		{
 			log.error(String.format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), level.getType().getTitle(), level.getType().getTitle(), level.getText()));
 			valid = false;
 		}
-		if (level.getType() == null) {
+		
+		if (level.getType() == null)
+		{
 			log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
 			valid = false;
 		}
-		if (level.getTitle() == null || level.getTitle().equals("")) {
+		
+		if (level.getTitle() == null || level.getTitle().equals(""))
+		{
 			log.error(String.format(ProcessorConstants.ERROR_LEVEL_NO_TITLE_MSG, level.getLineNumber(), level.getType().getTitle(), level.getText()));
 			valid = false;
 		}
+		
 		// Validate the sub levels
-		for (Level l: level.getChildLevels()) {
+		for (Level l: level.getChildLevels())
+		{
 			if (!validateLevel(l, specTopics)) valid = false;;
 		}
+		
 		// Validate the topics in this level
-		for (SpecTopic t: level.getSpecTopics()) {
+		for (SpecTopic t: level.getSpecTopics())
+		{
 			if (!validateTopic(t, specTopics)) valid = false;;
 		}
 		
 		// Validate certain requirements depending on the type of level
-		switch (level.getType()) {
+		switch (level.getType())
+		{
 		case APPENDIX:
-			if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.PART)) {
+			if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.PART))
+			{
 				log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_APPENDIX_MSG, level.getLineNumber(), level.getText()));
 				valid = false;
 			}
 			break;
 		case CHAPTER:
-			if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.PART)) {
+			if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.PART))
+			{
 				log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_CHAPTER_MSG, level.getLineNumber(), level.getText()));
 				valid = false;
 			}
@@ -327,19 +358,22 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 		case PROCESS:
 			// Check that the process has no children
 			Process process = (Process) level;
-			if (process.getNumberOfChildLevels() != 0) {
+			if (process.getNumberOfChildLevels() != 0)
+			{
 				log.error(String.format(ProcessorConstants.ERROR_PROCESS_HAS_LEVELS_MSG, process.getLineNumber(), process.getText()));
 				valid = false;
 			}
 			break;
 		case PART:
-			if (level.getParent().getType() != LevelType.BASE) {
+			if (level.getParent().getType() != LevelType.BASE)
+			{
 				log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_PART_MSG, level.getLineNumber(), level.getText()));
 				valid = false;
 			}
 			break;
 		case SECTION:
-			if (!(level.getParent().getType() == LevelType.APPENDIX || level.getParent().getType() == LevelType.CHAPTER || level.getParent().getType() == LevelType.SECTION)) {
+			if (!(level.getParent().getType() == LevelType.APPENDIX || level.getParent().getType() == LevelType.CHAPTER || level.getParent().getType() == LevelType.SECTION))
+			{
 				log.error(String.format(ProcessorConstants.ERROR_CS_SECTION_NO_CHAPTER_MSG, level.getLineNumber(), level.getText()));
 				valid = false;
 			}
@@ -356,6 +390,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 	 * @param specTopics The list of topics that exist within the content specification.
 	 * @return True if the topic is valid otherwise false.
 	 */
+	@SuppressWarnings("unchecked")
 	public boolean validateTopic(SpecTopic specTopic, Map<String, SpecTopic> specTopics) {
 		
 		// Check if the app should be shutdown
@@ -365,158 +400,255 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 		}
 		
 		boolean valid = true;
-		if (specTopic.getStep() == 0) {
+		
+		// Check that the topic exists in the spec by checking it's step
+		if (specTopic.getStep() == 0)
+		{
 			log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
 			valid = false;
 		}
+		
 		// Checks that the id isn't null and is a valid topic ID
-		if (specTopic.getId() == null || !specTopic.getId().matches(CSConstants.ALL_TOPIC_ID_REGEX)) {
+		if (specTopic.getId() == null || !specTopic.getId().matches(CSConstants.ALL_TOPIC_ID_REGEX))
+		{
 			log.error(String.format(ProcessorConstants.ERROR_INVALID_TOPIC_ID_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 			valid = false;
 		}
-		// New Topics
-		if (specTopic.isTopicANewTopic()) {
-			if (specTopic.getTitle() == null || specTopic.getTitle().equals("")) {
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+		
+		// Check that the topic is inside a chapter/section/process/appendix
+		if (!(specTopic.getParent().getType() == LevelType.CHAPTER || specTopic.getParent().getType() == LevelType.APPENDIX 
+				|| specTopic.getParent().getType() == LevelType.PROCESS || specTopic.getParent().getType() == LevelType.SECTION))
+		{
+			log.error(String.format(ProcessorConstants.ERROR_TOPIC_OUTSIDE_CHAPTER_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+			valid = false;
+		}
+		
+		// Check that the title exists
+		if (specTopic.getTitle() == null || specTopic.getTitle().equals(""))
+		{
+			log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+			valid = false;
+		}
+		// Check that it is valid when escaped
+		else if (DocBookUtilities.escapeTitle(specTopic.getTitle()).isEmpty())
+		{
+			log.error(String.format(ProcessorConstants.ERROR_INVALID_TOPIC_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+			valid = false;
+		}
+		
+		// Check that we aren't using translations for anything but existing topics
+		if (!specTopic.isTopicAnExistingTopic())
+		{
+			// Check that we aren't processing translations
+			if (clazz == TranslatedTopicV1.class)
+			{
+				// TODO log an error about no new topics for translations
 				valid = false;
 			}
-			if (specTopic.getType() == null || specTopic.getType().equals("")) {
+		}
+		
+		// New Topics
+		if (specTopic.isTopicANewTopic())
+		{	
+			if (specTopic.getType() == null || specTopic.getType().equals(""))
+			{
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TYPE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				valid = false;
 			}
+			
 			// Check that the type entered exists
-			//List<Type> typeList = reader.getTypesByName(type);
 			TagV1 type = reader.getTypeByName(specTopic.getType());
-			if (type == null) {
+			if (type == null)
+			{
 				log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				valid = false;
 			}
 			
 			// Validate the tags
-			if (!validateTopicTags(specTopic, specTopic.getTags(true))) {
+			if (!validateTopicTags(specTopic, specTopic.getTags(true)))
+			{
 				valid = false;
 			}
 			
 			//Check Assigned Writer exists
 			if (!validateAssignedWriter(specTopic)) valid = false;
+		}
 		// Existing Topics
-		} else if (specTopic.isTopicAnExistingTopic()) {
+		else if (specTopic.isTopicAnExistingTopic())
+		{
 			// Check that the id actually exists
-			TopicV1 topic = reader.getTopicById(Integer.parseInt(specTopic.getId()), null);
-			if (topic == null) {
+			final T topic;
+			if (clazz == TopicV1.class)
+			{
+				topic = (T) reader.getTopicById(Integer.parseInt(specTopic.getId()), null);
+			}
+			else
+			{
+				topic = (T) reader.getTranslatedTopicByTopicId(Integer.parseInt(specTopic.getId()), locale);
+			}
+			
+			if (topic == null)
+			{
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_ID_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				return false;
 			}
-			if (topic.getId() <= 0) {
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_ID_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
-				return false;
+			else
+			{
+				specTopic.setTopic(topic);
 			}
-			if (!permissiveMode && !specTopic.getTitle().equals(topic.getTitle())) {
+			
+			// Check that the topic has a valid id
+			if (topic.getId() <= 0)
+			{
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_ID_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				valid = false;
+			}
+			
+			// Validate the title matches if we aren't using permissive mode
+			if (!permissiveMode && !specTopic.getTitle().equals(topic.getTitle()))
+			{
 				String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topic.getTitle();
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getPreProcessedLineNumber(), "Specified: " + specTopic.getText(), topicTitleMsg));
-				return false;
-			} else if (permissiveMode && !specTopic.getTitle().equals(topic.getTitle())) {
+				valid = false;
+			}
+			// If we are using permissive mode then change the title to the correct title
+			else if (permissiveMode && !specTopic.getTitle().equals(topic.getTitle()))
+			{
 				specTopic.setTitle(topic.getTitle());
 			}
 			
 			// Check that tags aren't trying to be removed
-			if (!specTopic.getRemoveTags(false).isEmpty()) {
+			if (!specTopic.getRemoveTags(false).isEmpty())
+			{
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_EXISTING_TOPIC_CANNOT_REMOVE_TAGS, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
-				return false;
+				valid = false;
 			}
 			
-			if (specTopic.getAssignedWriter(false) != null || specTopic.getDescription(false) != null || !specTopic.getSourceUrls().isEmpty()) {
+			// Check that the assigned writer, description and source URLS haven't been set
+			if (specTopic.getAssignedWriter(false) != null || specTopic.getDescription(false) != null || !specTopic.getSourceUrls().isEmpty())
+			{
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_EXISTING_BAD_OPTIONS, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
-				return false;
+				valid = false;
 			}
 			
 			// Validate the tags
-			if (!validateTopicTags(specTopic, specTopic.getTags(true))) {
+			if (!validateTopicTags(specTopic, specTopic.getTags(true)))
+			{
 				valid = false;
 			}
+		}
 		// Duplicated Topics
-		} else if (specTopic.isTopicADuplicateTopic()) {
-			if (specTopic.getTitle() == null || specTopic.getTitle().equals("")) {
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
-				valid = false;
-			}
-	
+		else if (specTopic.isTopicADuplicateTopic())
+		{
 			String temp = "N" + specTopic.getId().substring(1);
-			if (!specTopics.containsKey(temp)) {
+			
+			// Check that the topic exists in the content specification
+			if (!specTopics.containsKey(temp))
+			{
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				valid = false;
-			} else {
-				if (!specTopic.getTitle().equals(specTopics.get(temp).getTitle())) {
+			}
+			else
+			{
+				// Check that the topic titles match the original
+				if (!specTopic.getTitle().equals(specTopics.get(temp).getTitle()))
+				{
 					String topicTitleMsg = "Topic " + specTopic.getId() + ": " + specTopics.get(temp).getTitle();
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText(), topicTitleMsg));
 					valid = false;
 				}
 			}
+		}
 		// Cloned Topics
-		} else if (specTopic.isTopicAClonedTopic()) {
-			if (specTopic.getTitle() == null || specTopic.getTitle().equals("")) {
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
-				valid = false;
-			}
+		else if (specTopic.isTopicAClonedTopic())
+		{
 			
 			// Check if a description or type exists. If one does then generate a warning.
-			if ((specTopic.getType() != null && !specTopic.getType().equals("")) || (specTopic.getDescription(false) != null && !specTopic.getDescription(false).equals(""))) {
+			if ((specTopic.getType() != null && !specTopic.getType().equals("")) || (specTopic.getDescription(false) != null && !specTopic.getDescription(false).equals("")))
+			{
 				String format = "";
-				if (specTopic.getType() != null && !specTopic.getType().equals("")) {
+				if (specTopic.getType() != null && !specTopic.getType().equals(""))
+				{
 					format += String.format(ProcessorConstants.WARN_TYPE_IGNORE_MSG, specTopic.getPreProcessedLineNumber(), "Cloned");
 				}
-				if (specTopic.getDescription(false) != null && !specTopic.getDescription(false).equals("")) {
+				
+				if (specTopic.getDescription(false) != null && !specTopic.getDescription(false).equals(""))
+				{
 					if (!format.equals("")) format += "\n       ";
 					format += String.format(ProcessorConstants.WARN_DESCRIPTION_IGNORE_MSG, specTopic.getPreProcessedLineNumber(), "Cloned");
 				}
+				
 				log.warn(String.format("%s" + ProcessorConstants.CSLINE_MSG, format, specTopic.getText()));
 			}
 			
+			// Get the original topic from the database
 			int temp = Integer.parseInt(specTopic.getId().substring(1));
 			TopicV1 topic = reader.getTopicById(temp, null);
-			if (topic == null) { 
+			
+			// Check that the original topic was found
+			if (topic == null)
+			{ 
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				valid = false;
-			} else {
-				if (!permissiveMode && !specTopic.getTitle().equals(topic.getTitle())) {
+			}
+			else
+			{
+				// Validate the title matches if we aren't using permissive mode
+				if (!permissiveMode && !specTopic.getTitle().equals(topic.getTitle()))
+				{
 					String topicTitleMsg = "Topic " + topic.getId() + ": " + topic.getTitle();
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText(), topicTitleMsg));
 					valid = false;
-				} else if (permissiveMode && !specTopic.getTitle().equals(topic.getTitle())) {
+				}
+				// If we are using permissive mode then change the title to the correct title
+				else if (permissiveMode && !specTopic.getTitle().equals(topic.getTitle()))
+				{
 					specTopic.setTitle(topic.getTitle());
 				}
+				
 				//Check Assigned Writer exists
 				if (!validateAssignedWriter(specTopic)) valid = false;
 			}
 			
 			// Validate the tags
-			if (!validateTopicTags(specTopic, specTopic.getTags(true))) {
+			if (!validateTopicTags(specTopic, specTopic.getTags(true)))
+			{
 				valid = false;
 			}
 		// Duplicated Cloned Topics
-		} else if (specTopic.isTopicAClonedDuplicateTopic()) {
-			if (specTopic.getTitle() == null || specTopic.getTitle().equals("")) {
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
-				valid = false;
-			}
-	
+		}
+		else if (specTopic.isTopicAClonedDuplicateTopic())
+		{
+			// Find the duplicate topic in the content spec
 			String temp = specTopic.getId().substring(1);
 			int count = 0;
 			SpecTopic clonedTopic = null;
-			for (String topicId: specTopics.keySet()) {
-				if (topicId.endsWith(temp) && !topicId.endsWith(specTopic.getId())) {
+			for (String topicId: specTopics.keySet())
+			{
+				if (topicId.endsWith(temp) && !topicId.endsWith(specTopic.getId()))
+				{
 					clonedTopic = specTopics.get(topicId);
 					count++;
 				}
 			}
-			if (count == 0) {
+			
+			// Check that the topic exists
+			if (count == 0)
+			{
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				valid = false;
-			} else if (count > 1) {
+			}
+			// Check that the referenced topic is unique
+			else if (count > 1)
+			{
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_DUPLICATE_CLONES_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				valid = false;
-			} else {
-				if (!specTopic.getTitle().equals(clonedTopic.getTitle())) {
+			}
+			else
+			{
+				// Check that the title matches
+				if (!specTopic.getTitle().equals(clonedTopic.getTitle()))
+				{
 					String topicTitleMsg = "Topic " + specTopic.getId() + ": " + clonedTopic.getTitle();
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText(), topicTitleMsg));
 					valid = false;
@@ -531,29 +663,37 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 	 * 
 	 * @return True if the assigned writer exists in the database and is under the Assigned Writer category otherwise false.
 	 */
-	private boolean validateAssignedWriter(SpecTopic topic) {
-		if (topic.getAssignedWriter(true) == null) {
+	private boolean validateAssignedWriter(SpecTopic topic)
+	{
+		if (topic.getAssignedWriter(true) == null)
+		{
 			log.error(String.format(ProcessorConstants.ERROR_NO_WRITER_MSG, topic.getPreProcessedLineNumber(), topic.getText()));
 			return false;
 		}
 		
 		//Check Assigned Writer exists
 		List<TagV1> tagList = reader.getTagsByName(topic.getAssignedWriter(true));
-		if (tagList.size() != 1) {
+		if (tagList.size() != 1)
+		{
 			log.error(String.format(ProcessorConstants.ERROR_WRITER_NONEXIST_MSG, topic.getPreProcessedLineNumber(), topic.getText()));
 			return false;
 		}
 		
 		// Check that the writer tag is actually part of the Assigned Writer category
 		CategoryV1 cat = reader.getCategoryByTagId(tagList.get(0).getId());
-		if (cat == null) {
+		if (cat == null)
+		{
 			log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getPreProcessedLineNumber(), topic.getText()));
 			return false;
 		}
-		if (cat.getId() != ProcessorConstants.ASSIGNED_WRITER_CATEGORY_ID) {
+		
+		// Check that tag is actually in the Assigned Writer category
+		if (cat.getId() != ProcessorConstants.ASSIGNED_WRITER_CATEGORY_ID)
+		{
 			log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getPreProcessedLineNumber(), topic.getText()));
 			return false;
 		}
+		
 		return true;
 	}
 	
@@ -566,9 +706,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 	 */
 	private boolean validateTopicTags(SpecTopic specTopic, List<String> tagNames) {
 		boolean valid = true;
-		if (!tagNames.isEmpty()) {
+		if (!tagNames.isEmpty())
+		{
 			List<TagV1> tags = new ArrayList<TagV1>();
-			for (String tagName: tagNames) {
+			for (String tagName: tagNames)
+			{
 				
 				// Check if the app should be shutdown
 				if (isShuttingDown.get()) {
@@ -576,13 +718,21 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 					return false;
 				}
 				
+				// Get the tag from the database
 				List<TagV1> tagList = reader.getTagsByName(tagName);
-				if (tagList.size() == 1) {
+				
+				// Check that it exists
+				if (tagList.size() == 1)
+				{
 					tags.add(tagList.get(0));
-				} else if (tagList.size() == 0) {
+				}
+				else if (tagList.size() == 0)
+				{
 					log.error(String.format(ProcessorConstants.ERROR_TAG_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 					valid = false;
-				} else {
+				}
+				else
+				{
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TAG_DUPLICATED_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 					valid = false;
 				}
@@ -590,24 +740,33 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 			Map<CategoryV1, List<TagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
 			
 			// Check that the mutex value entered is correct
-			for (CategoryV1 cat: mapping.keySet()) {
+			for (CategoryV1 cat: mapping.keySet())
+			{
 				
 				// Check if the app should be shutdown
-				if (isShuttingDown.get()) {
+				if (isShuttingDown.get())
+				{
 					shutdown.set(true);
 					return false;
 				}
 				
-				if (cat.isMutuallyExclusive() && mapping.get(cat).size() > 1) {
+				// Check that only one tag has been set if the category is mutually exclusive
+				if (cat.isMutuallyExclusive() && mapping.get(cat).size() > 1)
+				{
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TOO_MANY_CATS_MSG, specTopic.getPreProcessedLineNumber(), cat.getName(), specTopic.getText()));
 					valid = false;
 				}
+				
 				// Check that the tag isn't a type or writer
-				if (cat.getId() == CSConstants.WRITER_CATEGORY_ID) {
+				if (cat.getId() == CSConstants.WRITER_CATEGORY_ID)
+				{
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_WRITER_AS_TAG_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 					valid = false;
 				}
-				if (cat.getId() == CSConstants.TYPE_CATEGORY_ID) {
+				
+				// Check that the tag isn't a topic type
+				if (cat.getId() == CSConstants.TYPE_CATEGORY_ID)
+				{
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TYPE_AS_TAG_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 					valid = false;
 				}

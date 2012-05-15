@@ -11,13 +11,8 @@
   <version>0.0.1-SNAPSHOT</version>
   <name>Content Specification Processor</name>
   
-  <dependencies>
-    <dependency>
-		<groupId>com.redhat.contentspec</groupId>
-		<artifactId>cscommons</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
-    </dependency>
-    
+  <dependencies>    
+  
     <!-- Apache Commons Libraries -->
   	<dependency>
   		<groupId>commons-codec</groupId>
