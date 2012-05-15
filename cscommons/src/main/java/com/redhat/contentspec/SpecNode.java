@@ -352,5 +352,4 @@ public abstract class SpecNode extends Node {
 	 * Removes the node from its parent.
 	 */
 	protected abstract void removeParent();
-
 }

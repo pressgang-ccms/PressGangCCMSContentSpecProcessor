@@ -373,4 +373,126 @@ public class Level extends SpecNode {
 		getParent().removeChild(this);
 		setParent(null);
 	}
+	
+	/**
+	 * Finds the closest node in the contents of a level
+	 * 
+	 * @param topic The node we need to find the closest match for
+	 * @return
+	 */
+	public SpecTopic getClosestTopic(final SpecTopic topic, final boolean checkParentNode)
+	{
+		/*
+		 * Check this level to see if the topic exists
+		 */
+		for (final SpecTopic childTopic : topics)
+		{
+			if (childTopic == topic || childTopic.getId().equals(topic.getId())) return childTopic;
+		}
+		
+		/* 
+		 * If we get to this stage, then the topic wasn't directly at this
+		 * level. So we should try this levels, child levels first.
+		 */
+		for (final Level childLevel: levels)
+		{
+			final SpecTopic childLevelTopic = childLevel.getClosestTopic(topic, checkParentNode);
+			if (childLevelTopic != null) return childLevelTopic;
+		}
+		
+		/*
+		 * If we still haven't found the closest node then check this
+		 * nodes parents.
+		 */
+		if (getParent() != null && checkParentNode)
+			return getParent().getClosestTopic(topic, checkParentNode);
+		
+		return null;
+	}
+	
+	public SpecTopic getClosestTopicByDBId(final Integer DBId, final boolean checkParentNode)
+	{
+		/*
+		 * Check this level to see if the topic exists
+		 */
+		for (final SpecTopic childTopic : topics)
+		{
+			if (childTopic.getDBId() == DBId) return childTopic;
+		}
+		
+		/* 
+		 * If we get to this stage, then the topic wasn't directly at this
+		 * level. So we should try this levels, child levels first.
+		 */
+		for (final Level childLevel: levels)
+		{
+			final SpecTopic childLevelTopic = childLevel.getClosestTopicByDBId(DBId, checkParentNode);
+			if (childLevelTopic != null) return childLevelTopic;
+		}
+		
+		/*
+		 * If we still haven't found the closest node then check this
+		 * nodes parents.
+		 */
+		if (getParent() != null && checkParentNode)
+			return getParent().getClosestTopicByDBId(DBId, checkParentNode);
+		
+		return null;
+	}
+	
+	/**
+	 * Checks to see if a SpecTopic exists within this level or its children.
+	 * 
+	 * @param topic The topic to see if it exists
+	 * @return True if the topic exists within this level or its children otherwise false.
+	 */
+	public boolean isSpecTopicInLevel(final SpecTopic topic)
+	{
+		/*
+		 * Check this level to see if the topic exists
+		 */
+		for (final SpecTopic childTopic : topics)
+		{
+			if (childTopic == topic || childTopic.getId().equals(topic.getId())) return true;
+		}
+		
+		/* 
+		 * If we get to this stage, then the topic wasn't directly at this
+		 * level. So we should try this levels, child levels first.
+		 */
+		for (final Level childLevel: levels)
+		{
+			if (childLevel.isSpecTopicInLevel(topic)) return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Checks to see if a SpecTopic exists within this level or its children.
+	 * 
+	 * @param topic The topic to see if it exists
+	 * @return True if the topic exists within this level or its children otherwise false.
+	 */
+	public boolean isSpecTopicInLevelByTopicID(final Integer topicId)
+	{
+		/*
+		 * Check this level to see if the topic exists
+		 */
+		for (final SpecTopic childTopic : topics)
+		{
+			if (childTopic.getDBId() == topicId) return true;
+		}
+		
+		/* 
+		 * If we get to this stage, then the topic wasn't directly at this
+		 * level. So we should try this levels, child levels first.
+		 */
+		for (final Level childLevel: levels)
+		{
+			if (childLevel.isSpecTopicInLevelByTopicID(topicId)) return true;
+		}
+		
+		return false;
+	}
 }

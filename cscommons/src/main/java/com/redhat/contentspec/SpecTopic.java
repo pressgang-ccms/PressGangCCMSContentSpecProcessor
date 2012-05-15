@@ -10,12 +10,18 @@ package com.redhat.contentspec;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.NodeList;
+
 import com.redhat.contentspec.constants.CSConstants;
 import com.redhat.contentspec.entities.TargetRelationship;
 import com.redhat.contentspec.entities.Relationship;
 import com.redhat.contentspec.entities.TopicRelationship;
 import com.redhat.contentspec.enums.RelationshipType;
 import com.redhat.contentspec.utils.StringUtilities;
+import com.redhat.ecs.commonutils.XMLUtilities;
+import com.redhat.topicindex.rest.entities.BaseTopicV1;
 
 public class SpecTopic extends SpecNode {
 	
@@ -29,6 +35,7 @@ public class SpecTopic extends SpecNode {
 	private int preProcessedLineNumber = 0;
 	private String title = null;
 	private boolean inlineTopic = false;
+	private BaseTopicV1<? extends BaseTopicV1<?>> topic = null;
 	
 	/**
 	 * Constructor
@@ -81,6 +88,14 @@ public class SpecTopic extends SpecNode {
 	}
 	
 	// Start of the basic getter/setter methods for this Topic.
+	
+	public BaseTopicV1<? extends BaseTopicV1<?>> getTopic() {
+		return topic;
+	}
+
+	public <T extends BaseTopicV1<T>> void setTopic(BaseTopicV1<T> topic) {
+		this.topic = topic;
+	}
 	
 	/**
 	 * Set the ID for the Content Specification Topic.
@@ -555,5 +570,88 @@ public class SpecTopic extends SpecNode {
 	protected void removeParent() {
 		getParent().removeChild(this);
 		setParent(null);
+	}
+	
+	/**
+	 * Get a list of all the "id" elements in the topics XML.
+	 * 
+	 * @return A list of ids in the XML if a topic has been set otherwise false.
+	 */
+	public List<String> getTopicXMLIds()
+	{
+		if (topic == null) return null;
+		
+		final Document xmlDocument = XMLUtilities.convertStringToDocument(topic.getXml());
+		return xmlDocument == null ? new ArrayList<String>() : getTopicXMLIds(xmlDocument);
+	}
+	
+	/**
+	 * Get a list of all the "id" elements in the topics XML.
+	 * 
+	 * @param xmlNode The XML node to check ids for.
+	 * @return A list of ids for the XML node.
+	 */
+	private List<String> getTopicXMLIds(final org.w3c.dom.Node xmlNode)
+	{
+		final List<String> idAttributes = new ArrayList<String>();
+		
+		// Check this node for ids
+		final NamedNodeMap attributes = xmlNode.getAttributes();
+		if (attributes != null)
+		{
+			final org.w3c.dom.Node idAttribute = attributes.getNamedItem("id");
+			if (idAttribute != null)
+			{
+				final String idAttibuteValue = idAttribute.getNodeValue();
+				idAttributes.add(idAttibuteValue);
+			}
+		}
+		
+		// Check this nodes child nodes for ids
+		final NodeList elements = xmlNode.getChildNodes();
+		for (int i = 0; i < elements.getLength(); ++i)
+			idAttributes.addAll(getTopicXMLIds(elements.item(i)));
+		
+		return idAttributes;
+	}
+	
+	/**
+	 * Finds the closest node in the contents of a level
+	 * 
+	 * @param topic The node we need to find the closest match for
+	 * @return
+	 */
+	public SpecTopic getClosestTopic(final SpecTopic topic, final boolean checkParentNode)
+	{
+		/*
+		 * Check this topic to see if it is the topic we are looking for
+		 */
+		if (this == topic || this.getId().equals(topic.getId())) return this;
+		
+		/*
+		 * If we still haven't found the closest node then check this
+		 * nodes parents.
+		 */
+		if (getParent() != null)
+			return getParent().getClosestTopic(topic, checkParentNode);
+		
+		return null;
+	}
+	
+	public SpecTopic getClosestTopicByDBId(final Integer DBId, final boolean checkParentNode)
+	{
+		/*
+		 * Check this topic to see if it is the topic we are looking for
+		 */
+		if (this.DBId == DBId) return this;
+		
+		/*
+		 * If we still haven't found the closest node then check this
+		 * nodes parents.
+		 */
+		if (getParent() != null)
+			return getParent().getClosestTopicByDBId(DBId, checkParentNode);
+		
+		return null;
 	}
 }

@@ -39,6 +39,8 @@ public class ContentSpec {
 	private String bugzillaComponent = null;
 	private String bugzillaVersion = null;
 	private boolean injectBugLinks = true;
+	private String locale = null;
+	private String outputStyle = null;
 	
 	private LinkedList<Comment> baseComments = new LinkedList<Comment>();
 	
@@ -432,6 +434,42 @@ public class ContentSpec {
 	 */
 	public String getDescription() {
 		return level.getDescription(false);
+	}
+	
+	/**
+	 * Gets the locale of the Content Specification.
+	 * 
+	 * @return The Content Specification locale.
+	 */
+	public String getLocale() {
+		return locale;
+	}
+	
+	/**
+	 * Sets the Content Specifications locale.
+	 * 
+	 * @param locale The locale for the content specification
+	 */
+	public void setLocale(String locale) {
+		this.locale= locale;
+	}
+	
+	/**
+	 * Gets the output style for the Content Specification. The default is CSP.
+	 * 
+	 * @return The Content Specification output style.
+	 */
+	public String getOutputStyle() {
+		return outputStyle;
+	}
+	
+	/**
+	 * Sets the Content Specifications output style. 
+	 * 
+	 * @param outputStyle The output style for the content specification
+	 */
+	public void setOutputStyle(String outputStyle) {
+		this.outputStyle= outputStyle;
 	}
 	
 	/**

@@ -22,11 +22,15 @@ public class RESTCollectionCache {
 	}
 	
 	public <T extends BaseRESTEntityV1<T>> void add(Class<T> clazz, BaseRestCollectionV1<T> value, List<String> additionalKeys) {
+		add(clazz, value, additionalKeys, false);
+	}
+	
+	public <T extends BaseRESTEntityV1<T>> void add(Class<T> clazz, BaseRestCollectionV1<T> value, List<String> additionalKeys, boolean isRevisions) {
 		String key = clazz.getSimpleName();
 		if (additionalKeys != null && !additionalKeys.isEmpty()) {
 			key += "-" + StringUtilities.join(additionalKeys.toArray(new String[additionalKeys.size()]), "-");
 		}
-		entityCache.add(value);
+		entityCache.add(value, isRevisions);
 		collections.put(key, value);
 	}
 	

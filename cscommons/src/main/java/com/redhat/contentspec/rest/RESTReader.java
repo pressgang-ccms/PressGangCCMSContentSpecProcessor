@@ -196,46 +196,22 @@ public class RESTReader {
 			if (entityCache.containsKeyValue(TopicV1.class, id, rev)) {
 				topic = entityCache.get(TopicV1.class, id, rev);
 			} else {
+				/* We need to expand the all the items in the topic collection */
+				final ExpandDataTrunk expand = new ExpandDataTrunk();
+				final ExpandDataTrunk expandTags = new ExpandDataTrunk(new ExpandDataDetails("tags"));
+				expandTags.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails("categories")), new ExpandDataTrunk(new ExpandDataDetails("properties"))));
+				expand.setBranches(CollectionUtilities.toArrayList(expandTags, new ExpandDataTrunk(new ExpandDataDetails("sourceUrls")), 
+						new ExpandDataTrunk(new ExpandDataDetails("properties")), new ExpandDataTrunk(new ExpandDataDetails("outgoingRelationships")),
+						new ExpandDataTrunk(new ExpandDataDetails("incomingRelationships"))));
+				
+				final String expandString = mapper.writeValueAsString(expand);
+				final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
 				if (rev == null) {
-					/* We need to expand the all the items in the topic collection */
-					final ExpandDataTrunk expand = new ExpandDataTrunk();
-					final ExpandDataTrunk expandTags = new ExpandDataTrunk(new ExpandDataDetails("tags"));
-					expandTags.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails("categories")), new ExpandDataTrunk(new ExpandDataDetails("properties"))));
-					expand.setBranches(CollectionUtilities.toArrayList(expandTags, new ExpandDataTrunk(new ExpandDataDetails("sourceUrls")), 
-							new ExpandDataTrunk(new ExpandDataDetails("properties")), new ExpandDataTrunk(new ExpandDataDetails("outgoingRelationships")),
-							new ExpandDataTrunk(new ExpandDataDetails("incomingRelationships"))));
-					
-					final String expandString = mapper.writeValueAsString(expand);
-					final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
 					topic = client.getJSONTopic(id, expandEncodedString);
 					entityCache.add(topic);
 				} else {
-					TopicV1 currentTopic;
-					/* We need to expand the all the items in the topic collection */
-					final ExpandDataTrunk expand = new ExpandDataTrunk();
-					final ExpandDataTrunk expandTags = new ExpandDataTrunk(new ExpandDataDetails("tags"));
-					final ExpandDataTrunk expandRevs = new ExpandDataTrunk(new ExpandDataDetails("revisions"));
-					expandTags.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails("categories"))));
-					expandRevs.setBranches(CollectionUtilities.toArrayList(expandTags, new ExpandDataTrunk(new ExpandDataDetails("sourceUrls")), 
-							new ExpandDataTrunk(new ExpandDataDetails("properties")), new ExpandDataTrunk(new ExpandDataDetails("outgoingRelationships")),
-							new ExpandDataTrunk(new ExpandDataDetails("incomingRelationships"))));
-					expand.setBranches(CollectionUtilities.toArrayList(expandTags, expandRevs));
-					
-					final String expandString = mapper.writeValueAsString(expand);
-					final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
-					currentTopic = client.getJSONTopic(id, expandEncodedString);
-					entityCache.add(currentTopic);
-					
-					// Get the revison of the topic that is closest to the rev number but is still less then the revision number
-					for (TopicV1 topicRev: currentTopic.getRevisions().getItems()) {
-						if ((Integer)topicRev.getRevision() <= rev) {
-							if (topic != null && (Integer)topic.getRevision() < (Integer)topicRev.getRevision()) {
-								topic = topicRev;
-							} else if (topic == null) {
-								topic = topicRev;
-							}
-						}
-					}
+					topic = client.getJSONTopic(id, expandEncodedString);
+					entityCache.add(topic, true);
 				}
 			}
 			return topic;
@@ -245,6 +221,9 @@ public class RESTReader {
 		return null;
 	}
 	
+	/*
+	 * Gets a collection of topics based on the list of ids passed.
+	 */
 	public BaseRestCollectionV1<TopicV1> getTopicsByIds(List<Integer> ids) {
 		if (ids.isEmpty()) return null;
 		
@@ -320,7 +299,7 @@ public class RESTReader {
 				final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
 
 				final TopicV1 topic = client.getJSONTopic(topicId, expandEncodedString);
-				collectionsCache.add(TopicV1.class, topic.getRevisions(), additionalKeys);
+				collectionsCache.add(TopicV1.class, topic.getRevisions(), additionalKeys, true);
 				topicRevisions = topic.getRevisions();
 			}
 
@@ -354,29 +333,66 @@ public class RESTReader {
 		return topic == null ? null : topic.getSourceUrls_OTM().getItems();
 	}
 	
-	// SNAPSHOT TOPIC QUERIES
+	// TRANSLATED TOPICS QUERIES
 	
-	/*public SnapshotV1 getTopicSnapshotById(Integer id) {
+	/*
+	 * Gets a collection of translated topics based on the list of topic ids passed.
+	 */
+	public BaseRestCollectionV1<TranslatedTopicV1> getTranslatedTopicsByTopicIds(List<Integer> ids, String locale) {
+		if (ids.isEmpty()) return null;
+		
 		try {
-			final SnapshotV1 snapshot;
-			if (entityCache.containsKeyValue(SnapshotV1.class, id)) {
-				snapshot = entityCache.get(SnapshotV1.class, id);
-			} else {
-				/* We need to expand the all the items in the topic collection */
-				/*final ExpandDataTrunk expand = new ExpandDataTrunk();
-				expand.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails("snapshottopics"))));
-				
-				final String expandString = mapper.writeValueAsString(expand);
-				String expandEncodedString = null;expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
-				snapshot = client.getJSONSnapshot(id, expandEncodedString);
-				entityCache.add(snapshot);
+			final BaseRestCollectionV1<TranslatedTopicV1> topics = new BaseRestCollectionV1<TranslatedTopicV1>();
+			final StringBuffer urlVars = new StringBuffer("query;latestTranslations=true&topicIds=");
+			final String encodedComma = URLEncoder.encode(",", "UTF-8");
+			
+			for (Integer id: ids) {
+				if (!entityCache.containsKeyValue(TranslatedTopicV1.class, id)) {
+					urlVars.append(id + encodedComma);
+				} else {
+					topics.addItem(entityCache.get(TranslatedTopicV1.class, id));
+				}
 			}
-			return snapshot == null ? null : snapshot;
+			
+			String query = urlVars.toString();
+			query = query.substring(0, query.length() - encodedComma.length());
+			
+			/* Add the locale to the query if one was passed */
+			if (locale != null && !locale.isEmpty())
+				query += "&locale1=" + locale + "1";
+			
+			PathSegment path = new PathSegmentImpl(query, false);
+			
+			/* We need to expand the all the items in the topic collection */
+			final ExpandDataTrunk expand = new ExpandDataTrunk();
+			final ExpandDataTrunk expandTopic = new ExpandDataTrunk(new ExpandDataDetails(TranslatedTopicV1.TOPIC_NAME)); 
+			final ExpandDataTrunk expandTranslatedTopics = new ExpandDataTrunk(new ExpandDataDetails("translatdtopics")); 
+			final ExpandDataTrunk expandTags = new ExpandDataTrunk(new ExpandDataDetails("tags"));
+			
+			expandTopic.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails(TopicV1.TRANSLATEDTOPICS_NAME))));
+			expandTags.setBranches(CollectionUtilities.toArrayList(new ExpandDataTrunk(new ExpandDataDetails("categories")), new ExpandDataTrunk(new ExpandDataDetails("properties"))));
+			expandTranslatedTopics.setBranches(CollectionUtilities.toArrayList(expandTags, expandTopic, new ExpandDataTrunk(new ExpandDataDetails("sourceUrls")), 
+					new ExpandDataTrunk(new ExpandDataDetails("properties")), new ExpandDataTrunk(new ExpandDataDetails(TranslatedTopicV1.ALL_LATEST_OUTGOING_NAME))));
+			expand.setBranches(CollectionUtilities.toArrayList(expandTranslatedTopics));
+			
+			final String expandString = mapper.writeValueAsString(expand);
+			final String expandEncodedString = URLEncoder.encode(expandString, "UTF-8");
+			BaseRestCollectionV1<TranslatedTopicV1> downloadedTopics = client.getJSONTranslatedTopicsWithQuery(path, expandEncodedString);
+			entityCache.add(downloadedTopics);
+			
+			/* Transfer the downloaded data to the current topic list */
+			if (downloadedTopics != null && downloadedTopics.getItems() != null) {
+				for (TranslatedTopicV1 item: downloadedTopics.getItems()) {
+					topics.addItem(item);
+				}
+			}
+			
+			return topics;
 		} catch (Exception e) {
 			log.error(ExceptionUtilities.getStackTrace(e));
 		}
 		return null;
-	}*/
+	}
 	
 	// USER QUERIES
 	
@@ -479,7 +495,7 @@ public class RESTReader {
 				if (!topic.isTaggedWith(CSConstants.CONTENT_SPEC_TAG_ID)) return null;
 				
 				// Add the content spec revisions to the cache
-				collectionsCache.add(TopicV1.class, topic.getRevisions(), additionalKeys);
+				collectionsCache.add(TopicV1.class, topic.getRevisions(), additionalKeys, true);
 				topicRevisions = topic.getRevisions();
 			}
 			
