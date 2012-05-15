@@ -101,6 +101,7 @@ public class ProcessorConstants {
 	public static final String ERROR_INVALID_WRITER_MSG				= LINE + INVALID_TOPIC + " The writer specified is not an Assigned Writer." + CSLINE_MSG;
 	public static final String ERROR_INVALID_TOPIC_ID_MSG			= LINE + INVALID_TOPIC + " Incorrect ID format." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NO_TITLE_MSG				= LINE + INVALID_TOPIC + " No Title." + CSLINE_MSG;
+	public static final String ERROR_INVALID_TOPIC_TITLE_MSG		= LINE + INVALID_TOPIC + " The topic title is invalid." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NO_TYPE_MSG				= LINE + INVALID_TOPIC + " No Type." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NO_TECH_AND_RELEASE_MSG	= LINE + INVALID_TOPIC + " A Technology and Release tag has not been set." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NO_TECH_OR_RELEASE_MSG	= LINE + INVALID_TOPIC + " A Technology or Release tag has not been set." + CSLINE_MSG;

@@ -20,6 +20,7 @@ import com.redhat.contentspec.processor.utils.ProcessorUtilities;
 import com.redhat.contentspec.rest.RESTManager;
 import com.redhat.contentspec.rest.RESTReader;
 import com.redhat.contentspec.utils.HashUtilities;
+import com.redhat.contentspec.utils.StringUtilities;
 import com.redhat.contentspec.utils.logging.ErrorLogger;
 import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
 import com.redhat.topicindex.rest.entities.CategoryV1;
@@ -374,12 +375,18 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 			log.error(String.format(ProcessorConstants.ERROR_INVALID_TOPIC_ID_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 			valid = false;
 		}
+		
+		if (specTopic.getTitle() == null || specTopic.getTitle().equals("")) {
+			log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+			valid = false;
+		} else if (StringUtilities.escapeTitle(specTopic.getTitle()).isEmpty())
+		{
+			log.error(String.format(ProcessorConstants.ERROR_INVALID_TOPIC_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+			valid = false;
+		}
+		
 		// New Topics
 		if (specTopic.isTopicANewTopic()) {
-			if (specTopic.getTitle() == null || specTopic.getTitle().equals("")) {
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
-				valid = false;
-			}
 			if (specTopic.getType() == null || specTopic.getType().equals("")) {
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TYPE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				valid = false;
@@ -436,11 +443,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 			}
 		// Duplicated Topics
 		} else if (specTopic.isTopicADuplicateTopic()) {
-			if (specTopic.getTitle() == null || specTopic.getTitle().equals("")) {
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
-				valid = false;
-			}
-	
 			String temp = "N" + specTopic.getId().substring(1);
 			if (!specTopics.containsKey(temp)) {
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
@@ -454,10 +456,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 			}
 		// Cloned Topics
 		} else if (specTopic.isTopicAClonedTopic()) {
-			if (specTopic.getTitle() == null || specTopic.getTitle().equals("")) {
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
-				valid = false;
-			}
 			
 			// Check if a description or type exists. If one does then generate a warning.
 			if ((specTopic.getType() != null && !specTopic.getType().equals("")) || (specTopic.getDescription(false) != null && !specTopic.getDescription(false).equals(""))) {
@@ -495,10 +493,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 			}
 		// Duplicated Cloned Topics
 		} else if (specTopic.isTopicAClonedDuplicateTopic()) {
-			if (specTopic.getTitle() == null || specTopic.getTitle().equals("")) {
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
-				valid = false;
-			}
 	
 			String temp = specTopic.getId().substring(1);
 			int count = 0;
