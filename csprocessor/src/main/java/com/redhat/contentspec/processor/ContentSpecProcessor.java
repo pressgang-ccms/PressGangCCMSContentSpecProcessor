@@ -8,22 +8,24 @@ import com.redhat.contentspec.interfaces.ShutdownAbleApp;
 import com.redhat.contentspec.ContentSpec;
 import com.redhat.contentspec.SpecTopic;
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
+import com.redhat.contentspec.processor.structures.ProcessingOptions;
 import com.redhat.contentspec.processor.utils.ProcessorUtilities;
 import com.redhat.contentspec.rest.RESTManager;
 import com.redhat.contentspec.rest.RESTReader;
 import com.redhat.contentspec.rest.RESTWriter;
 import com.redhat.contentspec.rest.utils.TopicPool;
-import com.redhat.contentspec.utils.ContentSpecUtilities;
-import com.redhat.contentspec.utils.ExceptionUtilities;
 import com.redhat.contentspec.utils.logging.ErrorLogger;
 import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
 import com.redhat.ecs.commonutils.CollectionUtilities;
+import com.redhat.ecs.commonutils.ExceptionUtilities;
+import com.redhat.ecs.constants.CommonConstants;
 import com.redhat.topicindex.rest.collections.BaseRestCollectionV1;
 import com.redhat.topicindex.rest.entities.CategoryV1;
 import com.redhat.topicindex.rest.entities.PropertyTagV1;
 import com.redhat.topicindex.rest.entities.TagV1;
 import com.redhat.topicindex.rest.entities.TopicSourceUrlV1;
 import com.redhat.topicindex.rest.entities.TopicV1;
+import com.redhat.topicindex.rest.entities.TranslatedTopicV1;
 import com.redhat.topicindex.rest.entities.UserV1;
 
 /**
@@ -33,6 +35,7 @@ import com.redhat.topicindex.rest.entities.UserV1;
  *  
  *  @author lnewson
  */
+@SuppressWarnings("rawtypes")
 public class ContentSpecProcessor implements ShutdownAbleApp {
 	
 	private final ErrorLogger log;
@@ -42,12 +45,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 	private final RESTReader reader;
 	private final RESTWriter writer;
 	
-	private ContentSpecValidator validator = null;
-	
-	private boolean permissiveMode = false;
-	private boolean validateOnly = false;
-	private boolean ignoreSpecRevision = false;
+	private final ProcessingOptions processingOptions;
 	private final ContentSpecParser csp;
+	private ContentSpecValidator validator;
 	private final TopicPool topics;
 	private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 	private final AtomicBoolean shutdown = new AtomicBoolean(false);
@@ -57,44 +57,17 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 	 * 
 	 * @param restManager A DBManager object that manages the REST connection and the functions to read/write to the REST Interface.
 	 * @param elm An Error Logger Manager that will be used to store all the log messages in case they need to be accessed at a later stage.
-	 * @param permissiveMode If the Content Specifications processed should be done so in permissive mode. (No Title checking)
+	 * @param processingOptions The set of options to use when processing.
 	 */
-	public ContentSpecProcessor(RESTManager restManager, ErrorLoggerManager elm, boolean permissiveMode) {
+	public ContentSpecProcessor(RESTManager restManager, ErrorLoggerManager elm, final ProcessingOptions processingOptions) {
 		reader = restManager.getReader();
 		writer = restManager.getWriter();
 		log = elm.getLogger(ContentSpecProcessor.class);
-		this.permissiveMode = permissiveMode;
 		this.elm = elm;
 		this.dbManager = restManager;
 		this.csp = new ContentSpecParser(elm, restManager);
 		this.topics = new TopicPool(restManager.getRESTClient());
-	}
-	
-	/**
-	 * Constructor
-	 * 
-	 * @param restManager A DBManager object that manages the REST connection and the functions to read/write to the REST Interface.
-	 * @param elm An Error Logger Manager that will be used to store all the log messages in case they need to be accessed at a later stage.
-	 * @param permissiveMode If the Content Specifications processed should be done so in permissive mode. (No Title checking)
-	 * @param validate If the processor should only validate and not save.
-	 */
-	public ContentSpecProcessor(RESTManager restManager, ErrorLoggerManager elm, boolean permissiveMode, boolean validate) {
-		this(restManager, elm, permissiveMode);
-		this.validateOnly = validate;
-	}
-	
-	/**
-	 * Constructor
-	 * 
-	 * @param dbManager A DBManager object that manages the REST connection and the functions to read/write to the REST Interface.
-	 * @param elm An Error Logger Manager that will be used to store all the log messages in case they need to be accessed at a later stage.
-	 * @param permissiveMode If the Content Specifications processed should be done so in permissive mode. (No Title checking)
-	 * @param validate If the processor should only validate and not save.
-	 * @param ignoreSpecRevision If the processor should ignore the SpecRevision/Checksum checking.
-	 */
-	public ContentSpecProcessor(RESTManager dbManager, ErrorLoggerManager elm, boolean permissiveMode, boolean validate, boolean ignoreSpecRevision) {
-		this(dbManager, elm, permissiveMode, validate);
-		this.ignoreSpecRevision = ignoreSpecRevision;
+		this.processingOptions = processingOptions;
 	}
 	
 	/**
@@ -124,6 +97,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 	 * @return True if everything was processed successfully otherwise false.
 	 * @throws Exception Any unexpected exception that occurred when processing.
 	 */
+	@SuppressWarnings({ "unchecked" })
 	public boolean processContentSpec(String contentSpec, UserV1 user, ContentSpecParser.ParsingMode mode) throws Exception {
 		boolean editing = false;
 		
@@ -152,7 +126,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 		}
 		
 		// Validate the content specification
-		validator = new ContentSpecValidator(elm, dbManager, permissiveMode, ignoreSpecRevision);
+		if (csp.getContentSpec().getLocale() == null || csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE))
+			validator = new ContentSpecValidator<TopicV1>(TopicV1.class, elm, dbManager, processingOptions);
+		else
+			validator = new ContentSpecValidator<TranslatedTopicV1>(TranslatedTopicV1.class, elm, dbManager, processingOptions);
+		
 		if (error || !validator.validateContentSpec(csp.getContentSpec(), csp.getSpecTopics()) || !validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics())) {
 			log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
 			return false;
@@ -160,7 +138,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 			log.info(ProcessorConstants.INFO_VALID_CS_MSG);
 			
 			// If we aren't validating then save the content specification
-			if (!validateOnly) {
+			if (!processingOptions.isValidating()) {
 				
 				// Check if the app should be shutdown
 				if (isShuttingDown.get()) {
@@ -229,7 +207,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				// Get the existing topic from the database
 				int clonedId = Integer.parseInt(specTopic.getId().substring(1));
 				TopicV1 originalTopic = reader.getTopicById(clonedId, null);
-				topic = ContentSpecUtilities.cloneTopic(originalTopic);
+				topic = originalTopic.clone(true);
 				
 				// Set the ID to null so a new ID will be created
 				topic.setId(null);
@@ -263,7 +241,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				}
 			} else if (specTopic.isTopicAnExistingTopic()) {
 				TopicV1 originalTopic = reader.getTopicById(specTopic.getDBId(), null);
-				topic = ContentSpecUtilities.cloneTopic(originalTopic);
+				topic = originalTopic.clone(true);
 				
 				// Remove any existing property tags
 				for (PropertyTagV1 property: topic.getProperties().getItems()) {

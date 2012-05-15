@@ -12,8 +12,8 @@ import com.google.code.regexp.NamedPattern;
 import com.redhat.contentspec.ContentSpec;
 import com.redhat.contentspec.SpecTopic;
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
-import com.redhat.contentspec.utils.HashUtilities;
-import com.redhat.contentspec.utils.StringUtilities;
+import com.redhat.ecs.commonutils.HashUtilities;
+import com.redhat.ecs.commonutils.StringUtilities;
 import com.redhat.topicindex.rest.entities.CategoryV1;
 import com.redhat.topicindex.rest.entities.TagV1;
 

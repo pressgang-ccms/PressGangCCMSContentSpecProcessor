@@ -29,9 +29,10 @@ import com.redhat.contentspec.processor.constants.ProcessorConstants;
 import com.redhat.contentspec.rest.RESTManager;
 import com.redhat.contentspec.entities.InjectionOptions;
 import com.redhat.contentspec.utils.ContentSpecUtilities;
-import com.redhat.contentspec.utils.StringUtilities;
 import com.redhat.contentspec.utils.logging.ErrorLogger;
 import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
+import com.redhat.ecs.commonutils.CollectionUtilities;
+import com.redhat.ecs.commonutils.StringUtilities;
 import com.redhat.topicindex.rest.entities.UserV1;
 
 /**
@@ -220,7 +221,7 @@ public class ContentSpecParser {
 				continue;
 			}
 			String[] temp = StringUtilities.split(input, '=');
-			temp = StringUtilities.trimArray(temp);
+			temp = CollectionUtilities.trimStringArray(temp);
 			if (temp.length >= 2) {
 				// Content Specification
 				if (temp[0].equals("Title")) {
@@ -291,7 +292,7 @@ public class ContentSpecParser {
 						return false;
 					}
 					temp = StringUtilities.split(input, '=');
-					temp = StringUtilities.trimArray(temp);
+					temp = CollectionUtilities.trimStringArray(temp);
 					if (temp.length >= 2) {
 						if (temp[0].equalsIgnoreCase("SpecRevision")) {
 							// Read in the amount of spaces that were used for the content specification
@@ -328,7 +329,7 @@ public class ContentSpecParser {
 						return false;
 					}
 					temp = StringUtilities.split(input, '=');
-					temp = StringUtilities.trimArray(temp);
+					temp = CollectionUtilities.trimStringArray(temp);
 					if (temp.length >= 2) {
 						if (temp[0].equalsIgnoreCase("ID")) {
 							int contentSpecId = 0;
@@ -412,7 +413,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^SUBTITLE[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				spec.setSubtitle(StringUtilities.replaceEscapeChars(tempInput[1]));
 			} else {
@@ -422,7 +423,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^EDITION[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				String edition = tempInput[1];
 				if (edition.matches(ProcessorConstants.EDITION_VALIDATE_REGEX)) {
@@ -438,7 +439,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^PUBSNUMBER[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				try {
 					spec.setPubsNumber(Integer.parseInt(tempInput[1]));
@@ -453,7 +454,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^PRODUCT[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				spec.setProduct(StringUtilities.replaceEscapeChars(tempInput[1]));
 			} else {
@@ -463,7 +464,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^(DESCRIPTION|ABSTRACT)[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				spec.setAbstract(StringUtilities.replaceEscapeChars(tempInput[1]));
 			} else {
@@ -473,7 +474,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^COPYRIGHT HOLDER[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				spec.setCopyrightHolder(StringUtilities.replaceEscapeChars(tempInput[1]));
 			} else {
@@ -482,7 +483,7 @@ public class ContentSpecParser {
 			}
 		} else if (input.toUpperCase().matches("^DEBUG[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				if (tempInput[1].equals("1")) {
 					elm.setVerboseDebug(1);
@@ -495,7 +496,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^VERSION[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				spec.setVersion(StringUtilities.replaceEscapeChars(tempInput[1]));
 			} else {
@@ -505,7 +506,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^BRAND[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				spec.setBrand(StringUtilities.replaceEscapeChars(tempInput[1]));
 			} else {
@@ -515,7 +516,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^BUG[ ]*LINKS[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				if (tempInput[1].equalsIgnoreCase("OFF")) {
 					spec.setInjectBugLinks(false);
@@ -530,7 +531,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^BZPRODUCT[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				spec.setBugzillaProduct(StringUtilities.replaceEscapeChars(tempInput[1]));
 			} else {
@@ -540,7 +541,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^BZCOMPONENT[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				spec.setBugzillaComponent(StringUtilities.replaceEscapeChars(tempInput[1]));
 			} else {
@@ -550,7 +551,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^BZVERSION[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				spec.setBugzillaVersion(StringUtilities.replaceEscapeChars(tempInput[1]));
 			} else {
@@ -560,7 +561,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^PUBLICAN\\.CFG[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				int startingPos = StringUtilities.indexOf(tempInput[1], '[');
 				if (startingPos != -1) {
@@ -606,7 +607,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^INLINE INJECTION[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				InjectionOptions injectionOptions = new InjectionOptions();
 				String[] types = null;
@@ -649,7 +650,7 @@ public class ContentSpecParser {
 		} else if (input.toLowerCase().matches("^spaces[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2) {
 				// Read in the amount of spaces that were used for the content specification
 				try {
@@ -667,7 +668,7 @@ public class ContentSpecParser {
 				|| input.toUpperCase().matches("^PART[ ]*((:.*)|$)") || input.toUpperCase().matches("^PROCESS[ ]*((:.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, ':', 2);
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			
 			if (tempInput.length >= 1) {
 				// Process the chapter, it's level and title
@@ -748,7 +749,7 @@ public class ContentSpecParser {
 		} else if (input.toUpperCase().matches("^DTD[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
-			tempInput = StringUtilities.trimArray(tempInput);
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			
 			if (tempInput.length >= 2) {
 				if (tempInput[0].equals("DTD")) {
@@ -781,17 +782,12 @@ public class ContentSpecParser {
 			}
 		} else {
 			// Process a new topic
-			if (level > 0) {
-				SpecTopic tempTopic = processTopic(input);
-				if (tempTopic == null) {
-					return false;
-				}
-				// Adds the topic to the current level
-				lvl.appendSpecTopic(tempTopic);
-			} else {
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_OUTSIDE_CHAPTER_MSG, lineCounter, input));
+			SpecTopic tempTopic = processTopic(input);
+			if (tempTopic == null) {
 				return false;
 			}
+			// Adds the topic to the current level
+			lvl.appendSpecTopic(tempTopic);
 		}
 		return true;
 	}
@@ -915,11 +911,8 @@ public class ContentSpecParser {
 			}
 		}
 		
-		if (!topicRelationships.isEmpty() && !tempTopic.isInlineTopic()) {
+		if (!topicRelationships.isEmpty()) {
 			relationships.put(uniqueId, topicRelationships);
-		} else if (!topicRelationships.isEmpty() && tempTopic.isInlineTopic()) {
-			log.error(String.format(ProcessorConstants.ERROR_TOPIC_INLINE_RELATIONSHIPS, lineCounter, input));
-			return null;
 		}
 		
 		// Process targets
@@ -949,7 +942,7 @@ public class ContentSpecParser {
 	private Level processLevel(int line, LevelType levelType, String input) {
 		String splitVars[] = StringUtilities.split(input, ':', 2);
 		// Remove the whitespace from each value in the split array
-		splitVars = StringUtilities.trimArray(splitVars);
+		splitVars = CollectionUtilities.trimStringArray(splitVars);
 		
 		// Create the level based on the type
 		Level newLvl;
@@ -1142,7 +1135,7 @@ public class ContentSpecParser {
 			// If the variable contains a = then it isn't a tag so process it separately
 			if (StringUtilities.indexOf(str, '=') != -1) {
 				String temp[] = StringUtilities.split(str, '=', 2);
-				temp = StringUtilities.trimArray(temp);
+				temp = CollectionUtilities.trimStringArray(temp);
 				if (temp.length == 2) {
 					if (temp[0].equalsIgnoreCase("URL")) {
 						node.addSourceUrl(StringUtilities.replaceEscapeChars(temp[1]));
@@ -1158,7 +1151,7 @@ public class ContentSpecParser {
 			// Variable is a tag with a category specified
 			} else if (StringUtilities.indexOf(str, ':') != -1) {
 				String temp[] = StringUtilities.split(str, ':', 2);
-				temp = StringUtilities.trimArray(temp);
+				temp = CollectionUtilities.trimStringArray(temp);
 				if (temp.length == 2) {
 					// Check if the category has an array of tags
 					if (StringUtilities.indexOf(temp[1], '(') != -1) {
