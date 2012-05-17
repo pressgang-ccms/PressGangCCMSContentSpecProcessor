@@ -124,7 +124,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 		}
 		// If editing then check that the ID exists & the SpecRevision match
 		if (contentSpec.getId() != 0) {
-			final TopicV1 contentSpecTopic = reader.getContentSpecById(contentSpec.getId(), null);
+			final TopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(), null);
 			if (contentSpecTopic == null) {
 				log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
 				valid = false;
