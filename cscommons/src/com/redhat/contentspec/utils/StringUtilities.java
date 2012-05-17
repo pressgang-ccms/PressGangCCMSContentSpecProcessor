@@ -217,7 +217,7 @@ public class StringUtilities extends com.redhat.ecs.commonutils.StringUtilities 
 	 * @return The escaped title string.
 	 */
 	public static String escapeTitle(String title) {
-		return title.replaceAll(" ", "_").replaceAll("[^A-Za-z0-9_-]", "");
+		return title.replaceAll(" ", "_").replaceAll("[^A-Za-z0-9\\._-]", "");
 	}
 	
 	/**
