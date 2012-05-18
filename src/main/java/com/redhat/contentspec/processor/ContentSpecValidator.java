@@ -190,7 +190,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		}
 		
 		// Check that each level is valid
-		if (!validateLevel(contentSpec.getBaseLevel(), specTopics)) valid = false;
+		if (!validateLevel(contentSpec.getBaseLevel(), specTopics, contentSpec.getAllowEmptyLevels())) valid = false;
 		
 		// reset the locale back to its default
 		this.locale = CommonConstants.DEFAULT_LOCALE;
@@ -295,9 +295,10 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 	 * 
 	 * @param level The level to be validated.
 	 * @param specTopics The list of topics that exist within the content specification.
+	 * @param csAllowEmptyTopics If the "Allow Empty Topics" bit is set in a content specification.
 	 * @return True if the level is valid otherwise false.
 	 */
-	public boolean validateLevel(Level level, Map<String, SpecTopic> specTopics) {
+	public boolean validateLevel(Level level, Map<String, SpecTopic> specTopics, final boolean csAllowEmptyLevels) {
 		
 		// Check if the app should be shutdown
 		if (isShuttingDown.get()) {
@@ -308,7 +309,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		boolean valid = true;
 		
 		// Check that the level isn't empty
-		if (level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 0 && !allowEmptyLevels)
+		if (level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 0 && !allowEmptyLevels && (allowEmptyLevels && !csAllowEmptyLevels))
 		{
 			log.error(String.format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), level.getType().getTitle(), level.getType().getTitle(), level.getText()));
 			valid = false;
@@ -329,7 +330,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		// Validate the sub levels
 		for (Level l: level.getChildLevels())
 		{
-			if (!validateLevel(l, specTopics)) valid = false;;
+			if (!validateLevel(l, specTopics, csAllowEmptyLevels)) valid = false;;
 		}
 		
 		// Validate the topics in this level
@@ -391,7 +392,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 	 * @return True if the topic is valid otherwise false.
 	 */
 	@SuppressWarnings("unchecked")
-	public boolean validateTopic(SpecTopic specTopic, Map<String, SpecTopic> specTopics) {
+	public boolean validateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics) {
 		
 		// Check if the app should be shutdown
 		if (isShuttingDown.get()) {
@@ -531,10 +532,19 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				valid = false;
 			}
 			
-			// Validate the tags
-			if (!validateTopicTags(specTopic, specTopic.getTags(true)))
+			// Check that we aren't processing translations
+			if (!specTopic.getTags(true).isEmpty() && clazz == TranslatedTopicV1.class)
 			{
+				// TODO log an error about no new tags for translations
 				valid = false;
+			}
+			else
+			{
+				// Validate the tags
+				if (!validateTopicTags(specTopic, specTopic.getTags(true)))
+				{
+					valid = false;
+				}
 			}
 		}
 		// Duplicated Topics
