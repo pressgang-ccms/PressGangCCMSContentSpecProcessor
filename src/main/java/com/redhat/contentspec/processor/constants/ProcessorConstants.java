@@ -121,6 +121,9 @@ public class ProcessorConstants {
 	public static final String ERROR_TOPIC_INLINE_TOPIC_MUST_BE_FIRST	= LINE + INVALID_TOPIC + " An inline topic must be the first topic in a Chapter/Section/Appendix." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_INLINE_RELATIONSHIPS		= LINE + INVALID_TOPIC + " An inline topic can't have any relationships." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_TAG_DUPLICATED_MSG		= LINE + INVALID_TOPIC + " Tag exists twice inside of the database." + CSLINE_MSG;
+	public static final String ERROR_TOPIC_NO_NEW_TOPIC_BUILD		= LINE + INVALID_TOPIC + " New topics aren't allowed to be created during a build." + CSLINE_MSG;
+	public static final String ERROR_TOPIC_NO_NEW_TRANSLATION_TOPIC	= LINE + INVALID_TOPIC + " New topics aren't allowed to be created for translated topics." + CSLINE_MSG;
+	public static final String ERROR_TOPIC_NO_TAGS_TRANSLATION_TOPIC	= LINE + INVALID_TOPIC + " Tags aren't allowed to be added to translated topics." + CSLINE_MSG;
 	
 	// Warnings
 	public static final String WARN_DESCRIPTION_IGNORE_MSG			= LINE + "%s topics can't have a description, so the description will be ignored.";
