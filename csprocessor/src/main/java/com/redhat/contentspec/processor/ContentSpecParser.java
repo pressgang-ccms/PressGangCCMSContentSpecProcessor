@@ -558,6 +558,63 @@ public class ContentSpecParser {
 				log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
 				return false;
 			}
+		} else if (input.toUpperCase().matches("^TRANSLATION LOCALE[ ]*((=.*)|$)")) {
+			String tempInput[] = StringUtilities.split(input, '=');
+			// Remove the whitespace from each value in the split array
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
+			if (tempInput.length >= 2) {
+				spec.setLocale(StringUtilities.replaceEscapeChars(tempInput[1]));
+			} else {
+				log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+				return false;
+			}
+		} else if (input.toUpperCase().matches("^OUTPUT STYLE[ ]*((=.*)|$)")) {
+			String tempInput[] = StringUtilities.split(input, '=');
+			// Remove the whitespace from each value in the split array
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
+			if (tempInput.length >= 2) {
+				spec.setOutputStyle(StringUtilities.replaceEscapeChars(tempInput[1]));
+			} else {
+				log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+				return false;
+			}
+		} else if (input.toUpperCase().matches("^ALLOW EMPTY LEVELS[ ]*((=.*)|$)")) {
+			String tempInput[] = StringUtilities.split(input, '=');
+			// Remove the whitespace from each value in the split array
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
+			if (tempInput.length >= 2) {
+				try
+				{
+					spec.setAllowEmptyLevels(Boolean.parseBoolean(StringUtilities.replaceEscapeChars(tempInput[1])));
+				}
+				catch (Exception ex)
+				{
+					log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+					return false;
+				}
+			} else {
+				log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+				return false;
+			}
+		// TODO Fix the CSP to allow for an spec to not have duplicate topics 
+		/*} else if (input.toUpperCase().matches("^DUPLICATE TOPICS[ ]*((=.*)|$)")) {
+			String tempInput[] = StringUtilities.split(input, '=');
+			// Remove the whitespace from each value in the split array
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
+			if (tempInput.length >= 2) {
+				try
+				{
+					spec.setAllowDuplicateTopics(Boolean.parseBoolean(StringUtilities.replaceEscapeChars(tempInput[1])));
+				}
+				catch (Exception ex)
+				{
+					log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+					return false;
+				}
+			} else {
+				log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+				return false;
+			}*/
 		} else if (input.toUpperCase().matches("^PUBLICAN\\.CFG[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
