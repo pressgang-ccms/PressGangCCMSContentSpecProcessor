@@ -497,6 +497,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				topic = (T) reader.getTranslatedTopicByTopicId(Integer.parseInt(specTopic.getId()), locale);
 			}
 			
+			// Check that the topic actually exists
 			if (topic == null)
 			{
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_ID_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
@@ -505,6 +506,12 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			else
 			{
 				specTopic.setTopic(topic);
+				
+				// Check to see if the topic contains the "Internal-Only" tag
+				if (topic.isTaggedWith(CSConstants.RH_INTERNAL_TAG_ID))
+				{
+					log.warn(String.format(ProcessorConstants.WARN_INTERNAL_TOPIC_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				}
 			}
 			
 			// Check that the topic has a valid id
