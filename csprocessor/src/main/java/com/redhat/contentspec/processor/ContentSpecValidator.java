@@ -45,6 +45,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 	private final boolean permissiveMode;
 	private final boolean ignoreSpecRevisions;
 	private final boolean allowEmptyLevels;
+	private final boolean allowNewTopics;
 	private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 	private final AtomicBoolean shutdown = new AtomicBoolean(false);
 	private final Class<T> clazz;
@@ -76,6 +77,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		this.permissiveMode = processingOptions.isPermissiveMode();
 		this.ignoreSpecRevisions = processingOptions.isIgnoreSpecRevision();
 		this.allowEmptyLevels = processingOptions.isAllowEmptyLevels();
+		this.allowNewTopics = processingOptions.isAllowNewTopics();
 		this.locale = CommonConstants.DEFAULT_LOCALE;
 	}
 	
@@ -443,9 +445,16 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			// Check that we aren't processing translations
 			if (clazz == TranslatedTopicV1.class)
 			{
-				// TODO log an error about no new topics for translations
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_NEW_TRANSLATION_TOPIC, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				valid = false;
 			}
+		}
+		
+		// Check that we are allowed to create new topics
+		if (!specTopic.isTopicAnExistingTopic() && !allowNewTopics)
+		{
+			log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_NEW_TOPIC_BUILD, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+			valid = false;
 		}
 		
 		// New Topics
@@ -535,7 +544,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			// Check that we aren't processing translations
 			if (!specTopic.getTags(true).isEmpty() && clazz == TranslatedTopicV1.class)
 			{
-				// TODO log an error about no new tags for translations
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TAGS_TRANSLATION_TOPIC, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				valid = false;
 			}
 			else
