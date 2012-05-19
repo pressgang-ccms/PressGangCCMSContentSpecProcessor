@@ -87,7 +87,6 @@
   </dependencies>
 
   <modules>
-	<module>cscommons</module>
 	<module>csprocessor</module>
 	<module>csbuilder</module>
 	<module>client</module>
