@@ -578,7 +578,8 @@ public class ContentSpecParser {
 				log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
 				return false;
 			}
-		} else if (input.toUpperCase().matches("^ALLOW EMPTY LEVELS[ ]*((=.*)|$)")) {
+		// TODO Fix empty chapter processing
+		/*} else if (input.toUpperCase().matches("^ALLOW EMPTY LEVELS[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
 			tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -595,7 +596,7 @@ public class ContentSpecParser {
 			} else {
 				log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
 				return false;
-			}
+			}*/
 		// TODO Fix the CSP to allow for an spec to not have duplicate topics 
 		/*} else if (input.toUpperCase().matches("^DUPLICATE TOPICS[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
