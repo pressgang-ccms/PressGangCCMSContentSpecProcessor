@@ -311,7 +311,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		boolean valid = true;
 		
 		// Check that the level isn't empty
-		if (level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 0 && !allowEmptyLevels && (allowEmptyLevels && !csAllowEmptyLevels))
+		if (level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 0 /*&& !allowEmptyLevels && (allowEmptyLevels && !csAllowEmptyLevels)*/)
 		{
 			log.error(String.format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), level.getType().getTitle(), level.getType().getTitle(), level.getText()));
 			valid = false;
