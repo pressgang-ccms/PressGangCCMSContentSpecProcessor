@@ -558,6 +558,21 @@ public class ContentSpecParser {
 				log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
 				return false;
 			}
+		} else if (input.toUpperCase().matches("^SURVEY[ ]*LINKS[ ]*((=.*)|$)")) {
+			String tempInput[] = StringUtilities.split(input, '=');
+			// Remove the whitespace from each value in the split array
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
+			if (tempInput.length >= 2) {
+				if (tempInput[1].equalsIgnoreCase("ON")) {
+					spec.setInjectSurveyLinks(true);
+				} else if (!tempInput[1].equalsIgnoreCase("OFF")) {
+					log.error(String.format(ProcessorConstants.ERROR_INVALID_SURVEY_LINKS_MSG, lineCounter, input));
+					return false;
+				}
+			} else {
+				log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+				return false;
+			}
 		} else if (input.toUpperCase().matches("^TRANSLATION LOCALE[ ]*((=.*)|$)")) {
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
