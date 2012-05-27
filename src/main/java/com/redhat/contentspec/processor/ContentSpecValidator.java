@@ -375,7 +375,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			}
 			break;
 		case SECTION:
-			if (!(level.getParent().getType() == LevelType.APPENDIX || level.getParent().getType() == LevelType.CHAPTER || level.getParent().getType() == LevelType.SECTION))
+			if (!(level.getParent().getType() == LevelType.PART || level.getParent().getType() == LevelType.APPENDIX || level.getParent().getType() == LevelType.CHAPTER || level.getParent().getType() == LevelType.SECTION))
 			{
 				log.error(String.format(ProcessorConstants.ERROR_CS_SECTION_NO_CHAPTER_MSG, level.getLineNumber(), level.getText()));
 				valid = false;
@@ -418,9 +418,10 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			valid = false;
 		}
 		
-		// Check that the topic is inside a chapter/section/process/appendix
-		if (!(specTopic.getParent().getType() == LevelType.CHAPTER || specTopic.getParent().getType() == LevelType.APPENDIX 
-				|| specTopic.getParent().getType() == LevelType.PROCESS || specTopic.getParent().getType() == LevelType.SECTION))
+		// Check that the topic is inside a chapter/section/process/appendix/part
+		if (specTopic.getParent() == null || !(specTopic.getParent().getType() == LevelType.CHAPTER || specTopic.getParent().getType() == LevelType.APPENDIX 
+				|| specTopic.getParent().getType() == LevelType.PROCESS || specTopic.getParent().getType() == LevelType.SECTION
+				|| specTopic.getParent().getType() == LevelType.PART))
 		{
 			log.error(String.format(ProcessorConstants.ERROR_TOPIC_OUTSIDE_CHAPTER_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 			valid = false;
