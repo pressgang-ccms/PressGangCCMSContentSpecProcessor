@@ -141,7 +141,7 @@ public class ProcessorConstants {
 	public static final String ERROR_PROCESS_NONEXIST_MSG			= LINE + INVALID_PROCESS + " Topic %s doesn't exist in the database." + CSLINE_MSG;
 	public static final String ERROR_PROCESS_INVALID_TOPIC_MSG		= LINE + INVALID_PROCESS + " Only existing topics can be used in a process." + CSLINE_MSG;
 	public static final String ERROR_PROCESS_INVALID_TYPES_MSG		= LINE + INVALID_PROCESS + " Processes can't have tags, relationships or targets." + CSLINE_MSG;
-	public static final String ERROR_PROCESS_OUTSIDE_CHAPTER_MSG	= LINE + INVALID_PROCESS + " A process must be inside of a chapter." + CSLINE_MSG;
+	public static final String ERROR_PROCESS_OUTSIDE_CHAPTER_MSG	= LINE + INVALID_PROCESS + " A process must be inside of a chapter or be a chapter." + CSLINE_MSG;
 	public static final String ERROR_PROCESS_NO_TOPICS_MSG			= LINE + INVALID_PROCESS + " No Topics found. A process must contain at least one topic." + CSLINE_MSG;
 	public static final String ERROR_PROCESS_DUPLICATE_TOPICS_MSG	= LINE + INVALID_PROCESS + " Topic %s is duplicated. A Process must not have duplicate topics." + CSLINE_MSG;
 	public static final String ERROR_PROCESS_HAS_LEVELS_MSG			= LINE + INVALID_PROCESS + " A process cannot contain Chapters/Sections/Appendixes or other Processes." + CSLINE_MSG;
