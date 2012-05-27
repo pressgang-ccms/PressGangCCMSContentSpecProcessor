@@ -110,7 +110,7 @@ public class ProcessorConstants {
 	public static final String ERROR_TOPIC_TITLES_NONMATCH_MSG		= LINE + INVALID_TOPIC + " Existing topic title doesn't match." + CSLINE_MSG + CSLINE_MSG;
 	public static final String ERROR_TOPIC_TYPE_NONMATCH_MSG		= LINE + INVALID_TOPIC + " Existing topic type doesn't match." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NONEXIST_MSG				= LINE + INVALID_TOPIC + " Existing topic specified doesn't exist." + CSLINE_MSG;
-	public static final String ERROR_TOPIC_OUTSIDE_CHAPTER_MSG 		= LINE + INVALID_TOPIC + " A topic must be inside of a Chapter or Section." + CSLINE_MSG;
+	public static final String ERROR_TOPIC_OUTSIDE_CHAPTER_MSG 		= LINE + INVALID_TOPIC + " A topic must be inside of another element, it can't be at the base level." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_DUPLICATE_CLONES_MSG		= LINE + INVALID_TOPIC + " A Duplicate clone topic can only be used when the clone is exclusively used inside a Content Specification." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_WRITER_AS_TAG_MSG		= LINE + INVALID_TOPIC + " A writer cannot be specified as a tag." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_TYPE_AS_TAG_MSG			= LINE + INVALID_TOPIC + " A topic type cannot be specified as a tag." + CSLINE_MSG;
