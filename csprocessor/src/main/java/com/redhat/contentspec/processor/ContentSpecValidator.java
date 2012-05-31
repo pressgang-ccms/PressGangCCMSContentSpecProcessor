@@ -25,11 +25,12 @@ import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
 import com.redhat.ecs.commonutils.DocBookUtilities;
 import com.redhat.ecs.commonutils.HashUtilities;
 import com.redhat.ecs.constants.CommonConstants;
-import com.redhat.topicindex.rest.entities.BaseTopicV1;
-import com.redhat.topicindex.rest.entities.CategoryV1;
-import com.redhat.topicindex.rest.entities.TagV1;
 import com.redhat.topicindex.rest.entities.TopicV1;
 import com.redhat.topicindex.rest.entities.TranslatedTopicV1;
+import com.redhat.topicindex.rest.entities.interfaces.IBaseTopicV1;
+import com.redhat.topicindex.rest.entities.interfaces.ICategoryV1;
+import com.redhat.topicindex.rest.entities.interfaces.ITagV1;
+import com.redhat.topicindex.rest.entities.interfaces.ITopicV1;
 
 /**
  * A class that is used to validate a Content Specification and the objects within a Content Specification. It provides methods for 
@@ -38,7 +39,7 @@ import com.redhat.topicindex.rest.entities.TranslatedTopicV1;
  * @author lnewson
  *
  */
-public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownAbleApp {
+public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements ShutdownAbleApp {
 	
 	private final RESTReader reader;
 	private final ErrorLogger log;
@@ -139,7 +140,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		}
 		// If editing then check that the ID exists & the SpecRevision match
 		if (contentSpec.getId() != 0) {
-			final TopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(), null);
+			final ITopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(), null);
 			if (contentSpecTopic == null) {
 				log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
 				valid = false;
@@ -167,8 +168,8 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			}
 			
 			// Check that the Content Spec isn't read only
-			if (contentSpecTopic != null && contentSpecTopic.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID) != null) {
-				if (!contentSpecTopic.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID).getValue().matches("(^|.*,)" + contentSpec.getCreatedBy() + "(,.*|$)")) {
+			if (contentSpecTopic != null && contentSpecTopic.returnProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID) != null) {
+				if (!contentSpecTopic.returnProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID).getValue().matches("(^|.*,)" + contentSpec.getCreatedBy() + "(,.*|$)")) {
 					log.error(ProcessorConstants.ERROR_CS_READ_ONLY_MSG);
 					valid = false;
 				}
@@ -178,9 +179,9 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		// Check that the injection options are valid
 		if (contentSpec.getInjectionOptions() != null) {
 			for (String injectionType: contentSpec.getInjectionOptions().getStrictTopicTypes()) {
-				List<TagV1> tags = reader.getTagsByName(injectionType);
+				List<ITagV1> tags = reader.getTagsByName(injectionType);
 				if (tags.size() == 1) {
-					if (!tags.get(0).isInCategory(CSConstants.TYPE_CATEGORY_ID)) {
+					if (!tags.get(0).containedInCategory(CSConstants.TYPE_CATEGORY_ID)) {
 						log.error(String.format(ProcessorConstants.ERROR_INVALID_INJECTION_TYPE_MSG, injectionType));
 						valid = false;
 					}
@@ -468,7 +469,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			}
 			
 			// Check that the type entered exists
-			TagV1 type = reader.getTypeByName(specTopic.getType());
+			final ITagV1 type = reader.getTypeByName(specTopic.getType());
 			if (type == null)
 			{
 				log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
@@ -509,7 +510,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				specTopic.setTopic(topic);
 				
 				// Check to see if the topic contains the "Internal-Only" tag
-				if (topic.isTaggedWith(CSConstants.RH_INTERNAL_TAG_ID))
+				if (topic.hasTag(CSConstants.RH_INTERNAL_TAG_ID))
 				{
 					log.warn(String.format(ProcessorConstants.WARN_INTERNAL_TOPIC_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				}
@@ -610,7 +611,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			
 			// Get the original topic from the database
 			int temp = Integer.parseInt(specTopic.getId().substring(1));
-			TopicV1 topic = reader.getTopicById(temp, null);
+			final ITopicV1 topic = reader.getTopicById(temp, null);
 			
 			// Check that the original topic was found
 			if (topic == null)
@@ -699,7 +700,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		}
 		
 		//Check Assigned Writer exists
-		List<TagV1> tagList = reader.getTagsByName(topic.getAssignedWriter(true));
+		final List<ITagV1> tagList = reader.getTagsByName(topic.getAssignedWriter(true));
 		if (tagList.size() != 1)
 		{
 			log.error(String.format(ProcessorConstants.ERROR_WRITER_NONEXIST_MSG, topic.getPreProcessedLineNumber(), topic.getText()));
@@ -707,7 +708,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		}
 		
 		// Check that the writer tag is actually part of the Assigned Writer category
-		CategoryV1 cat = reader.getCategoryByTagId(tagList.get(0).getId());
+		final ICategoryV1 cat = reader.getCategoryByTagId(tagList.get(0).getId());
 		if (cat == null)
 		{
 			log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getPreProcessedLineNumber(), topic.getText()));
@@ -735,7 +736,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		boolean valid = true;
 		if (!tagNames.isEmpty())
 		{
-			List<TagV1> tags = new ArrayList<TagV1>();
+			final List<ITagV1> tags = new ArrayList<ITagV1>();
 			for (String tagName: tagNames)
 			{
 				
@@ -746,7 +747,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				}
 				
 				// Get the tag from the database
-				List<TagV1> tagList = reader.getTagsByName(tagName);
+				final List<ITagV1> tagList = reader.getTagsByName(tagName);
 				
 				// Check that it exists
 				if (tagList.size() == 1)
@@ -764,10 +765,10 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 					valid = false;
 				}
 			}
-			Map<CategoryV1, List<TagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
+			Map<ICategoryV1, List<ITagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
 			
 			// Check that the mutex value entered is correct
-			for (CategoryV1 cat: mapping.keySet())
+			for (final ICategoryV1 cat: mapping.keySet())
 			{
 				
 				// Check if the app should be shutdown
@@ -778,7 +779,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				}
 				
 				// Check that only one tag has been set if the category is mutually exclusive
-				if (cat.isMutuallyExclusive() && mapping.get(cat).size() > 1)
+				if (cat.getMutuallyExclusive() && mapping.get(cat).size() > 1)
 				{
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TOO_MANY_CATS_MSG, specTopic.getPreProcessedLineNumber(), cat.getName(), specTopic.getText()));
 					valid = false;

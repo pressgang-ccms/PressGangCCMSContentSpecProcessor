@@ -20,13 +20,17 @@ import com.redhat.ecs.commonutils.CollectionUtilities;
 import com.redhat.ecs.commonutils.ExceptionUtilities;
 import com.redhat.ecs.constants.CommonConstants;
 import com.redhat.topicindex.rest.collections.BaseRestCollectionV1;
-import com.redhat.topicindex.rest.entities.CategoryV1;
 import com.redhat.topicindex.rest.entities.PropertyTagV1;
 import com.redhat.topicindex.rest.entities.TagV1;
 import com.redhat.topicindex.rest.entities.TopicSourceUrlV1;
 import com.redhat.topicindex.rest.entities.TopicV1;
-import com.redhat.topicindex.rest.entities.TranslatedTopicV1;
 import com.redhat.topicindex.rest.entities.UserV1;
+import com.redhat.topicindex.rest.entities.interfaces.ICategoryV1;
+import com.redhat.topicindex.rest.entities.interfaces.IPropertyTagV1;
+import com.redhat.topicindex.rest.entities.interfaces.ITagV1;
+import com.redhat.topicindex.rest.entities.interfaces.ITopicSourceUrlV1;
+import com.redhat.topicindex.rest.entities.interfaces.ITopicV1;
+import com.redhat.topicindex.rest.entities.interfaces.ITranslatedTopicV1;
 
 /**
  * A class to fully process a Content Specification. It first parses the data using a ContentSpecParser,
@@ -127,9 +131,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 		
 		// Validate the content specification
 		if (csp.getContentSpec().getLocale() == null || csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE))
-			validator = new ContentSpecValidator<TopicV1>(TopicV1.class, elm, dbManager, processingOptions);
+			validator = new ContentSpecValidator<ITopicV1>(ITopicV1.class, elm, dbManager, processingOptions);
 		else
-			validator = new ContentSpecValidator<TranslatedTopicV1>(TranslatedTopicV1.class, elm, dbManager, processingOptions);
+			validator = new ContentSpecValidator<ITranslatedTopicV1>(ITranslatedTopicV1.class, elm, dbManager, processingOptions);
 		
 		if (error || !validator.validateContentSpec(csp.getContentSpec(), csp.getSpecTopics()) || !validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics())) {
 			log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
@@ -162,7 +166,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 	 * @param specTopic The Content Specification Topic to create the topic entity from.
 	 * @return True if the topic saved successfully otherwise false.
 	 */
-	protected TopicV1 createTopicEntity(SpecTopic specTopic) {
+	protected ITopicV1 createTopicEntity(SpecTopic specTopic) {
 		
 		if (isShuttingDown.get()) {
 			return null;
@@ -170,29 +174,29 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 		
 		try {		
 			// Create the unique ID for the property
-			BaseRestCollectionV1<PropertyTagV1> properties = new BaseRestCollectionV1<PropertyTagV1>();
+			BaseRestCollectionV1<IPropertyTagV1> properties = new BaseRestCollectionV1<IPropertyTagV1>();
 			PropertyTagV1 cspProperty = new PropertyTagV1();
-			cspProperty.setValueExplicit(Integer.toString(specTopic.getLineNumber()));
+			cspProperty.explicitSetValue(Integer.toString(specTopic.getLineNumber()));
 			cspProperty.setAddItem(true);
 			cspProperty.setId(CSConstants.CSP_PROPERTY_ID);
 			properties.addItem(cspProperty);
 			
-			TopicV1 topic = null;
+			ITopicV1 topic = null;
 			
 			// Create a Tag collection that will hold the tags for this topic entity
-			BaseRestCollectionV1<TagV1> topicTags = new BaseRestCollectionV1<TagV1>();
+			BaseRestCollectionV1<ITagV1> topicTags = new BaseRestCollectionV1<ITagV1>();
 			
 			if (specTopic.isTopicANewTopic()) {					
 				// Create the topic entity.
 				topic = new TopicV1();
 				
 				// Set the basics
-				topic.setTitleExplicit(specTopic.getTitle());
-				topic.setDescriptionExplicit(specTopic.getDescription(true));
-				topic.setXmlExplicit("");
+				topic.explicitSetTitle(specTopic.getTitle());
+				topic.explicitSetDescription(specTopic.getDescription(true));
+				topic.explicitSetXml("");
 				
 				// Write the type
-				TagV1 type = reader.getTypeByName(specTopic.getType());
+				final ITagV1 type = reader.getTypeByName(specTopic.getType());
 				if (type == null) {
 					log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 					return null;
@@ -206,7 +210,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 			} else if (specTopic.isTopicAClonedTopic()) {
 				// Get the existing topic from the database
 				int clonedId = Integer.parseInt(specTopic.getId().substring(1));
-				TopicV1 originalTopic = reader.getTopicById(clonedId, null);
+				final ITopicV1 originalTopic = reader.getTopicById(clonedId, null);
 				topic = originalTopic.clone(true);
 				
 				// Set the ID to null so a new ID will be created
@@ -216,42 +220,42 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				topic.setLastModified(null);
 				// Set-up the configured parameters so that everything gets saved
 				topic.setConfiguredParameters(CollectionUtilities.toArrayList(TopicV1.TAGS_NAME, TopicV1.SOURCE_URLS_NAME, TopicV1.INCOMING_NAME,
-						TopicV1.OUTGOING_NAME, TopicV1.PROPERTIES_NAME, TopicV1.TITLE_NAME, TopicV1.XML_NAME, TopicV1.DESCRIPTION_NAME, TopicV1.HTML_NAME));
+						TopicV1.OUTGOING_NAME, ITopicV1.PROPERTIES_NAME, TopicV1.TITLE_NAME, TopicV1.XML_NAME, TopicV1.DESCRIPTION_NAME, TopicV1.HTML_NAME));
 			
 				// Go through each collection and set the "addItem" attribute to true
-				for (TopicV1 incomingRelationship: topic.getIncomingRelationships().getItems()) {
+				for (final ITopicV1 incomingRelationship: topic.getIncomingRelationships().getItems()) {
 					incomingRelationship.setAddItem(true);
 				}
-				for (TopicV1 outgoingRelationship: topic.getOutgoingRelationships().getItems()) {
+				for (final ITopicV1 outgoingRelationship: topic.getOutgoingRelationships().getItems()) {
 					outgoingRelationship.setAddItem(true);
 				}
-				for (TopicSourceUrlV1 sourceUrl: topic.getSourceUrls_OTM().getItems()) {
+				for (final ITopicSourceUrlV1 sourceUrl: topic.getSourceUrls_OTM().getItems()) {
 					sourceUrl.setAddItem(true);
 					sourceUrl.setConfiguredParameters(CollectionUtilities.toArrayList(TopicSourceUrlV1.TITLE_NAME, TopicSourceUrlV1.URL_NAME, TopicSourceUrlV1.DESCRIPTION_NAME));
 				}
-				for (PropertyTagV1 property: topic.getProperties().getItems()) {
+				for (final IPropertyTagV1 property: topic.getProperties().getItems()) {
 					if (!property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
 						property.setAddItem(true);
 						properties.addItem(property);
 					}
 				}
-				for (TagV1 tag: topic.getTags().getItems()) {
+				for (final ITagV1 tag: topic.getTags().getItems()) {
 					tag.setAddItem(true);
 					topicTags.addItem(tag);
 				}
 			} else if (specTopic.isTopicAnExistingTopic()) {
-				TopicV1 originalTopic = reader.getTopicById(specTopic.getDBId(), null);
+				final ITopicV1 originalTopic = reader.getTopicById(specTopic.getDBId(), null);
 				topic = originalTopic.clone(true);
 				
 				// Remove any existing property tags
-				for (PropertyTagV1 property: topic.getProperties().getItems()) {
+				for (final IPropertyTagV1 property: topic.getProperties().getItems()) {
 					if (property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
 						property.setRemoveItem(true);
 						properties.addItem(property);
 					}
 				}	
 			}
-			topic.setPropertiesExplicit(properties);
+			topic.explicitSetProperties(properties);
 			
 			// Check if the app should be shutdown
 			if (isShuttingDown.get()) {
@@ -261,12 +265,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 			
 			if (!specTopic.isTopicAnExistingTopic()) {
 				// Set the assigned writer (Tag Table)
-				List<TagV1> assignedWriterTags = reader.getTagsByName(specTopic.getAssignedWriter(true));
+				final List<ITagV1> assignedWriterTags = reader.getTagsByName(specTopic.getAssignedWriter(true));
 				if (assignedWriterTags.size() != 1) {
 					log.error(String.format(ProcessorConstants.ERROR_WRITER_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 					return null;
 				}
-				TagV1 writerTag = assignedWriterTags.iterator().next();
+				final ITagV1 writerTag = assignedWriterTags.iterator().next();
 				// Save a new assigned writer
 				writerTag.setAddItem(true);
 				topicTags.addItem(writerTag);
@@ -280,14 +284,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 			
 			// Get the tags for the topic
 			List<String> tagNames = specTopic.getTags(true);
-			List<TagV1> tags = new ArrayList<TagV1>();
+			final List<ITagV1> tags = new ArrayList<ITagV1>();
 			for (String tagName: tagNames) {
-				List<TagV1> tagList = reader.getTagsByName(tagName);
+				final List<ITagV1> tagList = reader.getTagsByName(tagName);
 				if (tagList.size() == 1) {
 					tags.add(tagList.get(0));
 				}
 			}
-			Map<CategoryV1, List<TagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
+			Map<ICategoryV1, List<ITagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
 			
 			// Check if the app should be shutdown
 			if (isShuttingDown.get()) {
@@ -299,11 +303,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 			if (specTopic.isTopicAClonedTopic()) {
 				// Save the new tags
 				// Finds tags that aren't already in the database and adds them
-				List<TagV1> tttList = topic.getTags().getItems();
-				for (CategoryV1 cat: mapping.keySet()) {					
-					for (TagV1 tag: mapping.get(cat)) {
+				final List<ITagV1> tttList = topic.getTags().getItems();
+				for (final ICategoryV1 cat: mapping.keySet()) {					
+					for (final ITagV1 tag: mapping.get(cat)) {
 						boolean found = false;
-						for (TagV1 ttt: tttList) {
+						for (final ITagV1 ttt: tttList) {
 							if (ttt.getId().equals(tag.getId())) {
 								found = true;
 								break;
@@ -326,12 +330,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				tagNames = specTopic.getRemoveTags(true);
 				List<TagV1> removeTags = new ArrayList<TagV1>();
 				for (String tagName: tagNames) {
-					List<TagV1> tagList = reader.getTagsByName(tagName);
+					final List<ITagV1> tagList = reader.getTagsByName(tagName);
 					if (tagList.size() == 1) {
 						tags.add(tagList.get(0));
 					}
 				}
-				for (TagV1 ttt: tttList) {
+				for (final ITagV1 ttt: tttList) {
 					boolean found = false;
 					for (TagV1 tag: removeTags) {
 						if (ttt.getId().equals(tag.getId())) {
@@ -345,7 +349,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 						topicTags.addItem(ttt);
 					}
 					// Remove the old writer tag as it will get replaced
-					if (ttt.isInCategory(CSConstants.WRITER_CATEGORY_ID)) {
+					if (ttt.containedInCategory(CSConstants.WRITER_CATEGORY_ID)) {
 						ttt.setAddItem(false);
 						ttt.setRemoveItem(true);
 						topicTags.addItem(ttt);
@@ -353,11 +357,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				}
 			} else if (specTopic.isTopicAnExistingTopic()) {
 				// Finds tags that aren't already in the database and adds them
-				List<TagV1> tttList = topic.getTags().getItems();
-				for (CategoryV1 cat: mapping.keySet()) {					
-					for (TagV1 tag: mapping.get(cat)) {
+				final List<ITagV1> tttList = topic.getTags().getItems();
+				for (final ICategoryV1 cat: mapping.keySet()) {					
+					for (final ITagV1 tag: mapping.get(cat)) {
 						boolean found = false;
-						for (TagV1 ttt: tttList) {
+						for (final ITagV1 ttt: tttList) {
 							if (ttt.getId().equals(tag.getId())) {
 								found = true;
 								break;
@@ -371,8 +375,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				}
 			} else {
 				// Save the tags
-				for (CategoryV1 cat: mapping.keySet()) {					
-					for (TagV1 tag: mapping.get(cat)) {
+				for (final ICategoryV1 cat: mapping.keySet()) {					
+					for (final ITagV1 tag: mapping.get(cat)) {
 						tag.setAddItem(true);
 						topicTags.addItem(tag);
 					}
@@ -387,20 +391,19 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 			
 			if (!specTopic.isTopicAnExistingTopic()) {
 				// Save the new Source Urls
-				List<String> urls = specTopic.getSourceUrls();
+				final List<String> urls = specTopic.getSourceUrls();
 				
-				BaseRestCollectionV1<TopicSourceUrlV1> sourceUrls = topic.getSourceUrls_OTM();
-				if (sourceUrls == null) {
-					sourceUrls = new BaseRestCollectionV1<TopicSourceUrlV1>();
-				}
+				final BaseRestCollectionV1<ITopicSourceUrlV1> sourceUrls = topic.getSourceUrls_OTM() == null ? 
+						new BaseRestCollectionV1<ITopicSourceUrlV1>() : topic.getSourceUrls_OTM();
+
 				for (String url: urls) {
-					TopicSourceUrlV1 sourceUrl = new TopicSourceUrlV1();
+					final TopicSourceUrlV1 sourceUrl = new TopicSourceUrlV1();
 					sourceUrl.setAddItem(true);
 					sourceUrl.setUrlExplicit(url);
 					sourceUrls.addItem(sourceUrl);
 				}
 				if (sourceUrls.getItems() != null && !sourceUrls.getItems().isEmpty()) {
-					topic.setSourceUrlsExplicit_OTM(sourceUrls);
+					topic.explicitSetSourceUrls_OTM(sourceUrls);
 				}
 			}
 			
@@ -411,7 +414,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 			}
 			
 			if (topicTags.getItems() != null && !topicTags.getItems().isEmpty()) {
-				topic.setTagsExplicit(topicTags);
+				topic.explicitSetTags(topicTags);
 			}
 			
 			return topic;
@@ -493,14 +496,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				}
 				
 				if (specTopics.get(specTopicId).getId().matches("(" + CSConstants.NEW_TOPIC_ID_REGEX + "|" + CSConstants.CLONED_TOPIC_ID_REGEX + ")")) {
-					TopicV1 topic = createTopicEntity(specTopics.get(specTopicId));
+					final ITopicV1 topic = createTopicEntity(specTopics.get(specTopicId));
 					if (topic == null) {
 						log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
 						throw new Exception("Failed to create topic: " + specTopicId);
 					}
 					topics.addNewTopic(topic);
 				} else if (specTopics.get(specTopicId).isTopicAnExistingTopic() && !specTopics.get(specTopicId).getTags(true).isEmpty()) {
-					TopicV1 topic = createTopicEntity(specTopics.get(specTopicId));
+					final ITopicV1 topic = createTopicEntity(specTopics.get(specTopicId));
 					if (topic == null) {
 						log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
 						throw new Exception("Failed to create topic: " + specTopicId);
