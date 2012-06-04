@@ -14,8 +14,8 @@ import com.redhat.contentspec.SpecTopic;
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
 import com.redhat.ecs.commonutils.HashUtilities;
 import com.redhat.ecs.commonutils.StringUtilities;
-import com.redhat.topicindex.rest.entities.interfaces.ICategoryV1;
-import com.redhat.topicindex.rest.entities.interfaces.ITagV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTCategoryV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTagV1;
 
 public class ProcessorUtilities {
 	
@@ -27,13 +27,13 @@ public class ProcessorUtilities {
 	 * @param tags The List of tags to be converted.
 	 * @return The mapping of Categories to Tags.
 	 */
-	public static Map<ICategoryV1, List<ITagV1>> getCategoryMappingFromTagList(final List<ITagV1> tags) {
-		final HashMap<ICategoryV1, List<ITagV1>> mapping = new HashMap<ICategoryV1, List<ITagV1>>();
-		for (final ITagV1 tag: tags) {
-			final List<ICategoryV1> catList = tag.getCategories().getItems();
+	public static Map<RESTCategoryV1, List<RESTTagV1>> getCategoryMappingFromTagList(final List<RESTTagV1> tags) {
+		final HashMap<RESTCategoryV1, List<RESTTagV1>> mapping = new HashMap<RESTCategoryV1, List<RESTTagV1>>();
+		for (final RESTTagV1 tag: tags) {
+			final List<RESTCategoryV1> catList = tag.getCategories().getItems();
 			if (catList != null) {
-				for (final ICategoryV1 cat: catList) {
-					if (!mapping.containsKey(cat)) mapping.put(cat, new ArrayList<ITagV1>());
+				for (final RESTCategoryV1 cat: catList) {
+					if (!mapping.containsKey(cat)) mapping.put(cat, new ArrayList<RESTTagV1>());
 					mapping.get(cat).add(tag);
 				}
 			}

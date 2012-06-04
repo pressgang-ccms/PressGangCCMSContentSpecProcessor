@@ -20,17 +20,14 @@ import com.redhat.ecs.commonutils.CollectionUtilities;
 import com.redhat.ecs.commonutils.ExceptionUtilities;
 import com.redhat.ecs.constants.CommonConstants;
 import com.redhat.topicindex.rest.collections.BaseRestCollectionV1;
-import com.redhat.topicindex.rest.entities.PropertyTagV1;
-import com.redhat.topicindex.rest.entities.TagV1;
-import com.redhat.topicindex.rest.entities.TopicSourceUrlV1;
-import com.redhat.topicindex.rest.entities.TopicV1;
+import com.redhat.topicindex.rest.entities.ComponentTagV1;
 import com.redhat.topicindex.rest.entities.UserV1;
-import com.redhat.topicindex.rest.entities.interfaces.ICategoryV1;
-import com.redhat.topicindex.rest.entities.interfaces.IPropertyTagV1;
-import com.redhat.topicindex.rest.entities.interfaces.ITagV1;
-import com.redhat.topicindex.rest.entities.interfaces.ITopicSourceUrlV1;
-import com.redhat.topicindex.rest.entities.interfaces.ITopicV1;
-import com.redhat.topicindex.rest.entities.interfaces.ITranslatedTopicV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTCategoryV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTPropertyTagV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTagV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTopicSourceUrlV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTranslatedTopicV1;
 
 /**
  * A class to fully process a Content Specification. It first parses the data using a ContentSpecParser,
@@ -131,9 +128,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 		
 		// Validate the content specification
 		if (csp.getContentSpec().getLocale() == null || csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE))
-			validator = new ContentSpecValidator<ITopicV1>(ITopicV1.class, elm, dbManager, processingOptions);
+			validator = new ContentSpecValidator<RESTTopicV1>(RESTTopicV1.class, elm, dbManager, processingOptions);
 		else
-			validator = new ContentSpecValidator<ITranslatedTopicV1>(ITranslatedTopicV1.class, elm, dbManager, processingOptions);
+			validator = new ContentSpecValidator<RESTTranslatedTopicV1>(RESTTranslatedTopicV1.class, elm, dbManager, processingOptions);
 		
 		if (error || !validator.validateContentSpec(csp.getContentSpec(), csp.getSpecTopics()) || !validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics())) {
 			log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
@@ -166,7 +163,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 	 * @param specTopic The Content Specification Topic to create the topic entity from.
 	 * @return True if the topic saved successfully otherwise false.
 	 */
-	protected ITopicV1 createTopicEntity(SpecTopic specTopic) {
+	protected RESTTopicV1 createTopicEntity(SpecTopic specTopic) {
 		
 		if (isShuttingDown.get()) {
 			return null;
@@ -174,21 +171,21 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 		
 		try {		
 			// Create the unique ID for the property
-			BaseRestCollectionV1<IPropertyTagV1> properties = new BaseRestCollectionV1<IPropertyTagV1>();
-			PropertyTagV1 cspProperty = new PropertyTagV1();
+			final BaseRestCollectionV1<RESTPropertyTagV1> properties = new BaseRestCollectionV1<RESTPropertyTagV1>();
+			final RESTPropertyTagV1 cspProperty = new RESTPropertyTagV1();
 			cspProperty.explicitSetValue(Integer.toString(specTopic.getLineNumber()));
 			cspProperty.setAddItem(true);
 			cspProperty.setId(CSConstants.CSP_PROPERTY_ID);
 			properties.addItem(cspProperty);
 			
-			ITopicV1 topic = null;
+			RESTTopicV1 topic = null;
 			
 			// Create a Tag collection that will hold the tags for this topic entity
-			BaseRestCollectionV1<ITagV1> topicTags = new BaseRestCollectionV1<ITagV1>();
+			BaseRestCollectionV1<RESTTagV1> topicTags = new BaseRestCollectionV1<RESTTagV1>();
 			
 			if (specTopic.isTopicANewTopic()) {					
 				// Create the topic entity.
-				topic = new TopicV1();
+				topic = new RESTTopicV1();
 				
 				// Set the basics
 				topic.explicitSetTitle(specTopic.getTitle());
@@ -196,7 +193,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				topic.explicitSetXml("");
 				
 				// Write the type
-				final ITagV1 type = reader.getTypeByName(specTopic.getType());
+				final RESTTagV1 type = reader.getTypeByName(specTopic.getType());
 				if (type == null) {
 					log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 					return null;
@@ -210,7 +207,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 			} else if (specTopic.isTopicAClonedTopic()) {
 				// Get the existing topic from the database
 				int clonedId = Integer.parseInt(specTopic.getId().substring(1));
-				final ITopicV1 originalTopic = reader.getTopicById(clonedId, null);
+				final RESTTopicV1 originalTopic = reader.getTopicById(clonedId, null);
 				topic = originalTopic.clone(true);
 				
 				// Set the ID to null so a new ID will be created
@@ -219,36 +216,36 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				topic.setCreated(null);
 				topic.setLastModified(null);
 				// Set-up the configured parameters so that everything gets saved
-				topic.setConfiguredParameters(CollectionUtilities.toArrayList(TopicV1.TAGS_NAME, TopicV1.SOURCE_URLS_NAME, TopicV1.INCOMING_NAME,
-						TopicV1.OUTGOING_NAME, ITopicV1.PROPERTIES_NAME, TopicV1.TITLE_NAME, TopicV1.XML_NAME, TopicV1.DESCRIPTION_NAME, TopicV1.HTML_NAME));
+				topic.setConfiguredParameters(CollectionUtilities.toArrayList(RESTTopicV1.TAGS_NAME, RESTTopicV1.SOURCE_URLS_NAME, RESTTopicV1.INCOMING_NAME,
+						RESTTopicV1.OUTGOING_NAME, RESTTopicV1.PROPERTIES_NAME, RESTTopicV1.TITLE_NAME, RESTTopicV1.XML_NAME, RESTTopicV1.DESCRIPTION_NAME, RESTTopicV1.HTML_NAME));
 			
 				// Go through each collection and set the "addItem" attribute to true
-				for (final ITopicV1 incomingRelationship: topic.getIncomingRelationships().getItems()) {
+				for (final RESTTopicV1 incomingRelationship: topic.getIncomingRelationships().getItems()) {
 					incomingRelationship.setAddItem(true);
 				}
-				for (final ITopicV1 outgoingRelationship: topic.getOutgoingRelationships().getItems()) {
+				for (final RESTTopicV1 outgoingRelationship: topic.getOutgoingRelationships().getItems()) {
 					outgoingRelationship.setAddItem(true);
 				}
-				for (final ITopicSourceUrlV1 sourceUrl: topic.getSourceUrls_OTM().getItems()) {
+				for (final RESTTopicSourceUrlV1 sourceUrl: topic.getSourceUrls_OTM().getItems()) {
 					sourceUrl.setAddItem(true);
-					sourceUrl.setConfiguredParameters(CollectionUtilities.toArrayList(TopicSourceUrlV1.TITLE_NAME, TopicSourceUrlV1.URL_NAME, TopicSourceUrlV1.DESCRIPTION_NAME));
+					sourceUrl.setConfiguredParameters(CollectionUtilities.toArrayList(RESTTopicSourceUrlV1.TITLE_NAME, RESTTopicSourceUrlV1.URL_NAME, RESTTopicSourceUrlV1.DESCRIPTION_NAME));
 				}
-				for (final IPropertyTagV1 property: topic.getProperties().getItems()) {
+				for (final RESTPropertyTagV1 property: topic.getProperties().getItems()) {
 					if (!property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
 						property.setAddItem(true);
 						properties.addItem(property);
 					}
 				}
-				for (final ITagV1 tag: topic.getTags().getItems()) {
+				for (final RESTTagV1 tag: topic.getTags().getItems()) {
 					tag.setAddItem(true);
 					topicTags.addItem(tag);
 				}
 			} else if (specTopic.isTopicAnExistingTopic()) {
-				final ITopicV1 originalTopic = reader.getTopicById(specTopic.getDBId(), null);
+				final RESTTopicV1 originalTopic = reader.getTopicById(specTopic.getDBId(), null);
 				topic = originalTopic.clone(true);
 				
 				// Remove any existing property tags
-				for (final IPropertyTagV1 property: topic.getProperties().getItems()) {
+				for (final RESTPropertyTagV1 property: topic.getProperties().getItems()) {
 					if (property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
 						property.setRemoveItem(true);
 						properties.addItem(property);
@@ -265,12 +262,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 			
 			if (!specTopic.isTopicAnExistingTopic()) {
 				// Set the assigned writer (Tag Table)
-				final List<ITagV1> assignedWriterTags = reader.getTagsByName(specTopic.getAssignedWriter(true));
+				final List<RESTTagV1> assignedWriterTags = reader.getTagsByName(specTopic.getAssignedWriter(true));
 				if (assignedWriterTags.size() != 1) {
 					log.error(String.format(ProcessorConstants.ERROR_WRITER_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 					return null;
 				}
-				final ITagV1 writerTag = assignedWriterTags.iterator().next();
+				final RESTTagV1 writerTag = assignedWriterTags.iterator().next();
 				// Save a new assigned writer
 				writerTag.setAddItem(true);
 				topicTags.addItem(writerTag);
@@ -284,14 +281,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 			
 			// Get the tags for the topic
 			List<String> tagNames = specTopic.getTags(true);
-			final List<ITagV1> tags = new ArrayList<ITagV1>();
+			final List<RESTTagV1> tags = new ArrayList<RESTTagV1>();
 			for (String tagName: tagNames) {
-				final List<ITagV1> tagList = reader.getTagsByName(tagName);
+				final List<RESTTagV1> tagList = reader.getTagsByName(tagName);
 				if (tagList.size() == 1) {
 					tags.add(tagList.get(0));
 				}
 			}
-			Map<ICategoryV1, List<ITagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
+			Map<RESTCategoryV1, List<RESTTagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
 			
 			// Check if the app should be shutdown
 			if (isShuttingDown.get()) {
@@ -303,11 +300,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 			if (specTopic.isTopicAClonedTopic()) {
 				// Save the new tags
 				// Finds tags that aren't already in the database and adds them
-				final List<ITagV1> tttList = topic.getTags().getItems();
-				for (final ICategoryV1 cat: mapping.keySet()) {					
-					for (final ITagV1 tag: mapping.get(cat)) {
+				final List<RESTTagV1> tttList = topic.getTags().getItems();
+				for (final RESTCategoryV1 cat: mapping.keySet()) {					
+					for (final RESTTagV1 tag: mapping.get(cat)) {
 						boolean found = false;
-						for (final ITagV1 ttt: tttList) {
+						for (final RESTTagV1 ttt: tttList) {
 							if (ttt.getId().equals(tag.getId())) {
 								found = true;
 								break;
@@ -328,16 +325,16 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				
 				// Remove the database tags for - tags
 				tagNames = specTopic.getRemoveTags(true);
-				List<TagV1> removeTags = new ArrayList<TagV1>();
+				List<RESTTagV1> removeTags = new ArrayList<RESTTagV1>();
 				for (String tagName: tagNames) {
-					final List<ITagV1> tagList = reader.getTagsByName(tagName);
+					final List<RESTTagV1> tagList = reader.getTagsByName(tagName);
 					if (tagList.size() == 1) {
 						tags.add(tagList.get(0));
 					}
 				}
-				for (final ITagV1 ttt: tttList) {
+				for (final RESTTagV1 ttt: tttList) {
 					boolean found = false;
-					for (TagV1 tag: removeTags) {
+					for (RESTTagV1 tag: removeTags) {
 						if (ttt.getId().equals(tag.getId())) {
 							found = true;
 						}
@@ -349,7 +346,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 						topicTags.addItem(ttt);
 					}
 					// Remove the old writer tag as it will get replaced
-					if (ttt.containedInCategory(CSConstants.WRITER_CATEGORY_ID)) {
+					if (ComponentTagV1.containedInCategory(ttt, CSConstants.WRITER_CATEGORY_ID)) {
 						ttt.setAddItem(false);
 						ttt.setRemoveItem(true);
 						topicTags.addItem(ttt);
@@ -357,11 +354,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				}
 			} else if (specTopic.isTopicAnExistingTopic()) {
 				// Finds tags that aren't already in the database and adds them
-				final List<ITagV1> tttList = topic.getTags().getItems();
-				for (final ICategoryV1 cat: mapping.keySet()) {					
-					for (final ITagV1 tag: mapping.get(cat)) {
+				final List<RESTTagV1> tttList = topic.getTags().getItems();
+				for (final RESTCategoryV1 cat: mapping.keySet()) {					
+					for (final RESTTagV1 tag: mapping.get(cat)) {
 						boolean found = false;
-						for (final ITagV1 ttt: tttList) {
+						for (final RESTTagV1 ttt: tttList) {
 							if (ttt.getId().equals(tag.getId())) {
 								found = true;
 								break;
@@ -375,8 +372,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				}
 			} else {
 				// Save the tags
-				for (final ICategoryV1 cat: mapping.keySet()) {					
-					for (final ITagV1 tag: mapping.get(cat)) {
+				for (final RESTCategoryV1 cat: mapping.keySet()) {					
+					for (final RESTTagV1 tag: mapping.get(cat)) {
 						tag.setAddItem(true);
 						topicTags.addItem(tag);
 					}
@@ -393,11 +390,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				// Save the new Source Urls
 				final List<String> urls = specTopic.getSourceUrls();
 				
-				final BaseRestCollectionV1<ITopicSourceUrlV1> sourceUrls = topic.getSourceUrls_OTM() == null ? 
-						new BaseRestCollectionV1<ITopicSourceUrlV1>() : topic.getSourceUrls_OTM();
+				final BaseRestCollectionV1<RESTTopicSourceUrlV1> sourceUrls = topic.getSourceUrls_OTM() == null ? 
+						new BaseRestCollectionV1<RESTTopicSourceUrlV1>() : topic.getSourceUrls_OTM();
 
 				for (String url: urls) {
-					final TopicSourceUrlV1 sourceUrl = new TopicSourceUrlV1();
+					final RESTTopicSourceUrlV1 sourceUrl = new RESTTopicSourceUrlV1();
 					sourceUrl.setAddItem(true);
 					sourceUrl.setUrlExplicit(url);
 					sourceUrls.addItem(sourceUrl);
@@ -496,14 +493,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 				}
 				
 				if (specTopics.get(specTopicId).getId().matches("(" + CSConstants.NEW_TOPIC_ID_REGEX + "|" + CSConstants.CLONED_TOPIC_ID_REGEX + ")")) {
-					final ITopicV1 topic = createTopicEntity(specTopics.get(specTopicId));
+					final RESTTopicV1 topic = createTopicEntity(specTopics.get(specTopicId));
 					if (topic == null) {
 						log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
 						throw new Exception("Failed to create topic: " + specTopicId);
 					}
 					topics.addNewTopic(topic);
 				} else if (specTopics.get(specTopicId).isTopicAnExistingTopic() && !specTopics.get(specTopicId).getTags(true).isEmpty()) {
-					final ITopicV1 topic = createTopicEntity(specTopics.get(specTopicId));
+					final RESTTopicV1 topic = createTopicEntity(specTopics.get(specTopicId));
 					if (topic == null) {
 						log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
 						throw new Exception("Failed to create topic: " + specTopicId);
