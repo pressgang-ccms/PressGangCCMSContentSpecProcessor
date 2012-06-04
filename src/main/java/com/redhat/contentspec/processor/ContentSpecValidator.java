@@ -25,12 +25,14 @@ import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
 import com.redhat.ecs.commonutils.DocBookUtilities;
 import com.redhat.ecs.commonutils.HashUtilities;
 import com.redhat.ecs.constants.CommonConstants;
-import com.redhat.topicindex.rest.entities.TopicV1;
-import com.redhat.topicindex.rest.entities.TranslatedTopicV1;
-import com.redhat.topicindex.rest.entities.interfaces.IBaseTopicV1;
-import com.redhat.topicindex.rest.entities.interfaces.ICategoryV1;
-import com.redhat.topicindex.rest.entities.interfaces.ITagV1;
-import com.redhat.topicindex.rest.entities.interfaces.ITopicV1;
+import com.redhat.topicindex.rest.entities.ComponentBaseTopicV1;
+import com.redhat.topicindex.rest.entities.ComponentTagV1;
+import com.redhat.topicindex.rest.entities.ComponentTopicV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTBaseTopicV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTCategoryV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTagV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTranslatedTopicV1;
 
 /**
  * A class that is used to validate a Content Specification and the objects within a Content Specification. It provides methods for 
@@ -39,7 +41,7 @@ import com.redhat.topicindex.rest.entities.interfaces.ITopicV1;
  * @author lnewson
  *
  */
-public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements ShutdownAbleApp {
+public class ContentSpecValidator<T extends RESTBaseTopicV1<T>> implements ShutdownAbleApp {
 	
 	private final RESTReader reader;
 	private final ErrorLogger log;
@@ -140,7 +142,7 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 		}
 		// If editing then check that the ID exists & the SpecRevision match
 		if (contentSpec.getId() != 0) {
-			final ITopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(), null);
+			final RESTTopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(), null);
 			if (contentSpecTopic == null) {
 				log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
 				valid = false;
@@ -168,8 +170,8 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 			}
 			
 			// Check that the Content Spec isn't read only
-			if (contentSpecTopic != null && contentSpecTopic.returnProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID) != null) {
-				if (!contentSpecTopic.returnProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID).getValue().matches("(^|.*,)" + contentSpec.getCreatedBy() + "(,.*|$)")) {
+			if (contentSpecTopic != null && ComponentTopicV1.returnProperty(contentSpecTopic, CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID) != null) {
+				if (!ComponentTopicV1.returnProperty(contentSpecTopic, CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID).getValue().matches("(^|.*,)" + contentSpec.getCreatedBy() + "(,.*|$)")) {
 					log.error(ProcessorConstants.ERROR_CS_READ_ONLY_MSG);
 					valid = false;
 				}
@@ -179,9 +181,9 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 		// Check that the injection options are valid
 		if (contentSpec.getInjectionOptions() != null) {
 			for (String injectionType: contentSpec.getInjectionOptions().getStrictTopicTypes()) {
-				List<ITagV1> tags = reader.getTagsByName(injectionType);
+				List<RESTTagV1> tags = reader.getTagsByName(injectionType);
 				if (tags.size() == 1) {
-					if (!tags.get(0).containedInCategory(CSConstants.TYPE_CATEGORY_ID)) {
+					if (!ComponentTagV1.containedInCategory(tags.get(0), CSConstants.TYPE_CATEGORY_ID)) {
 						log.error(String.format(ProcessorConstants.ERROR_INVALID_INJECTION_TYPE_MSG, injectionType));
 						valid = false;
 					}
@@ -445,7 +447,7 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 		if (!specTopic.isTopicAnExistingTopic())
 		{
 			// Check that we aren't processing translations
-			if (clazz == TranslatedTopicV1.class)
+			if (clazz == RESTTranslatedTopicV1.class)
 			{
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_NEW_TRANSLATION_TOPIC, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				valid = false;
@@ -469,7 +471,7 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 			}
 			
 			// Check that the type entered exists
-			final ITagV1 type = reader.getTypeByName(specTopic.getType());
+			final RESTTagV1 type = reader.getTypeByName(specTopic.getType());
 			if (type == null)
 			{
 				log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
@@ -490,7 +492,7 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 		{
 			// Check that the id actually exists
 			final T topic;
-			if (clazz == TopicV1.class)
+			if (clazz == RESTTopicV1.class)
 			{
 				topic = (T) reader.getTopicById(Integer.parseInt(specTopic.getId()), null);
 			}
@@ -510,7 +512,7 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 				specTopic.setTopic(topic);
 				
 				// Check to see if the topic contains the "Internal-Only" tag
-				if (topic.hasTag(CSConstants.RH_INTERNAL_TAG_ID))
+				if (ComponentBaseTopicV1.hasTag(topic, CSConstants.RH_INTERNAL_TAG_ID))
 				{
 					log.warn(String.format(ProcessorConstants.WARN_INTERNAL_TOPIC_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				}
@@ -551,7 +553,7 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 			}
 			
 			// Check that we aren't processing translations
-			if (!specTopic.getTags(true).isEmpty() && clazz == TranslatedTopicV1.class)
+			if (!specTopic.getTags(true).isEmpty() && clazz == RESTTranslatedTopicV1.class)
 			{
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TAGS_TRANSLATION_TOPIC, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
 				valid = false;
@@ -611,7 +613,7 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 			
 			// Get the original topic from the database
 			int temp = Integer.parseInt(specTopic.getId().substring(1));
-			final ITopicV1 topic = reader.getTopicById(temp, null);
+			final RESTTopicV1 topic = reader.getTopicById(temp, null);
 			
 			// Check that the original topic was found
 			if (topic == null)
@@ -700,7 +702,7 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 		}
 		
 		//Check Assigned Writer exists
-		final List<ITagV1> tagList = reader.getTagsByName(topic.getAssignedWriter(true));
+		final List<RESTTagV1> tagList = reader.getTagsByName(topic.getAssignedWriter(true));
 		if (tagList.size() != 1)
 		{
 			log.error(String.format(ProcessorConstants.ERROR_WRITER_NONEXIST_MSG, topic.getPreProcessedLineNumber(), topic.getText()));
@@ -708,7 +710,7 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 		}
 		
 		// Check that the writer tag is actually part of the Assigned Writer category
-		final ICategoryV1 cat = reader.getCategoryByTagId(tagList.get(0).getId());
+		final RESTCategoryV1 cat = reader.getCategoryByTagId(tagList.get(0).getId());
 		if (cat == null)
 		{
 			log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getPreProcessedLineNumber(), topic.getText()));
@@ -736,7 +738,7 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 		boolean valid = true;
 		if (!tagNames.isEmpty())
 		{
-			final List<ITagV1> tags = new ArrayList<ITagV1>();
+			final List<RESTTagV1> tags = new ArrayList<RESTTagV1>();
 			for (String tagName: tagNames)
 			{
 				
@@ -747,7 +749,7 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 				}
 				
 				// Get the tag from the database
-				final List<ITagV1> tagList = reader.getTagsByName(tagName);
+				final List<RESTTagV1> tagList = reader.getTagsByName(tagName);
 				
 				// Check that it exists
 				if (tagList.size() == 1)
@@ -765,10 +767,10 @@ public class ContentSpecValidator<T extends IBaseTopicV1<T>> implements Shutdown
 					valid = false;
 				}
 			}
-			Map<ICategoryV1, List<ITagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
+			Map<RESTCategoryV1, List<RESTTagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
 			
 			// Check that the mutex value entered is correct
-			for (final ICategoryV1 cat: mapping.keySet())
+			for (final RESTCategoryV1 cat: mapping.keySet())
 			{
 				
 				// Check if the app should be shutdown
