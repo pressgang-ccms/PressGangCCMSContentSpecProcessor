@@ -13,8 +13,10 @@ import com.google.code.regexp.NamedPattern;
 import com.redhat.contentspec.constants.CSConstants;
 import com.redhat.contentspec.Appendix;
 import com.redhat.contentspec.Chapter;
+import com.redhat.contentspec.Comment;
 import com.redhat.contentspec.ContentSpec;
 import com.redhat.contentspec.Level;
+import com.redhat.contentspec.Node;
 import com.redhat.contentspec.Part;
 import com.redhat.contentspec.Process;
 import com.redhat.contentspec.entities.Relationship;
@@ -34,6 +36,7 @@ import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
 import com.redhat.ecs.commonutils.CollectionUtilities;
 import com.redhat.ecs.commonutils.StringUtilities;
 import com.redhat.topicindex.rest.entities.UserV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
 
 /**
  * A class that parses a Content Specification and stores the parsed data into a ContentSpec Object. The Object then contains all of the
@@ -58,6 +61,7 @@ public class ContentSpecParser {
 	private int level = 0;
 	private HashMap<String, SpecTopic> specTopics = new HashMap<String, SpecTopic>();
 	private HashMap<String, Level> targetLevels = new HashMap<String, Level>();
+	private HashMap<String, Level> externalTargetLevels = new HashMap<String, Level>();
 	private HashMap<String, SpecTopic> targetTopics = new HashMap<String, SpecTopic>();
 	private HashMap<String, List<Relationship>> relationships = new HashMap<String, List<Relationship>>();
 	private ArrayList<Process> processes = new ArrayList<Process>();
@@ -73,7 +77,7 @@ public class ContentSpecParser {
 	public ContentSpecParser(String serverUrl) {
 		elm = new ErrorLoggerManager();
 		log = elm.getLogger(ContentSpecParser.class);
-		restManager = new RESTManager(elm, serverUrl);
+		restManager = new RESTManager(serverUrl);
 	}
 	
 	/**
@@ -733,75 +737,101 @@ public class ContentSpecParser {
 					log.error(String.format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineCounter, input));
 					return false;
 				}
-			} else {
+			}
+			else
+			{
 				log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
 				return false;
 			}
-		} else if (input.toUpperCase().matches("^CHAPTER[ ]*((:.*)|$)") || input.toUpperCase().matches("^SECTION[ ]*((:.*)|$)") || input.toUpperCase().matches("^APPENDIX[ ]*((:.*)|$)") 
-				|| input.toUpperCase().matches("^PART[ ]*((:.*)|$)") || input.toUpperCase().matches("^PROCESS[ ]*((:.*)|$)")) {
+		}
+		else if (input.toUpperCase().matches("^CHAPTER[ ]*((:.*)|$)") || input.toUpperCase().matches("^SECTION[ ]*((:.*)|$)") || input.toUpperCase().matches("^APPENDIX[ ]*((:.*)|$)") 
+				|| input.toUpperCase().matches("^PART[ ]*((:.*)|$)") || input.toUpperCase().matches("^PROCESS[ ]*((:.*)|$)"))
+		{
 			String tempInput[] = StringUtilities.split(input, ':', 2);
 			// Remove the whitespace from each value in the split array
 			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			
-			if (tempInput.length >= 1) {
+			if (tempInput.length >= 1)
+			{
 				// Process the chapter, it's level and title
-				if (tempInput[0].equalsIgnoreCase("Chapter")) {
+				if (tempInput[0].equalsIgnoreCase("Chapter"))
+				{
 					Level newLevel = processLevel(lineCounter, LevelType.CHAPTER, input);
-					if (newLevel == null) {
+					if (newLevel == null)
+					{
 						// Create a basic level so the rest of the spec can be processed
 						Chapter chapter = new Chapter(null, lineCounter, input);
 						lvl.appendChild(chapter);
 						lvl = chapter;
 						return false;
-					} else {
+					}
+					else
+					{
 						level = curLevel + 1;
 						lvl.appendChild(newLevel);
 						lvl = newLevel;
 					}
 				// Processes the section, it's level and title
-				} else if (tempInput[0].equalsIgnoreCase("Section")) {
+				}
+				else if (tempInput[0].equalsIgnoreCase("Section"))
+				{
 					Level newLevel = processLevel(lineCounter, LevelType.SECTION, input);
-					if (newLevel == null) {
+					if (newLevel == null)
+					{
 						// Create a basic level so the rest of the spec can be processed
 						Section section = new Section(null, lineCounter, input);
 						lvl.appendChild(section);
 						lvl = section;
 						return false;
-					} else {
+					}
+					else 
+					{
 						level = curLevel + 1;
 						lvl.appendChild(newLevel);
 						lvl = newLevel;
 					}
 				// Process an appendix (its done in the same fashion as a chapter
-				} else if (tempInput[0].equalsIgnoreCase("Appendix")) {
+				}
+				else if (tempInput[0].equalsIgnoreCase("Appendix"))
+				{
 					Level newLevel = processLevel(lineCounter, LevelType.APPENDIX, input);
-					if (newLevel == null) {
+					if (newLevel == null)
+					{
 						// Create a basic level so the rest of the spec can be processed
 						Appendix appendix = new Appendix(null, lineCounter, input);
 						lvl.appendChild(appendix);
 						lvl = appendix;
 						return false;
-					} else {
+					}
+					else
+					{
 						level = curLevel + 1;
 						lvl.appendChild(newLevel);
 						lvl = newLevel;
 					}
 				// Process a Process
-				} else if (tempInput[0].equalsIgnoreCase("Process")) {
+				}
+				else if (tempInput[0].equalsIgnoreCase("Process"))
+				{
 					Level newLevel = processLevel(lineCounter, LevelType.PROCESS, input);
-					if (newLevel == null) {
+					if (newLevel == null)
+					{
 						// Create a basic level so the rest of the spec can be processed
 						Process process = new Process(null, lineCounter, input);
 						lvl.appendChild(process);
 						lvl = process;
 						return false;
-					} else {
+					}
+					else
+					{
 						level = curLevel + 1;
 						lvl.appendChild(newLevel);
 						lvl = newLevel;
 					}
 				// Process a Part
-				} else if (tempInput[0].equalsIgnoreCase("Part")) {
+				}
+				else if (tempInput[0].equalsIgnoreCase("Part"))
+				{
 					Level newLevel = processLevel(lineCounter, LevelType.PART, input);
 					if (newLevel == null) {
 						// Create a basic level so the rest of the spec can be processed
@@ -809,17 +839,42 @@ public class ContentSpecParser {
 						lvl.appendChild(part);
 						lvl = part;
 						return false;
-					} else {
+					}
+					else
+					{
 						level = curLevel + 1;
 						lvl.appendChild(newLevel);
 						lvl = newLevel;
 					}
 				}
-			} else {
+			}
+			else
+			{
 				log.error(String.format(ProcessorConstants.ERROR_LEVEL_FORMAT_MSG, lineCounter, input));
 				return false;
 			}
-		} else if (input.toUpperCase().matches("^DTD[ ]*((=.*)|$)")) {
+		}
+		else if (input.toUpperCase().matches("^CS[ ]*:.*"))
+		{
+			String splitVars[] = StringUtilities.split(input, ':', 2);
+			// Remove the whitespace from each value in the split array
+			splitVars = CollectionUtilities.trimStringArray(splitVars);
+			
+			// Get the mapping of variables
+			HashMap<RelationshipType, String[]> variableMap;
+			try {
+				variableMap = getLineVariables(splitVars[1], '[', ']', ',', false);
+				final String title = StringUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
+				processExternalLevel(lvl, variableMap.get(RelationshipType.EXTERNAL_CONTENT_SPEC)[0],title, input);
+			}
+			catch (Exception e)
+			{
+				log.error(e.getMessage());
+				return false;
+			}
+		}
+		else if (input.toUpperCase().matches("^DTD[ ]*((=.*)|$)"))
+		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
 			tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -1001,6 +1056,23 @@ public class ContentSpecParser {
 				tempTopic.setTargetId(variableMap.get(RelationshipType.TARGET)[0]);
 			}
 		}
+		
+		// Throw an error for external targets
+		if (variableMap.containsKey(RelationshipType.EXTERNAL_TARGET)) 
+		{
+			// TODO Log an error
+			log.error("Unable to use external targets on topics.");
+			return null;
+		}
+		
+		// Throw an error for external content spec injections
+		if (variableMap.containsKey(RelationshipType.EXTERNAL_CONTENT_SPEC)) 
+		{
+			// TODO Log an error
+			log.error("Unable to use external content specs as topics.");
+			return null;
+		}
+		
 		return tempTopic;
 	}
 	
@@ -1012,7 +1084,7 @@ public class ContentSpecParser {
 	 * @param input The chapter string in the content specification.
 	 * @return The created level or null if an error occurred.
 	 */
-	private Level processLevel(int line, LevelType levelType, String input) {
+	private Level processLevel(final int line, final LevelType levelType, final String input) {
 		String splitVars[] = StringUtilities.split(input, ':', 2);
 		// Remove the whitespace from each value in the split array
 		splitVars = CollectionUtilities.trimStringArray(splitVars);
@@ -1040,34 +1112,63 @@ public class ContentSpecParser {
 		}
 		
 		// Parse the input
-		if (splitVars.length >= 2) {
+		if (splitVars.length >= 2)
+		{
 			String[] variables = new String[0];
-			newLvl.setTitle(StringUtilities.replaceEscapeChars(getTitle(splitVars[1], '[')));
-			try {
+			final String title = StringUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
+			newLvl.setTitle(title);
+			try 
+			{
 				// Get the mapping of variables
 				HashMap<RelationshipType, String[]> variableMap = getLineVariables(splitVars[1], '[', ']', ',', false);
-				if (variableMap.containsKey(RelationshipType.NONE)) {
+				if (variableMap.containsKey(RelationshipType.NONE)) 
+				{
 					variables = variableMap.get(RelationshipType.NONE);
 				}
+				
 				// Add targets for the level
-				if (variableMap.containsKey(RelationshipType.TARGET)) {
-					if (targetTopics.containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
+				if (variableMap.containsKey(RelationshipType.TARGET)) 
+				{
+					if (targetTopics.containsKey(variableMap.get(RelationshipType.TARGET)[0])) 
+					{
 						log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetTopics.get(variableMap.get(RelationshipType.TARGET)[0]).getLineNumber(), targetTopics.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter, input));
 						return null;
-					} else if (targetLevels.containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
+					}
+					else if (targetLevels.containsKey(variableMap.get(RelationshipType.TARGET)[0]))
+					{
 						log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetLevels.get(variableMap.get(RelationshipType.TARGET)[0]).getLineNumber(), targetLevels.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter, input));
 						return null;
-					} else {
+					}
+					else
+					{
 						targetLevels.put(variableMap.get(RelationshipType.TARGET)[0], newLvl);
 						newLvl.setTargetId(variableMap.get(RelationshipType.TARGET)[0]);
 					}
 				}
+				
+				// Check for external targets
+				if (variableMap.containsKey(RelationshipType.EXTERNAL_TARGET)) 
+				{
+					externalTargetLevels.put(variableMap.get(RelationshipType.EXTERNAL_TARGET)[0], newLvl);
+					newLvl.setExternalTargetId(variableMap.get(RelationshipType.EXTERNAL_TARGET)[0]);
+				}
+				
+				// Check if the level is injecting data from another content spec
+				if (variableMap.containsKey(RelationshipType.EXTERNAL_CONTENT_SPEC)) 
+				{
+					processExternalLevel(newLvl, variableMap.get(RelationshipType.EXTERNAL_CONTENT_SPEC)[0], title, input);
+				}
+				
 				// Check that no relationships were specified for the appendix
-				if (variableMap.containsKey(RelationshipType.RELATED) || variableMap.containsKey(RelationshipType.PREREQUISITE) || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType.PREVIOUS)) {
+				if (variableMap.containsKey(RelationshipType.RELATED) || variableMap.containsKey(RelationshipType.PREREQUISITE) 
+						|| variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType.PREVIOUS)) 
+				{
 					log.error(String.format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineCounter, CSConstants.CHAPTER, CSConstants.CHAPTER, input));
 					return null;
 				}
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				log.error(e.getMessage());
 				return null;
 			}
@@ -1136,11 +1237,13 @@ public class ContentSpecParser {
 		NamedPattern bracketPattern = NamedPattern.compile(regex);
 		NamedMatcher matcher = bracketPattern.matcher(input);
 		// Find all of the variables inside of the brackets defined by the regex
-		while (matcher.find()) {
+		while (matcher.find())
+		{
 			ArrayList<String> variables = new ArrayList<String>();
 			String variableSet = matcher.group(ProcessorConstants.BRACKET_CONTENTS).replaceAll("\n", "");
 			// Check that a closing bracket wasn't missed
-			if (StringUtilities.indexOf(variableSet, startDelim) != -1) {
+			if (StringUtilities.indexOf(variableSet, startDelim) != -1)
+			{
 				throw new ParsingException(String.format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG, initialCount, endDelim));
 			}
 			// Split the variables set into individual variables
@@ -1151,12 +1254,15 @@ public class ContentSpecParser {
 				// Remove the type specifier from the start of the variable set
 				String splitString[] = StringUtilities.split(variableSet.trim(), ':');
 				// Check that there are actually variables set
-				if (splitString.length > 1) {
+				if (splitString.length > 1)
+				{
 					splitString = StringUtilities.split(splitString[1], separator);
 					for (String s: splitString) {
 						variables.add(s.trim());
 					}
-				} else {
+				}
+				else
+				{
 					throw new ParsingException(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, initialCount, input));
 				}
 				// Set the type for this set of variables
@@ -1165,26 +1271,42 @@ public class ContentSpecParser {
 				else if (variableSet.toUpperCase().matches(ProcessorConstants.NEXT_REGEX)) type = RelationshipType.NEXT;
 				else if (variableSet.toUpperCase().matches(ProcessorConstants.PREV_REGEX)) type = RelationshipType.PREVIOUS;
 				else if (variableSet.toUpperCase().matches(ProcessorConstants.BRANCH_REGEX)) type = RelationshipType.BRANCH;
-			} else if (!ignoreTypes && variableSet.toUpperCase().matches(ProcessorConstants.TARGET_REGEX)) {
+			}
+			else if (!ignoreTypes && variableSet.toUpperCase().matches(ProcessorConstants.TARGET_REGEX))
+			{
 				type = RelationshipType.TARGET;
 				variables.add(variableSet.trim());
-			} else {
+			}
+			else if (!ignoreTypes && variableSet.toUpperCase().matches(ProcessorConstants.EXTERNAL_TARGET_REGEX))
+			{
+				type = RelationshipType.EXTERNAL_TARGET;
+				variables.add(variableSet.trim());
+			}
+			else
+			{
 				// Normal set of variables that contains the ID and/or tags
 				String splitString[] = StringUtilities.split(variableSet, separator);
-				for (String s: splitString) {
+				for (String s: splitString)
+				{
 					variables.add(s.trim());
 				}
 			}
 			// Add the variable set to the mapping
-			if (output.containsKey(type)) {
-				if (ignoreTypes || groupTypes) {
+			if (output.containsKey(type))
+			{
+				if (ignoreTypes || groupTypes)
+				{
 					ArrayList<String> tempVariables = new ArrayList<String>(Arrays.asList(output.get(type)));
 					tempVariables.addAll(variables);
 					output.put(type, tempVariables.toArray(new String[0]));
-				} else {
+				}
+				else
+				{
 					throw new ParsingException(String.format(ProcessorConstants.ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG, initialCount, input));
 				}
-			} else {
+			}
+			else
+			{
 				output.put(type, variables.toArray(new String[0]));
 			}
 		}
@@ -1242,47 +1364,65 @@ public class ContentSpecParser {
 								}
 							}
 						}
-						try {
+						try
+						{
 							// Get the mapping of variables
 							HashMap<RelationshipType, String[]> variableMap = getLineVariables(input, '(', ')', ',', false);
-							if (variableMap.containsKey(RelationshipType.NONE)) {
+							if (variableMap.containsKey(RelationshipType.NONE))
+							{
 								tempTags = variableMap.get(RelationshipType.NONE);
 							}
-						} catch (Exception e) {
+						}
+						catch (Exception e)
+						{
 							log.error(e.getMessage());
 							return false;
 						}
-						if (tempTags.length >= 2) {
+						if (tempTags.length >= 2)
+						{
 							String tags[] = new String[tempTags.length - 1];
-							for (int j = 1; j < tempTags.length; j++) {
+							for (int j = 1; j < tempTags.length; j++)
+							{
 								tags[j - 1] = tempTags[j];
 							}
-							if (!node.addTags(Arrays.asList(tags))) {
+							if (!node.addTags(Arrays.asList(tags)))
+							{
 								log.error(String.format(ProcessorConstants.ERROR_MULTI_TAG_DUPLICATED_MSG, lineCounter, originalInput));
 								return false;
 							}
-						} else {
+						}
+						else
+						{
 							log.error(String.format(ProcessorConstants.ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG, lineCounter, originalInput));
 							return false;
 						}
 					// Just a single tag so add it straight away
-					} else {
-						if (!node.addTag(StringUtilities.replaceEscapeChars(temp[1]))) {
+					}
+					else
+					{
+						if (!node.addTag(StringUtilities.replaceEscapeChars(temp[1])))
+						{
 							log.error(String.format(ProcessorConstants.ERROR_TAG_DUPLICATED_MSG, lineCounter, originalInput));
 							return false;
 						}
 					}
-				} else {
+				}
+				else
+				{
 					log.error(String.format(ProcessorConstants.ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG, lineCounter, originalInput));
 					return false;
 				}
 			// Variable is a tag with no category specified
-			} else {
-				if (str.matches(CSConstants.ALL_TOPIC_ID_REGEX)) {
+			}
+			else
+			{
+				if (str.matches(CSConstants.ALL_TOPIC_ID_REGEX))
+				{
 					log.error(String.format(ProcessorConstants.ERROR_INCORRECT_TOPIC_ID_LOCATION_MSG, lineCounter, originalInput));
 					return false;
 				}
-				if (!node.addTag(str)) {
+				if (!node.addTag(str))
+				{
 					log.error(String.format(ProcessorConstants.ERROR_TAG_DUPLICATED_MSG, lineCounter, originalInput));
 					return false;
 				}
@@ -1298,7 +1438,8 @@ public class ContentSpecParser {
 	 * @param startDelim The delimiter that specifies that start of options (ie '[')
 	 * @return The title as a String or null if the title is blank.
 	 */
-	private String getTitle(String input, char startDelim) {
+	private String getTitle(String input, char startDelim)
+	{
 		if (input == null || input.equals("")) return null;
 		return StringUtilities.split(input, startDelim)[0].trim();
 	}
@@ -1306,59 +1447,83 @@ public class ContentSpecParser {
 	/**
 	 * Process the relationships without logging any errors.
 	 */
-	private void processRelationships() {
-		for(String topicId: relationships.keySet()) {
-			for (Relationship relationship: relationships.get(topicId)) {
+	private void processRelationships()
+	{
+		for(String topicId: relationships.keySet())
+		{
+			for (Relationship relationship: relationships.get(topicId))
+			{
 				String relatedId = relationship.getSecondaryRelationshipTopicId();
 				// The relationship points to a target so it must be a level or topic
 				if (relatedId.toUpperCase().matches(ProcessorConstants.TARGET_REGEX)) {
-					if (targetTopics.containsKey(relatedId) && !targetLevels.containsKey(relatedId)) {
+					if (targetTopics.containsKey(relatedId) && !targetLevels.containsKey(relatedId))
+					{
 						SpecTopic specTopic = specTopics.get(topicId);
 						specTopic.addRelationshipToTarget(targetTopics.get(relatedId), relationship.getType());
-					} else if (!targetTopics.containsKey(relatedId) && targetLevels.containsKey(relatedId)) {
-						if (!(relationship.getType() == RelationshipType.NEXT ||relationship.getType() == RelationshipType.PREVIOUS)) {
+					} else if (!targetTopics.containsKey(relatedId) && targetLevels.containsKey(relatedId))
+					{
+						if (!(relationship.getType() == RelationshipType.NEXT ||relationship.getType() == RelationshipType.PREVIOUS))
+						{
 							SpecTopic specTopic = specTopics.get(topicId);
 							specTopic.addRelationshipToTarget(targetLevels.get(relatedId), relationship.getType());
 						}
 					}
 				// The relationship isn't a target so it must point to a topic directly
-				} else {
-					if (!relatedId.matches(CSConstants.NEW_TOPIC_ID_REGEX)) {
+				}
+				else
+				{
+					if (!relatedId.matches(CSConstants.NEW_TOPIC_ID_REGEX))
+					{
 						// The relationship isn't a unique new topic so it will contain the line number in front of the topic ID
-						if (!relatedId.startsWith("X")) {
+						if (!relatedId.startsWith("X"))
+						{
 							int count = 0;
 							SpecTopic relatedTopic = null;
 							// Get the related topic and count if more then one is found
-							for (String specTopicId: specTopics.keySet()) {
-								if (specTopicId.matches("^[0-9]+-" + relatedId + "$")) {
+							for (String specTopicId: specTopics.keySet())
+							{
+								if (specTopicId.matches("^[0-9]+-" + relatedId + "$"))
+								{
 									relatedTopic = specTopics.get(specTopicId);
 									count++;
 								}
 							}
 							SpecTopic specTopic = specTopics.get(topicId);
-							if (count == 1 && relatedTopic != specTopic) {
+							if (count == 1 && relatedTopic != specTopic)
+							{
 								specTopic.addRelationshipToTopic(relatedTopic, relationship.getType());
 							}
 						}
-					} else {
-						if (specTopics.containsKey(relatedId)) {
+					}
+					else
+					{
+						if (specTopics.containsKey(relatedId))
+						{
 							// Check that a duplicate doesn't exist because if it does the new topic isn't unique
 							String duplicatedId = "X" + relatedId.substring(1);
 							boolean duplicateExists = false;
-							for (String specTopicId: specTopics.keySet()) {
-								if (specTopicId.matches("^[0-9]+-" + duplicatedId + "$")) {
+							for (String specTopicId: specTopics.keySet())
+							{
+								if (specTopicId.matches("^[0-9]+-" + duplicatedId + "$"))
+								{
 									duplicateExists = true;
 									break;
 								}
 							}
-							if (specTopics.get(relatedId) != specTopics.get(topicId)) {
-								if (!duplicateExists) {
+							if (specTopics.get(relatedId) != specTopics.get(topicId))
+							{
+								if (!duplicateExists)
+								{
 									specTopics.get(topicId).addRelationshipToTopic(specTopics.get(relatedId), relationship.getType());
-								} else {
+								}
+								else
+								{
 									// Only create a new target if one doesn't already exist
-									if (specTopics.get(relatedId).getTargetId() == null) {
+									if (specTopics.get(relatedId).getTargetId() == null)
+									{
 										String targetId = ContentSpecUtilities.generateRandomTargetId(specTopics.get(relatedId).getLineNumber());
-										while (targetTopics.containsKey(targetId) || targetLevels.containsKey(targetId)) {
+										while (targetTopics.containsKey(targetId) || targetLevels.containsKey(targetId))
+										{
 											targetId = ContentSpecUtilities.generateRandomTargetId(specTopics.get(relatedId).getLineNumber());
 										}
 										specTopics.get(relatedId).setTargetId(targetId);
@@ -1371,6 +1536,85 @@ public class ContentSpecParser {
 					}
 				}
 			}
+		}
+	}
+
+	private void processExternalLevel(final Level lvl, final String externalCSPReference, final String title, final String input)
+	{
+		String[] vars = externalCSPReference.split(":");
+		vars = CollectionUtilities.trimStringArray(vars);
+		
+		/* No need to check for an exception as the regex that produces this will take care of it. */
+		final Integer cspId = Integer.parseInt(vars[0]);
+		final Integer targetId = vars.length > 1 ? Integer.parseInt(vars[1]) : null;
+		
+		final RESTTopicV1 externalContentSpec = this.restManager.getReader().getContentSpecById(cspId, null);
+		
+		if (externalContentSpec != null)
+		{
+			/* We are importing part of an external content specification */
+			if (targetId != null)
+			{
+				final ContentSpecParser parser = new ContentSpecParser(new ErrorLoggerManager(), restManager);
+				boolean foundTargetId = false;
+				try {
+					parser.parse(externalContentSpec.getXml());
+					for (final String externalTargetId : parser.externalTargetLevels.keySet())
+					{
+						final String id = externalTargetId.replaceAll("ET", "");
+						if (id.equals(targetId.toString()))
+						{
+							foundTargetId = true;
+							
+							final Level externalLvl = parser.externalTargetLevels.get(externalTargetId);
+							
+							/* Check that the title matches */
+							if (externalLvl.getTitle().equals(title))
+							{
+								for (final Node externalChildNode : externalLvl.getChildNodes())
+								{
+									if (externalChildNode instanceof SpecNode)
+									{
+										lvl.appendChild((SpecNode) externalChildNode);
+									}
+									else if (externalChildNode instanceof Comment)
+									{
+										lvl.appendComment((Comment) externalChildNode);
+									}
+								}
+							}
+							else
+							{
+								// TODO Error Message
+								log.error("Title doesn't match the referenced target id.");
+							}
+						}
+					}
+					
+					if (!foundTargetId)
+					{
+						log.error("External target doesn't exist in the content specification");
+					}
+				} catch (Exception e) {
+					// TODO Error message
+					log.error("Failed to pull in external content spec reference");
+				}
+			}
+			/* Import the entire content spec, excluding the metadata */
+			else if (lvl.getType() == LevelType.BASE)
+			{
+				// TODO Handle importing the entire content specification
+			}
+			else
+			{
+				//TODO Error Message
+				log.error("Invalid place to import external content");
+			}
+		}
+		else
+		{
+			// TODO Error Message
+			log.error("Unable to find the external content specification");
 		}
 	}
 }
