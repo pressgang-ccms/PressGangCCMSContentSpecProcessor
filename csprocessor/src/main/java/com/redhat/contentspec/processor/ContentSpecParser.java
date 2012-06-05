@@ -252,7 +252,7 @@ public class ContentSpecParser {
 						}
 					}
 					// Before validating the content specification processes should be loaded first so that the relationships and targets are created
-					for (Process process: processes) {
+					for (final Process process: processes) {
 						if (process.processTopics(specTopics, targetTopics, restManager.getReader())) {
 							// Add all of the process topic targets
 							for (String targetId: process.getProcessTargets().keySet()) {
@@ -828,6 +828,7 @@ public class ContentSpecParser {
 						lvl.appendChild(newLevel);
 						lvl = newLevel;
 					}
+					processes.add((Process) lvl);
 				// Process a Part
 				}
 				else if (tempInput[0].equalsIgnoreCase("Part"))
