@@ -18,6 +18,8 @@ public class ProcessorConstants {
 	public static final String PREV_REGEX 			= "^PREV[ ]*:.*$";
 	public static final String TARGET_REGEX 		= "^T[0-9]+$"; 
 	public static final String BRANCH_REGEX 		= "^B[ ]*:.*$";
+	public static final String EXTERNAL_TARGET_REGEX	= "^ET[0-9]+$";
+	public static final String EXTERNAL_CSP_REGEX	= "^CS[0-9]+[ ]*(:[ ]*[0-9]+)?$";
 	
 	public static final String LINE = "Line %d: ";
 	public static final String INVALID_CS = "Invalid Content Specification!";
