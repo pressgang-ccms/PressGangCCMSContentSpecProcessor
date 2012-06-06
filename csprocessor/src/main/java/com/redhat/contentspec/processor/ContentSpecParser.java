@@ -35,7 +35,7 @@ import com.redhat.contentspec.utils.logging.ErrorLogger;
 import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
 import com.redhat.ecs.commonutils.CollectionUtilities;
 import com.redhat.ecs.commonutils.StringUtilities;
-import com.redhat.topicindex.rest.entities.UserV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTUserV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
 
 /**
@@ -100,7 +100,7 @@ public class ContentSpecParser {
 	 * @return True if everything was parsed successfully otherwise false.
 	 * @throws Exception Any unexpected exception that occurred when parsing.
 	 */
-	public boolean parse(String contentSpec) throws Exception {
+	public boolean parse(final String contentSpec) throws Exception {
 		return parse(contentSpec, null);
 	}
 	
@@ -114,7 +114,7 @@ public class ContentSpecParser {
 	 * @return True if everything was parsed successfully otherwise false.
 	 * @throws Exception Any unexpected exception that occurred when parsing.
 	 */
-	public boolean parse(String contentSpec, UserV1 user) throws Exception {
+	public boolean parse(final String contentSpec, final RESTUserV1 user) throws Exception {
 		return parse(contentSpec, user, ParsingMode.EITHER);
 	}
 	
@@ -129,8 +129,8 @@ public class ContentSpecParser {
 	 * @return True if everything was parsed successfully otherwise false.
 	 * @throws Exception Any unexpected exception that occurred when parsing.
 	 */
-	public boolean parse(String contentSpec, UserV1 user, ParsingMode mode) throws Exception {
-		BufferedReader br = new BufferedReader(new StringReader(contentSpec));
+	public boolean parse(final String contentSpec, final RESTUserV1 user, final ParsingMode mode) throws Exception {
+		final BufferedReader br = new BufferedReader(new StringReader(contentSpec));
 		return readFileData(br, user, mode);
 	}
 	
@@ -212,7 +212,7 @@ public class ContentSpecParser {
 	 * @return True if the Content Specification was read successfully otherwise false.
 	 */
 	@SuppressWarnings("deprecation")
-	private boolean readFileData(BufferedReader br, UserV1 user, ParsingMode mode) throws Exception {
+	private boolean readFileData(final BufferedReader br, final RESTUserV1 user, final ParsingMode mode) throws Exception {
 		this.br = br;
 		String input = null;
 		boolean editing = false;

@@ -21,7 +21,7 @@ import com.redhat.ecs.commonutils.ExceptionUtilities;
 import com.redhat.ecs.constants.CommonConstants;
 import com.redhat.topicindex.rest.collections.BaseRestCollectionV1;
 import com.redhat.topicindex.rest.entities.ComponentTagV1;
-import com.redhat.topicindex.rest.entities.UserV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTUserV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTCategoryV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTPropertyTagV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTTagV1;
@@ -99,7 +99,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 	 * @throws Exception Any unexpected exception that occurred when processing.
 	 */
 	@SuppressWarnings({ "unchecked" })
-	public boolean processContentSpec(String contentSpec, UserV1 user, ContentSpecParser.ParsingMode mode) throws Exception {
+	public boolean processContentSpec(final String contentSpec, final RESTUserV1 user, final ContentSpecParser.ParsingMode mode) throws Exception {
 		boolean editing = false;
 		
 		// Check if the app should be shutdown
