@@ -127,6 +127,7 @@ public class ProcessorConstants {
 	public static final String ERROR_TOPIC_NO_NEW_TOPIC_BUILD		= LINE + INVALID_TOPIC + " New topics aren't allowed to be created during a build." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NO_NEW_TRANSLATION_TOPIC	= LINE + INVALID_TOPIC + " New topics aren't allowed to be created for translated topics." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NO_TAGS_TRANSLATION_TOPIC	= LINE + INVALID_TOPIC + " Tags aren't allowed to be added to translated topics." + CSLINE_MSG;
+	public static final String ERROR_TOPIC_INVALID_REVISION_FORMAT	= LINE + INVALID_TOPIC + " " + CSLINE_MSG;
 	
 	// Warnings
 	public static final String WARN_DESCRIPTION_IGNORE_MSG			= LINE + "%s topics can't have a description, so the description will be ignored.";
