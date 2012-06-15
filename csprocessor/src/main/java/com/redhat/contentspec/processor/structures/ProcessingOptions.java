@@ -7,6 +7,7 @@ public class ProcessingOptions {
 	private boolean ignoreSpecRevision = false;
 	private boolean allowEmptyLevels = false;
 	private boolean allowNewTopics = true;
+	private boolean addRevisions = false;
 	
 	public boolean isPermissiveMode()
 	{
@@ -53,5 +54,13 @@ public class ProcessingOptions {
 
 	public void setAllowNewTopics(boolean allowNewTopics) {
 		this.allowNewTopics = allowNewTopics;
+	}
+
+	public boolean isAddRevisions() {
+		return addRevisions;
+	}
+
+	public void setAddRevisions(boolean addRevisions) {
+		this.addRevisions = addRevisions;
 	}
 }
