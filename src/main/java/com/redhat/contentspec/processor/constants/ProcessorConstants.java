@@ -18,6 +18,8 @@ public class ProcessorConstants {
 	public static final String PREV_REGEX 			= "^PREV[ ]*:.*$";
 	public static final String TARGET_REGEX 		= "^T[0-9]+$"; 
 	public static final String BRANCH_REGEX 		= "^B[ ]*:.*$";
+	public static final String EXTERNAL_TARGET_REGEX	= "^ET[0-9]+$";
+	public static final String EXTERNAL_CSP_REGEX	= "^CS[0-9]+[ ]*(:[ ]*[0-9]+)?$";
 	
 	public static final String LINE = "Line %d: ";
 	public static final String INVALID_CS = "Invalid Content Specification!";
@@ -62,6 +64,7 @@ public class ProcessorConstants {
 	public static final String ERROR_DUPLICATE_ID_MSG				= LINE + INVALID_CS + " Duplicate topic ID ( %s )." + CSLINE_MSG;
 	public static final String ERROR_INVALID_BUG_LINKS_MSG			= LINE + INVALID_CS + " The setting for bug links must be On or Off." + CSLINE_MSG;
 	public static final String ERROR_CS_READ_ONLY_MSG				= INVALID_CS + " The content specification is read-only.";
+	public static final String ERROR_INVALID_SURVEY_LINKS_MSG		= LINE + INVALID_CS + " The setting for survey links must be On or Off." + CSLINE_MSG;
 	
 	public static final String ERROR_INCORRECT_TOPIC_ID_LOCATION_MSG 	= LINE + INVALID_CS + " Topic ID specified in the wrong location." + CSLINE_MSG;
 
@@ -101,7 +104,7 @@ public class ProcessorConstants {
 	public static final String ERROR_INVALID_WRITER_MSG				= LINE + INVALID_TOPIC + " The writer specified is not an Assigned Writer." + CSLINE_MSG;
 	public static final String ERROR_INVALID_TOPIC_ID_MSG			= LINE + INVALID_TOPIC + " Incorrect ID format." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NO_TITLE_MSG				= LINE + INVALID_TOPIC + " No Title." + CSLINE_MSG;
-	public static final String ERROR_INVALID_TOPIC_TITLE_MSG		= LINE + INVALID_TOPIC + " The topic title is invalid." + CSLINE_MSG;
+	public static final String ERROR_INVALID_TOPIC_TITLE_MSG		= LINE + INVALID_TOPIC + " The Topic title is not valid." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NO_TYPE_MSG				= LINE + INVALID_TOPIC + " No Type." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NO_TECH_AND_RELEASE_MSG	= LINE + INVALID_TOPIC + " A Technology and Release tag has not been set." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NO_TECH_OR_RELEASE_MSG	= LINE + INVALID_TOPIC + " A Technology or Release tag has not been set." + CSLINE_MSG;
@@ -110,7 +113,7 @@ public class ProcessorConstants {
 	public static final String ERROR_TOPIC_TITLES_NONMATCH_MSG		= LINE + INVALID_TOPIC + " Existing topic title doesn't match." + CSLINE_MSG + CSLINE_MSG;
 	public static final String ERROR_TOPIC_TYPE_NONMATCH_MSG		= LINE + INVALID_TOPIC + " Existing topic type doesn't match." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NONEXIST_MSG				= LINE + INVALID_TOPIC + " Existing topic specified doesn't exist." + CSLINE_MSG;
-	public static final String ERROR_TOPIC_OUTSIDE_CHAPTER_MSG 		= LINE + INVALID_TOPIC + " A topic must be inside of a Chapter or Section." + CSLINE_MSG;
+	public static final String ERROR_TOPIC_OUTSIDE_CHAPTER_MSG 		= LINE + INVALID_TOPIC + " A topic must be inside of another element, it can't be at the base level." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_DUPLICATE_CLONES_MSG		= LINE + INVALID_TOPIC + " A Duplicate clone topic can only be used when the clone is exclusively used inside a Content Specification." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_WRITER_AS_TAG_MSG		= LINE + INVALID_TOPIC + " A writer cannot be specified as a tag." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_TYPE_AS_TAG_MSG			= LINE + INVALID_TOPIC + " A topic type cannot be specified as a tag." + CSLINE_MSG;
@@ -121,6 +124,10 @@ public class ProcessorConstants {
 	public static final String ERROR_TOPIC_INLINE_TOPIC_MUST_BE_FIRST	= LINE + INVALID_TOPIC + " An inline topic must be the first topic in a Chapter/Section/Appendix." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_INLINE_RELATIONSHIPS		= LINE + INVALID_TOPIC + " An inline topic can't have any relationships." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_TAG_DUPLICATED_MSG		= LINE + INVALID_TOPIC + " Tag exists twice inside of the database." + CSLINE_MSG;
+	public static final String ERROR_TOPIC_NO_NEW_TOPIC_BUILD		= LINE + INVALID_TOPIC + " New topics aren't allowed to be created during a build." + CSLINE_MSG;
+	public static final String ERROR_TOPIC_NO_NEW_TRANSLATION_TOPIC	= LINE + INVALID_TOPIC + " New topics aren't allowed to be created for translated topics." + CSLINE_MSG;
+	public static final String ERROR_TOPIC_NO_TAGS_TRANSLATION_TOPIC	= LINE + INVALID_TOPIC + " Tags aren't allowed to be added to translated topics." + CSLINE_MSG;
+	public static final String ERROR_TOPIC_INVALID_REVISION_FORMAT	= LINE + INVALID_TOPIC + " " + CSLINE_MSG;
 	
 	// Warnings
 	public static final String WARN_DESCRIPTION_IGNORE_MSG			= LINE + "%s topics can't have a description, so the description will be ignored.";
@@ -129,7 +136,8 @@ public class ProcessorConstants {
 	public static final String WARN_TAGS_IGNORE_MSG					= LINE + "%s topics can't have tags, so the tags will be ignored.";
 	public static final String WARN_DEBUG_IGNORE_MSG 				= "Invalid debug setting. Debug must be set to 0, 1 or 2! So debug will be off by default.";
 	public static final String WARN_IGNORE_INFO_MSG					= LINE + "All descriptions, tags, source urls and writers will be ignored for existing Topics." + CSLINE_MSG;
-	public static final String WARN_IGNORE_DUP_INFO_MSG				= LINE + "All types, descriptions, tags, source urls and writers will be ignored for existing Topics." + CSLINE_MSG;
+	public static final String WARN_IGNORE_DUP_INFO_MSG				= LINE + "All types, descriptions, source urls and writers will be ignored for existing Topics." + CSLINE_MSG;
+	public static final String WARN_INTERNAL_TOPIC_MSG				= LINE + "The topic is an internal-only topic and contains sensitive information. Ensure you are not publishing this publicly." + CSLINE_MSG;
 	
 	public static final String ERROR_NEW_TOPIC_DISABLED_MESSAGE		= LINE + "Creating new topics via Content Specification is not supported on this server" + CSLINE_MSG;
 	
@@ -137,7 +145,7 @@ public class ProcessorConstants {
 	public static final String ERROR_PROCESS_NONEXIST_MSG			= LINE + INVALID_PROCESS + " Topic %s doesn't exist in the database." + CSLINE_MSG;
 	public static final String ERROR_PROCESS_INVALID_TOPIC_MSG		= LINE + INVALID_PROCESS + " Only existing topics can be used in a process." + CSLINE_MSG;
 	public static final String ERROR_PROCESS_INVALID_TYPES_MSG		= LINE + INVALID_PROCESS + " Processes can't have tags, relationships or targets." + CSLINE_MSG;
-	public static final String ERROR_PROCESS_OUTSIDE_CHAPTER_MSG	= LINE + INVALID_PROCESS + " A process must be inside of a chapter." + CSLINE_MSG;
+	public static final String ERROR_PROCESS_OUTSIDE_CHAPTER_MSG	= LINE + INVALID_PROCESS + " A process must be inside of a chapter or be a chapter." + CSLINE_MSG;
 	public static final String ERROR_PROCESS_NO_TOPICS_MSG			= LINE + INVALID_PROCESS + " No Topics found. A process must contain at least one topic." + CSLINE_MSG;
 	public static final String ERROR_PROCESS_DUPLICATE_TOPICS_MSG	= LINE + INVALID_PROCESS + " Topic %s is duplicated. A Process must not have duplicate topics." + CSLINE_MSG;
 	public static final String ERROR_PROCESS_HAS_LEVELS_MSG			= LINE + INVALID_PROCESS + " A process cannot contain Chapters/Sections/Appendixes or other Processes." + CSLINE_MSG;
