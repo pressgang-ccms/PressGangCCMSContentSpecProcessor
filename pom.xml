@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.redhat</groupId>
+  <artifactId>contentspec</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>ECS Content Specification Tools</name>
+  
+  <repositories>
+	<repository>
+		<id>JBoss</id>
+		<url>https://repository.jboss.org/nexus/</url>
+	</repository>
+	<repository>
+		<id>Apache</id>
+		<url>http://repository.apache.org</url>
+	</repository>
+	<repository>
+		<id>Zanata</id>
+		<url>http://repository-zanata.forge.cloudbees.com/release/</url>
+	</repository>
+	<repository>
+		<id>ECS Maven</id>
+		<url>http://ecsmaven.usersys.redhat.com/nexus/</url>
+	</repository>
+  </repositories>
+  
+  <build>
+	<plugins>
+		<plugin>
+        		<groupId>org.apache.maven.plugins</groupId>
+        		<artifactId>maven-compiler-plugin</artifactId>
+			<version>2.3.1</version>
+        		<configuration>
+          			<source>1.6</source>
+          			<target>1.6</target>
+				<optimize>true</optimize>
+        		</configuration>
+      		</plugin>
+   	</plugins>
+  </build>
+
+  <properties>
+	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  
+  <dependencies>
+  	<!-- Commons Library -->
+	<dependency>
+		<groupId>com.redhat</groupId>
+		<artifactId>Commonutilities</artifactId>
+		<version>0.0.2-SNAPSHOT</version>
+	</dependency>
+
+	<!-- RESTEasy Libraries -->
+  	<dependency>
+  		<groupId>org.jboss.resteasy</groupId>
+  		<artifactId>resteasy-atom-provider</artifactId>
+  		<version>2.2.3.GA</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.jboss.resteasy</groupId>
+  		<artifactId>resteasy-jackson-provider</artifactId>
+  		<version>2.2.3.GA</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.jboss.resteasy</groupId>
+  		<artifactId>resteasy-jaxrs</artifactId>
+  		<version>2.2.3.GA</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>javax.ws.rs</groupId>
+  		<artifactId>javax.ws.rs-api</artifactId>
+  		<version>2.0-m04</version>
+  	</dependency>
+
+	<!-- Testing libraries -->
+	<dependency>
+  		<groupId>junit</groupId>
+  		<artifactId>junit</artifactId>
+  		<version>4.10</version>
+		<scope>test</scope>
+  	</dependency>
+  </dependencies>
+
+  <modules>
+	<module>csprocessor</module>
+	<module>csbuilder</module>
+	<module>client</module>
+  </modules>
+</project>
