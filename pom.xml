@@ -14,7 +14,7 @@
 	</repository>
 	<repository>
 		<id>Apache</id>
-		<url>http://repository.apache.org</url>
+		<url>https://repository.apache.org</url>
 	</repository>
 	<repository>
 		<id>Zanata</id>
@@ -22,7 +22,7 @@
 	</repository>
 	<repository>
 		<id>ECS Maven</id>
-		<url>http://ecsmaven.usersys.redhat.com/nexus/</url>
+		<url>http://ecsmaven.usersys.redhat.com/nexus/content/groups/public/</url>
 	</repository>
   </repositories>
   
