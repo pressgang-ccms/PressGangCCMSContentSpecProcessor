@@ -14,7 +14,7 @@
 	</repository>
 	<repository>
 		<id>Apache</id>
-		<url>http://repository.apache.org</url>
+		<url>https://repository.apache.org</url>
 	</repository>
 	<repository>
 		<id>Zanata</id>
