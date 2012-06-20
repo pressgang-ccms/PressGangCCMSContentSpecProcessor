@@ -18,6 +18,7 @@ import com.redhat.contentspec.rest.RESTWriter;
 import com.redhat.contentspec.rest.utils.TopicPool;
 import com.redhat.contentspec.utils.logging.ErrorLogger;
 import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
+import com.redhat.ecs.commonstructures.Pair;
 import com.redhat.ecs.commonutils.CollectionUtilities;
 import com.redhat.ecs.commonutils.ExceptionUtilities;
 import com.redhat.ecs.constants.CommonConstants;
@@ -147,10 +148,36 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			return false;
 		}
 		
-		// Download the list of topics in one go to reduce I/O overhead
-		LOG.info("Attempting to download all topics...");
-		reader.getTopicsByIds(csp.getReferencedTopicIds(), csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE));
-		
+		if (!csp.getReferencedLatestTopicIds().isEmpty())
+		{
+			// Download the list of topics in one go to reduce I/O overhead
+			LOG.info("Attempting to download all the latest topics...");
+			reader.getTopicsByIds(csp.getReferencedLatestTopicIds(), csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE));
+		}
+
+		final List<Pair<Integer, Integer>> referencedRevisionTopicIds = csp.getReferencedRevisionTopicIds();
+		if (!referencedRevisionTopicIds.isEmpty())
+		{
+			LOG.info("Attempting to download all the revision topics...");
+
+			final int showPercent = 5;
+			final float total = referencedRevisionTopicIds.size();
+			float current = 0;
+			int lastPercent = 0;
+
+			for (final Pair<Integer, Integer> topicToRevision : referencedRevisionTopicIds)
+			{
+				reader.getTopicById(topicToRevision.getFirst(), topicToRevision.getSecond());
+
+				++current;
+				final int percent = Math.round(current / total * 100);
+				if (percent - lastPercent >= showPercent)
+				{
+					lastPercent = percent;
+					log.info("\tDownloading revision topics " + percent + "% Done");
+				}
+			}
+		}
 		// Check if the app should be shutdown
 		if (isShuttingDown.get())
 		{
@@ -188,7 +215,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 					return false;
 				}
 				
-				LOG.info("Saving the Content Specification...");
+				LOG.info("Saving the Content Specification to the server...");
 				if (saveContentSpec(csp.getContentSpec(), csp.getSpecTopics(), editing))
 				{
 					log.info(ProcessorConstants.INFO_SUCCESSFUL_SAVE_MSG);
