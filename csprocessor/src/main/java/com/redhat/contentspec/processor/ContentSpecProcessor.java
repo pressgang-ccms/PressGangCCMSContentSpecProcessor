@@ -45,7 +45,7 @@ import com.redhat.topicindex.rest.entities.interfaces.RESTTranslatedTopicV1;
 @SuppressWarnings("rawtypes")
 public class ContentSpecProcessor implements ShutdownAbleApp
 {
-	private final Logger LOG = Logger.getLogger(ContentSpecProcessor.class);
+	private final Logger LOG = Logger.getLogger("com.redhat.contentspec.processor.CustomContentSpecProcessor");
 	
 	private final ErrorLogger log;
 	private final ErrorLoggerManager elm;
