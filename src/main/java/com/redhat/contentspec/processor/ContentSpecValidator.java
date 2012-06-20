@@ -25,6 +25,7 @@ import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
 import com.redhat.ecs.commonutils.DocBookUtilities;
 import com.redhat.ecs.commonutils.HashUtilities;
 import com.redhat.ecs.constants.CommonConstants;
+import com.redhat.topicindex.rest.collections.BaseRestCollectionV1;
 import com.redhat.topicindex.rest.entities.ComponentBaseTopicV1;
 import com.redhat.topicindex.rest.entities.ComponentTagV1;
 import com.redhat.topicindex.rest.entities.ComponentTopicV1;
@@ -40,7 +41,7 @@ import com.redhat.topicindex.rest.entities.interfaces.RESTTranslatedTopicV1;
  * 
  * @author lnewson
  */
-public class ContentSpecValidator<T extends RESTBaseTopicV1<T>> implements ShutdownAbleApp
+public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends BaseRestCollectionV1<T, U>> implements ShutdownAbleApp
 {
 	private final RESTReader reader;
 	private final ErrorLogger log;

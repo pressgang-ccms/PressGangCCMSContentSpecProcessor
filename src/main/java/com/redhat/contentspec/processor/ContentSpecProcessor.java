@@ -21,7 +21,11 @@ import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
 import com.redhat.ecs.commonutils.CollectionUtilities;
 import com.redhat.ecs.commonutils.ExceptionUtilities;
 import com.redhat.ecs.constants.CommonConstants;
-import com.redhat.topicindex.rest.collections.BaseRestCollectionV1;
+import com.redhat.topicindex.rest.collections.RESTPropertyTagCollectionV1;
+import com.redhat.topicindex.rest.collections.RESTTagCollectionV1;
+import com.redhat.topicindex.rest.collections.RESTTopicCollectionV1;
+import com.redhat.topicindex.rest.collections.RESTTopicSourceUrlCollectionV1;
+import com.redhat.topicindex.rest.collections.RESTTranslatedTopicCollectionV1;
 import com.redhat.topicindex.rest.entities.ComponentTagV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTUserV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTCategoryV1;
@@ -158,11 +162,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 		LOG.info("Starting to validate...");
 		if (csp.getContentSpec().getLocale() == null || csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE))
 		{
-			validator = new ContentSpecValidator<RESTTopicV1>(RESTTopicV1.class, elm, dbManager, processingOptions);
+			validator = new ContentSpecValidator<RESTTopicV1, RESTTopicCollectionV1>(RESTTopicV1.class, elm, dbManager, processingOptions);
 		}
 		else
 		{
-			validator = new ContentSpecValidator<RESTTranslatedTopicV1>(RESTTranslatedTopicV1.class, elm, dbManager, processingOptions);
+			validator = new ContentSpecValidator<RESTTranslatedTopicV1, RESTTranslatedTopicCollectionV1>(RESTTranslatedTopicV1.class, elm, dbManager, processingOptions);
 		}
 		
 		if (error || !validator.validateContentSpec(csp.getContentSpec(), csp.getSpecTopics()) || !validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics()))
@@ -214,7 +218,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 		try
 		{		
 			// Create the unique ID for the property
-			final BaseRestCollectionV1<RESTPropertyTagV1> properties = new BaseRestCollectionV1<RESTPropertyTagV1>();
+			final RESTPropertyTagCollectionV1 properties = new RESTPropertyTagCollectionV1();
 			final RESTPropertyTagV1 cspProperty = new RESTPropertyTagV1();
 			cspProperty.explicitSetValue(Integer.toString(specTopic.getLineNumber()));
 			cspProperty.setAddItem(true);
@@ -224,7 +228,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			RESTTopicV1 topic = null;
 			
 			// Create a Tag collection that will hold the tags for this topic entity
-			BaseRestCollectionV1<RESTTagV1> topicTags = new BaseRestCollectionV1<RESTTagV1>();
+			RESTTagCollectionV1 topicTags = new RESTTagCollectionV1();
 			
 			if (specTopic.isTopicANewTopic())
 			{					
@@ -485,8 +489,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 				// Save the new Source Urls
 				final List<String> urls = specTopic.getSourceUrls();
 				
-				final BaseRestCollectionV1<RESTTopicSourceUrlV1> sourceUrls = topic.getSourceUrls_OTM() == null ? 
-						new BaseRestCollectionV1<RESTTopicSourceUrlV1>() : topic.getSourceUrls_OTM();
+				final RESTTopicSourceUrlCollectionV1 sourceUrls = topic.getSourceUrls_OTM() == null ? 
+						new RESTTopicSourceUrlCollectionV1() : topic.getSourceUrls_OTM();
 
 				for (final String url: urls)
 				{
