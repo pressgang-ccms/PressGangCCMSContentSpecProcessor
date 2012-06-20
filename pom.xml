@@ -25,6 +25,14 @@
 		<url>http://ecsmaven.usersys.redhat.com/nexus/</url>
 	</repository>
   </repositories>
+
+  <distributionManagement>
+    <repository>
+      <id>ecsmaven-nexus</id>
+      <name>ECS Maven Repo</name>
+      <url>http://ecsmaven.usersys.redhat.com/nexus/content/repositories/snapshots/</url>
+    </repository>
+  </distributionManagement>
   
   <build>
 	<plugins>
