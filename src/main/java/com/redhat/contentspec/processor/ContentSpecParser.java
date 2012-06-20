@@ -33,6 +33,7 @@ import com.redhat.contentspec.entities.InjectionOptions;
 import com.redhat.contentspec.utils.ContentSpecUtilities;
 import com.redhat.contentspec.utils.logging.ErrorLogger;
 import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
+import com.redhat.ecs.commonstructures.Pair;
 import com.redhat.ecs.commonutils.CollectionUtilities;
 import com.redhat.ecs.commonutils.StringUtilities;
 import com.redhat.topicindex.rest.entities.interfaces.RESTUserV1;
@@ -144,6 +145,42 @@ public class ContentSpecParser
 		for(String topicId: specTopics.keySet()) {
 			SpecTopic specTopic = specTopics.get(topicId);
 			if (specTopic.getDBId() != 0) ids.add(specTopic.getDBId());
+		}
+		return ids;
+	}
+	
+	/**
+	 * Gets a list of Topic ID's that are used in a Content Specification.
+	 * The list only includes topics that don't reference a revision of a
+	 * topic.
+	 * 
+	 * @return A List of topic ID's.
+	 */
+	public List<Integer> getReferencedLatestTopicIds()
+	{
+		final List<Integer> ids = new ArrayList<Integer>();
+		for(final String topicId: specTopics.keySet())
+		{
+			final SpecTopic specTopic = specTopics.get(topicId);
+			if (specTopic.getDBId() != 0 && specTopic.getRevision() == null) ids.add(specTopic.getDBId());
+		}
+		return ids;
+	}
+
+	/**
+	 * Gets a list of Topic ID's that are used in a Content Specification.
+	 * The list only includes topics that reference a topic revision rather
+	 * then the latest topic revision.
+	 * 
+	 * @return A List of topic ID's.
+	 */
+	public List<Pair<Integer, Integer>> getReferencedRevisionTopicIds()
+	{
+		final List<Pair<Integer, Integer>> ids = new ArrayList<Pair<Integer, Integer>>();
+		for(final String topicId: specTopics.keySet())
+		{
+			final SpecTopic specTopic = specTopics.get(topicId);
+			if (specTopic.getDBId() != 0 && specTopic.getRevision() != null) ids.add(new Pair<Integer, Integer>(specTopic.getDBId(), specTopic.getRevision()));
 		}
 		return ids;
 	}
