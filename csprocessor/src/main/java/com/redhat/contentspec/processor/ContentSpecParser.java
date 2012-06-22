@@ -1397,8 +1397,8 @@ public class ContentSpecParser
 				// Read in a new line and increment relevant counters
 				temp = br.readLine();
 				lineCounter++;
-				postProcessedLineCounter++;
-				spec.appendPreProcessedLine(temp);
+				//postProcessedLineCounter++;
+				spec.appendPreProcessedLineText(temp, postProcessedLineCounter);
 				if (temp != null) {
 					input += "\n" + temp;
 				}
