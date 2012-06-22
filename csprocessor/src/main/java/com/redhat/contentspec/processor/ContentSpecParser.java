@@ -67,7 +67,7 @@ public class ContentSpecParser
 	private HashMap<String, List<Relationship>> relationships = new HashMap<String, List<Relationship>>();
 	private ArrayList<Process> processes = new ArrayList<Process>();
 	private Level lvl = null;
-	private int lineCounter = 0, postLineCounter = 0;
+	private int lineCounter = 0, postProcessedLineCounter = 0;
 	private boolean error = false;
 	private BufferedReader br = null;
 	private final RESTManager restManager;
@@ -256,7 +256,7 @@ public class ContentSpecParser
 		// Read in the first line of the file
 		while ((input = br.readLine()) != null) {
 			lineCounter++;
-			postLineCounter++;
+			postProcessedLineCounter++;
 			if (input.trim().startsWith("#") || input.trim().equals("")) {
 				spec.appendPreProcessedLine(input);
 				continue;
@@ -277,7 +277,7 @@ public class ContentSpecParser
 					lvl.setAssignedWriter(user == null ? null: user.getName());
 					while ((input = br.readLine()) != null) {
 						lineCounter++;
-						postLineCounter++;
+						postProcessedLineCounter++;
 						// Process the content specification and print an error message if an error occurs
 						try {
 							if (!processLine(input)) {
@@ -309,11 +309,18 @@ public class ContentSpecParser
 					
 					// Setup the relationships
 					processRelationships();
-				} else if (temp[0].equals("ID")) {
-					if (mode == ParsingMode.NEW) {
+				}
+				else if (temp[0].equals("ID"))
+				{
+					if (mode == ParsingMode.NEW)
+					{
 						log.error(ProcessorConstants.ERROR_INCORRECT_MODE_MSG);
 						return false;
 					}
+					
+					// ID's aren't stored in the post-processed line data so decrement the post line counter
+					postProcessedLineCounter--;
+					
 					editing = true;
 					int contentSpecId = 0;
 					try {
@@ -327,7 +334,6 @@ public class ContentSpecParser
 					// Read in the revision number
 					input = br.readLine();
 					lineCounter++;
-					postLineCounter++;
 					if (input == null) {
 						log.error(ProcessorConstants.ERROR_INCORRECT_FILE_FORMAT_MSG);
 						return false;
@@ -358,13 +364,16 @@ public class ContentSpecParser
 						log.error(ProcessorConstants.ERROR_INCORRECT_MODE_MSG);
 						return false;
 					}
+					
+					// ID's aren't stored in the post-processed line data so decrement the post line counter
+					postProcessedLineCounter--;
+					
 					editing = true;
 					String checksum = temp[1];
 					spec.setChecksum(checksum);
 					// Read in the Content Spec ID
 					input = br.readLine();
 					lineCounter++;
-					postLineCounter++;
 					if (input == null) {
 						log.error(ProcessorConstants.ERROR_INCORRECT_FILE_FORMAT_MSG);
 						return false;
@@ -739,7 +748,7 @@ public class ContentSpecParser
 							while (newLine != null) {
 								cfg += newLine + "\n";
 								lineCounter++;
-								postLineCounter++;
+								postProcessedLineCounter++;
 								spec.appendPreProcessedLine(newLine);
 								// If the ']' character still isn't found keep trying
 								if (StringUtilities.lastIndexOf(cfg, ']') == -1) {
@@ -1015,7 +1024,7 @@ public class ContentSpecParser
 	 */
 	private SpecTopic processTopic(final String input)
 	{
-		final SpecTopic tempTopic = new SpecTopic(null, postLineCounter, input, lineCounter, null);
+		final SpecTopic tempTopic = new SpecTopic(null, postProcessedLineCounter, input, lineCounter, null);
 		
 		// Process a new topic
 		String[] variables;
@@ -1131,7 +1140,7 @@ public class ContentSpecParser
 		else if (variables[0].equals("N") || variables[0].matches(CSConstants.DUPLICATE_TOPIC_ID_REGEX) || variables[0].matches(CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX) 
 				|| variables[0].matches(CSConstants.CLONED_TOPIC_ID_REGEX) || variables[0].matches(CSConstants.EXISTING_TOPIC_ID_REGEX))
 		{
-			uniqueId = Integer.toString(postLineCounter) + "-" + variables[0];
+			uniqueId = Integer.toString(postProcessedLineCounter) + "-" + variables[0];
 			specTopics.put(uniqueId, tempTopic);
 		} else {
 			log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_ID_MSG, lineCounter, variables[0], input));
@@ -1368,19 +1377,28 @@ public class ContentSpecParser
 	 * @throws ParsingException Thrown if the line can't be successfully parsed.
 	 * @throws IOException Thrown if a problem occurs reading a new line.
 	 */
-	public HashMap<RelationshipType, String[]> getLineVariables(String input, char startDelim, char endDelim, char separator, boolean ignoreTypes, boolean groupTypes) throws ParsingException, IOException {
+	public HashMap<RelationshipType, String[]> getLineVariables(String input, final char startDelim, final char endDelim, final char separator, final boolean ignoreTypes, final boolean groupTypes) throws ParsingException, IOException
+	{
 		HashMap<RelationshipType, String[]> output = new HashMap<RelationshipType, String[]>();
-		if (StringUtilities.indexOf(input, startDelim) == -1) return output;
+		
+		final int lastStartDelimPos = StringUtilities.lastIndexOf(input, startDelim);
+		final int lastEndDelimPos = StringUtilities.lastIndexOf(input, endDelim);
+		
+		// Check that we have vairables to process
+		if (lastStartDelimPos == -1) return output;
+		
 		String regex = String.format(ProcessorConstants.BRACKET_PATTERN, startDelim, endDelim);
 		// if the line doesn't match the regex even once then attempt to read the next line
 		String temp = "";
 		int initialCount = lineCounter;
-		while (!input.trim().matches(String.format(ProcessorConstants.BRACKET_VALIDATE_REGEX, regex)) && temp != null) {
+		while (!input.trim().matches(String.format(ProcessorConstants.BRACKET_VALIDATE_REGEX, regex)) && temp != null && lastEndDelimPos < lastStartDelimPos)
+		{
 			try {
 				// Read in a new line and increment relevant counters
 				temp = br.readLine();
 				lineCounter++;
-				spec.appendPreProcessedLineText(temp, postLineCounter);
+				postProcessedLineCounter++;
+				spec.appendPreProcessedLine(temp);
 				if (temp != null) {
 					input += "\n" + temp;
 				}
