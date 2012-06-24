@@ -348,6 +348,10 @@ public class ContentSpecParser
 						log.error(ProcessorConstants.ERROR_INCORRECT_MODE_MSG);
 						return false;
 					}
+					
+					// Remove 1 from the post line count as ID and CHECKSUM aren't stored in the post processed data.
+					postLineCounter--;
+					
 					editing = true;
 					int contentSpecId = 0;
 					try
@@ -364,7 +368,6 @@ public class ContentSpecParser
 					// Read in the revision number
 					input = br.readLine();
 					lineCounter++;
-					postLineCounter++;
 					if (input == null)
 					{
 						log.error(ProcessorConstants.ERROR_INCORRECT_FILE_FORMAT_MSG);
@@ -408,13 +411,16 @@ public class ContentSpecParser
 						log.error(ProcessorConstants.ERROR_INCORRECT_MODE_MSG);
 						return false;
 					}
+					
+					// Remove 1 from the post line count as ID and CHECKSUM aren't stored in the post processed data.
+					postLineCounter--;
+					
 					editing = true;
 					String checksum = temp[1];
 					spec.setChecksum(checksum);
 					// Read in the Content Spec ID
 					input = br.readLine();
 					lineCounter++;
-					postLineCounter++;
 					if (input == null)
 					{
 						log.error(ProcessorConstants.ERROR_INCORRECT_FILE_FORMAT_MSG);
@@ -1478,12 +1484,17 @@ public class ContentSpecParser
 	 */
 	public HashMap<RelationshipType, String[]> getLineVariables(String input, char startDelim, char endDelim, char separator, boolean ignoreTypes, boolean groupTypes) throws ParsingException, IOException {
 		HashMap<RelationshipType, String[]> output = new HashMap<RelationshipType, String[]>();
-		if (StringUtilities.indexOf(input, startDelim) == -1) return output;
+		final int lastStartDelimPos = StringUtilities.lastIndexOf(input, startDelim);
+		final int lastEndDelimPos = StringUtilities.lastIndexOf(input, endDelim);
+		
+		// Check that we have vairables to process
+		if (lastStartDelimPos == -1) return output;
+		
 		String regex = String.format(ProcessorConstants.BRACKET_PATTERN, startDelim, endDelim);
 		// if the line doesn't match the regex even once then attempt to read the next line
 		String temp = "";
 		int initialCount = lineCounter;
-		while (!input.trim().matches(String.format(ProcessorConstants.BRACKET_VALIDATE_REGEX, regex)) && temp != null) {
+		while (!input.trim().matches(String.format(ProcessorConstants.BRACKET_VALIDATE_REGEX, regex)) && temp != null && lastEndDelimPos < lastStartDelimPos) {
 			try {
 				// Read in a new line and increment relevant counters
 				temp = br.readLine();
