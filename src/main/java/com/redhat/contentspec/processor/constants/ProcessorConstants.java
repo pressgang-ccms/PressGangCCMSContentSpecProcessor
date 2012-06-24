@@ -43,9 +43,9 @@ public class ProcessorConstants {
 	public static final String ERROR_CS_NO_DTD_MSG					= INVALID_CS + " No DTD specified.";
 	public static final String ERROR_CS_INVALID_DTD_MSG				= INVALID_CS + " DTD must be either Docbook 4.5 or Docbook 5.";
 	public static final String ERROR_CS_NO_CHECKSUM_MSG				= INVALID_CS + " \"CHECKSUM\" or \"ID\" attribute not found in the Content Specification.";
-	public static final String ERROR_CS_NONMATCH_SPEC_REVISION_MSG	= INVALID_CS + " Revisions must match to be edited." + NEW_LINE_SPACER + "SpecRevision: %d" + NEW_LINE_SPACER + "Current Revision: %d\n";
+	public static final String ERROR_CS_NONMATCH_SPEC_REVISION_MSG	= INVALID_CS + " Revisions must match to be edited." + NEW_LINE_SPACER + "SpecRevision: %d" + NEW_LINE_SPACER + "Server Revision: %d\n";
 	public static final String ERROR_CS_INVALID_SPEC_REVISION_MSG	= LINE + INVALID_CS + " SpecRevision attribute is present, and is not allowed when pushing a new Content Specification.";
-	public static final String ERROR_CS_NONMATCH_CHECKSUM_MSG		= INVALID_CS + " Checksums must match to be edited." + NEW_LINE_SPACER + "Checksum: %s" + NEW_LINE_SPACER + "Current Checksum: %s\n";
+	public static final String ERROR_CS_NONMATCH_CHECKSUM_MSG		= INVALID_CS + " Checksums must match to be edited." + NEW_LINE_SPACER + "Local Checksum: %s" + NEW_LINE_SPACER + "Server Checksum: %s\n";
 	public static final String ERROR_CS_INVALID_CHECKSUM_MSG		= LINE + INVALID_CS + " Checksum attribute is present, and is not allowed when pushing a new Content Specification.";
 	public static final String ERROR_INVALID_PUBLICAN_CFG_MSG 		= LINE + INVALID_CS + " Incorrect publican.cfg input." + CSLINE_MSG;
 	public static final String ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG	= LINE + INVALID_CS + " Incorrect tag attribute format." + CSLINE_MSG;
