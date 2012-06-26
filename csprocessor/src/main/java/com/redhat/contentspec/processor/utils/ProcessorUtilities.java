@@ -50,20 +50,18 @@ public class ProcessorUtilities {
 	 * 
 	 * @param contentSpec The ContenSpec object to create the Post Processed Content Specification for. 
 	 * @param specTopics A HashMap of the all the Content Specification Topics that can exist in the Content Specification. The key is the Topics ID.
-	 * @param editing Whether the content specification is being edited or created.
 	 * @return A string that contains the Post Content Specification or null if an error occurred.
 	 */
-	public static String generatePostContentSpec(final ContentSpec contentSpec, final HashMap<String, SpecTopic> specTopics, final boolean editing)
+	public static String generatePostContentSpec(final ContentSpec contentSpec, final HashMap<String, SpecTopic> specTopics)
 	{
 		String output = "ID=" + contentSpec.getId() + "\n";
-		final NamedPattern newTopicPattern = NamedPattern.compile("\\[[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">[0-9]+)[ ]*(,|\\])");
-		final NamedPattern newTopicPattern2 = NamedPattern.compile("\\[[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">N)[ ]*,");
+		final NamedPattern newTopicPattern = NamedPattern.compile("\\[[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">[0-9]+)[ ]*(?=(,|\\]))");
+		final NamedPattern newTopicPattern2 = NamedPattern.compile("\\[[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">N[ ]*,.*?)(?=\\])");
 		final NamedPattern newTopicRelationshipPattern = NamedPattern.compile("(B:|P:|R:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">N[0-9]+)[ ]*(?=(,|\\]))");
 		final NamedPattern duplicateTopicPattern = NamedPattern.compile("(B:|P:|R:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">X[0-9]+)[ ]*(?=(,|\\]))");
 		final NamedPattern clonedTopicPattern = NamedPattern.compile("(B:|P:|R:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">C[0-9]+)[ ]*(?=(,|\\]))");
 		final NamedPattern clonedDuplicateTopicPattern = NamedPattern.compile("(B:|P:|R:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">XC[0-9]+)[ ]*(?=(,|\\]))");
 		int count = 1;
-		if (editing) count += 2;
 		// For each line in the CS check if it matches each pattern and then do an action depending on what pattern is found
 		for (String line: contentSpec.getPreProcessedText()) {
 			if (line.trim().matches("^#.*"))
@@ -231,6 +229,6 @@ public class ProcessorUtilities {
             }
 			output = output.substring(0, i) + topicTitle + " " + output.substring(StringUtilities.indexOf(output, '['));
 		}
-		return input;
+		return output;
     }
 }

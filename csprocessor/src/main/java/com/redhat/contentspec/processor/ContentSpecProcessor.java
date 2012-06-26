@@ -688,7 +688,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			syncDuplicatedTopics(specTopics);
 			
 			// Create the post processed content spec
-			final String postCS = ProcessorUtilities.generatePostContentSpec(contentSpec, specTopics, edit);
+			final String postCS = ProcessorUtilities.generatePostContentSpec(contentSpec, specTopics);
 			if (postCS == null)
 			{
 				log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
