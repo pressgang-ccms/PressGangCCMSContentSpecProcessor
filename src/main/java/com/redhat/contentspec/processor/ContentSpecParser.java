@@ -60,12 +60,12 @@ public class ContentSpecParser
 	private int spaces = 2;
 	private final ContentSpec spec = new ContentSpec();
 	private int level = 0;
-	private HashMap<String, SpecTopic> specTopics = new HashMap<String, SpecTopic>();
-	private HashMap<String, Level> targetLevels = new HashMap<String, Level>();
-	private HashMap<String, Level> externalTargetLevels = new HashMap<String, Level>();
-	private HashMap<String, SpecTopic> targetTopics = new HashMap<String, SpecTopic>();
-	private HashMap<String, List<Relationship>> relationships = new HashMap<String, List<Relationship>>();
-	private ArrayList<Process> processes = new ArrayList<Process>();
+	private final HashMap<String, SpecTopic> specTopics = new HashMap<String, SpecTopic>();
+	private final HashMap<String, Level> targetLevels = new HashMap<String, Level>();
+	private final HashMap<String, Level> externalTargetLevels = new HashMap<String, Level>();
+	private final HashMap<String, SpecTopic> targetTopics = new HashMap<String, SpecTopic>();
+	private final HashMap<String, List<Relationship>> relationships = new HashMap<String, List<Relationship>>();
+	private final ArrayList<Process> processes = new ArrayList<Process>();
 	private Level lvl = null;
 	private int lineCounter = 0, postLineCounter = 0;
 	private boolean error = false;
@@ -75,7 +75,7 @@ public class ContentSpecParser
 	/**
 	 * Constructor
 	 */
-	public ContentSpecParser(String serverUrl)
+	public ContentSpecParser(final String serverUrl)
 	{
 		elm = new ErrorLoggerManager();
 		log = elm.getLogger(ContentSpecParser.class);
@@ -87,7 +87,7 @@ public class ContentSpecParser
 	 * 
 	 * @param elm An Error Logger Manager that will be used to store all the log messages in case they need to be accessed at a later stage.
 	 */
-	public ContentSpecParser(ErrorLoggerManager elm, RESTManager restManager)
+	public ContentSpecParser(final ErrorLoggerManager elm, final RESTManager restManager)
 	{
 		this.elm = elm;
 		log = elm.getLogger(ContentSpecParser.class);
