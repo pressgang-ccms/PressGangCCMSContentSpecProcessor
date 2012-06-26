@@ -57,13 +57,13 @@ public class ProcessorUtilities {
 	{
 		String output = "ID=" + contentSpec.getId() + "\n";
 		final NamedPattern newTopicPattern = NamedPattern.compile("\\[[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">[0-9]+)[ ]*(,|\\])");
-		final NamedPattern newTopicPattern2 = NamedPattern.compile("\\[[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">N)[ ]*,");
+		final NamedPattern newTopicPattern2 = NamedPattern.compile("\\[[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">N[ ]*,.*?)\\]");
 		final NamedPattern newTopicRelationshipPattern = NamedPattern.compile("(B:|P:|R:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">N[0-9]+)[ ]*(?=(,|\\]))");
 		final NamedPattern duplicateTopicPattern = NamedPattern.compile("(B:|P:|R:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">X[0-9]+)[ ]*(?=(,|\\]))");
 		final NamedPattern clonedTopicPattern = NamedPattern.compile("(B:|P:|R:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">C[0-9]+)[ ]*(?=(,|\\]))");
 		final NamedPattern clonedDuplicateTopicPattern = NamedPattern.compile("(B:|P:|R:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">XC[0-9]+)[ ]*(?=(,|\\]))");
 		int count = 1;
-		if (editing) count += 2;
+		//if (editing) count += 2;
 		// For each line in the CS check if it matches each pattern and then do an action depending on what pattern is found
 		for (String line: contentSpec.getPreProcessedText()) {
 			if (line.trim().matches("^#.*"))
@@ -96,7 +96,7 @@ public class ProcessorUtilities {
 			while (m.find())
 			{
 				log.debug("Pattern2");
-			    for (String key: specTopics.keySet())
+			    for (final String key: specTopics.keySet())
 			    {
 			    	if (specTopics.get(key).getLineNumber() == count)
 			    	{
@@ -231,6 +231,6 @@ public class ProcessorUtilities {
             }
 			output = output.substring(0, i) + topicTitle + " " + output.substring(StringUtilities.indexOf(output, '['));
 		}
-		return input;
+		return output;
     }
 }

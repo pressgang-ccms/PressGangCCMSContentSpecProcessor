@@ -235,7 +235,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 	 * @param specTopic The Content Specification Topic to create the topic entity from.
 	 * @return True if the topic saved successfully otherwise false.
 	 */
-	protected RESTTopicV1 createTopicEntity(SpecTopic specTopic)
+	protected RESTTopicV1 createTopicEntity(final SpecTopic specTopic)
 	{
 		if (isShuttingDown.get())
 		{
