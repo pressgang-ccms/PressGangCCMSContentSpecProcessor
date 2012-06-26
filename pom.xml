@@ -55,6 +55,13 @@
 
   
   <dependencies>
+	<!-- Jackson Libraries -->
+	<dependency>
+		<groupId>org.codehaus.jackson</groupId>
+		<artifactId>jackson-mapper-asl</artifactId>
+		<version>1.9.6</version>
+	</dependency>
+
   	<!-- Commons Library -->
 	<dependency>
 		<groupId>com.redhat</groupId>
@@ -66,17 +73,17 @@
   	<dependency>
   		<groupId>org.jboss.resteasy</groupId>
   		<artifactId>resteasy-atom-provider</artifactId>
-  		<version>2.2.3.GA</version>
+  		<version>2.3.4.Final</version>
   	</dependency>
   	<dependency>
   		<groupId>org.jboss.resteasy</groupId>
   		<artifactId>resteasy-jackson-provider</artifactId>
-  		<version>2.2.3.GA</version>
+  		<version>2.3.4.Final</version>
   	</dependency>
   	<dependency>
   		<groupId>org.jboss.resteasy</groupId>
   		<artifactId>resteasy-jaxrs</artifactId>
-  		<version>2.2.3.GA</version>
+  		<version>2.3.4.Final</version>
   	</dependency>
   	<dependency>
   		<groupId>javax.ws.rs</groupId>
