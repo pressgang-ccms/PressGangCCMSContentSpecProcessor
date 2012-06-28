@@ -2,6 +2,8 @@ package com.redhat.contentspec.processor;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
@@ -10,6 +12,7 @@ import com.redhat.contentspec.interfaces.ShutdownAbleApp;
 import com.redhat.contentspec.ContentSpec;
 import com.redhat.contentspec.SpecTopic;
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
+import com.redhat.contentspec.processor.exceptions.ProcessingException;
 import com.redhat.contentspec.processor.structures.ProcessingOptions;
 import com.redhat.contentspec.processor.utils.ProcessorUtilities;
 import com.redhat.contentspec.rest.RESTManager;
@@ -649,8 +652,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 					final RESTTopicV1 topic = createTopicEntity(specTopic);
 					if (topic == null)
 					{
-						log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
-						throw new Exception("Failed to create topic: " + specTopicId);
+						throw new ProcessingException("Failed to create topic: " + specTopicId);
 					}
 					topics.addNewTopic(topic);
 				}
@@ -659,8 +661,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 					final RESTTopicV1 topic = createTopicEntity(specTopics.get(specTopicId));
 					if (topic == null)
 					{
-						log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
-						throw new Exception("Failed to create topic: " + specTopicId);
+						throw new ProcessingException("Failed to create topic: " + specTopicId);
 					}
 					topics.addUpdatedTopic(topic);
 				}
@@ -695,14 +696,27 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			final String postCS = ProcessorUtilities.generatePostContentSpec(contentSpec, specTopics, edit);
 			if (postCS == null)
 			{
-				log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
-				throw new Exception("Failed to create the Post Content Specification.");
+				throw new ProcessingException("Failed to create the Post Content Specification.");
 			}
+			
+			// Validate that the content specification was processed correctly
+			if (!validatePostProcessedSpec(postCS))
+			{
+				throw new ProcessingException("Failed to create the Post Content Specification.");
+			}
+			
 			if (!writer.updatePostContentSpec(contentSpec.getId(), postCS))
 			{
 				log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
 				throw new Exception("Failed to save the post content Specification");
 			}
+		}
+		catch (ProcessingException e)
+		{
+			// Clean up the data that was created
+			if (contentSpec.getId() != 0 && !edit) writer.deleteContentSpec(contentSpec.getId());
+			if (topics.isInitialised()) topics.rollbackPool();
+			log.error(String.format("%s\n%7s%s", ProcessorConstants.ERROR_PROCESSING_ERROR_MSG, "", e.getMessage()));
 		}
 		catch (Exception e)
 		{
@@ -713,6 +727,55 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			log.debug(ExceptionUtilities.getStackTrace(e), 2);
 			return false;
 		}
+		return true;
+	}
+	
+	/**
+	 * Checks a post processed content specification to ensure that no new, cloned or duplicated
+	 * topics exist in the content specification as they should have been resolved to 
+	 * existing topics.
+	 * 
+	 * @param postProcessedSpec The post processed content specification.
+	 * @return True if no invalid topics were found, otherwise false
+	 */
+	private boolean validatePostProcessedSpec(final String postProcessedSpec)
+	{
+		Pattern newTopicPattern = Pattern.compile("(#.*)?\\[[ ]*N[0-9]*[ ]*,.*?\\]");
+		Matcher matcher = newTopicPattern.matcher(postProcessedSpec);
+		
+		while (matcher.find())
+		{
+			final String match = matcher.group();
+			if (!match.contains("#")) return false;
+		}
+		
+		Pattern clonedTopicPattern = Pattern.compile("(#.*)?\\[[ ]*C[0-9]+.*?\\]");
+		matcher = clonedTopicPattern.matcher(postProcessedSpec);
+		
+		while (matcher.find())
+		{
+			final String match = matcher.group();
+			if (!match.contains("#")) return false;
+		}
+		
+		Pattern duplicateTopicPattern = Pattern.compile("(#.*)?\\[[ ]*X[0-9]+.*?\\]");
+		matcher = duplicateTopicPattern.matcher(postProcessedSpec);
+		
+		while (matcher.find())
+		{
+			final String match = matcher.group();
+			if (!match.contains("#")) return false;
+		}
+		
+		Pattern duplicateClonedTopicPattern = Pattern.compile("(#.*)?\\[[ ]*XC[0-9]+.*?\\]");
+		matcher = duplicateClonedTopicPattern.matcher(postProcessedSpec);
+		
+		while (matcher.find())
+		{
+			final String match = matcher.group();
+			if (!match.contains("#")) return false;
+		}
+		
 		return true;
 	}
 
