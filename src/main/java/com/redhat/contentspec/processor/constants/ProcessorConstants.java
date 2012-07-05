@@ -12,14 +12,20 @@ public class ProcessorConstants {
 	public static final String BRACKET_VALIDATE_REGEX		= ".*%s[ ]*$"; // ".*%s(([ ]*$)|([ ]*#.*$))" For use to allow comments at the end of a line
 	public static final String EDITION_VALIDATE_REGEX		= "([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+)";
 	
-	public static final String RELATED_REGEX 		= "^R[ ]*:.*$";
-	public static final String PREREQUISITE_REGEX 	= "^P[ ]*:.*$"; 
+	public static final String RELATED_REGEX 		= "^(R|RELATED-TO)[ ]*:.*$";
+	public static final String PREREQUISITE_REGEX 	= "^(P|PREREQUISITE)[ ]*:.*$";
+	public static final String LINK_LIST_REGEX 		= "^(L|LINK-LIST)[ ]*:.*$"; 
 	public static final String NEXT_REGEX 			= "^NEXT[ ]*:.*$";
 	public static final String PREV_REGEX 			= "^PREV[ ]*:.*$";
-	public static final String TARGET_REGEX 		= "^T[0-9]+$"; 
+	private static final String TARGET_BASE_REGEX	= "T(([0-9]+)|(\\-[ ]*[A-Za-z0-9\\-_]+))";
+	public static final String TARGET_REGEX 		= "^" + TARGET_BASE_REGEX + "$"; 
 	public static final String BRANCH_REGEX 		= "^B[ ]*:.*$";
 	public static final String EXTERNAL_TARGET_REGEX	= "^ET[0-9]+$";
 	public static final String EXTERNAL_CSP_REGEX	= "^CS[0-9]+[ ]*(:[ ]*[0-9]+)?$";
+	
+	public static final String RELATION_ID_REGEX		= "^(" + TARGET_BASE_REGEX + ")|(N?[0-9]+)$";
+	public static final String RELATION_ID_LONG_REGEX	= "^.*\\[((" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
+	public static final String RELATION_ID_LONG_PATTERN	= "^(?<TopicTitle>.*)[ ]*\\[(?<TopicID>(" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
 	
 	public static final String LINE = "Line %d: ";
 	public static final String INVALID_CS = "Invalid Content Specification!";
