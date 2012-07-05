@@ -12,6 +12,7 @@ import com.google.code.regexp.NamedPattern;
 import com.redhat.contentspec.ContentSpec;
 import com.redhat.contentspec.SpecTopic;
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
+import com.redhat.contentspec.processor.structures.VariableSet;
 import com.redhat.ecs.commonutils.HashUtilities;
 import com.redhat.ecs.commonutils.StringUtilities;
 import com.redhat.topicindex.rest.entities.interfaces.RESTCategoryV1;
@@ -58,20 +59,28 @@ public class ProcessorUtilities {
 		String output = "ID=" + contentSpec.getId() + "\n";
 		final NamedPattern newTopicPattern = NamedPattern.compile("\\[[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">[0-9]+)[ ]*(,|\\])");
 		final NamedPattern newTopicPattern2 = NamedPattern.compile("\\[[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">N[ ]*,.*?)\\]");
-		final NamedPattern newTopicRelationshipPattern = NamedPattern.compile("(B:|P:|R:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">N[0-9]+)[ ]*(?=(,|\\]))");
-		final NamedPattern duplicateTopicPattern = NamedPattern.compile("(B:|P:|R:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">X[0-9]+)[ ]*(?=(,|\\]))");
-		final NamedPattern clonedTopicPattern = NamedPattern.compile("(B:|P:|R:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">C[0-9]+)[ ]*(?=(,|\\]))");
-		final NamedPattern clonedDuplicateTopicPattern = NamedPattern.compile("(B:|P:|R:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">XC[0-9]+)[ ]*(?=(,|\\]))");
+		final NamedPattern newTopicRelationshipPattern = NamedPattern.compile("(B:|P:|PREREQUISITE:|R:|RELATED-TO:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">N[0-9]+)[ ]*(?=(,|\\]))");
+		final NamedPattern duplicateTopicPattern = NamedPattern.compile("(B:|P:|PREREQUISITE:|R:|RELATED-TO:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">X[0-9]+)[ ]*(?=(,|\\]))");
+		final NamedPattern clonedTopicPattern = NamedPattern.compile("(B:|P:|PREREQUISITE:|R:|RELATED-TO:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">C[0-9]+)[ ]*(?=(,|\\]))");
+		final NamedPattern clonedDuplicateTopicPattern = NamedPattern.compile("(B:|P:|PREREQUISITE:|R:|RELATED-TO:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">XC[0-9]+)[ ]*(?=(,|\\]))");
 		int count = 1;
 		//if (editing) count += 2;
 		// For each line in the CS check if it matches each pattern and then do an action depending on what pattern is found
-		for (String line: contentSpec.getPreProcessedText()) {
+		for (String line: contentSpec.getPreProcessedText())
+		{
 			if (line.trim().matches("^#.*"))
 			{
 				count++;
 				output += line + "\n";
 				continue;
 			}
+			
+			if (line.trim().toUpperCase().matches("^((CHECKSUM)|(ID))[ ]*=.*"))
+			{
+				count++;
+				continue;
+			}
+			
 			log.debug(line);
 			// Existing Topic
 			NamedMatcher m = newTopicPattern.matcher(line.toUpperCase());
@@ -111,7 +120,7 @@ public class ProcessorUtilities {
 			while (m.find())
 			{
 				log.debug("Pattern3");
-				String s = m.group(ProcessorConstants.TOPIC_ID_CONTENTS);
+				final String s = m.group(ProcessorConstants.TOPIC_ID_CONTENTS);
 			    log.debug(s);
 			    final SpecTopic specTopic = specTopics.get(s);
 			    if (m.group().startsWith("["))
@@ -200,24 +209,39 @@ public class ProcessorUtilities {
      */
     private static String stripVariables(final String input, final int DBId, final Integer revision, final String topicTitle)
     {
-    	final String regex = String.format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']');
+    	/*final String regex = String.format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']');
     	final NamedPattern bracketPattern = NamedPattern.compile(regex);
 		final NamedMatcher matcher = bracketPattern.matcher(input);
 		// Find the contents of the brackets that aren't a relationship or target
 		String replacementTarget = null;
 		while (matcher.find())
 		{
-			String variableSet = matcher.group(ProcessorConstants.BRACKET_CONTENTS).replaceAll("\n", "");
+			final String variableSet = matcher.group(ProcessorConstants.BRACKET_CONTENTS).replaceAll("\n", "");
 			if (!(variableSet.toUpperCase().matches(ProcessorConstants.RELATED_REGEX) || variableSet.toUpperCase().matches(ProcessorConstants.PREREQUISITE_REGEX)
 					|| variableSet.toUpperCase().matches(ProcessorConstants.NEXT_REGEX) || variableSet.toUpperCase().matches(ProcessorConstants.PREV_REGEX)
-					|| variableSet.toUpperCase().matches(ProcessorConstants.TARGET_REGEX) || variableSet.toUpperCase().matches(ProcessorConstants.BRANCH_REGEX)))
+					|| variableSet.toUpperCase().matches(ProcessorConstants.TARGET_REGEX) || variableSet.toUpperCase().matches(ProcessorConstants.BRANCH_REGEX)
+					|| variableSet.toUpperCase().matches(ProcessorConstants.LINK_LIST_REGEX) || variableSet.toUpperCase().matches(ProcessorConstants.EXTERNAL_TARGET_REGEX)
+					|| variableSet.toUpperCase().matches(ProcessorConstants.EXTERNAL_CSP_REGEX)))
 			{
 				// Normal set of variables that contains the ID and/or tags
 				replacementTarget = variableSet;
 			}
-		}
+		}*/
+    	VariableSet idSet = findVariableSet(input, '[', ']', 0);
+    	String replacementTarget = idSet.getContents();
+    	while (replacementTarget.toUpperCase().matches(ProcessorConstants.RELATED_REGEX) || replacementTarget.toUpperCase().matches(ProcessorConstants.PREREQUISITE_REGEX)
+					|| replacementTarget.toUpperCase().matches(ProcessorConstants.NEXT_REGEX) || replacementTarget.toUpperCase().matches(ProcessorConstants.PREV_REGEX)
+					|| replacementTarget.toUpperCase().matches(ProcessorConstants.TARGET_REGEX) || replacementTarget.toUpperCase().matches(ProcessorConstants.BRANCH_REGEX)
+					|| replacementTarget.toUpperCase().matches(ProcessorConstants.LINK_LIST_REGEX) || replacementTarget.toUpperCase().matches(ProcessorConstants.EXTERNAL_TARGET_REGEX)
+					|| replacementTarget.toUpperCase().matches(ProcessorConstants.EXTERNAL_CSP_REGEX) && idSet != null && idSet.getContents() != null && idSet.getEndPos() != null)
+    	{
+    		idSet = findVariableSet(input, '[', ']', idSet.getEndPos() + 1);
+    		if (idSet != null)
+    			replacementTarget = idSet.getContents();
+    	}
+
 		// Replace the non relationship variable set with the database id.
-		String output = input.replace(replacementTarget, Integer.toString(DBId) + (revision == null ? "" : (", rev: " + revision)));
+		String output = input.replace(replacementTarget, "[" + Integer.toString(DBId) + (revision == null ? "" : (", rev: " + revision)) + "]");
 		// Replace the title
 		if (topicTitle != null && StringUtilities.indexOf(output, '[') != -1)
 		{
@@ -233,4 +257,59 @@ public class ProcessorUtilities {
 		}
 		return output;
     }
+    
+    /**
+	 * Finds a set of variables that are group by delimiters. It also skips nested
+	 * groups and returns them as part of the set so they can be processed separately.
+	 * eg. [var1, var2, [var3, var4], var5]
+	 * 
+	 * @param input The string to find the set for.
+	 * @param startDelim The starting delimiter for the set.
+	 * @param endDelim The ending delimiter for the set.
+	 * @param startPos The position to start searching from in the string.
+	 * @return A VariableSet object that contains the contents of the set, the start position
+	 * in the string and the end position.
+	 */
+	public static VariableSet findVariableSet(final String input, final char startDelim, final char endDelim, final int startPos)
+	{
+		final int startIndex = StringUtilities.indexOf(input, startDelim, startPos);
+		int endIndex = StringUtilities.indexOf(input, endDelim, startPos);
+		int nextStartIndex = StringUtilities.indexOf(input, startDelim, startIndex + 1);
+		
+		/* 
+		 * Find the ending delimiter that matches the start delimiter. This is done
+		 * by checking to see if the next start delimiter is before the current end
+		 * delimiter. If that is the case then there is a nested set so look for the
+		 * next end delimiter.
+		 */
+		while (nextStartIndex < endIndex && nextStartIndex != -1 && endIndex != -1)
+		{
+			final int prevEndIndex = endIndex;
+			endIndex = StringUtilities.indexOf(input, endDelim, endIndex + 1);
+			nextStartIndex = StringUtilities.indexOf(input, startDelim, prevEndIndex + 1);
+		}
+		
+		// Build the resulting set object
+		final VariableSet set = new VariableSet();
+
+		if (endIndex == -1 && startIndex != -1)
+		{
+			set.setContents(input.substring(startIndex));
+			set.setEndPos(null);
+			set.setStartPos(startIndex);
+		}
+		else if (startIndex != -1)
+		{
+			set.setContents(input.substring(startIndex, endIndex + 1));
+			set.setEndPos(endIndex);
+			set.setStartPos(startIndex);
+		}
+		else
+		{
+			set.setContents(null);
+			set.setEndPos(null);
+			set.setStartPos(null);
+		}
+		return set;
+	}
 }

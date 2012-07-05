@@ -29,7 +29,6 @@ import com.redhat.topicindex.rest.collections.RESTPropertyTagCollectionV1;
 import com.redhat.topicindex.rest.collections.RESTTagCollectionV1;
 import com.redhat.topicindex.rest.collections.RESTTopicCollectionV1;
 import com.redhat.topicindex.rest.collections.RESTTopicSourceUrlCollectionV1;
-import com.redhat.topicindex.rest.collections.RESTTranslatedTopicCollectionV1;
 import com.redhat.topicindex.rest.entities.ComponentTagV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTUserV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTCategoryV1;
@@ -37,7 +36,6 @@ import com.redhat.topicindex.rest.entities.interfaces.RESTPropertyTagV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTTagV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTTopicSourceUrlV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTTranslatedTopicV1;
 
 /**
  * A class to fully process a Content Specification. It first parses the data using a ContentSpecParser,
@@ -115,7 +113,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 	 */
 	public boolean processContentSpec(final String contentSpec, final RESTUserV1 user, final ContentSpecParser.ParsingMode mode) throws Exception
 	{
-		return processContentSpec(contentSpec, user, mode, false);
+		return processContentSpec(contentSpec, user, mode, null);
 	}
 	
 	/**
@@ -124,12 +122,28 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 	 * @param contentSpec The Content Specification that is to be processed.
 	 * @param user The user who requested the process operation.
 	 * @param mode The mode to parse the content specification in.
+	 * @param overrideLocale Override the default locale using this parameter.
+	 * @return True if everything was processed successfully otherwise false.
+	 * @throws Exception Any unexpected exception that occurred when processing.
+	 */
+	public boolean processContentSpec(final String contentSpec, final RESTUserV1 user, final ContentSpecParser.ParsingMode mode, final String overrideLocale) throws Exception
+	{
+		return processContentSpec(contentSpec, user, mode, overrideLocale, false);
+	}
+	
+	/**
+	 * Process a content specification so that it is parsed, validated and saved.
+	 * 
+	 * @param contentSpec The Content Specification that is to be processed.
+	 * @param user The user who requested the process operation.
+	 * @param mode The mode to parse the content specification in.
+	 * @param overrideLocale Override the default locale using this parameter.
 	 * @param addRevisions If revision numbers should be added to each SpecTopic in the output.
 	 * @return True if everything was processed successfully otherwise false.
 	 * @throws Exception Any unexpected exception that occurred when processing.
 	 */
 	@SuppressWarnings({ "unchecked" })
-	public boolean processContentSpec(final String contentSpec, final RESTUserV1 user, final ContentSpecParser.ParsingMode mode, final boolean addRevisions) throws Exception
+	public boolean processContentSpec(final String contentSpec, final RESTUserV1 user, final ContentSpecParser.ParsingMode mode, final String overrideLocale, final boolean addRevisions) throws Exception
 	{
 		boolean editing = false;
 		
@@ -142,7 +156,13 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 		
 		LOG.info("Starting to parse...");
 		if (mode == ContentSpecParser.ParsingMode.EDITED) editing = true;
-		boolean error = !csp.parse(contentSpec, user, mode);
+		boolean error = !csp.parse(contentSpec, user, mode, true);
+		
+		// Change the locale if the overrideLocale isn't null
+		if (overrideLocale != null)
+		{
+			csp.getContentSpec().setLocale(overrideLocale);
+		}
 		
 		// Check if the app should be shutdown
 		if (isShuttingDown.get())
@@ -190,14 +210,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 		
 		// Validate the content specification
 		LOG.info("Starting to validate...");
-		if (csp.getContentSpec().getLocale() == null || csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE))
-		{
+		/*if (csp.getContentSpec().getLocale() == null || csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE))
+		{*/
 			validator = new ContentSpecValidator<RESTTopicV1, RESTTopicCollectionV1>(RESTTopicV1.class, elm, dbManager, processingOptions);
-		}
+		/*}
 		else
 		{
 			validator = new ContentSpecValidator<RESTTranslatedTopicV1, RESTTranslatedTopicCollectionV1>(RESTTranslatedTopicV1.class, elm, dbManager, processingOptions);
-		}
+		}*/
 		
 		if (error || !validator.validateContentSpec(csp.getContentSpec(), csp.getSpecTopics()) || !validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics()))
 		{
@@ -274,7 +294,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 				final RESTTagV1 type = reader.getTypeByName(specTopic.getType());
 				if (type == null)
 				{
-					log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+					log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
 					return null;
 				}
 				type.setAddItem(true);
@@ -364,7 +384,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 				final List<RESTTagV1> assignedWriterTags = reader.getTagsByName(specTopic.getAssignedWriter(true));
 				if (assignedWriterTags.size() != 1)
 				{
-					log.error(String.format(ProcessorConstants.ERROR_WRITER_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+					log.error(String.format(ProcessorConstants.ERROR_WRITER_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
 					return null;
 				}
 				final RESTTagV1 writerTag = assignedWriterTags.iterator().next();
