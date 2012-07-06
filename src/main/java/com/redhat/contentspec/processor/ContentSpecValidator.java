@@ -25,11 +25,15 @@ import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
 import com.redhat.ecs.commonutils.DocBookUtilities;
 import com.redhat.ecs.commonutils.HashUtilities;
 import com.redhat.ecs.constants.CommonConstants;
-import com.redhat.topicindex.rest.entities.BaseTopicV1;
-import com.redhat.topicindex.rest.entities.CategoryV1;
-import com.redhat.topicindex.rest.entities.TagV1;
-import com.redhat.topicindex.rest.entities.TopicV1;
-import com.redhat.topicindex.rest.entities.TranslatedTopicV1;
+import com.redhat.topicindex.rest.collections.BaseRestCollectionV1;
+import com.redhat.topicindex.rest.entities.ComponentBaseTopicV1;
+import com.redhat.topicindex.rest.entities.ComponentTagV1;
+import com.redhat.topicindex.rest.entities.ComponentTopicV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTBaseTopicV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTCategoryV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTagV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTranslatedTopicV1;
 
 /**
  * A class that is used to validate a Content Specification and the objects within a Content Specification. It provides methods for 
@@ -37,7 +41,7 @@ import com.redhat.topicindex.rest.entities.TranslatedTopicV1;
  * 
  * @author lnewson
  */
-public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownAbleApp
+public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends BaseRestCollectionV1<T, U>> implements ShutdownAbleApp
 {
 	private final RESTReader reader;
 	private final ErrorLogger log;
@@ -144,7 +148,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		// If editing then check that the ID exists & the SpecRevision match
 		if (contentSpec.getId() != 0)
 		{
-			final TopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(), null);
+			final RESTTopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(), null);
 			if (contentSpecTopic == null)
 			{
 				log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
@@ -181,9 +185,9 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			}
 			
 			// Check that the Content Spec isn't read only
-			if (contentSpecTopic != null && contentSpecTopic.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID) != null)
+			if (contentSpecTopic != null && ComponentTopicV1.returnProperty(contentSpecTopic, CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID) != null)
 			{
-				if (!contentSpecTopic.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID).getValue().matches("(^|.*,)" + contentSpec.getCreatedBy() + "(,.*|$)"))
+				if (!ComponentTopicV1.returnProperty(contentSpecTopic, CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID).getValue().matches("(^|.*,)" + contentSpec.getCreatedBy() + "(,.*|$)"))
 				{
 					log.error(ProcessorConstants.ERROR_CS_READ_ONLY_MSG);
 					valid = false;
@@ -196,10 +200,10 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		{
 			for (final String injectionType: contentSpec.getInjectionOptions().getStrictTopicTypes())
 			{
-				final List<TagV1> tags = reader.getTagsByName(injectionType);
+				final List<RESTTagV1> tags = reader.getTagsByName(injectionType);
 				if (tags.size() == 1)
 				{
-					if (!tags.get(0).isInCategory(CSConstants.TYPE_CATEGORY_ID))
+					if (!ComponentTagV1.containedInCategory(tags.get(0), CSConstants.TYPE_CATEGORY_ID))
 					{
 						log.error(String.format(ProcessorConstants.ERROR_INVALID_INJECTION_TYPE_MSG, injectionType));
 						valid = false;
@@ -294,7 +298,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 							int count = 0;
 							SpecTopic relatedTopic = null;
 							// Get the related topic and count if more then one is found
-							for (String specTopicId: specTopics.keySet())
+							for (final String specTopicId: specTopics.keySet())
 							{
 								if (specTopicId.matches("^[0-9]+-" + relatedId + "$"))
 								{
@@ -466,7 +470,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		// Checks that the id isn't null and is a valid topic ID
 		if (specTopic.getId() == null || !specTopic.getId().matches(CSConstants.ALL_TOPIC_ID_REGEX))
 		{
-			log.error(String.format(ProcessorConstants.ERROR_INVALID_TOPIC_ID_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+			log.error(String.format(ProcessorConstants.ERROR_INVALID_TOPIC_ID_MSG, specTopic.getLineNumber(), specTopic.getText()));
 			valid = false;
 		}
 		
@@ -475,20 +479,20 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				|| specTopic.getParent().getType() == LevelType.PROCESS || specTopic.getParent().getType() == LevelType.SECTION
 				/*|| specTopic.getParent().getType() == LevelType.PART*/))
 		{
-			log.error(String.format(ProcessorConstants.ERROR_TOPIC_OUTSIDE_CHAPTER_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+			log.error(String.format(ProcessorConstants.ERROR_TOPIC_OUTSIDE_CHAPTER_MSG, specTopic.getLineNumber(), specTopic.getText()));
 			valid = false;
 		}
 		
 		// Check that the title exists
 		if (specTopic.getTitle() == null || specTopic.getTitle().equals(""))
 		{
-			log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+			log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getLineNumber(), specTopic.getText()));
 			valid = false;
 		}
 		// Check that it is valid when escaped
 		else if (DocBookUtilities.escapeTitle(specTopic.getTitle()).isEmpty())
 		{
-			log.error(String.format(ProcessorConstants.ERROR_INVALID_TOPIC_TITLE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+			log.error(String.format(ProcessorConstants.ERROR_INVALID_TOPIC_TITLE_MSG, specTopic.getLineNumber(), specTopic.getText()));
 			valid = false;
 		}
 		
@@ -496,9 +500,9 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		if (!specTopic.isTopicAnExistingTopic())
 		{
 			// Check that we aren't processing translations
-			if (clazz == TranslatedTopicV1.class)
+			if (clazz == RESTTranslatedTopicV1.class)
 			{
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_NEW_TRANSLATION_TOPIC, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_NEW_TRANSLATION_TOPIC, specTopic.getLineNumber(), specTopic.getText()));
 				valid = false;
 			}
 		}
@@ -506,7 +510,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		// Check that we are allowed to create new topics
 		if (!specTopic.isTopicAnExistingTopic() && !processingOptions.isAllowNewTopics())
 		{
-			log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_NEW_TOPIC_BUILD, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+			log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_NEW_TOPIC_BUILD, specTopic.getLineNumber(), specTopic.getText()));
 			valid = false;
 		}
 		
@@ -515,15 +519,15 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		{	
 			if (specTopic.getType() == null || specTopic.getType().equals(""))
 			{
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TYPE_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TYPE_MSG, specTopic.getLineNumber(), specTopic.getText()));
 				valid = false;
 			}
 			
 			// Check that the type entered exists
-			final TagV1 type = reader.getTypeByName(specTopic.getType());
+			final RESTTagV1 type = reader.getTypeByName(specTopic.getType());
 			if (type == null)
 			{
-				log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
 				valid = false;
 			}
 			
@@ -541,12 +545,12 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		{
 			// Check that the id actually exists
 			final T topic;
-			if (clazz == TranslatedTopicV1.class)
+			if (clazz == RESTTranslatedTopicV1.class)
 			{
 				topic = (T) reader.getTranslatedTopicByTopicId(Integer.parseInt(specTopic.getId()), locale);
 				if (processingOptions.isAddRevisions() && specTopic.getRevision() == null)
 				{
-					specTopic.setRevision(((TranslatedTopicV1) topic).getTopicRevision());
+					specTopic.setRevision(((RESTTranslatedTopicV1) topic).getTopicRevision());
 				}
 			}
 			else
@@ -554,14 +558,14 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				topic = (T) reader.getTopicById(Integer.parseInt(specTopic.getId()), specTopic.getRevision());
 				if (processingOptions.isAddRevisions() && specTopic.getRevision() == null)
 				{
-					specTopic.setRevision(topic.getRevision().intValue());
+					specTopic.setRevision(topic.getRevision());
 				}
 			}
 			
 			// Check that the topic actually exists
 			if (topic == null)
 			{
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_ID_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_ID_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
 				return false;
 			}
 			else
@@ -569,16 +573,16 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				specTopic.setTopic(topic);
 				
 				// Check to see if the topic contains the "Internal-Only" tag
-				if (topic.isTaggedWith(CSConstants.RH_INTERNAL_TAG_ID))
+				if (ComponentBaseTopicV1.hasTag(topic, CSConstants.RH_INTERNAL_TAG_ID))
 				{
-					log.warn(String.format(ProcessorConstants.WARN_INTERNAL_TOPIC_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+					log.warn(String.format(ProcessorConstants.WARN_INTERNAL_TOPIC_MSG, specTopic.getLineNumber(), specTopic.getText()));
 				}
 			}
 			
 			// Check that the topic has a valid id
 			if (topic.getId() <= 0)
 			{
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_ID_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_ID_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
 				valid = false;
 			}
 			
@@ -586,7 +590,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topic.getTitle()))
 			{
 				String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topic.getTitle();
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getPreProcessedLineNumber(), "Specified: " + specTopic.getText(), topicTitleMsg));
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(), "Specified: " + specTopic.getText(), topicTitleMsg));
 				valid = false;
 			}
 			// If we are using permissive mode then change the title to the correct title
@@ -598,21 +602,21 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			// Check that tags aren't trying to be removed
 			if (!specTopic.getRemoveTags(false).isEmpty())
 			{
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_EXISTING_TOPIC_CANNOT_REMOVE_TAGS, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_EXISTING_TOPIC_CANNOT_REMOVE_TAGS, specTopic.getLineNumber(), specTopic.getText()));
 				valid = false;
 			}
 			
 			// Check that the assigned writer, description and source URLS haven't been set
 			if (specTopic.getAssignedWriter(false) != null || specTopic.getDescription(false) != null || !specTopic.getSourceUrls().isEmpty())
 			{
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_EXISTING_BAD_OPTIONS, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_EXISTING_BAD_OPTIONS, specTopic.getLineNumber(), specTopic.getText()));
 				valid = false;
 			}
 			
 			// Check that we aren't processing translations
-			if (!specTopic.getTags(true).isEmpty() && clazz == TranslatedTopicV1.class)
+			if (!specTopic.getTags(true).isEmpty() && clazz == RESTTranslatedTopicV1.class)
 			{
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TAGS_TRANSLATION_TOPIC, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TAGS_TRANSLATION_TOPIC, specTopic.getLineNumber(), specTopic.getText()));
 				valid = false;
 			}
 			else
@@ -632,7 +636,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			// Check that the topic exists in the content specification
 			if (!specTopics.containsKey(temp))
 			{
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
 				valid = false;
 			}
 			else
@@ -641,7 +645,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				if (!specTopic.getTitle().equals(specTopics.get(temp).getTitle()))
 				{
 					String topicTitleMsg = "Topic " + specTopic.getId() + ": " + specTopics.get(temp).getTitle();
-					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText(), topicTitleMsg));
+					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(), specTopic.getText(), topicTitleMsg));
 					valid = false;
 				}
 			}
@@ -655,13 +659,13 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				String format = "";
 				if (specTopic.getType() != null && !specTopic.getType().equals(""))
 				{
-					format += String.format(ProcessorConstants.WARN_TYPE_IGNORE_MSG, specTopic.getPreProcessedLineNumber(), "Cloned");
+					format += String.format(ProcessorConstants.WARN_TYPE_IGNORE_MSG, specTopic.getLineNumber(), "Cloned");
 				}
 				
 				if (specTopic.getDescription(false) != null && !specTopic.getDescription(false).equals(""))
 				{
 					if (!format.equals("")) format += "\n       ";
-					format += String.format(ProcessorConstants.WARN_DESCRIPTION_IGNORE_MSG, specTopic.getPreProcessedLineNumber(), "Cloned");
+					format += String.format(ProcessorConstants.WARN_DESCRIPTION_IGNORE_MSG, specTopic.getLineNumber(), "Cloned");
 				}
 				
 				log.warn(String.format("%s" + ProcessorConstants.CSLINE_MSG, format, specTopic.getText()));
@@ -669,12 +673,12 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			
 			// Get the original topic from the database
 			int temp = Integer.parseInt(specTopic.getId().substring(1));
-			final TopicV1 topic = reader.getTopicById(temp, null);
+			final RESTTopicV1 topic = reader.getTopicById(temp, null);
 			
 			// Check that the original topic was found
 			if (topic == null)
 			{ 
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
 				valid = false;
 			}
 			else
@@ -683,7 +687,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topic.getTitle()))
 				{
 					String topicTitleMsg = "Topic " + topic.getId() + ": " + topic.getTitle();
-					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText(), topicTitleMsg));
+					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(), specTopic.getText(), topicTitleMsg));
 					valid = false;
 				}
 				// If we are using permissive mode then change the title to the correct title
@@ -706,10 +710,10 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 		else if (specTopic.isTopicAClonedDuplicateTopic())
 		{
 			// Find the duplicate topic in the content spec
-			String temp = specTopic.getId().substring(1);
+			final String temp = specTopic.getId().substring(1);
 			int count = 0;
 			SpecTopic clonedTopic = null;
-			for (String topicId: specTopics.keySet())
+			for (final String topicId: specTopics.keySet())
 			{
 				if (topicId.endsWith(temp) && !topicId.endsWith(specTopic.getId()))
 				{
@@ -721,13 +725,13 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 			// Check that the topic exists
 			if (count == 0)
 			{
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
 				valid = false;
 			}
 			// Check that the referenced topic is unique
 			else if (count > 1)
 			{
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_DUPLICATE_CLONES_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_DUPLICATE_CLONES_MSG, specTopic.getLineNumber(), specTopic.getText()));
 				valid = false;
 			}
 			else
@@ -736,7 +740,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				if (!specTopic.getTitle().equals(clonedTopic.getTitle()))
 				{
 					String topicTitleMsg = "Topic " + specTopic.getId() + ": " + clonedTopic.getTitle();
-					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText(), topicTitleMsg));
+					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(), specTopic.getText(), topicTitleMsg));
 					valid = false;
 				}
 			}
@@ -753,30 +757,30 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 	{
 		if (topic.getAssignedWriter(true) == null)
 		{
-			log.error(String.format(ProcessorConstants.ERROR_NO_WRITER_MSG, topic.getPreProcessedLineNumber(), topic.getText()));
+			log.error(String.format(ProcessorConstants.ERROR_NO_WRITER_MSG, topic.getLineNumber(), topic.getText()));
 			return false;
 		}
 		
 		//Check Assigned Writer exists
-		final List<TagV1> tagList = reader.getTagsByName(topic.getAssignedWriter(true));
+		final List<RESTTagV1> tagList = reader.getTagsByName(topic.getAssignedWriter(true));
 		if (tagList.size() != 1)
 		{
-			log.error(String.format(ProcessorConstants.ERROR_WRITER_NONEXIST_MSG, topic.getPreProcessedLineNumber(), topic.getText()));
+			log.error(String.format(ProcessorConstants.ERROR_WRITER_NONEXIST_MSG, topic.getLineNumber(), topic.getText()));
 			return false;
 		}
 		
 		// Check that the writer tag is actually part of the Assigned Writer category
-		final CategoryV1 cat = reader.getCategoryByTagId(tagList.get(0).getId());
+		final RESTCategoryV1 cat = reader.getCategoryByTagId(tagList.get(0).getId());
 		if (cat == null)
 		{
-			log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getPreProcessedLineNumber(), topic.getText()));
+			log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getLineNumber(), topic.getText()));
 			return false;
 		}
 		
 		// Check that tag is actually in the Assigned Writer category
 		if (cat.getId() != ProcessorConstants.ASSIGNED_WRITER_CATEGORY_ID)
 		{
-			log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getPreProcessedLineNumber(), topic.getText()));
+			log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getLineNumber(), topic.getText()));
 			return false;
 		}
 		
@@ -790,12 +794,13 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 	 * @param tagNames A list of all the tags in their string form to be validate.
 	 * @return True if the tags are valid otherwise false.
 	 */
-	private boolean validateTopicTags(SpecTopic specTopic, List<String> tagNames) {
+	private boolean validateTopicTags(SpecTopic specTopic, List<String> tagNames)
+	{
 		boolean valid = true;
 		if (!tagNames.isEmpty())
 		{
-			final List<TagV1> tags = new ArrayList<TagV1>();
-			for (String tagName: tagNames)
+			final List<RESTTagV1> tags = new ArrayList<RESTTagV1>();
+			for (final String tagName: tagNames)
 			{
 				
 				// Check if the app should be shutdown
@@ -805,7 +810,7 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				}
 				
 				// Get the tag from the database
-				final List<TagV1> tagList = reader.getTagsByName(tagName);
+				final List<RESTTagV1> tagList = reader.getTagsByName(tagName);
 				
 				// Check that it exists
 				if (tagList.size() == 1)
@@ -814,19 +819,19 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				}
 				else if (tagList.size() == 0)
 				{
-					log.error(String.format(ProcessorConstants.ERROR_TAG_NONEXIST_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+					log.error(String.format(ProcessorConstants.ERROR_TAG_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
 					valid = false;
 				}
 				else
 				{
-					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TAG_DUPLICATED_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TAG_DUPLICATED_MSG, specTopic.getLineNumber(), specTopic.getText()));
 					valid = false;
 				}
 			}
-			Map<CategoryV1, List<TagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
 			
 			// Check that the mutex value entered is correct
-			for (final CategoryV1 cat: mapping.keySet())
+			final Map<RESTCategoryV1, List<RESTTagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
+			for (final RESTCategoryV1 cat: mapping.keySet())
 			{
 				
 				// Check if the app should be shutdown
@@ -837,23 +842,23 @@ public class ContentSpecValidator<T extends BaseTopicV1<T>> implements ShutdownA
 				}
 				
 				// Check that only one tag has been set if the category is mutually exclusive
-				if (cat.isMutuallyExclusive() && mapping.get(cat).size() > 1)
+				if (cat.getMutuallyExclusive() && mapping.get(cat).size() > 1)
 				{
-					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TOO_MANY_CATS_MSG, specTopic.getPreProcessedLineNumber(), cat.getName(), specTopic.getText()));
+					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TOO_MANY_CATS_MSG, specTopic.getLineNumber(), cat.getName(), specTopic.getText()));
 					valid = false;
 				}
 				
 				// Check that the tag isn't a type or writer
 				if (cat.getId() == CSConstants.WRITER_CATEGORY_ID)
 				{
-					log.error(String.format(ProcessorConstants.ERROR_TOPIC_WRITER_AS_TAG_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+					log.error(String.format(ProcessorConstants.ERROR_TOPIC_WRITER_AS_TAG_MSG, specTopic.getLineNumber(), specTopic.getText()));
 					valid = false;
 				}
 				
 				// Check that the tag isn't a topic type
 				if (cat.getId() == CSConstants.TYPE_CATEGORY_ID)
 				{
-					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TYPE_AS_TAG_MSG, specTopic.getPreProcessedLineNumber(), specTopic.getText()));
+					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TYPE_AS_TAG_MSG, specTopic.getLineNumber(), specTopic.getText()));
 					valid = false;
 				}
 			}
