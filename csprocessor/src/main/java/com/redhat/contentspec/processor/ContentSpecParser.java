@@ -2074,11 +2074,12 @@ public class ContentSpecParser
 							}
 							
 							/* 
-							 * Add the relationship to the topic if the relationship isn't duplicated
-							 * and the related topic isn't the current topic.
+							 * Add the relationship to the topic even if the relationship isn't duplicated
+							 * and the related topic isn't the current topic. This is so it shows up in the 
+							 * output.
 							 */
 							final SpecTopic specTopic = specTopics.get(topicId);
-							if (count == 1 && relatedTopic != specTopic)
+							if (count > 0 && relatedTopic != specTopic)
 							{
 								specTopic.addRelationshipToTopic(relatedTopic, relationship.getType(), relationship.getRelationshipTitle());
 							}

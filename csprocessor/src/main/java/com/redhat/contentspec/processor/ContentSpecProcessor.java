@@ -223,7 +223,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			validator = new ContentSpecValidator<RESTTranslatedTopicV1, RESTTranslatedTopicCollectionV1>(RESTTranslatedTopicV1.class, elm, dbManager, processingOptions);
 		}*/
 		
-		if (!validator.validateContentSpec(csp.getContentSpec(), csp.getSpecTopics()) || !validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics()))
+		final boolean contentSpecValid = validator.validateContentSpec(csp.getContentSpec(), csp.getSpecTopics());
+		final boolean relationshipsValid = validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics());
+
+		if (!contentSpecValid || !relationshipsValid)
 		{
 			log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
 			return false;

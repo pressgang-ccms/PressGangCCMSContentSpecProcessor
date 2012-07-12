@@ -30,6 +30,7 @@ public class ProcessorConstants {
 	public static final String LINE = "Line %d: ";
 	public static final String INVALID_CS = "Invalid Content Specification!";
 	public static final String INVALID_TOPIC = "Invalid Topic!";
+	public static final String INVALID_RELATIONSHIP = "Invalid Relationship!";
 	public static final String INVALID_PROCESS = "Invalid Process!";
 	public static final String GENERIC_INVALID_LEVEL = "Invalid Chapter/Section/Appendix!";
 	public static final String NEW_LINE_SPACER = "\n       -> ";
@@ -158,15 +159,15 @@ public class ProcessorConstants {
 	
 	//Relationship Errors
 	public static final String ERROR_DUPLICATE_TARGET_ID_MSG		= "Target ID is duplicated. Target ID's must be unique." + NEW_LINE_SPACER + LINE + " %s" + NEW_LINE_SPACER + LINE + " %s";
-	public static final String ERROR_TARGET_NONEXIST_MSG			= LINE + INVALID_TOPIC + " The Target specified doesn't exist in the content specification." + CSLINE_MSG;
-	public static final String ERROR_RELATED_TOPIC_NONEXIST_MSG		= LINE + INVALID_TOPIC + " The related topic specified doesn't exist in the content specification." + CSLINE_MSG;
-	public static final String ERROR_INVALID_RELATIONSHIP_MSG		= LINE + INVALID_TOPIC + " Topics that are used twice inside of a Content Specification cannot be related to directly. To relate to one of these topics please use a Target." + CSLINE_MSG;
-	public static final String ERROR_TOO_MANY_NEXTS_MSG				= LINE + INVALID_TOPIC + " A topic may only have one next Topic." + CSLINE_MSG;
-	public static final String ERROR_TOO_MANY_PREVS_MSG				= LINE + INVALID_TOPIC + " A topic may only have one previous Topic." + CSLINE_MSG;
-	public static final String ERROR_NEXT_RELATED_LEVEL_MSG			= LINE + INVALID_TOPIC + " Next relationships must target a topic." + CSLINE_MSG;
-	public static final String ERROR_PREV_RELATED_LEVEL_MSG			= LINE + INVALID_TOPIC + " Previous relationships must target a topic." + CSLINE_MSG;
-	public static final String ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG	= LINE + INVALID_TOPIC + " The link target is ambiguous, please use an explicit link target ID. Add [T<uniqueID>] to the instance you want to relate to, and use that as the link target." + CSLINE_MSG;
-	public static final String ERROR_TOPIC_RELATED_TO_ITSELF_MSG		= LINE + INVALID_TOPIC + " You can't relate a topic to itself." + CSLINE_MSG;
+	public static final String ERROR_TARGET_NONEXIST_MSG			= LINE + INVALID_RELATIONSHIP + " The Target specified doesn't exist in the content specification." + CSLINE_MSG;
+	public static final String ERROR_RELATED_TOPIC_NONEXIST_MSG		= LINE + INVALID_RELATIONSHIP + " The related topic specified doesn't exist in the content specification." + CSLINE_MSG;
+	public static final String ERROR_INVALID_RELATIONSHIP_MSG		= LINE + INVALID_RELATIONSHIP + " Topics that are used twice inside of a Content Specification cannot be related to directly. To relate to one of these topics please use a Target." + CSLINE_MSG;
+	public static final String ERROR_TOO_MANY_NEXTS_MSG				= LINE + INVALID_RELATIONSHIP + " A topic may only have one next Topic." + CSLINE_MSG;
+	public static final String ERROR_TOO_MANY_PREVS_MSG				= LINE + INVALID_RELATIONSHIP + " A topic may only have one previous Topic." + CSLINE_MSG;
+	public static final String ERROR_NEXT_RELATED_LEVEL_MSG			= LINE + INVALID_RELATIONSHIP + " Next relationships must target a topic." + CSLINE_MSG;
+	public static final String ERROR_PREV_RELATED_LEVEL_MSG			= LINE + INVALID_RELATIONSHIP + " Previous relationships must target a topic." + CSLINE_MSG;
+	public static final String ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG	= LINE + INVALID_RELATIONSHIP + " The link target is ambiguous, please use an explicit link target ID. Add [T<uniqueID>] to the instance you want to relate to, and use that as the link target." + CSLINE_MSG;
+	public static final String ERROR_TOPIC_RELATED_TO_ITSELF_MSG		= LINE + INVALID_RELATIONSHIP + " You can't relate a topic to itself." + CSLINE_MSG;
 	
 	// Setup Processor Constants
 	public static final String ERROR_INVALID_MUTEX_MSG				= LINE + "Mutex value must be either 0 or 1." + CSLINE_MSG;
