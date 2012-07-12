@@ -1064,11 +1064,12 @@ public class ContentSpecParser
 				// Process the chapter, it's level and title
 				if (tempInput[0].equalsIgnoreCase("Chapter"))
 				{
-					Level newLevel = processLevel(lineCounter, LevelType.CHAPTER, input);
+					final Level newLevel = processLevel(lineCounter, LevelType.CHAPTER, input);
 					if (newLevel == null)
 					{
 						// Create a basic level so the rest of the spec can be processed
-						Chapter chapter = new Chapter(null, lineCounter, input);
+						final Chapter chapter = new Chapter(null, lineCounter, input);
+						level = curLevel + 1;
 						lvl.appendChild(chapter);
 						lvl = chapter;
 						return false;
@@ -1083,11 +1084,12 @@ public class ContentSpecParser
 				}
 				else if (tempInput[0].equalsIgnoreCase("Section"))
 				{
-					Level newLevel = processLevel(lineCounter, LevelType.SECTION, input);
+					final Level newLevel = processLevel(lineCounter, LevelType.SECTION, input);
 					if (newLevel == null)
 					{
 						// Create a basic level so the rest of the spec can be processed
-						Section section = new Section(null, lineCounter, input);
+						final Section section = new Section(null, lineCounter, input);
+						level = curLevel + 1;
 						lvl.appendChild(section);
 						lvl = section;
 						return false;
@@ -1102,11 +1104,12 @@ public class ContentSpecParser
 				}
 				else if (tempInput[0].equalsIgnoreCase("Appendix"))
 				{
-					Level newLevel = processLevel(lineCounter, LevelType.APPENDIX, input);
+					final Level newLevel = processLevel(lineCounter, LevelType.APPENDIX, input);
 					if (newLevel == null)
 					{
 						// Create a basic level so the rest of the spec can be processed
-						Appendix appendix = new Appendix(null, lineCounter, input);
+						final Appendix appendix = new Appendix(null, lineCounter, input);
+						level = curLevel + 1;
 						lvl.appendChild(appendix);
 						lvl = appendix;
 						return false;
@@ -1121,11 +1124,12 @@ public class ContentSpecParser
 				}
 				else if (tempInput[0].equalsIgnoreCase("Process"))
 				{
-					Level newLevel = processLevel(lineCounter, LevelType.PROCESS, input);
+					final Level newLevel = processLevel(lineCounter, LevelType.PROCESS, input);
 					if (newLevel == null)
 					{
 						// Create a basic level so the rest of the spec can be processed
-						Process process = new Process(null, lineCounter, input);
+						final Process process = new Process(null, lineCounter, input);
+						level = curLevel + 1;
 						lvl.appendChild(process);
 						lvl = process;
 						return false;
@@ -1141,10 +1145,11 @@ public class ContentSpecParser
 				}
 				else if (tempInput[0].equalsIgnoreCase("Part"))
 				{
-					Level newLevel = processLevel(lineCounter, LevelType.PART, input);
+					final Level newLevel = processLevel(lineCounter, LevelType.PART, input);
 					if (newLevel == null) {
 						// Create a basic level so the rest of the spec can be processed
 						Part part = new Part(null, lineCounter, input);
+						level = curLevel + 1;
 						lvl.appendChild(part);
 						lvl = part;
 						return false;
@@ -1661,8 +1666,10 @@ public class ContentSpecParser
 				return null;
 			}
 			// Process the options
-			if (variables.length >= 1) {
-				if (!addOptions(newLvl, variables, 0, input)) {
+			if (variables.length >= 1)
+			{
+				if (!addOptions(newLvl, variables, 0, input))
+				{
 					return null;
 				}
 			}
@@ -1730,13 +1737,10 @@ public class ContentSpecParser
 			}
 		}
 		
-		// Build up the regex and patterns
-		/*regex = String.format(ProcessorConstants.BRACKET_NAMED_PATTERN, startDelim, endDelim);
-		final NamedPattern bracketPattern = NamedPattern.compile(regex);
-		final NamedMatcher matcher = bracketPattern.matcher(input);*/
-		
+		/* Get the variables from the line */
 		final List<VariableSet> varSets = findVariableSets(input, startDelim, endDelim);
 		
+		/* Process the variables that were found */
 		for (final VariableSet set : varSets)
 		{
 			final ArrayList<String> variables = new ArrayList<String>();
@@ -1811,78 +1815,6 @@ public class ContentSpecParser
 			}
 		}
 		
-		// Find all of the variables inside of the brackets defined by the regex
-		/*while (matcher.find())
-		{
-			final ArrayList<String> variables = new ArrayList<String>();
-			final String variableSet = matcher.group(ProcessorConstants.BRACKET_CONTENTS).replaceAll("(\r\n|\n)", "");
-			// Check that a closing bracket wasn't missed
-			if (StringUtilities.indexOf(variableSet, startDelim) != -1)
-			{
-				throw new ParsingException(String.format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG, initialCount, endDelim));
-			}
-			// Split the variables set into individual variables
-			final RelationshipType type = getRelationshipType(variableSet);
-			if (!ignoreTypes && (type == RelationshipType.RELATED || type == RelationshipType.PREREQUISITE || type == RelationshipType.NEXT 
-					|| type == RelationshipType.PREVIOUS || type == RelationshipType.BRANCH))
-			{
-				// Remove the type specifier from the start of the variable set
-				String splitString[] = StringUtilities.split(variableSet.trim(), ':');
-				// Check that there are actually variables set
-				if (splitString.length > 1)
-				{
-					splitString = StringUtilities.split(splitString[1], separator);
-					for (final String s: splitString)
-					{
-						variables.add(s.trim());
-					}
-				}
-				else
-				{
-					throw new ParsingException(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, initialCount, input));
-				}
-			}
-			else if (!ignoreTypes && type == RelationshipType.TARGET)
-			{
-				variables.add(variableSet.trim());
-			}
-			else if (!ignoreTypes && type == RelationshipType.EXTERNAL_TARGET)
-			{
-				variables.add(variableSet.trim());
-			}
-			else if (!ignoreTypes && type == RelationshipType.EXTERNAL_CONTENT_SPEC)
-			{
-				variables.add(variableSet.trim());
-			}
-			else
-			{
-				// Normal set of variables that contains the ID and/or tags
-				final String splitString[] = StringUtilities.split(variableSet, separator);
-				for (final String s: splitString)
-				{
-					variables.add(s.trim());
-				}
-			}
-			
-			// Add the variable set to the mapping
-			if (output.containsKey(type))
-			{
-				if (ignoreTypes || groupTypes)
-				{
-					final ArrayList<String> tempVariables = new ArrayList<String>(Arrays.asList(output.get(type)));
-					tempVariables.addAll(variables);
-					output.put(type, tempVariables.toArray(new String[0]));
-				}
-				else
-				{
-					throw new ParsingException(String.format(ProcessorConstants.ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG, initialCount, input));
-				}
-			}
-			else
-			{
-				output.put(type, variables.toArray(new String[0]));
-			}
-		}*/
 		return output;
 	}
 	
@@ -2207,7 +2139,7 @@ public class ContentSpecParser
 	 */
 	protected void processExternalLevel(final Level lvl, final String externalCSPReference, final String title, final String input)
 	{
-		//TODO Add the level/topic contents to the local variables
+		//TODO Add the level/topic contents to the local parser variables
 		String[] vars = externalCSPReference.split(":");
 		vars = CollectionUtilities.trimStringArray(vars);
 		
@@ -2291,8 +2223,20 @@ public class ContentSpecParser
 		}
 	}
 	
+	/**
+	 * Finds a List of variable sets within a string. If the end of a set
+	 * can't be determined then it will continue to parse the following 
+	 * lines until the end is found.
+	 * 
+	 * @param input The string to find the sets in.
+	 * @param startDelim The starting character of the set.
+	 * @param endDelim The ending character of the set.
+	 * @return A list of VariableSets that contain the contents of each set 
+	 * and the start and end position of the set.
+	 */
 	protected List<VariableSet> findVariableSets(final String input, final char startDelim, final char endDelim)
 	{
+		String varLine = new String(input);
 		final List<VariableSet> retValue = new ArrayList<VariableSet>();
 		VariableSet set = ProcessorUtilities.findVariableSet(input, startDelim, endDelim, 0);
 		while (set != null && set.getContents() != null)
@@ -2309,8 +2253,10 @@ public class ContentSpecParser
 				
 				if (line != null)
 				{
+					varLine += "\n" + line;
+					
 					spec.appendPreProcessedLine(line);
-					set = ProcessorUtilities.findVariableSet(input + "\n" + line, startDelim, endDelim, set.getStartPos());
+					set = ProcessorUtilities.findVariableSet(varLine, startDelim, endDelim, set.getStartPos());
 				}
 				else
 				{

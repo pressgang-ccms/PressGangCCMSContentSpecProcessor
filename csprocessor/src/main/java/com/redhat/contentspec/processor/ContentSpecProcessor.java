@@ -156,7 +156,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 		
 		LOG.info("Starting to parse...");
 		if (mode == ContentSpecParser.ParsingMode.EDITED) editing = true;
-		boolean error = !csp.parse(contentSpec, user, mode, true);
+		if (!csp.parse(contentSpec, user, mode, true))
+		{
+			log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
+			return false;
+		}
 		
 		// Change the locale if the overrideLocale isn't null
 		if (overrideLocale != null)
@@ -197,7 +201,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 				if (percent - lastPercent >= showPercent)
 				{
 					lastPercent = percent;
-					log.info("\tDownloading revision topics " + percent + "% Done");
+					LOG.info("\tDownloading revision topics " + percent + "% Done");
 				}
 			}
 		}
@@ -219,7 +223,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			validator = new ContentSpecValidator<RESTTranslatedTopicV1, RESTTranslatedTopicCollectionV1>(RESTTranslatedTopicV1.class, elm, dbManager, processingOptions);
 		}*/
 		
-		if (error || !validator.validateContentSpec(csp.getContentSpec(), csp.getSpecTopics()) || !validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics()))
+		if (!validator.validateContentSpec(csp.getContentSpec(), csp.getSpecTopics()) || !validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics()))
 		{
 			log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
 			return false;

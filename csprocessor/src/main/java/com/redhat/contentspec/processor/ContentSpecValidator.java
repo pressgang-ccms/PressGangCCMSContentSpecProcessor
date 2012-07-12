@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.redhat.contentspec.ContentSpec;
 import com.redhat.contentspec.Level;
 import com.redhat.contentspec.Process;
+import com.redhat.contentspec.SpecNode;
 import com.redhat.contentspec.SpecTopic;
 import com.redhat.contentspec.entities.Relationship;
 import com.redhat.contentspec.enums.LevelType;
@@ -103,21 +104,25 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			log.error(ProcessorConstants.ERROR_CS_NO_TITLE_MSG);
 			valid = false;
 		}
+		
 		if (contentSpec.getProduct() == null || contentSpec.getProduct().equals(""))
 		{
 			log.error(ProcessorConstants.ERROR_CS_NO_PRODUCT_MSG);
 			valid = false;
 		}
+		
 		if (contentSpec.getVersion() == null || contentSpec.getVersion().equals(""))
 		{
 			log.error(ProcessorConstants.ERROR_CS_NO_VERSION_MSG);
 			valid = false;
 		}
+		
 		if (contentSpec.getPreProcessedText().isEmpty())
 		{
 			log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
 			valid = false;
 		}
+		
 		if (contentSpec.getDtd() == null || contentSpec.getDtd().equals(""))
 		{
 			log.error(ProcessorConstants.ERROR_CS_NO_DTD_MSG);
@@ -129,22 +134,26 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			log.error(ProcessorConstants.ERROR_CS_INVALID_DTD_MSG);
 			valid = false;
 		}
+		
 		if (contentSpec.getCreatedBy() == null)
 		{
 			log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
 			valid = false;
 		}
+		
 		if (contentSpec.getCopyrightHolder() == null || contentSpec.getCopyrightHolder().equals(""))
 		{
 			log.error(ProcessorConstants.ERROR_CS_NO_COPYRIGHT_MSG);
 			valid = false;
 		}
+		
 		// Check that the content specification isn't empty
 		if (contentSpec.getBaseLevel() == null)
 		{
 			log.error(ProcessorConstants.ERROR_CS_EMPTY_MSG);
 			valid = false;
 		}
+		
 		// If editing then check that the ID exists & the SpecRevision match
 		if (contentSpec.getId() != 0)
 		{
@@ -158,7 +167,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			// Check that the revision is valid
 			if (!processingOptions.isIgnoreSpecRevision() && contentSpecTopic != null)
 			{
-				String currentChecksum = HashUtilities.generateMD5(contentSpecTopic.getXml().replaceFirst("CHECKSUM[ ]*=.*(\r)?\n", ""));
+				final String currentChecksum = HashUtilities.generateMD5(contentSpecTopic.getXml().replaceFirst("CHECKSUM[ ]*=.*(\r)?\n", ""));
 				if (contentSpec.getChecksum() != null)
 				{
 					if (!contentSpec.getChecksum().equals(currentChecksum))
@@ -235,7 +244,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 	 * @param targetTopics The list of target topics in a content specification.
 	 * @return True if the relationships are valid, otherwise false.
 	 */
-	public boolean validateRelationships(final HashMap<String, List<Relationship>> relationships, HashMap<String, SpecTopic> specTopics, final HashMap<String, Level> targetLevels, final HashMap<String, SpecTopic> targetTopics)
+	public boolean validateRelationships(final HashMap<String, List<Relationship>> relationships, final HashMap<String, SpecTopic> specTopics, final HashMap<String, Level> targetLevels, final HashMap<String, SpecTopic> targetTopics)
 	{
 		boolean error = false;
 		for(final String topicId: relationships.keySet())
@@ -254,7 +263,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 					return false;
 				}
 				
-				String relatedId = relationship.getSecondaryRelationshipTopicId();
+				final String relatedId = relationship.getSecondaryRelationshipTopicId();
 				// The relationship points to a target so it must be a level or topic
 				if (relatedId.toUpperCase().matches(ProcessorConstants.TARGET_REGEX))
 				{
@@ -356,7 +365,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 	 * @param csAllowEmptyTopics If the "Allow Empty Topics" bit is set in a content specification.
 	 * @return True if the level is valid otherwise false.
 	 */
-	public boolean validateLevel(Level level, Map<String, SpecTopic> specTopics, final boolean csAllowEmptyLevels)
+	public boolean validateLevel(final Level level, final Map<String, SpecTopic> specTopics, final boolean csAllowEmptyLevels)
 	{
 		// Check if the app should be shutdown
 		if (isShuttingDown.get()) {
@@ -385,14 +394,20 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			valid = false;
 		}
 		
+		// Validate the tags
+		if (!validateTopicTags(level, level.getTags(false)))
+		{
+			valid = false;
+		}
+		
 		// Validate the sub levels
-		for (Level l: level.getChildLevels())
+		for (final Level l: level.getChildLevels())
 		{
 			if (!validateLevel(l, specTopics, csAllowEmptyLevels)) valid = false;;
 		}
 		
 		// Validate the topics in this level
-		for (SpecTopic t: level.getSpecTopics())
+		for (final SpecTopic t: level.getSpecTopics())
 		{
 			if (!validateTopic(t, specTopics)) valid = false;;
 		}
@@ -532,7 +547,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			}
 			
 			// Validate the tags
-			if (!validateTopicTags(specTopic, specTopic.getTags(true)))
+			if (!validateTopicTags(specTopic, specTopic.getTags(false)))
 			{
 				valid = false;
 			}
@@ -622,7 +637,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			else
 			{
 				// Validate the tags
-				if (!validateTopicTags(specTopic, specTopic.getTags(true)))
+				if (!validateTopicTags(specTopic, specTopic.getTags(false)))
 				{
 					valid = false;
 				}
@@ -701,7 +716,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			}
 			
 			// Validate the tags
-			if (!validateTopicTags(specTopic, specTopic.getTags(true)))
+			if (!validateTopicTags(specTopic, specTopic.getTags(false)))
 			{
 				valid = false;
 			}
@@ -790,11 +805,11 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 	/**
 	 * Checks to see if the tags are valid for a particular topic.
 	 * 
-	 * @param specTopic The topic the tags below to.
+	 * @param specNode The topic or level the tags below to.
 	 * @param tagNames A list of all the tags in their string form to be validate.
 	 * @return True if the tags are valid otherwise false.
 	 */
-	private boolean validateTopicTags(SpecTopic specTopic, List<String> tagNames)
+	private boolean validateTopicTags(final SpecNode specNode, final List<String> tagNames)
 	{
 		boolean valid = true;
 		if (!tagNames.isEmpty())
@@ -819,12 +834,12 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 				}
 				else if (tagList.size() == 0)
 				{
-					log.error(String.format(ProcessorConstants.ERROR_TAG_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
+					log.error(String.format(ProcessorConstants.ERROR_TAG_NONEXIST_MSG, specNode.getLineNumber(), tagName, specNode.getText()));
 					valid = false;
 				}
 				else
 				{
-					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TAG_DUPLICATED_MSG, specTopic.getLineNumber(), specTopic.getText()));
+					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TAG_DUPLICATED_MSG, specNode.getLineNumber(), specNode.getText()));
 					valid = false;
 				}
 			}
@@ -844,21 +859,21 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 				// Check that only one tag has been set if the category is mutually exclusive
 				if (cat.getMutuallyExclusive() && mapping.get(cat).size() > 1)
 				{
-					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TOO_MANY_CATS_MSG, specTopic.getLineNumber(), cat.getName(), specTopic.getText()));
+					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TOO_MANY_CATS_MSG, specNode.getLineNumber(), cat.getName(), specNode.getText()));
 					valid = false;
 				}
 				
 				// Check that the tag isn't a type or writer
 				if (cat.getId() == CSConstants.WRITER_CATEGORY_ID)
 				{
-					log.error(String.format(ProcessorConstants.ERROR_TOPIC_WRITER_AS_TAG_MSG, specTopic.getLineNumber(), specTopic.getText()));
+					log.error(String.format(ProcessorConstants.ERROR_TOPIC_WRITER_AS_TAG_MSG, specNode.getLineNumber(), specNode.getText()));
 					valid = false;
 				}
 				
 				// Check that the tag isn't a topic type
 				if (cat.getId() == CSConstants.TYPE_CATEGORY_ID)
 				{
-					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TYPE_AS_TAG_MSG, specTopic.getLineNumber(), specTopic.getText()));
+					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TYPE_AS_TAG_MSG, specNode.getLineNumber(), specNode.getText()));
 					valid = false;
 				}
 			}
