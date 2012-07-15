@@ -175,6 +175,22 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			return false;
 		}
 		
+		// Validate the relationships
+		validator = new ContentSpecValidator<RESTTopicV1, RESTTopicCollectionV1>(RESTTopicV1.class, elm, dbManager, processingOptions);
+		
+		if (!validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics()))
+		{
+			log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
+			return false;
+		}
+
+		// Check if the app should be shutdown
+		if (isShuttingDown.get())
+		{
+			shutdown.set(true);
+			return false;
+		}
+		
 		if (!csp.getReferencedLatestTopicIds().isEmpty())
 		{
 			// Download the list of topics in one go to reduce I/O overhead
@@ -214,19 +230,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 		
 		// Validate the content specification
 		LOG.info("Starting to validate...");
-		/*if (csp.getContentSpec().getLocale() == null || csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE))
-		{*/
-			validator = new ContentSpecValidator<RESTTopicV1, RESTTopicCollectionV1>(RESTTopicV1.class, elm, dbManager, processingOptions);
-		/*}
-		else
-		{
-			validator = new ContentSpecValidator<RESTTranslatedTopicV1, RESTTranslatedTopicCollectionV1>(RESTTranslatedTopicV1.class, elm, dbManager, processingOptions);
-		}*/
-		
-		final boolean contentSpecValid = validator.validateContentSpec(csp.getContentSpec(), csp.getSpecTopics());
-		final boolean relationshipsValid = validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics());
 
-		if (!contentSpecValid || !relationshipsValid)
+		if (!validator.validateContentSpec(csp.getContentSpec(), csp.getSpecTopics()))
 		{
 			log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
 			return false;
