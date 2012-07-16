@@ -62,6 +62,12 @@
 		<version>1.9.6</version>
 	</dependency>
 
+	<dependency>
+                <groupId>org.codehaus.jackson</groupId>
+                <artifactId>jackson-core-asl</artifactId>
+                <version>1.9.6</version>
+        </dependency>
+
   	<!-- Commons Library -->
 	<dependency>
 		<groupId>com.redhat</groupId>
