@@ -20,6 +20,7 @@ import com.redhat.contentspec.Level;
 import com.redhat.contentspec.Node;
 import com.redhat.contentspec.Part;
 import com.redhat.contentspec.Process;
+import com.redhat.contentspec.TextNode;
 import com.redhat.contentspec.entities.Relationship;
 import com.redhat.contentspec.Section;
 import com.redhat.contentspec.SpecNode;
@@ -324,8 +325,14 @@ public class ContentSpecParser
 			lineCounter++;
 			spec.appendPreProcessedLine(input);
 			
-			if (input.trim().startsWith("#") || input.trim().equals(""))
+			if (input.trim().startsWith("#"))
 			{
+				spec.appendComment(input);
+				continue;
+			}
+			else if (input.trim().equals(""))
+			{
+				spec.appendChild(new TextNode("\n"));
 				continue;
 			}
 			
@@ -543,7 +550,30 @@ public class ContentSpecParser
 		
 		// Trim the whitespace
 		final String input = line.trim();
-		if (input.equals("") || input.startsWith("#")) return true;
+		if (input.equals(""))
+		{
+			if (lvl.getType() == LevelType.BASE)
+			{
+				spec.appendChild(new TextNode("\n"));
+			}
+			else
+			{
+				lvl.appendChild(new TextNode("\n"));
+			}
+			return true;
+		}
+		else if (input.startsWith("#")) 
+		{
+			if (lvl.getType() == LevelType.BASE)
+			{
+				spec.appendComment(line);
+			}
+			else
+			{
+				lvl.appendComment(line);
+			}
+			return true;
+		}
 		
 		// Count the amount of whitespace characters before any text to determine the level
 		if(Character.isWhitespace(tempInputChar[0]))
