@@ -810,6 +810,17 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 		
 		return true;
 	}
+	
+	/**
+	 * Get the Content Specification Parser used in this
+	 * Processor.
+	 * 
+	 * @return The ContentSpecParser used within this processor.
+	 */
+	public ContentSpecParser getParser()
+	{
+		return csp;
+	}
 
 	@Override
 	public void shutdown()
