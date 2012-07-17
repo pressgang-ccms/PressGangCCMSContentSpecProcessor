@@ -54,12 +54,14 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 	private String locale;
 	
 	@Override
-	public void shutdown() {
+	public void shutdown()
+	{
 		isShuttingDown.set(true);
 	}
 
 	@Override
-	public boolean isShutdown() {
+	public boolean isShutdown()
+	{
 		return shutdown.get();
 	}
 	
@@ -93,7 +95,8 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 		locale = contentSpec.getLocale() == null ? locale : contentSpec.getLocale();
 		
 		// Check if the app should be shutdown
-		if (isShuttingDown.get()) {
+		if (isShuttingDown.get())
+		{
 			shutdown.set(true);
 			return false;
 		}
@@ -465,10 +468,11 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 	 * @return True if the topic is valid otherwise false.
 	 */
 	@SuppressWarnings("unchecked")
-	public boolean validateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics) {
-		
+	public boolean validateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics)
+	{
 		// Check if the app should be shutdown
-		if (isShuttingDown.get()) {
+		if (isShuttingDown.get())
+		{
 			shutdown.set(true);
 			return false;
 		}
