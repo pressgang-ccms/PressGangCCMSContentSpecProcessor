@@ -6,8 +6,10 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import com.google.code.regexp.NamedMatcher;
 import com.google.code.regexp.NamedPattern;
@@ -188,7 +190,7 @@ public class ContentSpecParser
 	 */
 	public List<Integer> getReferencedTopicIds()
 	{
-		final List<Integer> ids = new ArrayList<Integer>();
+		final Set<Integer> ids = new HashSet<Integer>();
 		for (final String topicId: specTopics.keySet())
 		{
 			final SpecTopic specTopic = specTopics.get(topicId);
@@ -196,7 +198,7 @@ public class ContentSpecParser
 				ids.add(specTopic.getDBId());
 		}
 		
-		return ids;
+		return CollectionUtilities.toArrayList(ids);
 	}
 	
 	/**
@@ -208,7 +210,7 @@ public class ContentSpecParser
 	 */
 	public List<Integer> getReferencedLatestTopicIds()
 	{
-		final List<Integer> ids = new ArrayList<Integer>();
+		final Set<Integer> ids = new HashSet<Integer>();
 		for (final String topicId: specTopics.keySet())
 		{
 			final SpecTopic specTopic = specTopics.get(topicId);
@@ -216,7 +218,7 @@ public class ContentSpecParser
 				ids.add(specTopic.getDBId());
 		}
 		
-		return ids;
+		return CollectionUtilities.toArrayList(ids);
 	}
 
 	/**
@@ -228,7 +230,7 @@ public class ContentSpecParser
 	 */
 	public List<Pair<Integer, Integer>> getReferencedRevisionTopicIds()
 	{
-		final List<Pair<Integer, Integer>> ids = new ArrayList<Pair<Integer, Integer>>();
+		final Set<Pair<Integer, Integer>> ids = new HashSet<Pair<Integer, Integer>>();
 		for (final String topicId: specTopics.keySet())
 		{
 			final SpecTopic specTopic = specTopics.get(topicId);
@@ -236,7 +238,7 @@ public class ContentSpecParser
 				ids.add(new Pair<Integer, Integer>(specTopic.getDBId(), specTopic.getRevision()));
 		}
 		
-		return ids;
+		return CollectionUtilities.toArrayList(ids);
 	}
 	
 	/**
