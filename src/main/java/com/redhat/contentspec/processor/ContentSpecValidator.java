@@ -566,7 +566,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			final T topic;
 			if (clazz == RESTTranslatedTopicV1.class)
 			{
-				topic = (T) reader.getTranslatedTopicByTopicId(Integer.parseInt(specTopic.getId()), locale);
+				topic = (T) reader.getTranslatedTopicByTopicId(Integer.parseInt(specTopic.getId()), null, locale);
 				if (processingOptions.isAddRevisions() && specTopic.getRevision() == null)
 				{
 					specTopic.setRevision(((RESTTranslatedTopicV1) topic).getTopicRevision());
