@@ -75,7 +75,7 @@ public class ProcessorUtilities {
 				continue;
 			}
 			
-			if (line.trim().toUpperCase().matches("^((CHECKSUM)|(ID))[ ]*=.*"))
+			if (line.trim().toUpperCase().matches("^((CHECKSUM)|(ID)|(SPECREVISION))[ ]*=.*"))
 			{
 				count++;
 				continue;
