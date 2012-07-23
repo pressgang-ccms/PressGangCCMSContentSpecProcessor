@@ -2083,6 +2083,7 @@ public class ContentSpecParser
 							specTopic.addRelationshipToTarget(targetLevels.get(relatedId), relationship.getType(), relationship.getRelationshipTitle());
 						}
 					}
+					// TODO add a relationship so it still shows in the toString() method
 				}
 				// The relationship isn't a target so it must point to a topic directly
 				else
