@@ -644,14 +644,14 @@ public class ContentSpecParser
 			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2)
 			{
-				String edition = tempInput[1];
-				if (edition.matches(ProcessorConstants.EDITION_VALIDATE_REGEX))
+				final String edition = tempInput[1];
+				if (edition.matches(ProcessorConstants.VERSION_VALIDATE_REGEX))
 				{
 					spec.setEdition(edition);
 				}
 				else
 				{
-					log.error(String.format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineCounter, input));
+					log.error(String.format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, lineCounter, input));
 					return false;
 				}
 			}
@@ -756,7 +756,16 @@ public class ContentSpecParser
 			tempInput = CollectionUtilities.trimStringArray(tempInput);
 			if (tempInput.length >= 2)
 			{
-				spec.setVersion(StringUtilities.replaceEscapeChars(tempInput[1]));
+				final String version = tempInput[1];
+				if (version.matches(ProcessorConstants.VERSION_VALIDATE_REGEX))
+				{
+					spec.setVersion(version);
+				}
+				else
+				{
+					log.error(String.format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, lineCounter, input));
+					return false;
+				}
 			}
 			else
 			{
@@ -1239,7 +1248,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (StringUtilities.indexOf(input, '[') == 0)
+		else if (StringUtilities.indexOf(input, '[') == 0 && lvl.getType() == LevelType.BASE)
 		{
 			// Read in the variables from the line
 			String[] variables;
@@ -1408,7 +1417,7 @@ public class ContentSpecParser
 		 * using the line number and topic ID.
 		 */
 		String uniqueId = variables[0];
-		if (!specTopics.containsKey(variables[0]) && !variables[0].equals("N") && !variables[0].startsWith("X") && !variables[0].startsWith("C") && !variables[0].matches(CSConstants.EXISTING_TOPIC_ID_REGEX))
+		if (variables[0].matches(CSConstants.NEW_TOPIC_ID_REGEX) && !variables[0].equals("N") && !specTopics.containsKey(variables[0]))
 		{
 			specTopics.put(uniqueId, tempTopic);
 		}
@@ -1417,8 +1426,15 @@ public class ContentSpecParser
 		{
 			uniqueId = Integer.toString(lineCounter) + "-" + variables[0];
 			specTopics.put(uniqueId, tempTopic);
-		} else {
+		}
+		else if (variables[0].startsWith("N"))
+		{
 			log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_ID_MSG, lineCounter, variables[0], input));
+			return null;
+		}
+		else
+		{
+			log.error(String.format(ProcessorConstants.ERROR_INVALID_TOPIC_ID_MSG, lineCounter, input));
 			return null;
 		}
 		
@@ -1756,7 +1772,7 @@ public class ContentSpecParser
 		 * Check to see if the line doesn't match the regex even once. Also check to see if the next 
 		 * line is a continuation of the current line. If so then attempt to read the next line.
 		 */
-		if (lastEndDelimPos < lastStartDelimPos || (nextLine != null && nextLine.trim().startsWith("" + startDelim)))
+		if (lastEndDelimPos < lastStartDelimPos || (nextLine != null && nextLine.trim().toUpperCase().matches("^\\" + startDelim + "[ ]*(R|L|P|T|B).*")))
 		{
 			// Read in a new line and increment relevant counters
 			temp = lines.poll();
