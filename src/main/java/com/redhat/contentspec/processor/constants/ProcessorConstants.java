@@ -10,7 +10,7 @@ public class ProcessorConstants {
 	public static final String BRACKET_NAMED_PATTERN		= "(?<!\\\\)\\%c(?<" + BRACKET_CONTENTS + ">(.|\n)*?)(?<!\\\\)\\%c";
 	public static final String BRACKET_PATTERN 				= "(?<!\\\\)\\%c((.|\n)*?)(?<!\\\\)\\%c";
 	public static final String BRACKET_VALIDATE_REGEX		= ".*%s[ ]*$"; // ".*%s(([ ]*$)|([ ]*#.*$))" For use to allow comments at the end of a line
-	public static final String EDITION_VALIDATE_REGEX		= "([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+)";
+	public static final String VERSION_VALIDATE_REGEX		= "([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+)";
 	
 	public static final String RELATED_REGEX 		= "^(R|RELATED-TO)[ ]*:.*$";
 	public static final String PREREQUISITE_REGEX 	= "^(P|PREREQUISITE)[ ]*:.*$";
@@ -48,7 +48,7 @@ public class ProcessorConstants {
 	public static final String ERROR_CS_NO_PRODUCT_MSG				= INVALID_CS + " No Product specified.";
 	public static final String ERROR_CS_NO_VERSION_MSG				= INVALID_CS + " No Version specified.";
 	public static final String ERROR_CS_NO_DTD_MSG					= INVALID_CS + " No DTD specified.";
-	public static final String ERROR_CS_INVALID_DTD_MSG				= INVALID_CS + " DTD must be either Docbook 4.5 or Docbook 5.";
+	public static final String ERROR_CS_INVALID_DTD_MSG				= INVALID_CS + " DTD specified is unsupported. Docbook 4.5 is the only currently supported DTD.";
 	public static final String ERROR_CS_NO_CHECKSUM_MSG				= INVALID_CS + " \"CHECKSUM\" or \"ID\" attribute not found in the Content Specification.";
 	public static final String ERROR_CS_NONMATCH_SPEC_REVISION_MSG	= INVALID_CS + " Revisions must match to be edited." + NEW_LINE_SPACER + "SpecRevision: %d" + NEW_LINE_SPACER + "Server Revision: %d\n";
 	public static final String ERROR_CS_INVALID_SPEC_REVISION_MSG	= LINE + INVALID_CS + " SpecRevision attribute is present, and is not allowed when pushing a new Content Specification.";
@@ -97,6 +97,7 @@ public class ProcessorConstants {
 	public static final String ERROR_LEVEL_RELATIONSHIP_MSG 		= LINE + "Invalid %s! Relationships can't be used for a %s." + CSLINE_MSG;
 	
 	public static final String ERROR_INVALID_NUMBER_MSG				= LINE + "Invalid number specified." + CSLINE_MSG;
+	public static final String ERROR_INVALID_VERSION_NUMBER_MSG		= LINE + "Invalid number specified. The value must be a valid version." + CSLINE_MSG;
 	public static final String WARN_EMPTY_BRACKETS_MSG				= LINE + "Empty brackets found.";
 	
 	public static final String ERROR_HIBERNATE_ROLLBACK_MSG			= "Hibernate Transaction rollback.";

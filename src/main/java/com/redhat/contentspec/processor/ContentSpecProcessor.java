@@ -414,9 +414,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			// Get the tags for the topic
 			List<String> tagNames = specTopic.getTags(true);
 			final List<RESTTagV1> tags = new ArrayList<RESTTagV1>();
-			for (String tagName: tagNames) {
+			for (final String tagName: tagNames)
+			{
 				final List<RESTTagV1> tagList = reader.getTagsByName(tagName);
-				if (tagList.size() == 1) {
+				if (tagList.size() == 1)
+				{
 					tags.add(tagList.get(0));
 				}
 			}
