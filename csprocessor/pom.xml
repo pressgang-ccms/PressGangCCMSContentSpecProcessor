@@ -8,7 +8,7 @@
   </parent>
   <groupId>com.redhat.contentspec</groupId>
   <artifactId>csprocessor</artifactId>
-  <version>0.0.2-SNAPSHOT</version>
+  <version>0.0.3-SNAPSHOT</version>
   <name>Content Specification Processor</name>
   
   <dependencies>    
