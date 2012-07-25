@@ -268,14 +268,17 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 	 * Creates an entity to be sent through the REST interface to create or update a DB entry.
 	 * 
 	 * @param specTopic The Content Specification Topic to create the topic entity from.
-	 * @return True if the topic saved successfully otherwise false.
+	 * @return The new topic object if any changes where made otherwise null.
+	 * @throws Exception Any error that occurs when trying to build the new topic Entity.
 	 */
-	protected RESTTopicV1 createTopicEntity(final SpecTopic specTopic)
+	protected RESTTopicV1 createTopicEntity(final SpecTopic specTopic) throws Exception
 	{
 		if (isShuttingDown.get())
 		{
 			return null;
 		}
+		
+		boolean changed = false;
 		
 		try
 		{		
@@ -315,6 +318,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 				// Add the type to the topic
 				type.setAddItem(true);
 				topicTags.addItem(type);
+				
+				// Since this is a new topic the data has already changed
+				changed = true;
 			}
 			else if (specTopic.isTopicAClonedTopic())
 			{
@@ -364,6 +370,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 					tag.setAddItem(true);
 					topicTags.addItem(tag);
 				}
+				
+				// Since this is a new topic the data has already changed
+				changed = true;
 			}
 			else if (specTopic.isTopicAnExistingTopic())
 			{
@@ -567,6 +576,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 				if (sourceUrls.getItems() != null && !sourceUrls.getItems().isEmpty())
 				{
 					topic.explicitSetSourceUrls_OTM(sourceUrls);
+					changed = true;
 				}
 			}
 			
@@ -580,15 +590,23 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			if (topicTags.getItems() != null && !topicTags.getItems().isEmpty())
 			{
 				topic.explicitSetTags(topicTags);
+				changed = true;
 			}
 			
-			return topic;
+			if (changed)
+			{
+				return topic;
+			}
+			else
+			{
+				return null;
+			}
 		}
 		catch (Exception e)
 		{
 			log.debug(e.getMessage());
 			log.debug(ExceptionUtilities.getStackTrace(e), 2);
-			return null;
+			throw e;
 		}
 	}
 	
@@ -683,21 +701,33 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 				final SpecTopic specTopic = specTopics.get(specTopicId);
 				if (specTopic.getId().matches("(" + CSConstants.NEW_TOPIC_ID_REGEX + "|" + CSConstants.CLONED_TOPIC_ID_REGEX + ")"))
 				{
-					final RESTTopicV1 topic = createTopicEntity(specTopic);
-					if (topic == null)
+					try
 					{
-						throw new ProcessingException("Failed to create topic: " + specTopicId);
+						final RESTTopicV1 topic = createTopicEntity(specTopic);
+						if (topic != null)
+						{
+							topics.addNewTopic(topic);
+						}
 					}
-					topics.addNewTopic(topic);
+					catch (Exception e)
+					{
+						throw new ProcessingException("Failed to create topic: " + specTopicId);	
+					}
 				}
 				else if (specTopic.isTopicAnExistingTopic() && !specTopic.getTags(true).isEmpty() && specTopic.getRevision() == null)
 				{
-					final RESTTopicV1 topic = createTopicEntity(specTopics.get(specTopicId));
-					if (topic == null)
+					try
 					{
-						throw new ProcessingException("Failed to create topic: " + specTopicId);
+						final RESTTopicV1 topic = createTopicEntity(specTopics.get(specTopicId));
+						if (topic != null)
+						{
+							topics.addUpdatedTopic(topic);
+						}
 					}
-					topics.addUpdatedTopic(topic);
+					catch (Exception e)
+					{
+						throw new ProcessingException("Failed to create topic: " + specTopicId);	
+					}
 				}
 			}
 			
