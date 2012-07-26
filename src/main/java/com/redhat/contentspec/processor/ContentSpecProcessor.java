@@ -208,9 +208,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			float current = 0;
 			int lastPercent = 0;
 
+			final boolean expandTranslations = csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE);
+			
 			for (final Pair<Integer, Integer> topicToRevision : referencedRevisionTopicIds)
 			{
-				reader.getTopicById(topicToRevision.getFirst(), topicToRevision.getSecond());
+				reader.getTopicById(topicToRevision.getFirst(), topicToRevision.getSecond(), expandTranslations);
 
 				++current;
 				final int percent = Math.round(current / total * 100);
