@@ -2094,11 +2094,8 @@ public class ContentSpecParser
 					}
 					else if (!targetTopics.containsKey(relatedId) && targetLevels.containsKey(relatedId))
 					{
-						if (!(relationship.getType() == RelationshipType.NEXT ||relationship.getType() == RelationshipType.PREVIOUS))
-						{
-							final SpecTopic specTopic = specTopics.get(topicId);
-							specTopic.addRelationshipToTarget(targetLevels.get(relatedId), relationship.getType(), relationship.getRelationshipTitle());
-						}
+						final SpecTopic specTopic = specTopics.get(topicId);
+						specTopic.addRelationshipToTarget(targetLevels.get(relatedId), relationship.getType(), relationship.getRelationshipTitle());
 					}
 					// TODO add a relationship so it still shows in the toString() method
 				}

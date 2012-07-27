@@ -169,6 +169,7 @@ public class ProcessorConstants {
 	public static final String ERROR_PREV_RELATED_LEVEL_MSG			= LINE + INVALID_RELATIONSHIP + " Previous relationships must target a topic." + CSLINE_MSG;
 	public static final String ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG	= LINE + INVALID_RELATIONSHIP + " The link target is ambiguous, please use an explicit link target ID. Add [T<uniqueID>] to the instance you want to relate to, and use that as the link target." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_RELATED_TO_ITSELF_MSG		= LINE + INVALID_RELATIONSHIP + " You can't relate a topic to itself." + CSLINE_MSG;
+	public static final String ERROR_RELATED_TITLE_NO_MATCH_MSG		= LINE + INVALID_RELATIONSHIP + " The topic/target relationship title specified doesn't match the actual topic/target title." + NEW_LINE_SPACER + "Specified: %s" + NEW_LINE_SPACER + "Actual:    %s";
 	
 	// Setup Processor Constants
 	public static final String ERROR_INVALID_MUTEX_MSG				= LINE + "Mutex value must be either 0 or 1." + CSLINE_MSG;
