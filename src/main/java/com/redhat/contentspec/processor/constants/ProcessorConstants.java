@@ -75,7 +75,8 @@ public class ProcessorConstants {
 	
 	public static final String ERROR_INCORRECT_TOPIC_ID_LOCATION_MSG 	= LINE + INVALID_CS + " Topic ID specified in the wrong location." + CSLINE_MSG;
 
-	public static final String ERROR_NO_ENDING_BRACKET_MSG 			= LINE + INVALID_CS + " No ending bracket(%c) found.";
+	public static final String ERROR_NO_ENDING_BRACKET_MSG 			= LINE + INVALID_CS + " Missing ending bracket (%c) detected.";
+	public static final String ERROR_MISSING_SEPARATOR_MSG 			= LINE + INVALID_CS + " Missing separator (%c) detected.";
 	public static final String ERROR_INCORRECT_INDENTATION_MSG		= LINE + INVALID_CS + " Indentation is invalid." + CSLINE_MSG;
 	public static final String ERROR_RELATIONSHIP_BASE_LEVEL_MSG 	= LINE + INVALID_CS + " Relationships can't be at the base level." + CSLINE_MSG;
 	

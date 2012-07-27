@@ -1474,7 +1474,7 @@ public class ContentSpecParser
 					
 					matcher.find();
 					final String id = matcher.group("TopicID");
-					final String relationshipTitle = matcher.group("TopicTitle");
+					final String relationshipTitle = matcher.group("TopicTitle").trim();
 					
 					topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.RELATED, relationshipTitle));
 				}
@@ -1814,7 +1814,15 @@ public class ContentSpecParser
 					splitString = StringUtilities.split(splitString[1], separator);
 					for (final String s: splitString)
 					{
-						variables.add(s.trim());
+						// Check that a separator wasn't missed.
+						if (StringUtilities.lastIndexOf(s, startDelim) != StringUtilities.indexOf(s, startDelim))
+						{
+							throw new ParsingException(String.format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, initialCount, separator));
+						}
+						else
+						{
+							variables.add(s.trim());
+						}
 					}
 				}
 				else
