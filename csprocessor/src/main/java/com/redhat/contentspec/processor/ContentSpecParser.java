@@ -26,6 +26,7 @@ import org.jboss.pressgangccms.contentspec.TextNode;
 import org.jboss.pressgangccms.contentspec.constants.CSConstants;
 import org.jboss.pressgangccms.contentspec.entities.InjectionOptions;
 import org.jboss.pressgangccms.contentspec.entities.Relationship;
+import org.jboss.pressgangccms.contentspec.enums.BookType;
 import org.jboss.pressgangccms.contentspec.enums.LevelType;
 import org.jboss.pressgangccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgangccms.contentspec.exceptions.IndentationException;
@@ -895,6 +896,30 @@ public class ContentSpecParser
 				return false;
 			}
 		}
+		else if (input.toUpperCase().matches("^TYPE[ ]*((=.*)|$)"))
+		{
+			String tempInput[] = StringUtilities.split(input, '=');
+			// Remove the whitespace from each value in the split array
+			tempInput = CollectionUtilities.trimStringArray(tempInput);
+			if (tempInput.length >= 2)
+			{
+				final String bookType = StringUtilities.replaceEscapeChars(tempInput[1]);
+				if (bookType.toUpperCase().matches(ProcessorConstants.VALID_BOOK_TYPE_REGEX))
+				{
+					spec.setBookType(BookType.getBookType(bookType));
+				}
+				else
+				{
+					log.error(ProcessorConstants.ERROR_INVALID_BOOK_TYPE_MSG);
+					return false;
+				}
+			}
+			else
+			{
+				log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+				return false;
+			}
+		}
 		else if (input.toUpperCase().matches("^OUTPUT STYLE[ ]*((=.*)|$)"))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
@@ -1095,7 +1120,7 @@ public class ContentSpecParser
 			}
 		}
 		else if (input.toUpperCase().matches("^CHAPTER[ ]*((:.*)|$)") || input.toUpperCase().matches("^SECTION[ ]*((:.*)|$)") || input.toUpperCase().matches("^APPENDIX[ ]*((:.*)|$)") 
-				|| input.toUpperCase().matches("^PART[ ]*((:.*)|$)") || input.toUpperCase().matches("^PROCESS[ ]*((:.*)|$)"))
+				|| input.toUpperCase().matches("^PART[ ]*((:.*)|$)") || input.toUpperCase().matches("^PROCESS[ ]*((:.*)|$)")  || input.toUpperCase().matches("^ARTICLE[ ]*((:.*)|$)"))
 		{
 			String tempInput[] = StringUtilities.split(input, ':', 2);
 			// Remove the whitespace from each value in the split array
@@ -1104,7 +1129,7 @@ public class ContentSpecParser
 			if (tempInput.length >= 1)
 			{
 				// Process the chapter, it's level and title
-				if (tempInput[0].equalsIgnoreCase("Chapter"))
+				if (tempInput[0].equalsIgnoreCase(CSConstants.CHAPTER))
 				{
 					final Level newLevel = processLevel(lineCounter, LevelType.CHAPTER, input);
 					if (newLevel == null)
@@ -1122,9 +1147,9 @@ public class ContentSpecParser
 						lvl.appendChild(newLevel);
 						lvl = newLevel;
 					}
-				// Processes the section, it's level and title
 				}
-				else if (tempInput[0].equalsIgnoreCase("Section"))
+				// Processes the section, it's level and title
+				else if (tempInput[0].equalsIgnoreCase(CSConstants.SECTION))
 				{
 					final Level newLevel = processLevel(lineCounter, LevelType.SECTION, input);
 					if (newLevel == null)
@@ -1142,9 +1167,9 @@ public class ContentSpecParser
 						lvl.appendChild(newLevel);
 						lvl = newLevel;
 					}
-				// Process an appendix (its done in the same fashion as a chapter
 				}
-				else if (tempInput[0].equalsIgnoreCase("Appendix"))
+				// Process an appendix (its done in the same fashion as a chapter
+				else if (tempInput[0].equalsIgnoreCase(CSConstants.APPENDIX))
 				{
 					final Level newLevel = processLevel(lineCounter, LevelType.APPENDIX, input);
 					if (newLevel == null)
@@ -1164,7 +1189,7 @@ public class ContentSpecParser
 					}
 				// Process a Process
 				}
-				else if (tempInput[0].equalsIgnoreCase("Process"))
+				else if (tempInput[0].equalsIgnoreCase(CSConstants.PROCESS))
 				{
 					final Level newLevel = processLevel(lineCounter, LevelType.PROCESS, input);
 					if (newLevel == null)
@@ -1183,14 +1208,15 @@ public class ContentSpecParser
 						lvl = newLevel;
 					}
 					processes.add((Process) lvl);
-				// Process a Part
 				}
-				else if (tempInput[0].equalsIgnoreCase("Part"))
+				// Process a Part
+				else if (tempInput[0].equalsIgnoreCase(CSConstants.PART))
 				{
 					final Level newLevel = processLevel(lineCounter, LevelType.PART, input);
-					if (newLevel == null) {
+					if (newLevel == null)
+					{
 						// Create a basic level so the rest of the spec can be processed
-						Part part = new Part(null, lineCounter, input);
+						final Part part = new Part(null, lineCounter, input);
 						level = curLevel + 1;
 						lvl.appendChild(part);
 						lvl = part;

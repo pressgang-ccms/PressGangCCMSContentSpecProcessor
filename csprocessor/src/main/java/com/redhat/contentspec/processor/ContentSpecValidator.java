@@ -3,16 +3,20 @@ package com.redhat.contentspec.processor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jboss.pressgangccms.contentspec.Appendix;
 import org.jboss.pressgangccms.contentspec.ContentSpec;
 import org.jboss.pressgangccms.contentspec.Level;
+import org.jboss.pressgangccms.contentspec.Node;
 import org.jboss.pressgangccms.contentspec.Process;
 import org.jboss.pressgangccms.contentspec.SpecNode;
 import org.jboss.pressgangccms.contentspec.SpecTopic;
 import org.jboss.pressgangccms.contentspec.constants.CSConstants;
 import org.jboss.pressgangccms.contentspec.entities.Relationship;
+import org.jboss.pressgangccms.contentspec.enums.BookType;
 import org.jboss.pressgangccms.contentspec.enums.LevelType;
 import org.jboss.pressgangccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgangccms.contentspec.interfaces.ShutdownAbleApp;
@@ -162,7 +166,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			valid = false;
 		}
 
-		// If editing then check that the ID exists & the SpecRevision match
+		// If editing then check that the ID exists & the CHECKSUM/SpecRevision match
 		if (contentSpec.getId() != 0)
 		{
 			final RESTTopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(), null);
@@ -235,7 +239,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 		}
 
 		// Check that each level is valid
-		if (!validateLevel(contentSpec.getBaseLevel(), specTopics, contentSpec.getAllowEmptyLevels()))
+		if (!validateLevel(contentSpec.getBaseLevel(), specTopics, contentSpec.getAllowEmptyLevels(), contentSpec.getBookType()))
 		{
 			valid = false;
 		}
@@ -415,9 +419,11 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 	 * @param level The level to be validated.
 	 * @param specTopics The list of topics that exist within the content specification.
 	 * @param csAllowEmptyLevels If the "Allow Empty Levels" bit is set in a content specification.
+	 * @param bookType The type of book the level should be validated for.
 	 * @return True if the level is valid otherwise false.
 	 */
-	public boolean validateLevel(final Level level, final Map<String, SpecTopic> specTopics, final boolean csAllowEmptyLevels)
+	public boolean validateLevel(final Level level, final Map<String, SpecTopic> specTopics, final boolean csAllowEmptyLevels,
+			final BookType bookType)
 	{
 		// Check if the app should be shutdown
 		if (isShuttingDown.get())
@@ -456,7 +462,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 		// Validate the sub levels
 		for (final Level l : level.getChildLevels())
 		{
-			if (!validateLevel(l, specTopics, csAllowEmptyLevels))
+			if (!validateLevel(l, specTopics, csAllowEmptyLevels, bookType))
 			{
 				valid = false;
 			}
@@ -465,55 +471,127 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 		// Validate the topics in this level
 		for (final SpecTopic t : level.getSpecTopics())
 		{
-			if (!validateTopic(t, specTopics))
+			if (!validateTopic(t, specTopics, bookType))
 			{
 				valid = false;
 			}
 		}
 
 		// Validate certain requirements depending on the type of level
-		switch (level.getType())
+		if (bookType == BookType.ARTICLE)
 		{
-		case APPENDIX:
-			if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.PART))
+			switch (level.getType())
 			{
-				log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_APPENDIX_MSG, level.getLineNumber(), level.getText()));
+			case APPENDIX:
+				if (!(level.getParent().getType() == LevelType.BASE))
+				{
+					log.error(String.format(ProcessorConstants.ERROR_ARTICLE_NESTED_APPENDIX_MSG, level.getLineNumber(), level.getText()));
+					valid = false;
+				}
+				
+				/* Check that the appendix is at the end of the article */
+				final Integer nodeListId = level.getParent().getChildNodes().indexOf(level);
+				final ListIterator<Node> parentNodes = level.getParent().getChildNodes().listIterator(nodeListId);
+				
+				while (parentNodes.hasNext())
+				{
+					final Node node = parentNodes.next(); 
+					if (node instanceof Level && !(node instanceof Appendix))
+					{
+						log.error(String.format(ProcessorConstants.ERROR_CS_APPENDIX_STRUCTURE_MSG, level.getLineNumber(), level.getText()));
+						valid = false;
+					}
+				}
+				break;
+			case CHAPTER:
+				log.error(String.format(ProcessorConstants.ERROR_ARTICLE_CHAPTER_MSG, level.getLineNumber(), level.getText()));
 				valid = false;
+				break;
+			case PROCESS:
+				// Check that the process has no children
+				Process process = (Process) level;
+				if (process.getNumberOfChildLevels() != 0)
+				{
+					log.error(String.format(ProcessorConstants.ERROR_PROCESS_HAS_LEVELS_MSG, process.getLineNumber(), process.getText()));
+					valid = false;
+				}
+				break;
+			case PART:
+				log.error(String.format(ProcessorConstants.ERROR_ARTICLE_PART_MSG, level.getLineNumber(), level.getText()));
+				valid = false;
+				break;
+			case SECTION:
+				if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.SECTION))
+				{
+					log.error(String.format(ProcessorConstants.ERROR_ARTICLE_SECTION_MSG, level.getLineNumber(), level.getText()));
+					valid = false;
+				}
+				break;
+			default:
+				break;
 			}
-			break;
-		case CHAPTER:
-			if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.PART))
+		}
+		// Generic book based validation
+		else
+		{
+			switch (level.getType())
 			{
-				log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_CHAPTER_MSG, level.getLineNumber(), level.getText()));
-				valid = false;
+			case APPENDIX:
+				if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.PART))
+				{
+					log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_APPENDIX_MSG, level.getLineNumber(), level.getText()));
+					valid = false;
+				}
+				
+				/* Check that the appendix is at the end of the book */
+				final Integer nodeListId = level.getParent().getChildNodes().indexOf(level);
+				final ListIterator<Node> parentNodes = level.getParent().getChildNodes().listIterator(nodeListId);
+				
+				while (parentNodes.hasNext())
+				{
+					final Node node = parentNodes.next(); 
+					if (node instanceof Level && !(node instanceof Appendix))
+					{
+						log.error(String.format(ProcessorConstants.ERROR_CS_APPENDIX_STRUCTURE_MSG, level.getLineNumber(), level.getText()));
+						valid = false;
+					}
+				}
+				
+				break;
+			case CHAPTER:
+				if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.PART))
+				{
+					log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_CHAPTER_MSG, level.getLineNumber(), level.getText()));
+					valid = false;
+				}
+				break;
+			case PROCESS:
+				// Check that the process has no children
+				Process process = (Process) level;
+				if (process.getNumberOfChildLevels() != 0)
+				{
+					log.error(String.format(ProcessorConstants.ERROR_PROCESS_HAS_LEVELS_MSG, process.getLineNumber(), process.getText()));
+					valid = false;
+				}
+				break;
+			case PART:
+				if (level.getParent().getType() != LevelType.BASE)
+				{
+					log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_PART_MSG, level.getLineNumber(), level.getText()));
+					valid = false;
+				}
+				break;
+			case SECTION:
+				if (!(level.getParent().getType() == LevelType.APPENDIX || level.getParent().getType() == LevelType.CHAPTER
+						|| level.getParent().getType() == LevelType.SECTION))
+				{
+					log.error(String.format(ProcessorConstants.ERROR_CS_SECTION_NO_CHAPTER_MSG, level.getLineNumber(), level.getText()));
+					valid = false;
+				}
+				break;
+			default:
+				break;
 			}
-			break;
-		case PROCESS:
-			// Check that the process has no children
-			Process process = (Process) level;
-			if (process.getNumberOfChildLevels() != 0)
-			{
-				log.error(String.format(ProcessorConstants.ERROR_PROCESS_HAS_LEVELS_MSG, process.getLineNumber(), process.getText()));
-				valid = false;
-			}
-			break;
-		case PART:
-			if (level.getParent().getType() != LevelType.BASE)
-			{
-				log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_PART_MSG, level.getLineNumber(), level.getText()));
-				valid = false;
-			}
-			break;
-		case SECTION:
-			if (!(level.getParent().getType() == LevelType.APPENDIX || level.getParent().getType() == LevelType.CHAPTER
-					|| level.getParent().getType() == LevelType.SECTION))
-			{
-				log.error(String.format(ProcessorConstants.ERROR_CS_SECTION_NO_CHAPTER_MSG, level.getLineNumber(), level.getText()));
-				valid = false;
-			}
-			break;
-		default:
-			break;
 		}
 
 		return valid;
@@ -524,10 +602,11 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 	 *
 	 * @param specTopic The topic to be validated.
 	 * @param specTopics The list of topics that exist within the content specification.
+	 * @param bookType The type of book the topic is to be validated against.
 	 * @return True if the topic is valid otherwise false.
 	 */
 	@SuppressWarnings("unchecked")
-	public boolean validateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics)
+	public boolean validateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics, final BookType bookType)
 	{
 		// Check if the app should be shutdown
 		if (isShuttingDown.get())
@@ -552,13 +631,16 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			valid = false;
 		}
 
-		// Check that the topic is inside a chapter/section/process/appendix/part
-		if (specTopic.getParent() == null || !(specTopic.getParent().getType() == LevelType.CHAPTER
-				|| specTopic.getParent().getType() == LevelType.APPENDIX || specTopic.getParent().getType() == LevelType.PROCESS
-				|| specTopic.getParent().getType() == LevelType.SECTION /*|| specTopic.getParent().getType() == LevelType.PART*/))
+		if (bookType != BookType.ARTICLE)
 		{
-			log.error(String.format(ProcessorConstants.ERROR_TOPIC_OUTSIDE_CHAPTER_MSG, specTopic.getLineNumber(), specTopic.getText()));
-			valid = false;
+			// Check that the topic is inside a chapter/section/process/appendix/part
+			if (specTopic.getParent() == null || !(specTopic.getParent().getType() == LevelType.CHAPTER
+					|| specTopic.getParent().getType() == LevelType.APPENDIX || specTopic.getParent().getType() == LevelType.PROCESS
+					|| specTopic.getParent().getType() == LevelType.SECTION	/*|| specTopic.getParent().getType() == LevelType.PART*/))
+			{
+				log.error(String.format(ProcessorConstants.ERROR_TOPIC_OUTSIDE_CHAPTER_MSG, specTopic.getLineNumber(), specTopic.getText()));
+				valid = false;
+			}
 		}
 
 		// Check that the title exists
