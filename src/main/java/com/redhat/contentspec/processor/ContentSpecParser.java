@@ -1989,6 +1989,11 @@ public class ContentSpecParser
 					{
 						node.setAssignedWriter(StringUtilities.replaceEscapeChars(temp[1]));
 					}
+					else
+					{
+						log.error(String.format(ProcessorConstants.ERROR_INVALID_OPTION_MSG, lineCounter, originalInput));
+						return false;
+					}
 				}
 				else
 				{
