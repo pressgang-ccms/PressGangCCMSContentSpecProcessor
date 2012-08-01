@@ -79,6 +79,7 @@ public class ProcessorConstants
 	public static final String ERROR_INVALID_BOOK_TYPE_MSG			= INVALID_CS + " The specified book type is not valid. Please choose either \"Book\" or \"Article\".";
 	public static final String ERROR_INVALID_ARTICLE_STRUCTURE		= INVALID_CS + " Articles must contain an \"Article\" chapter and cannot contain chapters or parts.";
 	public static final String ERROR_CS_APPENDIX_STRUCTURE_MSG		= LINE + INVALID_CS + " An Appendix must be at the end of the content specification." + CSLINE_MSG;
+	public static final String ERROR_INVALID_OPTION_MSG				= LINE + INVALID_CS + " Unknown metadata tag found. \"Description\", \"URL\" and \"Writer\" are currently the only supported metadata." + CSLINE_MSG;
 
 	// Article based level errors
 	public static final String ERROR_ARTICLE_CHAPTER_MSG		 	= LINE + INVALID_CS + " Chapters can't be used in Articles." + CSLINE_MSG;
