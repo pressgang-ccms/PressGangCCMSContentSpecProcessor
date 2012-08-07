@@ -94,7 +94,7 @@ public class ProcessorUtilities
 			    		if (m.group().startsWith("["))
 			    		{
 			    			final SpecTopic specTopic = specTopics.get(key);
-			    			line = stripVariables(line, specTopic.getDBId(), specTopic.getRevision(), specTopic.getTitle());
+			    			line = stripVariables(line, specTopic, specTopic.getTitle());
 			    		}
 			    		break;
 			    	}
@@ -111,7 +111,7 @@ public class ProcessorUtilities
 			    	if (specTopics.get(key).getLineNumber() == count)
 			    	{
 			    		final SpecTopic specTopic = specTopics.get(key);
-			    		line = stripVariables(line, specTopic.getDBId(), specTopic.getRevision(), null);
+			    		line = stripVariables(line, specTopic, null);
 			    		break;
 			    	}
 			    }
@@ -127,7 +127,7 @@ public class ProcessorUtilities
 			    final SpecTopic specTopic = specTopics.get(s);
 			    if (m.group().startsWith("["))
 			    {
-			    	line = stripVariables(line, specTopic.getDBId(), specTopic.getRevision(), null);
+			    	line = stripVariables(line, specTopic, null);
 			    	// Add the target id that was created during relationship processing if one exists
 			    	if (specTopic.getTargetId() != null && !line.matches("^.*\\[[ ]*" + specTopic.getTargetId() + "[ ]*\\].*$"))
 			    	{
@@ -148,7 +148,7 @@ public class ProcessorUtilities
 			    final SpecTopic specTopic = specTopics.get(key);
 			    if (m.group().startsWith("["))
 			    {
-			    	line = stripVariables(line, specTopic.getDBId(), specTopic.getRevision(), specTopic.getTitle());
+			    	line = stripVariables(line, specTopic, specTopic.getTitle());
 			    }
 			    line = line.replace(s, Integer.toString(specTopic.getDBId()));
 			}
@@ -166,7 +166,7 @@ public class ProcessorUtilities
 			    		final SpecTopic specTopic = specTopics.get(key);
 			    		if (m.group().startsWith("["))
 			    		{
-			    			line = stripVariables(line, specTopic.getDBId(), specTopic.getRevision(), specTopic.getTitle());
+			    			line = stripVariables(line, specTopic, specTopic.getTitle());
 			    		}
 			    		line = line.replace(s, Integer.toString(specTopic.getDBId()));
 			    		break;
@@ -189,7 +189,7 @@ public class ProcessorUtilities
 			    		final SpecTopic specTopic = specTopics.get(key);
 			    		if (m.group().startsWith("["))
 			    		{
-			    			line = stripVariables(line, specTopic.getDBId(), specTopic.getRevision(), specTopic.getTitle());
+			    			line = stripVariables(line, specTopic, specTopic.getTitle());
 			    		}
 			    		line = line.replace(s, Integer.toString(specTopic.getDBId()));
 			    		break;
@@ -212,7 +212,7 @@ public class ProcessorUtilities
      * @param topicTitle The title of the topic if it is to be replaced.
      * @return The line with all variables removed.
      */
-    private static String stripVariables(final String input, final int DBId, final Integer revision, final String topicTitle)
+    private static String stripVariables(final String input, final SpecTopic specTopic, final String topicTitle)
     {
     	VariableSet idSet = findVariableSet(input, '[', ']', 0);
     	String replacementTarget = idSet.getContents();
@@ -228,7 +228,8 @@ public class ProcessorUtilities
     	}
 
 		// Replace the non relationship variable set with the database id.
-		String output = input.replace(replacementTarget, "[" + Integer.toString(DBId) + (revision == null ? "" : (", rev: " + revision)) + "]");
+		String output = input.replace(replacementTarget, "[" + Integer.toString(specTopic.getDBId()) + (specTopic.getRevision() == null ? "" : (", rev: " + specTopic.getRevision()))
+				+ (specTopic.getConditionStatement() == null ? "" : (", condition=" + specTopic.getConditionStatement())) + "]");
 		// Replace the title
 		if (topicTitle != null && StringUtilities.indexOf(output, '[') != -1)
 		{
@@ -237,8 +238,8 @@ public class ProcessorUtilities
             int i;
             for (i = 0; i < chars.length; i++)
             {
-                    char c = chars[i];
-                    if (!Character.isWhitespace(c)) break;
+            	char c = chars[i];
+            	if (!Character.isWhitespace(c)) break;
             }
 			output = output.substring(0, i) + topicTitle + " " + output.substring(StringUtilities.indexOf(output, '['));
 		}

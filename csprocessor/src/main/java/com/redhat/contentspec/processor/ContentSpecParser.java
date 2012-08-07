@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.jboss.pressgangccms.contentspec.Appendix;
 import org.jboss.pressgangccms.contentspec.Chapter;
@@ -1989,6 +1991,20 @@ public class ContentSpecParser
 					{
 						node.setAssignedWriter(StringUtilities.replaceEscapeChars(temp[1]));
 					}
+					else if (temp[0].equalsIgnoreCase("condition"))
+					{
+						final String condition = temp[1];
+						node.setConditionStatement(condition);
+						try
+						{
+							Pattern.compile(condition);
+						}
+						catch (PatternSyntaxException exception)
+						{
+							log.error(String.format(ProcessorConstants.ERROR_INVALID_CONDITION_MSG, lineCounter, originalInput));
+							return false;
+						}
+					}
 					else
 					{
 						log.error(String.format(ProcessorConstants.ERROR_INVALID_OPTION_MSG, lineCounter, originalInput));
@@ -2030,7 +2046,7 @@ public class ContentSpecParser
 								}
 							}
 						}
-						
+
 						try
 						{
 							// Get the mapping of variables
