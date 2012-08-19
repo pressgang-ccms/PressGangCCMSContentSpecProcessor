@@ -287,7 +287,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 				{
 					if (targetTopics.containsKey(relatedId) && !targetLevels.containsKey(relatedId))
 					{
-						final SpecTopic targetTopic = targetTopics.get(relatedId);
+						/*final SpecTopic targetTopic = targetTopics.get(relatedId);
 						if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(targetTopic.getTitle()))
 						{
 							if (!processingOptions.isPermissiveMode())
@@ -295,11 +295,11 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 								log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopics.get(topicId).getLineNumber(), relationship.getRelationshipTitle(), targetTopic.getTitle()));
 								error = true;
 							}
-						}
+						}*/
 					}
 					else if (!targetTopics.containsKey(relatedId) && targetLevels.containsKey(relatedId))
 					{
-						final Level targetLevel = targetLevels.get(relatedId);
+						//final Level targetLevel = targetLevels.get(relatedId);
 						if (relationship.getType() == RelationshipType.NEXT)
 						{
 							log.error(String.format(ProcessorConstants.ERROR_NEXT_RELATED_LEVEL_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
@@ -310,14 +310,14 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 							log.error(String.format(ProcessorConstants.ERROR_PREV_RELATED_LEVEL_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
 							error = true;
 						}
-						else if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(targetLevel.getTitle()))
+						/*else if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(targetLevel.getTitle()))
 						{
 							if (!processingOptions.isPermissiveMode())
 							{
 								log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopics.get(topicId).getLineNumber(), relationship.getRelationshipTitle(), targetLevel.getTitle()));
 								error = true;
 							}
-						}
+						}*/
 					}
 					else
 					{
@@ -365,14 +365,14 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 								}
 
 								// Check to ensure the title matches
-								if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(relatedTopic.getTitle()))
+								/*if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(relatedTopic.getTitle()))
 								{
 									if (!processingOptions.isPermissiveMode())
 									{
 										log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopics.get(topicId).getLineNumber(), relationship.getRelationshipTitle(), relatedTopic.getTitle()));
 										error = true;
 									}
-								}
+								}*/
 							}
 							else
 							{
@@ -392,14 +392,14 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 								log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
 							}
 							// Check to ensure the title matches
-							else if (relationship.getRelationshipTitle() != null && relationship.getRelationshipTitle().equals(relatedTopic.getTitle()))
+							/*else if (relationship.getRelationshipTitle() != null && relationship.getRelationshipTitle().equals(relatedTopic.getTitle()))
 							{
 								if (!processingOptions.isPermissiveMode())
 								{
 									log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopics.get(topicId).getLineNumber(), relationship.getRelationshipTitle(), relatedTopic.getTitle()));
 									error = true;
 								}
-							}
+							}*/
 						}
 						else
 						{
