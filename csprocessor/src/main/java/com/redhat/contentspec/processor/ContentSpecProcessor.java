@@ -6,36 +6,36 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
+import org.jboss.pressgangccms.contentspec.ContentSpec;
+import org.jboss.pressgangccms.contentspec.SpecTopic;
+import org.jboss.pressgangccms.contentspec.constants.CSConstants;
+import org.jboss.pressgangccms.contentspec.interfaces.ShutdownAbleApp;
+import org.jboss.pressgangccms.contentspec.rest.RESTManager;
+import org.jboss.pressgangccms.contentspec.rest.RESTReader;
+import org.jboss.pressgangccms.contentspec.rest.RESTWriter;
+import org.jboss.pressgangccms.contentspec.rest.utils.TopicPool;
+import org.jboss.pressgangccms.contentspec.utils.logging.ErrorLogger;
+import org.jboss.pressgangccms.contentspec.utils.logging.ErrorLoggerManager;
+import org.jboss.pressgangccms.rest.v1.collections.RESTPropertyTagCollectionV1;
+import org.jboss.pressgangccms.rest.v1.collections.RESTTagCollectionV1;
+import org.jboss.pressgangccms.rest.v1.collections.RESTTopicCollectionV1;
+import org.jboss.pressgangccms.rest.v1.collections.RESTTopicSourceUrlCollectionV1;
+import org.jboss.pressgangccms.rest.v1.components.ComponentTagV1;
+import org.jboss.pressgangccms.rest.v1.entities.RESTCategoryV1;
+import org.jboss.pressgangccms.rest.v1.entities.RESTPropertyTagV1;
+import org.jboss.pressgangccms.rest.v1.entities.RESTTagV1;
+import org.jboss.pressgangccms.rest.v1.entities.RESTTopicSourceUrlV1;
+import org.jboss.pressgangccms.rest.v1.entities.RESTTopicV1;
+import org.jboss.pressgangccms.rest.v1.entities.RESTUserV1;
+import org.jboss.pressgangccms.utils.common.CollectionUtilities;
+import org.jboss.pressgangccms.utils.common.ExceptionUtilities;
+import org.jboss.pressgangccms.utils.constants.CommonConstants;
+import org.jboss.pressgangccms.utils.structures.Pair;
 
-import com.redhat.contentspec.constants.CSConstants;
-import com.redhat.contentspec.interfaces.ShutdownAbleApp;
-import com.redhat.contentspec.ContentSpec;
-import com.redhat.contentspec.SpecTopic;
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
 import com.redhat.contentspec.processor.exceptions.ProcessingException;
 import com.redhat.contentspec.processor.structures.ProcessingOptions;
 import com.redhat.contentspec.processor.utils.ProcessorUtilities;
-import com.redhat.contentspec.rest.RESTManager;
-import com.redhat.contentspec.rest.RESTReader;
-import com.redhat.contentspec.rest.RESTWriter;
-import com.redhat.contentspec.rest.utils.TopicPool;
-import com.redhat.contentspec.utils.logging.ErrorLogger;
-import com.redhat.contentspec.utils.logging.ErrorLoggerManager;
-import com.redhat.ecs.commonstructures.Pair;
-import com.redhat.ecs.commonutils.CollectionUtilities;
-import com.redhat.ecs.commonutils.ExceptionUtilities;
-import com.redhat.ecs.constants.CommonConstants;
-import com.redhat.topicindex.rest.collections.RESTPropertyTagCollectionV1;
-import com.redhat.topicindex.rest.collections.RESTTagCollectionV1;
-import com.redhat.topicindex.rest.collections.RESTTopicCollectionV1;
-import com.redhat.topicindex.rest.collections.RESTTopicSourceUrlCollectionV1;
-import com.redhat.topicindex.rest.entities.ComponentTagV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTUserV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTCategoryV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTPropertyTagV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTTagV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTTopicSourceUrlV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
 
 /**
  * A class to fully process a Content Specification. It first parses the data using a ContentSpecParser,
@@ -208,9 +208,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			float current = 0;
 			int lastPercent = 0;
 
+			final boolean expandTranslations = csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE);
+			
 			for (final Pair<Integer, Integer> topicToRevision : referencedRevisionTopicIds)
 			{
-				reader.getTopicById(topicToRevision.getFirst(), topicToRevision.getSecond());
+				reader.getTopicById(topicToRevision.getFirst(), topicToRevision.getSecond(), expandTranslations);
 
 				++current;
 				final int percent = Math.round(current / total * 100);

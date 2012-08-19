@@ -6,20 +6,20 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.jboss.pressgangccms.contentspec.ContentSpec;
+import org.jboss.pressgangccms.contentspec.SpecTopic;
+import org.jboss.pressgangccms.rest.v1.entities.RESTCategoryV1;
+import org.jboss.pressgangccms.rest.v1.entities.RESTTagV1;
+import org.jboss.pressgangccms.utils.common.HashUtilities;
+import org.jboss.pressgangccms.utils.common.StringUtilities;
 
 import com.google.code.regexp.NamedMatcher;
 import com.google.code.regexp.NamedPattern;
-import com.redhat.contentspec.ContentSpec;
-import com.redhat.contentspec.SpecTopic;
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
 import com.redhat.contentspec.processor.structures.VariableSet;
-import com.redhat.ecs.commonutils.HashUtilities;
-import com.redhat.ecs.commonutils.StringUtilities;
-import com.redhat.topicindex.rest.entities.interfaces.RESTCategoryV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTTagV1;
 
-public class ProcessorUtilities {
-	
+public class ProcessorUtilities
+{
 	private static final Logger log = Logger.getLogger(ProcessorUtilities.class);
 
 	/**
@@ -45,7 +45,7 @@ public class ProcessorUtilities {
 		}
 		return mapping;
 	}
-	
+
 	/**
 	 * Creates a Post Processed Content Specification from a processed ContentSpec object.
 	 * 
@@ -86,7 +86,7 @@ public class ProcessorUtilities {
 			NamedMatcher m = newTopicPattern.matcher(line.toUpperCase());
 			while (m.find())
 			{
-				log.debug("Pattern1");
+				log.debug("Existing Topic Match");
 			    for (final String key: specTopics.keySet())
 			    {
 			    	if (specTopics.get(key).getLineNumber() == count)
@@ -94,38 +94,40 @@ public class ProcessorUtilities {
 			    		if (m.group().startsWith("["))
 			    		{
 			    			final SpecTopic specTopic = specTopics.get(key);
-			    			line = stripVariables(line, specTopic.getDBId(), specTopic.getRevision(), specTopic.getTitle());
+			    			line = stripVariables(line, specTopic, specTopic.getTitle());
 			    		}
 			    		break;
 			    	}
 			    }
 			}
+
 			// New Topic without an identifying number
 			m = newTopicPattern2.matcher(line.toUpperCase());
 			while (m.find())
 			{
-				log.debug("Pattern2");
+				log.debug("New Topic without an Identifier Match");
 			    for (final String key: specTopics.keySet())
 			    {
 			    	if (specTopics.get(key).getLineNumber() == count)
 			    	{
 			    		final SpecTopic specTopic = specTopics.get(key);
-			    		line = stripVariables(line, specTopic.getDBId(), specTopic.getRevision(), null);
+			    		line = stripVariables(line, specTopic, null);
 			    		break;
 			    	}
 			    }
 			}
+
 			// New Topic with an identifying number
 			m = newTopicRelationshipPattern.matcher(line.toUpperCase());
 			while (m.find())
 			{
-				log.debug("Pattern3");
+				log.debug("New Topic with an Identifier Match");
 				final String s = m.group(ProcessorConstants.TOPIC_ID_CONTENTS);
 			    log.debug(s);
 			    final SpecTopic specTopic = specTopics.get(s);
 			    if (m.group().startsWith("["))
 			    {
-			    	line = stripVariables(line, specTopic.getDBId(), specTopic.getRevision(), null);
+			    	line = stripVariables(line, specTopic, null);
 			    	// Add the target id that was created during relationship processing if one exists
 			    	if (specTopic.getTargetId() != null && !line.matches("^.*\\[[ ]*" + specTopic.getTargetId() + "[ ]*\\].*$"))
 			    	{
@@ -134,26 +136,28 @@ public class ProcessorUtilities {
 			    }
 			    line = line.replace(s, specTopic.getTargetId() == null ? Integer.toString(specTopic.getDBId()) : specTopic.getTargetId());
 			}
+
 			// Duplicated Topic
 			m = duplicateTopicPattern.matcher(line.toUpperCase());
 			while (m.find())
 			{
-				log.debug("Pattern4");
+				log.debug("Duplicated Topic Match");
 				String s = m.group(ProcessorConstants.TOPIC_ID_CONTENTS);
 			    String key = s.replace('X', 'N');
 			    
 			    final SpecTopic specTopic = specTopics.get(key);
 			    if (m.group().startsWith("["))
 			    {
-			    	line = stripVariables(line, specTopic.getDBId(), specTopic.getRevision(), specTopic.getTitle());
+			    	line = stripVariables(line, specTopic, specTopic.getTitle());
 			    }
 			    line = line.replace(s, Integer.toString(specTopic.getDBId()));
 			}
+
 			// Cloned Topic
 			m = clonedTopicPattern.matcher(line.toUpperCase());
 			while (m.find())
 			{
-				log.debug("Pattern5");
+				log.debug("Cloned Topic Match");
 				String s = m.group(ProcessorConstants.TOPIC_ID_CONTENTS);
 			    for (String key: specTopics.keySet())
 			    {
@@ -162,18 +166,19 @@ public class ProcessorUtilities {
 			    		final SpecTopic specTopic = specTopics.get(key);
 			    		if (m.group().startsWith("["))
 			    		{
-			    			line = stripVariables(line, specTopic.getDBId(), specTopic.getRevision(), specTopic.getTitle());
+			    			line = stripVariables(line, specTopic, specTopic.getTitle());
 			    		}
 			    		line = line.replace(s, Integer.toString(specTopic.getDBId()));
 			    		break;
 			    	}
 			    }
 			}
+
 			// Duplicated Cloned Topic
 			m = clonedDuplicateTopicPattern.matcher(line.toUpperCase());
 			while (m.find())
 			{
-				log.debug("Pattern6");
+				log.debug("Duplicated Cloned Topic Match");
 				String s = m.group(ProcessorConstants.TOPIC_ID_CONTENTS);
 			    // Remove the X
 			    String clonedId = s.substring(1);
@@ -184,7 +189,7 @@ public class ProcessorUtilities {
 			    		final SpecTopic specTopic = specTopics.get(key);
 			    		if (m.group().startsWith("["))
 			    		{
-			    			line = stripVariables(line, specTopic.getDBId(), specTopic.getRevision(), specTopic.getTitle());
+			    			line = stripVariables(line, specTopic, specTopic.getTitle());
 			    		}
 			    		line = line.replace(s, Integer.toString(specTopic.getDBId()));
 			    		break;
@@ -197,7 +202,7 @@ public class ProcessorUtilities {
 		}
 		return "CHECKSUM=" + HashUtilities.generateMD5(output) + "\n" + output;
 	}
-    
+
     /**
      * Removes all the variables from a topics Content Specification line except the database ID.
      * 
@@ -207,26 +212,8 @@ public class ProcessorUtilities {
      * @param topicTitle The title of the topic if it is to be replaced.
      * @return The line with all variables removed.
      */
-    private static String stripVariables(final String input, final int DBId, final Integer revision, final String topicTitle)
+    private static String stripVariables(final String input, final SpecTopic specTopic, final String topicTitle)
     {
-    	/*final String regex = String.format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']');
-    	final NamedPattern bracketPattern = NamedPattern.compile(regex);
-		final NamedMatcher matcher = bracketPattern.matcher(input);
-		// Find the contents of the brackets that aren't a relationship or target
-		String replacementTarget = null;
-		while (matcher.find())
-		{
-			final String variableSet = matcher.group(ProcessorConstants.BRACKET_CONTENTS).replaceAll("\n", "");
-			if (!(variableSet.toUpperCase().matches(ProcessorConstants.RELATED_REGEX) || variableSet.toUpperCase().matches(ProcessorConstants.PREREQUISITE_REGEX)
-					|| variableSet.toUpperCase().matches(ProcessorConstants.NEXT_REGEX) || variableSet.toUpperCase().matches(ProcessorConstants.PREV_REGEX)
-					|| variableSet.toUpperCase().matches(ProcessorConstants.TARGET_REGEX) || variableSet.toUpperCase().matches(ProcessorConstants.BRANCH_REGEX)
-					|| variableSet.toUpperCase().matches(ProcessorConstants.LINK_LIST_REGEX) || variableSet.toUpperCase().matches(ProcessorConstants.EXTERNAL_TARGET_REGEX)
-					|| variableSet.toUpperCase().matches(ProcessorConstants.EXTERNAL_CSP_REGEX)))
-			{
-				// Normal set of variables that contains the ID and/or tags
-				replacementTarget = variableSet;
-			}
-		}*/
     	VariableSet idSet = findVariableSet(input, '[', ']', 0);
     	String replacementTarget = idSet.getContents();
     	while (replacementTarget.toUpperCase().matches(ProcessorConstants.RELATED_REGEX) || replacementTarget.toUpperCase().matches(ProcessorConstants.PREREQUISITE_REGEX)
@@ -241,7 +228,8 @@ public class ProcessorUtilities {
     	}
 
 		// Replace the non relationship variable set with the database id.
-		String output = input.replace(replacementTarget, "[" + Integer.toString(DBId) + (revision == null ? "" : (", rev: " + revision)) + "]");
+		String output = input.replace(replacementTarget, "[" + Integer.toString(specTopic.getDBId()) + (specTopic.getRevision() == null ? "" : (", rev: " + specTopic.getRevision()))
+				+ (specTopic.getConditionStatement() == null ? "" : (", condition=" + specTopic.getConditionStatement())) + "]");
 		// Replace the title
 		if (topicTitle != null && StringUtilities.indexOf(output, '[') != -1)
 		{
@@ -250,14 +238,14 @@ public class ProcessorUtilities {
             int i;
             for (i = 0; i < chars.length; i++)
             {
-                    char c = chars[i];
-                    if (!Character.isWhitespace(c)) break;
+            	char c = chars[i];
+            	if (!Character.isWhitespace(c)) break;
             }
 			output = output.substring(0, i) + topicTitle + " " + output.substring(StringUtilities.indexOf(output, '['));
 		}
 		return output;
     }
-    
+
     /**
 	 * Finds a set of variables that are group by delimiters. It also skips nested
 	 * groups and returns them as part of the set so they can be processed separately.
@@ -275,7 +263,7 @@ public class ProcessorUtilities {
 		final int startIndex = StringUtilities.indexOf(input, startDelim, startPos);
 		int endIndex = StringUtilities.indexOf(input, endDelim, startPos);
 		int nextStartIndex = StringUtilities.indexOf(input, startDelim, startIndex + 1);
-		
+
 		/* 
 		 * Find the ending delimiter that matches the start delimiter. This is done
 		 * by checking to see if the next start delimiter is before the current end
@@ -288,7 +276,7 @@ public class ProcessorUtilities {
 			endIndex = StringUtilities.indexOf(input, endDelim, endIndex + 1);
 			nextStartIndex = StringUtilities.indexOf(input, startDelim, prevEndIndex + 1);
 		}
-		
+
 		// Build the resulting set object
 		final VariableSet set = new VariableSet();
 
