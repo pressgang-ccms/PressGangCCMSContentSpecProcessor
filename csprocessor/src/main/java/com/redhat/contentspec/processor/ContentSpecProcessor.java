@@ -212,7 +212,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			
 			for (final Pair<Integer, Integer> topicToRevision : referencedRevisionTopicIds)
 			{
-				reader.getTopicById(topicToRevision.getFirst(), topicToRevision.getSecond(), expandTranslations);
+			    // If we want to update the revisions then we should get the latest topic and not the revision
+			    if (processingOptions.isUpdateRevisions())
+			    {
+			        reader.getTopicById(topicToRevision.getFirst(), null, expandTranslations);
+			    }
+			    else
+			    {
+			        reader.getTopicById(topicToRevision.getFirst(), topicToRevision.getSecond(), expandTranslations);
+			    }
 
 				++current;
 				final int percent = Math.round(current / total * 100);
@@ -720,7 +728,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 				{
 					try
 					{
-						final RESTTopicV1 topic = createTopicEntity(specTopics.get(specTopicId));
+						final RESTTopicV1 topic = createTopicEntity(specTopic);
 						if (topic != null)
 						{
 							topics.addUpdatedTopic(topic);

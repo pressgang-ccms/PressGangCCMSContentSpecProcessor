@@ -8,6 +8,7 @@ public class ProcessingOptions {
 	private boolean allowEmptyLevels = false;
 	private boolean allowNewTopics = true;
 	private boolean addRevisions = false;
+	private boolean updateRevisions = false;
 	
 	public boolean isPermissiveMode()
 	{
@@ -63,4 +64,12 @@ public class ProcessingOptions {
 	public void setAddRevisions(boolean addRevisions) {
 		this.addRevisions = addRevisions;
 	}
+
+    public boolean isUpdateRevisions() {
+        return updateRevisions;
+    }
+
+    public void setUpdateRevisions(boolean updateRevisions) {
+        this.updateRevisions = updateRevisions;
+    }
 }
