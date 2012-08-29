@@ -1322,7 +1322,7 @@ public class ContentSpecParser
 			{
 				return false;
 			}
-			
+						
 			// Adds the topic to the current level
 			lvl.appendSpecTopic(tempTopic);
 		}
@@ -1466,6 +1466,7 @@ public class ContentSpecParser
 			log.error(String.format(ProcessorConstants.ERROR_INVALID_TOPIC_ID_MSG, lineCounter, input));
 			return null;
 		}
+		tempTopic.setUniqueId(uniqueId);
 		
 		// Get the options if the topic is a new or cloned topic
 		if (variables[0].matches("(" + CSConstants.NEW_TOPIC_ID_REGEX + ")|(" + CSConstants.CLONED_TOPIC_ID_REGEX + ")|(" + CSConstants.EXISTING_TOPIC_ID_REGEX + ")"))
@@ -1484,164 +1485,175 @@ public class ContentSpecParser
 			}
 		}
 		
-		// Process the relationships
-		final ArrayList<Relationship> topicRelationships = new ArrayList<Relationship>();
-		if (variableMap.containsKey(RelationshipType.RELATED))
+		if (!processTopicRelationships(tempTopic, variableMap, input))
 		{
-			final String[] related = variableMap.get(RelationshipType.RELATED);
-			for (final String relatedId: related)
-			{
-				if (relatedId.matches(ProcessorConstants.RELATION_ID_REGEX))
-				{
-					topicRelationships.add(new Relationship(uniqueId, relatedId, RelationshipType.RELATED));
-				}
-				else if (relatedId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX))
-				{
-					final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-					final NamedMatcher matcher = pattern.matcher(relatedId);
-					
-					matcher.find();
-					final String id = matcher.group("TopicID");
-					final String relationshipTitle = matcher.group("TopicTitle").trim();
-					
-					topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.RELATED, relationshipTitle));
-				}
-				else
-				{
-					// TODO Error Message
-					log.error("Invalid Related-To Relationship format");
-					return null;
-				}
-			}
-		}
-		
-		if (variableMap.containsKey(RelationshipType.PREREQUISITE))
-		{
-			final String[] prerequisites = variableMap.get(RelationshipType.PREREQUISITE);
-			for (final String prerequisiteId: prerequisites)
-			{
-				if (prerequisiteId.matches(ProcessorConstants.RELATION_ID_REGEX))
-				{
-					topicRelationships.add(new Relationship(uniqueId, prerequisiteId, RelationshipType.PREREQUISITE));
-				}
-				else if (prerequisiteId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX))
-				{
-					final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-					final NamedMatcher matcher = pattern.matcher(prerequisiteId);
-					
-					matcher.find();
-					final String id = matcher.group("TopicID");
-					final String relationshipTitle = matcher.group("TopicTitle");
-					
-					topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.PREREQUISITE, relationshipTitle.trim()));
-				}
-				else
-				{
-					// TODO Error Message
-					log.error("Invalid Prerequiste Relationship format");
-					return null;
-				}
-			}
-		}
-		
-		if (variableMap.containsKey(RelationshipType.LINKLIST))
-		{
-			final String[] linkLists = variableMap.get(RelationshipType.LINKLIST);
-			for (final String linkListId: linkLists)
-			{
-				if (linkListId.matches(ProcessorConstants.RELATION_ID_REGEX))
-				{
-					topicRelationships.add(new Relationship(uniqueId, linkListId, RelationshipType.LINKLIST));
-				}
-				else if (linkListId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX))
-				{
-					final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-					final NamedMatcher matcher = pattern.matcher(linkListId);
-					
-					matcher.find();
-					final String id = matcher.group("TopicID");
-					final String relationshipTitle = matcher.group("TopicTitle");
-					
-					topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.LINKLIST, relationshipTitle.trim()));
-				}
-				else
-				{
-					// TODO Error Message
-					log.error("Invalid Link-List Relationship format");
-					return null;
-				}
-			}
-		}
-		
-		// Next and Previous relationships should only be created internally and shouldn't be specified by the user
-		if (variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType.PREVIOUS))
-		{
-			log.error(String.format(ProcessorConstants.ERROR_TOPIC_NEXT_PREV_MSG, lineCounter, input));
-			return null;
-		}
-		
-		/* 
-		 * Branches should only exist within a process. So make sure that
-		 * the current level is a process otherwise throw an error.
-		 */
-		if (variableMap.containsKey(RelationshipType.BRANCH))
-		{
-			if (lvl instanceof Process)
-			{
-				final String[] branches = variableMap.get(RelationshipType.BRANCH);
-				((Process) lvl).addBranches(uniqueId, Arrays.asList(branches));
-			}
-			else
-			{
-				log.error(String.format(ProcessorConstants.ERROR_TOPIC_BRANCH_OUTSIDE_PROCESS, lineCounter, input));
-				return null;
-			}
-		}
-		
-		// Add the relationships to the global list if any exist
-		if (!topicRelationships.isEmpty())
-		{
-			relationships.put(uniqueId, topicRelationships);
-		}
-		
-		// Process targets
-		if (variableMap.containsKey(RelationshipType.TARGET))
-		{
-			final String targetId = variableMap.get(RelationshipType.TARGET)[0];
-			if (targetTopics.containsKey(targetId))
-			{
-				log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetTopics.get(targetId).getLineNumber(), targetTopics.get(targetId).getText(), lineCounter, input));
-				return null;
-			}
-			else if (targetLevels.containsKey(targetId))
-			{
-				log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetLevels.get(targetId).getLineNumber(), targetLevels.get(targetId).getText(), lineCounter, input));
-				return null;
-			}
-			else
-			{
-				targetTopics.put(targetId, tempTopic);
-				tempTopic.setTargetId(targetId);
-			}
-		}
-		
-		// Throw an error for external targets
-		if (variableMap.containsKey(RelationshipType.EXTERNAL_TARGET)) 
-		{
-			// TODO Log an error
-			log.error("Unable to use external targets on topics.");
-			return null;
-		}
-		
-		// Throw an error for external content spec injections
-		if (variableMap.containsKey(RelationshipType.EXTERNAL_CONTENT_SPEC)) 
-		{
-			// TODO Log an error
-			log.error("Unable to use external content specs as topics.");
-			return null;
+		    return null;
 		}
 		
 		return tempTopic;
+	}
+	
+	protected boolean processTopicRelationships(final SpecTopic tempTopic, final HashMap<RelationshipType, String[]> variableMap, final String input)
+	{
+	    // Process the relationships
+	    final String uniqueId = tempTopic.getUniqueId();
+        final ArrayList<Relationship> topicRelationships = new ArrayList<Relationship>();
+        if (variableMap.containsKey(RelationshipType.RELATED))
+        {
+            final String[] related = variableMap.get(RelationshipType.RELATED);
+            for (final String relatedId: related)
+            {
+                if (relatedId.matches(ProcessorConstants.RELATION_ID_REGEX))
+                {
+                    topicRelationships.add(new Relationship(uniqueId, relatedId, RelationshipType.RELATED));
+                }
+                else if (relatedId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX))
+                {
+                    final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
+                    final NamedMatcher matcher = pattern.matcher(relatedId);
+                    
+                    matcher.find();
+                    final String id = matcher.group("TopicID");
+                    final String relationshipTitle = matcher.group("TopicTitle").trim();
+                    
+                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.RELATED, relationshipTitle));
+                }
+                else
+                {
+                    // TODO Error Message
+                    log.error("Invalid Related-To Relationship format");
+                    return false;
+                }
+            }
+        }
+        
+        if (variableMap.containsKey(RelationshipType.PREREQUISITE))
+        {
+            final String[] prerequisites = variableMap.get(RelationshipType.PREREQUISITE);
+            for (final String prerequisiteId: prerequisites)
+            {
+                if (prerequisiteId.matches(ProcessorConstants.RELATION_ID_REGEX))
+                {
+                    topicRelationships.add(new Relationship(uniqueId, prerequisiteId, RelationshipType.PREREQUISITE));
+                }
+                else if (prerequisiteId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX))
+                {
+                    final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
+                    final NamedMatcher matcher = pattern.matcher(prerequisiteId);
+                    
+                    matcher.find();
+                    final String id = matcher.group("TopicID");
+                    final String relationshipTitle = matcher.group("TopicTitle");
+                    
+                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.PREREQUISITE, relationshipTitle.trim()));
+                }
+                else
+                {
+                    // TODO Error Message
+                    log.error("Invalid Prerequiste Relationship format");
+                    return false;
+                }
+            }
+        }
+        
+        if (variableMap.containsKey(RelationshipType.LINKLIST))
+        {
+            final String[] linkLists = variableMap.get(RelationshipType.LINKLIST);
+            for (final String linkListId: linkLists)
+            {
+                if (linkListId.matches(ProcessorConstants.RELATION_ID_REGEX))
+                {
+                    topicRelationships.add(new Relationship(uniqueId, linkListId, RelationshipType.LINKLIST));
+                }
+                else if (linkListId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX))
+                {
+                    final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
+                    final NamedMatcher matcher = pattern.matcher(linkListId);
+                    
+                    matcher.find();
+                    final String id = matcher.group("TopicID");
+                    final String relationshipTitle = matcher.group("TopicTitle");
+                    
+                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.LINKLIST, relationshipTitle.trim()));
+                }
+                else
+                {
+                    // TODO Error Message
+                    log.error("Invalid Link-List Relationship format");
+                    return false;
+                }
+            }
+        }
+        
+        // Next and Previous relationships should only be created internally and shouldn't be specified by the user
+        if (variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType.PREVIOUS))
+        {
+            log.error(String.format(ProcessorConstants.ERROR_TOPIC_NEXT_PREV_MSG, lineCounter, input));
+            return false;
+        }
+        
+        /* 
+         * Branches should only exist within a process. So make sure that
+         * the current level is a process otherwise throw an error.
+         */
+        if (variableMap.containsKey(RelationshipType.BRANCH))
+        {
+            if (lvl instanceof Process)
+            {
+                final String[] branches = variableMap.get(RelationshipType.BRANCH);
+                ((Process) lvl).addBranches(uniqueId, Arrays.asList(branches));
+            }
+            else
+            {
+                log.error(String.format(ProcessorConstants.ERROR_TOPIC_BRANCH_OUTSIDE_PROCESS, lineCounter, input));
+                return false;
+            }
+        }
+        
+        // Add the relationships to the global list if any exist
+        if (!topicRelationships.isEmpty())
+        {
+            relationships.put(uniqueId, topicRelationships);
+        }
+        
+        // Process targets
+        if (variableMap.containsKey(RelationshipType.TARGET))
+        {
+            final String targetId = variableMap.get(RelationshipType.TARGET)[0];
+            if (targetTopics.containsKey(targetId))
+            {
+                log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetTopics.get(targetId).getLineNumber(), targetTopics.get(targetId).getText(), lineCounter, input));
+                return false;
+            }
+            else if (targetLevels.containsKey(targetId))
+            {
+                log.error(String.format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetLevels.get(targetId).getLineNumber(), targetLevels.get(targetId).getText(), lineCounter, input));
+                return false;
+            }
+            else
+            {
+                targetTopics.put(targetId, tempTopic);
+                tempTopic.setTargetId(targetId);
+            }
+        }
+        
+        // Throw an error for external targets
+        if (variableMap.containsKey(RelationshipType.EXTERNAL_TARGET)) 
+        {
+            // TODO Log an error
+            log.error("Unable to use external targets on topics.");
+            return false;
+        }
+        
+        // Throw an error for external content spec injections
+        if (variableMap.containsKey(RelationshipType.EXTERNAL_CONTENT_SPEC)) 
+        {
+            // TODO Log an error
+            log.error("Unable to use external content specs as topics.");
+            return false;
+        }
+        
+        return true;
 	}
 	
 	/**
@@ -1801,7 +1813,7 @@ public class ContentSpecParser
 		 * Check to see if the line doesn't match the regex even once. Also check to see if the next 
 		 * line is a continuation of the current line. If so then attempt to read the next line.
 		 */
-		if (lastEndDelimPos < lastStartDelimPos || (nextLine != null && nextLine.trim().toUpperCase().matches("^\\" + startDelim + "[ ]*(R|L|P|T|B).*")))
+		if (lastEndDelimPos < lastStartDelimPos || (nextLine != null && nextLine.trim().toUpperCase().matches("^\\" + startDelim + "[ ]*(R|L|P|T|B).*")) || input.trim().matches("(.|\n|\r\n)*(?<!\\\\)" + separator + "$"))
 		{
 			// Read in a new line and increment relevant counters
 			temp = lines.poll();
@@ -2344,14 +2356,44 @@ public class ContentSpecParser
 		VariableSet set = ProcessorUtilities.findVariableSet(input, startDelim, endDelim, 0);
 		while (set != null && set.getContents() != null)
 		{
+		    /*
+		     * Check if we've found the end of a set. If we have add the set to the
+		     * list and try and see if another set exists. If not then get the next line
+		     * in the content spec and keep processing the set until the end of the set
+		     * is found or the end of the content spec.
+		     */
 			if (set.getEndPos() != null)
 			{
 				retValue.add(set);
-				set = ProcessorUtilities.findVariableSet(input, startDelim, endDelim, set.getEndPos() + 1);
+				
+				final String nextLine = lines.peek();
+				final int nextStart = set.getEndPos() + 1;
+				set = ProcessorUtilities.findVariableSet(varLine, startDelim, endDelim, nextStart);
+				
+				/*
+				 * If the next set and/or its contents are empty then it means we found all the sets
+				 * for the input line. However the next line in the content spec maybe a continuation
+				 * but we couldn't find it originally because of a missing separator. So peek at the next
+				 * line and see if it's a continuation (ie another relationship) and if it is then add the
+				 * line and continue to find sets.
+				 */
+				if ((set == null || set.getContents() == null) && (nextLine != null && nextLine.trim().toUpperCase().matches("^\\" + startDelim + "[ ]*(R|L|P|T|B).*")))
+				{
+				    final String line = lines.poll();
+	                lineCounter++;
+	                
+	                if (line != null)
+	                {
+	                    varLine += "\n" + line;
+	                    
+	                    spec.appendPreProcessedLine(line);
+	                    set = ProcessorUtilities.findVariableSet(varLine, startDelim, endDelim, nextStart);
+	                }
+				}
 			}
 			else
 			{
-				final String line = lines.poll();
+			    final String line = lines.poll();
 				lineCounter++;
 				
 				if (line != null)
