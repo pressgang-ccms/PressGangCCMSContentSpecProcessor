@@ -985,22 +985,22 @@ public class ContentSpecParser
 				int startingPos = StringUtilities.indexOf(tempInput[1], '[');
 				if (startingPos != -1)
 				{
-					String cfg = tempInput[1];
+					final StringBuilder cfg = new StringBuilder(tempInput[1]);
 					int startLineCount = lineCounter;
 					// If the ']' character isn't on this line try the next line
-					if (StringUtilities.indexOf(cfg, ']') == -1)
+					if (StringUtilities.indexOf(cfg.toString(), ']') == -1)
 					{
-						cfg += "\n";
+						cfg.append("\n");
 						
 						// Read the next line and increment counters
 						String newLine = lines.poll();
 						while (newLine != null)
 						{
-							cfg += newLine + "\n";
+							cfg.append(newLine + "\n");
 							lineCounter++;
 							spec.appendPreProcessedLine(newLine);
 							// If the ']' character still isn't found keep trying
-							if (StringUtilities.lastIndexOf(cfg, ']') == -1)
+							if (StringUtilities.lastIndexOf(cfg.toString(), ']') == -1)
 							{
 								newLine = lines.poll();
 							}
@@ -1011,15 +1011,17 @@ public class ContentSpecParser
 						}
 					}
 					
+					final String finalCfg = cfg.toString();
+					
 					// Check that the ']' character was found and that it was found before another '[' character
-					if (StringUtilities.lastIndexOf(cfg, ']') == -1 || StringUtilities.lastIndexOf(cfg, '[') != startingPos)
+					if (StringUtilities.lastIndexOf(finalCfg, ']') == -1 || StringUtilities.lastIndexOf(finalCfg, '[') != startingPos)
 					{
-						log.error(String.format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, startLineCount, tempInput[0] + " = " + cfg.replaceAll("\n", "\n          ")));
+						log.error(String.format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, startLineCount, tempInput[0] + " = " + finalCfg.replaceAll("\n", "\n          ")));
 						return false;
 					}
 					else
 					{
-						spec.setPublicanCfg(StringUtilities.replaceEscapeChars(cfg).substring(1, cfg.length() - 2));
+						spec.setPublicanCfg(StringUtilities.replaceEscapeChars(finalCfg).substring(1, cfg.length() - 2));
 					}
 				}
 				else
@@ -1520,8 +1522,7 @@ public class ContentSpecParser
                 }
                 else
                 {
-                    // TODO Error Message
-                    log.error("Invalid Related-To Relationship format");
+                    log.error(String.format(ProcessorConstants.ERROR_INVALID_REFERS_TO_RELATIONSHIP, lineCounter));
                     return false;
                 }
             }
@@ -1549,8 +1550,7 @@ public class ContentSpecParser
                 }
                 else
                 {
-                    // TODO Error Message
-                    log.error("Invalid Prerequiste Relationship format");
+                    log.error(String.format(ProcessorConstants.ERROR_INVALID_PREREQUISITE_RELATIONSHIP, lineCounter));
                     return false;
                 }
             }
@@ -1578,8 +1578,7 @@ public class ContentSpecParser
                 }
                 else
                 {
-                    // TODO Error Message
-                    log.error("Invalid Link-List Relationship format");
+                    log.error(String.format(ProcessorConstants.ERROR_INVALID_LINK_LIST_RELATIONSHIP, lineCounter));
                     return false;
                 }
             }
@@ -2040,21 +2039,20 @@ public class ContentSpecParser
 					if (StringUtilities.indexOf(temp[1], '(') != -1)
 					{
 						String[] tempTags = new String[0];
-						String input = temp[1];
+						final StringBuilder input = new StringBuilder(temp[1]);
 						if (StringUtilities.indexOf(temp[1], ')') == -1)
 						{
-							input = temp[1];
 							for (int j = i + 1; j < vars.length; j++)
 							{
 								i++;
 								if (StringUtilities.indexOf(vars[j], ')') != -1)
 								{
-									input += ", " + vars[j];
+									input.append(", " + vars[j]);
 									break;
 								}
 								else
 								{
-									input += ", " + vars[j];
+									input.append(", " + vars[j]);
 								}
 							}
 						}
@@ -2062,7 +2060,7 @@ public class ContentSpecParser
 						try
 						{
 							// Get the mapping of variables
-							HashMap<RelationshipType, String[]> variableMap = getLineVariables(input, '(', ')', ',', false);
+							HashMap<RelationshipType, String[]> variableMap = getLineVariables(input.toString(), '(', ')', ',', false);
 							if (variableMap.containsKey(RelationshipType.NONE))
 							{
 								tempTags = variableMap.get(RelationshipType.NONE);
@@ -2351,7 +2349,7 @@ public class ContentSpecParser
 	 */
 	protected List<VariableSet> findVariableSets(final String input, final char startDelim, final char endDelim)
 	{
-		String varLine = new String(input);
+		final StringBuilder varLine = new StringBuilder(input);
 		final List<VariableSet> retValue = new ArrayList<VariableSet>();
 		VariableSet set = ProcessorUtilities.findVariableSet(input, startDelim, endDelim, 0);
 		while (set != null && set.getContents() != null)
@@ -2368,7 +2366,7 @@ public class ContentSpecParser
 				
 				final String nextLine = lines.peek();
 				final int nextStart = set.getEndPos() + 1;
-				set = ProcessorUtilities.findVariableSet(varLine, startDelim, endDelim, nextStart);
+				set = ProcessorUtilities.findVariableSet(varLine.toString(), startDelim, endDelim, nextStart);
 				
 				/*
 				 * If the next set and/or its contents are empty then it means we found all the sets
@@ -2384,10 +2382,10 @@ public class ContentSpecParser
 	                
 	                if (line != null)
 	                {
-	                    varLine += "\n" + line;
+	                    varLine.append("\n" + line);
 	                    
 	                    spec.appendPreProcessedLine(line);
-	                    set = ProcessorUtilities.findVariableSet(varLine, startDelim, endDelim, nextStart);
+	                    set = ProcessorUtilities.findVariableSet(varLine.toString(), startDelim, endDelim, nextStart);
 	                }
 				}
 			}
@@ -2398,10 +2396,10 @@ public class ContentSpecParser
 				
 				if (line != null)
 				{
-					varLine += "\n" + line;
+					varLine.append("\n" + line);
 					
 					spec.appendPreProcessedLine(line);
-					set = ProcessorUtilities.findVariableSet(varLine, startDelim, endDelim, set.getStartPos());
+					set = ProcessorUtilities.findVariableSet(varLine.toString(), startDelim, endDelim, set.getStartPos());
 				}
 				else
 				{
