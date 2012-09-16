@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.pressgangccms.contentspec.Appendix;
@@ -24,15 +25,16 @@ import org.jboss.pressgangccms.contentspec.rest.RESTManager;
 import org.jboss.pressgangccms.contentspec.rest.RESTReader;
 import org.jboss.pressgangccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgangccms.contentspec.utils.logging.ErrorLoggerManager;
-import org.jboss.pressgangccms.rest.v1.collections.base.BaseRestCollectionV1;
+import org.jboss.pressgangccms.rest.v1.collections.base.RESTBaseCollectionItemV1;
+import org.jboss.pressgangccms.rest.v1.collections.base.RESTBaseCollectionV1;
 import org.jboss.pressgangccms.rest.v1.components.ComponentBaseTopicV1;
 import org.jboss.pressgangccms.rest.v1.components.ComponentTagV1;
 import org.jboss.pressgangccms.rest.v1.components.ComponentTopicV1;
-import org.jboss.pressgangccms.rest.v1.entities.RESTCategoryV1;
 import org.jboss.pressgangccms.rest.v1.entities.RESTTagV1;
 import org.jboss.pressgangccms.rest.v1.entities.RESTTopicV1;
 import org.jboss.pressgangccms.rest.v1.entities.RESTTranslatedTopicV1;
 import org.jboss.pressgangccms.rest.v1.entities.base.RESTBaseTopicV1;
+import org.jboss.pressgangccms.rest.v1.entities.join.RESTCategoryTagV1;
 import org.jboss.pressgangccms.utils.common.DocBookUtilities;
 import org.jboss.pressgangccms.utils.common.HashUtilities;
 import org.jboss.pressgangccms.utils.constants.CommonConstants;
@@ -50,7 +52,7 @@ import com.redhat.contentspec.processor.utils.ProcessorUtilities;
  * @param <T> The REST Topic class that the Validator will be validating against.
  * @param <U> The REST Topic Collection class that the Validator will be validating against.
  */
-public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends BaseRestCollectionV1<T, U>> implements ShutdownAbleApp
+public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U, V>, U extends RESTBaseCollectionV1<T, U, V>, V extends RESTBaseCollectionItemV1<T, U, V>> implements ShutdownAbleApp
 {
 	private final RESTReader reader;
 	private final ErrorLogger log;
@@ -115,6 +117,11 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 		{
 			log.error(ProcessorConstants.ERROR_CS_NO_TITLE_MSG);
 			valid = false;
+		}
+		else if (!contentSpec.getTitle().matches(ProcessorConstants.CSP_TITLE_REGEX))
+		{
+		    log.error(ProcessorConstants.ERROR_CS_INVALID_TITLE_MSG);
+		    valid = false;
 		}
 
 		if (contentSpec.getProduct() == null || contentSpec.getProduct().equals(""))
@@ -263,8 +270,10 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			final HashMap<String, Level> targetLevels, final HashMap<String, SpecTopic> targetTopics)
 	{
 		boolean error = false;
-		for (final String topicId : relationships.keySet())
+		for (final Entry<String, List<Relationship>> relationshipEntry : relationships.entrySet())
 		{
+		    final String topicId = relationshipEntry.getKey();
+
 			// Check if the app should be shutdown
 			if (isShuttingDown.get())
 			{
@@ -272,7 +281,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 				return false;
 			}
 
-			for (final Relationship relationship : relationships.get(topicId))
+			for (final Relationship relationship : relationshipEntry.getValue())
 			{
 				// Check if the app should be shutdown
 				if (isShuttingDown.get())
@@ -342,11 +351,13 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 							int count = 0;
 							SpecTopic relatedTopic = null;
 							// Get the related topic and count if more then one is found
-							for (final String specTopicId : specTopics.keySet())
+							for (final Entry<String, SpecTopic> entry : specTopics.entrySet())
 							{
+							    final String specTopicId = entry.getKey();
+							    
 								if (specTopicId.matches("^[0-9]+-" + relatedId + "$"))
 								{
-									relatedTopic = specTopics.get(specTopicId);
+									relatedTopic = entry.getValue();
 									count++;
 								}
 							}
@@ -882,11 +893,13 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			final String temp = specTopic.getId().substring(1);
 			int count = 0;
 			SpecTopic clonedTopic = null;
-			for (final String topicId : specTopics.keySet())
+			for (final Entry<String, SpecTopic> entry : specTopics.entrySet())
 			{
+			    final String topicId = entry.getKey();
+			    
 				if (topicId.endsWith(temp) && !topicId.endsWith(specTopic.getId()))
 				{
-					clonedTopic = specTopics.get(topicId);
+					clonedTopic = entry.getValue();
 					count++;
 				}
 			}
@@ -940,7 +953,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 		}
 
 		// Check that the writer tag is actually part of the Assigned Writer category
-		final RESTCategoryV1 cat = reader.getCategoryByTagId(tagList.get(0).getId());
+		final RESTCategoryTagV1 cat = reader.getCategoryByTagId(tagList.get(0).getId());
 		if (cat == null)
 		{
 			log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getLineNumber(), topic.getText()));
@@ -1000,9 +1013,12 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			}
 
 			// Check that the mutex value entered is correct
-			final Map<RESTCategoryV1, List<RESTTagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
-			for (final RESTCategoryV1 cat : mapping.keySet())
+			final Map<RESTCategoryTagV1, List<RESTTagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
+			for (final Entry<RESTCategoryTagV1, List<RESTTagV1>> catEntry : mapping.entrySet())
 			{
+			    final RESTCategoryTagV1 cat = catEntry.getKey();
+			    final List<RESTTagV1> catTags = catEntry.getValue();
+			    
 				// Check if the app should be shutdown
 				if (isShuttingDown.get())
 				{
@@ -1011,21 +1027,21 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 				}
 
 				// Check that only one tag has been set if the category is mutually exclusive
-				if (cat.getMutuallyExclusive() && mapping.get(cat).size() > 1)
+				if (cat.getMutuallyExclusive() && catTags.size() > 1)
 				{
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TOO_MANY_CATS_MSG, specNode.getLineNumber(), cat.getName(), specNode.getText()));
 					valid = false;
 				}
 
 				// Check that the tag isn't a type or writer
-				if (cat.getId() == CSConstants.WRITER_CATEGORY_ID)
+				if (cat.getId().equals(CSConstants.WRITER_CATEGORY_ID))
 				{
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_WRITER_AS_TAG_MSG, specNode.getLineNumber(), specNode.getText()));
 					valid = false;
 				}
 
 				// Check that the tag isn't a topic type
-				if (cat.getId() == CSConstants.TYPE_CATEGORY_ID)
+				if (cat.getId().equals(CSConstants.TYPE_CATEGORY_ID))
 				{
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TYPE_AS_TAG_MSG, specNode.getLineNumber(), specNode.getText()));
 					valid = false;

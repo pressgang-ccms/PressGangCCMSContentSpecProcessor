@@ -23,6 +23,8 @@ public class ProcessorConstants
 	public static final String BRANCH_REGEX 		= "^B[ ]*:.*$";
 	public static final String EXTERNAL_TARGET_REGEX	= "^ET[0-9]+$";
 	public static final String EXTERNAL_CSP_REGEX	= "^CS[0-9]+[ ]*(:[ ]*[0-9]+)?$";
+	
+	public static final String CSP_TITLE_REGEX     = "^[0-9a-zA-Z_\\-\\.\\+\\s]+$";
 
 	public static final String RELATION_ID_REGEX		= "^(" + TARGET_BASE_REGEX + ")|(N?[0-9]+)$";
 	public static final String RELATION_ID_LONG_REGEX	= "^.*\\[((" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
@@ -48,6 +50,7 @@ public class ProcessorConstants
 	// Content Spec Errors
 	public static final String ERROR_CS_INVALID_ID_MSG				= INVALID_CS + " The specified ID doesn't exist in the database.";
 	public static final String ERROR_CS_NO_TITLE_MSG				= INVALID_CS + " No Title.";
+	public static final String ERROR_CS_INVALID_TITLE_MSG           = INVALID_CS + " Invalid Title. The title can only contain plus (+), hyphen (-), dot(.) or alpha numeric characters.";
 	public static final String ERROR_CS_NO_PRODUCT_MSG				= INVALID_CS + " No Product specified.";
 	public static final String ERROR_CS_NO_VERSION_MSG				= INVALID_CS + " No Version specified.";
 	public static final String ERROR_CS_NO_DTD_MSG					= INVALID_CS + " No DTD specified.";
@@ -186,7 +189,10 @@ public class ProcessorConstants
 	public static final String ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG	= LINE + INVALID_RELATIONSHIP + " The link target is ambiguous, please use an explicit link target ID. Add [T<uniqueID>] to the instance you want to relate to, and use that as the link target." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_RELATED_TO_ITSELF_MSG		= LINE + INVALID_RELATIONSHIP + " You can't relate a topic to itself." + CSLINE_MSG;
 	public static final String ERROR_RELATED_TITLE_NO_MATCH_MSG		= LINE + INVALID_RELATIONSHIP + " The topic/target relationship title specified doesn't match the actual topic/target title." + NEW_LINE_SPACER + "Specified: %s" + NEW_LINE_SPACER + "Actual:    %s";
-
+	public static final String ERROR_INVALID_REFERS_TO_RELATIONSHIP = LINE + INVALID_RELATIONSHIP + " Invalid Refers-To Relationship format";
+	public static final String ERROR_INVALID_PREREQUISITE_RELATIONSHIP = LINE + INVALID_RELATIONSHIP + " Invalid Prerequisite Relationship format";
+	public static final String ERROR_INVALID_LINK_LIST_RELATIONSHIP = LINE + INVALID_RELATIONSHIP + " Invalid Link-List Relationship format";
+	
 	// Setup Processor Constants
 	public static final String ERROR_INVALID_MUTEX_MSG				= LINE + "Mutex value must be either 0 or 1." + CSLINE_MSG;
 	public static final String ERROR_INVALID_CATEGORY_FORMAT_MSG	= LINE + "Invalid Category attribute format. (%s)" + CSLINE_MSG;
