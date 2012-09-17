@@ -548,7 +548,8 @@ public class ContentSpecParser
 	 * @param input A line of input from the content specification
 	 * @return True if the line of input was processed successfully otherwise false.
 	 */
-	protected boolean processLine(final String line) throws IndentationException
+	@SuppressWarnings("deprecation")
+    protected boolean processLine(final String line) throws IndentationException
 	{	
 		spec.appendPreProcessedLine(line);
 		char[] tempInputChar= line.toCharArray();

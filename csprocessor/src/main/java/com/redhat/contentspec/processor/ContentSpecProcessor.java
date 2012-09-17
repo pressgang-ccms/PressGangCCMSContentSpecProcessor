@@ -205,7 +205,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			LOG.info("Attempting to download all the latest topics...");
 			reader.getTopicsByIds(topicIds, csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE));
 		}
-		else if (!csp.getReferencedLatestTopicIds().isEmpty())
+		else if (!topicIds.isEmpty())
 		{
 		    // Add to the list of referenced topic ids
 		    for (final Integer topicId : topicIds)
