@@ -9,6 +9,7 @@ public class ProcessingOptions {
 	private boolean allowNewTopics = true;
 	private boolean addRevisions = false;
 	private boolean updateRevisions = false;
+	private Integer revision = null;
 	
 	public boolean isPermissiveMode()
 	{
@@ -71,5 +72,15 @@ public class ProcessingOptions {
 
     public void setUpdateRevisions(boolean updateRevisions) {
         this.updateRevisions = updateRevisions;
+    }
+
+    public Integer getRevision()
+    {
+        return revision;
+    }
+
+    public void setRevision(final Integer revision)
+    {
+        this.revision = revision;
     }
 }

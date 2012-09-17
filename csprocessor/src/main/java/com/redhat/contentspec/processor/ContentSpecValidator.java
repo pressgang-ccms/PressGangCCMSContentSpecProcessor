@@ -176,12 +176,15 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U, V>, U extends 
 		// If editing then check that the ID exists & the CHECKSUM/SpecRevision match
 		if (contentSpec.getId() != 0)
 		{
-			final RESTTopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(), null);
+			final RESTTopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(), processingOptions.getRevision());
 			if (contentSpecTopic == null)
 			{
 				log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
 				valid = false;
 			}
+
+			/* Set the revision the content spec is being validated for */
+			contentSpec.setRevision(contentSpecTopic.getRevision());
 
 			// Check that the revision is valid
 			if (!processingOptions.isIgnoreSpecRevision() && contentSpecTopic != null)
@@ -195,13 +198,13 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U, V>, U extends 
 						valid = false;
 					}
 				}
-				else if (contentSpec.getRevision() != null)
+				else if (contentSpec.getSpecRevision() != null)
 				{
 					// Check that the revision matches
 					int latestRev = reader.getLatestCSRevById(contentSpec.getId());
-					if (contentSpec.getRevision() != latestRev)
+					if (contentSpec.getSpecRevision() != latestRev)
 					{
-						log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_SPEC_REVISION_MSG, contentSpec.getRevision(), latestRev));
+						log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_SPEC_REVISION_MSG, contentSpec.getSpecRevision(), latestRev));
 						valid = false;
 					}
 				}
@@ -717,20 +720,31 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U, V>, U extends 
 		// Existing Topics
 		else if (specTopic.isTopicAnExistingTopic())
 		{
+		    // Calculate the revision for the topic
+		    final Integer revision;
+		    if (specTopic.getRevision() == null || processingOptions.isUpdateRevisions())
+		    {
+		        revision = processingOptions.getRevision();
+		    }
+		    else
+		    {
+		        revision = specTopic.getRevision();
+		    }
+		    
 			// Check that the id actually exists
 			final T topic;
 			if (clazz == RESTTranslatedTopicV1.class)
 			{
-				topic = (T) reader.getTranslatedTopicByTopicId(Integer.parseInt(specTopic.getId()), null, locale);
-				if (processingOptions.isAddRevisions() && specTopic.getRevision() == null)
+				topic = (T) reader.getTranslatedTopicByTopicId(Integer.parseInt(specTopic.getId()), revision, locale);
+				if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions()))
 				{
 					specTopic.setRevision(((RESTTranslatedTopicV1) topic).getTopicRevision());
 				}
 			}
 			else
 			{
-				topic = (T) reader.getTopicById(Integer.parseInt(specTopic.getId()), specTopic.getRevision());
-				if (processingOptions.isAddRevisions() && specTopic.getRevision() == null)
+				topic = (T) reader.getTopicById(Integer.parseInt(specTopic.getId()), revision);
+				if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions()))
 				{
 					specTopic.setRevision(topic.getRevision());
 				}
