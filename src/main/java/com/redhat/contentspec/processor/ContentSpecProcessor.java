@@ -195,46 +195,30 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			return false;
 		}
 		
-		if (!csp.getReferencedLatestTopicIds().isEmpty())
+		final List<Integer> topicIds = csp.getReferencedLatestTopicIds();
+		final List<Pair<Integer, Integer>> referencedRevisionTopicIds = csp.getReferencedRevisionTopicIds();
+		
+		// Check if a maximum revision was specified for processing
+		if (processingOptions.getRevision() == null && !topicIds.isEmpty())
 		{
 			// Download the list of topics in one go to reduce I/O overhead
 			LOG.info("Attempting to download all the latest topics...");
-			reader.getTopicsByIds(csp.getReferencedLatestTopicIds(), csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE));
+			reader.getTopicsByIds(topicIds, csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE));
+		}
+		else if (!csp.getReferencedLatestTopicIds().isEmpty())
+		{
+		    // Add to the list of referenced topic ids
+		    for (final Integer topicId : topicIds)
+		    {
+		        referencedRevisionTopicIds.add(new Pair(topicId, processingOptions.getRevision()));
+		    }
 		}
 
-		final List<Pair<Integer, Integer>> referencedRevisionTopicIds = csp.getReferencedRevisionTopicIds();
 		if (!referencedRevisionTopicIds.isEmpty())
 		{
-			LOG.info("Attempting to download all the revision topics...");
-
-			final int showPercent = 5;
-			final float total = referencedRevisionTopicIds.size();
-			float current = 0;
-			int lastPercent = 0;
-
-			final boolean expandTranslations = csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE);
-			
-			for (final Pair<Integer, Integer> topicToRevision : referencedRevisionTopicIds)
-			{
-			    // If we want to update the revisions then we should get the latest topic and not the revision
-			    if (processingOptions.isUpdateRevisions())
-			    {
-			        reader.getTopicById(topicToRevision.getFirst(), null, expandTranslations);
-			    }
-			    else
-			    {
-			        reader.getTopicById(topicToRevision.getFirst(), topicToRevision.getSecond(), expandTranslations);
-			    }
-
-				++current;
-				final int percent = Math.round(current / total * 100);
-				if (percent - lastPercent >= showPercent)
-				{
-					lastPercent = percent;
-					LOG.info("\tDownloading revision topics " + percent + "% Done");
-				}
-			}
+			downloadRevisionTopics(referencedRevisionTopicIds);
 		}
+		
 		// Check if the app should be shutdown
 		if (isShuttingDown.get())
 		{
@@ -276,6 +260,44 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			}
 		}
 		return true;
+	}
+	
+	/**
+	 * Download the Topics from the REST API that specify a revision.
+	 * 
+	 * @param referencedRevisionTopicIds The Set of topic ids and revision to download.
+	 */
+	protected void downloadRevisionTopics(final List<Pair<Integer, Integer>> referencedRevisionTopicIds)
+	{
+	    LOG.info("Attempting to download all the revision topics...");
+
+        final int showPercent = 5;
+        final float total = referencedRevisionTopicIds.size();
+        float current = 0;
+        int lastPercent = 0;
+
+        final boolean expandTranslations = csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE);
+        
+        for (final Pair<Integer, Integer> topicToRevision : referencedRevisionTopicIds)
+        {
+            // If we want to update the revisions then we should get the latest topic and not the revision
+            if (processingOptions.isUpdateRevisions())
+            {
+                reader.getTopicById(topicToRevision.getFirst(), processingOptions.getRevision(), expandTranslations);
+            }
+            else
+            {
+                reader.getTopicById(topicToRevision.getFirst(), topicToRevision.getSecond(), expandTranslations);
+            }
+
+            ++current;
+            final int percent = Math.round(current / total * 100);
+            if (percent - lastPercent >= showPercent)
+            {
+                lastPercent = percent;
+                LOG.info("\tDownloading revision topics " + percent + "% Done");
+            }
+        }
 	}
 	
 	/**

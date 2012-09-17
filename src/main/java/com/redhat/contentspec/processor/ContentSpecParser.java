@@ -452,7 +452,7 @@ public class ContentSpecParser
 									log.error(String.format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineCounter, rev.trim()));
 									return false;
 								}
-								spec.setRevision(specRev);
+								spec.setSpecRevision(specRev);
 							}
 							else
 							{

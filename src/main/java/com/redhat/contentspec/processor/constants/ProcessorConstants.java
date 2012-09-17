@@ -25,6 +25,7 @@ public class ProcessorConstants
 	public static final String EXTERNAL_CSP_REGEX	= "^CS[0-9]+[ ]*(:[ ]*[0-9]+)?$";
 	
 	public static final String CSP_TITLE_REGEX     = "^[0-9a-zA-Z_\\-\\.\\+\\s]+$";
+	public static final String CSP_PRODUCT_REGEX     = "^[0-9a-zA-Z_\\-\\.\\+\\s]+$";
 
 	public static final String RELATION_ID_REGEX		= "^(" + TARGET_BASE_REGEX + ")|(N?[0-9]+)$";
 	public static final String RELATION_ID_LONG_REGEX	= "^.*\\[((" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
