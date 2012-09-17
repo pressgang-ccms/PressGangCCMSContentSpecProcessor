@@ -25,8 +25,6 @@ import org.jboss.pressgangccms.contentspec.rest.RESTManager;
 import org.jboss.pressgangccms.contentspec.rest.RESTReader;
 import org.jboss.pressgangccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgangccms.contentspec.utils.logging.ErrorLoggerManager;
-import org.jboss.pressgangccms.rest.v1.collections.base.RESTBaseCollectionItemV1;
-import org.jboss.pressgangccms.rest.v1.collections.base.RESTBaseCollectionV1;
 import org.jboss.pressgangccms.rest.v1.components.ComponentBaseTopicV1;
 import org.jboss.pressgangccms.rest.v1.components.ComponentTagV1;
 import org.jboss.pressgangccms.rest.v1.components.ComponentTopicV1;
@@ -52,7 +50,7 @@ import com.redhat.contentspec.processor.utils.ProcessorUtilities;
  * @param <T> The REST Topic class that the Validator will be validating against.
  * @param <U> The REST Topic Collection class that the Validator will be validating against.
  */
-public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U, V>, U extends RESTBaseCollectionV1<T, U, V>, V extends RESTBaseCollectionItemV1<T, U, V>> implements ShutdownAbleApp
+public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements ShutdownAbleApp
 {
 	private final RESTReader reader;
 	private final ErrorLogger log;

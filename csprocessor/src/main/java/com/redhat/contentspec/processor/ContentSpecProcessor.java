@@ -19,7 +19,6 @@ import org.jboss.pressgangccms.contentspec.rest.utils.TopicPool;
 import org.jboss.pressgangccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgangccms.contentspec.utils.logging.ErrorLoggerManager;
 import org.jboss.pressgangccms.rest.v1.collections.RESTTagCollectionV1;
-import org.jboss.pressgangccms.rest.v1.collections.RESTTopicCollectionV1;
 import org.jboss.pressgangccms.rest.v1.collections.RESTTopicSourceUrlCollectionV1;
 import org.jboss.pressgangccms.rest.v1.collections.items.RESTTopicCollectionItemV1;
 import org.jboss.pressgangccms.rest.v1.collections.items.RESTTopicSourceUrlCollectionItemV1;
@@ -180,7 +179,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 		}
 		
 		// Validate the relationships
-		validator = new ContentSpecValidator<RESTTopicV1, RESTTopicCollectionV1, RESTTopicCollectionItemV1>(RESTTopicV1.class, elm, dbManager, processingOptions);
+		validator = new ContentSpecValidator<RESTTopicV1>(RESTTopicV1.class, elm, dbManager, processingOptions);
 		
 		if (!validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics()))
 		{
@@ -195,29 +194,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			return false;
 		}
 		
-		final List<Integer> topicIds = csp.getReferencedLatestTopicIds();
-		final List<Pair<Integer, Integer>> referencedRevisionTopicIds = csp.getReferencedRevisionTopicIds();
-		
-		// Check if a maximum revision was specified for processing
-		if (processingOptions.getRevision() == null && !topicIds.isEmpty())
-		{
-			// Download the list of topics in one go to reduce I/O overhead
-			LOG.info("Attempting to download all the latest topics...");
-			reader.getTopicsByIds(topicIds, csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE));
-		}
-		else if (!topicIds.isEmpty())
-		{
-		    // Add to the list of referenced topic ids
-		    for (final Integer topicId : topicIds)
-		    {
-		        referencedRevisionTopicIds.add(new Pair(topicId, processingOptions.getRevision()));
-		    }
-		}
-
-		if (!referencedRevisionTopicIds.isEmpty())
-		{
-			downloadRevisionTopics(referencedRevisionTopicIds);
-		}
+		// Download all of the latest and/or revision topics
+		downloadAllTopics();
 		
 		// Check if the app should be shutdown
 		if (isShuttingDown.get())
@@ -260,6 +238,51 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			}
 		}
 		return true;
+	}
+	
+	/**
+	 * Download all the topics that are to be used during processing from the
+	 * parsed Content Specification.
+	 */
+	protected void downloadAllTopics()
+	{
+	    /* If we are updating the revisions and no processing revision is passed then
+	     * we can just get the latest version for all of the topics. Other wise we need to
+	     * get the topics one by one that specify a revision.
+	     */
+	    if (processingOptions.isUpdateRevisions() && processingOptions.getRevision() == null)
+        {
+	        // Download the list of topics in one go to reduce I/O overhead
+            LOG.info("Attempting to download all the latest topics...");
+            final List<Integer> topicIds = csp.getReferencedTopicIds();
+            reader.getTopicsByIds(topicIds, csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE));
+        }
+	    else
+	    {
+    	    final List<Integer> topicIds = csp.getReferencedLatestTopicIds();
+            final List<Pair<Integer, Integer>> referencedRevisionTopicIds = csp.getReferencedRevisionTopicIds();
+            
+            // Check if a maximum revision was specified for processing
+            if (processingOptions.getRevision() == null && !topicIds.isEmpty())
+            {
+                // Download the list of topics in one go to reduce I/O overhead
+                LOG.info("Attempting to download all the latest topics...");
+                reader.getTopicsByIds(topicIds, csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE));
+            }
+            else if (!topicIds.isEmpty())
+            {
+                // Add to the list of referenced topic ids
+                for (final Integer topicId : topicIds)
+                {
+                    referencedRevisionTopicIds.add(new Pair<Integer, Integer>(topicId, processingOptions.getRevision()));
+                }
+            }
+    
+            if (!referencedRevisionTopicIds.isEmpty())
+            {
+                downloadRevisionTopics(referencedRevisionTopicIds);
+            }
+	    }
 	}
 	
 	/**
