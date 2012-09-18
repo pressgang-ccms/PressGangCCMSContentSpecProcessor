@@ -7,12 +7,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
-import org.jboss.pressgangccms.contentspec.ContentSpec;
-import org.jboss.pressgangccms.contentspec.SpecTopic;
-import org.jboss.pressgangccms.rest.v1.entities.RESTTagV1;
-import org.jboss.pressgangccms.rest.v1.entities.join.RESTCategoryTagV1;
-import org.jboss.pressgangccms.utils.common.HashUtilities;
-import org.jboss.pressgangccms.utils.common.StringUtilities;
+import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.rest.v1.entities.RESTTagV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTCategoryTagV1;
+import org.jboss.pressgang.ccms.utils.common.HashUtilities;
+import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 
 import com.google.code.regexp.NamedMatcher;
 import com.google.code.regexp.NamedPattern;
