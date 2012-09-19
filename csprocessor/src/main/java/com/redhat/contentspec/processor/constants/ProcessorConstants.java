@@ -31,7 +31,7 @@ public class ProcessorConstants
 	public static final String RELATION_ID_LONG_REGEX	= "^.*\\[((" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
 	public static final String RELATION_ID_LONG_PATTERN	= "^(?<TopicTitle>.*)[ ]*\\[(?<TopicID>(" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
 
-	public static final String VALID_BOOK_TYPE_REGEX	= "^(BOOK|ARTICLE)$";
+	public static final String VALID_BOOK_TYPE_REGEX	= "^(BOOK|ARTICLE)(-DRAFT)?$";
 
 	public static final String LINE = "Line %d: ";
 	public static final String INVALID_CS = "Invalid Content Specification!";
