@@ -1875,7 +1875,7 @@ public class ContentSpecParser
 					splitString = StringUtilities.split(splitString[1], separator);
 					for (final String s: splitString)
 					{
-					    final String var = s.replaceAll("(^\r?\n)|(\r?\n$)", "");
+					    final String var = s.replaceAll("(^(\r?\n)*)|((\r?\n)*$)", "");
 						// Check that a separator wasn't missed.
 						if (StringUtilities.lastIndexOf(var, startDelim) != StringUtilities.indexOf(var, startDelim) || var.indexOf('\n') != -1)
 						{
@@ -2169,6 +2169,8 @@ public class ContentSpecParser
 	{
 		for(final String topicId: relationships.keySet())
 		{
+		    final SpecTopic specTopic = specTopics.get(topicId);
+		    
 			for (final Relationship relationship: relationships.get(topicId))
 			{
 				final String relatedId = relationship.getSecondaryRelationshipTopicId();
@@ -2177,19 +2179,22 @@ public class ContentSpecParser
 				{
 					if (targetTopics.containsKey(relatedId) && !targetLevels.containsKey(relatedId))
 					{
-						final SpecTopic specTopic = specTopics.get(topicId);
 						specTopic.addRelationshipToTarget(targetTopics.get(relatedId), relationship.getType(), relationship.getRelationshipTitle());
 					}
 					else if (!targetTopics.containsKey(relatedId) && targetLevels.containsKey(relatedId))
 					{
-						final SpecTopic specTopic = specTopics.get(topicId);
 						specTopic.addRelationshipToTarget(targetLevels.get(relatedId), relationship.getType(), relationship.getRelationshipTitle());
 					}
-					// TODO add a relationship so it still shows in the toString() method
+					else
+                    {
+                        final SpecTopic dummyTopic = new SpecTopic(0, "");
+                        dummyTopic.setTargetId(relatedId);
+                        specTopic.addRelationshipToTarget(dummyTopic, relationship.getType());
+                    }
 				}
 				// The relationship isn't a target so it must point to a topic directly
 				else
-				{
+				{				    
 					if (!relatedId.matches(CSConstants.NEW_TOPIC_ID_REGEX))
 					{
 						// The relationship isn't a unique new topic so it will contain the line number in front of the topic ID
@@ -2213,17 +2218,30 @@ public class ContentSpecParser
 							 * and the related topic isn't the current topic. This is so it shows up in the 
 							 * output.
 							 */
-							final SpecTopic specTopic = specTopics.get(topicId);
 							if (count > 0 && relatedTopic != specTopic)
 							{
 								specTopic.addRelationshipToTopic(relatedTopic, relationship.getType(), relationship.getRelationshipTitle());
 							}
+							else
+	                        {
+	                            final SpecTopic dummyTopic = new SpecTopic(0, "");
+	                            dummyTopic.setId(relatedId);
+	                            specTopic.addRelationshipToTopic(dummyTopic, relationship.getType());
+	                        }
+						}
+						else
+						{
+						    final SpecTopic dummyTopic = new SpecTopic(0, "");
+						    dummyTopic.setId(relatedId);
+						    specTopic.addRelationshipToTopic(dummyTopic, relationship.getType());
 						}
 					}
 					else
 					{
 						if (specTopics.containsKey(relatedId))
 						{
+						    final SpecTopic relatedSpecTopic = specTopics.get(relatedId);
+						    
 							// Check that a duplicate doesn't exist, because if it does the new topic isn't unique
 							String duplicatedId = "X" + relatedId.substring(1);
 							boolean duplicateExists = false;
@@ -2236,29 +2254,35 @@ public class ContentSpecParser
 								}
 							}
 							
-							if (specTopics.get(relatedId) != specTopics.get(topicId))
+							if (relatedSpecTopic != specTopic)
 							{
 								if (!duplicateExists)
 								{
-									specTopics.get(topicId).addRelationshipToTopic(specTopics.get(relatedId), relationship.getType(), relationship.getRelationshipTitle());
+									specTopic.addRelationshipToTopic(relatedSpecTopic, relationship.getType(), relationship.getRelationshipTitle());
 								}
 								else
 								{
 									// Only create a new target if one doesn't already exist
-									if (specTopics.get(relatedId).getTargetId() == null)
+									if (relatedSpecTopic.getTargetId() == null)
 									{
-										String targetId = ContentSpecUtilities.generateRandomTargetId(specTopics.get(relatedId).getLineNumber());
+										String targetId = ContentSpecUtilities.generateRandomTargetId(relatedSpecTopic.getLineNumber());
 										while (targetTopics.containsKey(targetId) || targetLevels.containsKey(targetId))
 										{
-											targetId = ContentSpecUtilities.generateRandomTargetId(specTopics.get(relatedId).getLineNumber());
+											targetId = ContentSpecUtilities.generateRandomTargetId(relatedSpecTopic.getLineNumber());
 										}
 										specTopics.get(relatedId).setTargetId(targetId);
-										targetTopics.put(targetId, specTopics.get(relatedId));
+										targetTopics.put(targetId, relatedSpecTopic);
 									}
-									specTopics.get(topicId).addRelationshipToTopic(specTopics.get(relatedId), relationship.getType(), relationship.getRelationshipTitle());
+									specTopic.addRelationshipToTopic(relatedSpecTopic, relationship.getType(), relationship.getRelationshipTitle());
 								}
 							}
 						}
+						else
+                        {
+                            final SpecTopic dummyTopic = new SpecTopic(0, "");
+                            dummyTopic.setId(relatedId);
+                            specTopic.addRelationshipToTopic(dummyTopic, relationship.getType());
+                        }
 					}
 				}
 			}

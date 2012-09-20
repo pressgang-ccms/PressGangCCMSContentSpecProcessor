@@ -37,6 +37,7 @@ public class ProcessorConstants
 	public static final String INVALID_CS = "Invalid Content Specification!";
 	public static final String INVALID_TOPIC = "Invalid Topic!";
 	public static final String INVALID_RELATIONSHIP = "Invalid Relationship!";
+	public static final String AMBIGUOUS_RELATIONSHIP = "Ambiguous Relationship!";
 	public static final String INVALID_PROCESS = "Invalid Process!";
 	public static final String GENERIC_INVALID_LEVEL = "Invalid Chapter/Section/Appendix!";
 	public static final String NEW_LINE_SPACER = "\n       -> ";
@@ -89,6 +90,7 @@ public class ProcessorConstants
 	// Article based level errors
 	public static final String ERROR_ARTICLE_CHAPTER_MSG		 	= LINE + INVALID_CS + " Chapters can't be used in Articles." + CSLINE_MSG;
 	public static final String ERROR_ARTICLE_PART_MSG		 		= LINE + INVALID_CS + " Parts can't be used in Articles." + CSLINE_MSG;
+	public static final String ERROR_ARTICLE_PROCESS_MSG               = LINE + INVALID_CS + " Processes can't be used in Articles." + CSLINE_MSG;
 	public static final String ERROR_ARTICLE_NESTED_APPENDIX_MSG	= LINE + INVALID_CS + " An Appendix must have no indentation." + CSLINE_MSG;
 	public static final String ERROR_ARTICLE_SECTION_MSG			= LINE + INVALID_CS + " A Section must be within another section." + CSLINE_MSG;
 	
@@ -182,14 +184,14 @@ public class ProcessorConstants
 
 	//Relationship Errors
 	public static final String ERROR_DUPLICATE_TARGET_ID_MSG		= "Target ID is duplicated. Target ID's must be unique." + NEW_LINE_SPACER + LINE + " %s" + NEW_LINE_SPACER + LINE + " %s";
-	public static final String ERROR_TARGET_NONEXIST_MSG			= LINE + INVALID_RELATIONSHIP + " The Target specified doesn't exist in the content specification." + CSLINE_MSG;
+	public static final String ERROR_TARGET_NONEXIST_MSG			= LINE + INVALID_RELATIONSHIP + " The Target specified (%s) doesn't exist in the content specification." + CSLINE_MSG;
 	public static final String ERROR_RELATED_TOPIC_NONEXIST_MSG		= LINE + INVALID_RELATIONSHIP + " The related topic specified (%s) doesn't exist in the content specification." + CSLINE_MSG;
-	public static final String ERROR_INVALID_RELATIONSHIP_MSG		= LINE + INVALID_RELATIONSHIP + " Topics that are used twice inside of a Content Specification cannot be related to directly. To relate to one of these topics please use a Target." + CSLINE_MSG;
+	public static final String ERROR_INVALID_RELATIONSHIP_MSG		= LINE + AMBIGUOUS_RELATIONSHIP + " Topic %s is included on lines %s of the Content Specification. To relate to one of these topics please use a Target." + CSLINE_MSG;
 	public static final String ERROR_TOO_MANY_NEXTS_MSG				= LINE + INVALID_RELATIONSHIP + " A topic may only have one next Topic." + CSLINE_MSG;
 	public static final String ERROR_TOO_MANY_PREVS_MSG				= LINE + INVALID_RELATIONSHIP + " A topic may only have one previous Topic." + CSLINE_MSG;
 	public static final String ERROR_NEXT_RELATED_LEVEL_MSG			= LINE + INVALID_RELATIONSHIP + " Next relationships must target a topic." + CSLINE_MSG;
 	public static final String ERROR_PREV_RELATED_LEVEL_MSG			= LINE + INVALID_RELATIONSHIP + " Previous relationships must target a topic." + CSLINE_MSG;
-	public static final String ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG	= LINE + INVALID_RELATIONSHIP + " The link target is ambiguous, please use an explicit link target ID. Add [T<uniqueID>] to the instance you want to relate to, and use that as the link target." + CSLINE_MSG;
+	public static final String ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG	= LINE + AMBIGUOUS_RELATIONSHIP + " The link target is ambiguous, please use an explicit link target ID. Add [T<uniqueID>] to the instance you want to relate to, and use that as the link target." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_RELATED_TO_ITSELF_MSG		= LINE + INVALID_RELATIONSHIP + " You can't relate a topic to itself." + CSLINE_MSG;
 	public static final String ERROR_RELATED_TITLE_NO_MATCH_MSG		= LINE + INVALID_RELATIONSHIP + " The topic/target relationship title specified doesn't match the actual topic/target title." + NEW_LINE_SPACER + "Specified: %s" + NEW_LINE_SPACER + "Actual:    %s";
 	public static final String ERROR_INVALID_REFERS_TO_RELATIONSHIP = LINE + INVALID_RELATIONSHIP + " Invalid Refers-To Relationship format";
