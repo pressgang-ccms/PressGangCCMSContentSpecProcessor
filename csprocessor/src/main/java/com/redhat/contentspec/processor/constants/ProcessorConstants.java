@@ -13,14 +13,14 @@ public class ProcessorConstants
 	public static final String BRACKET_VALIDATE_REGEX		= ".*%s[ ]*$"; // ".*%s(([ ]*$)|([ ]*#.*$))" For use to allow comments at the end of a line
 	public static final String VERSION_VALIDATE_REGEX		= "([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+)";
 
-	public static final String RELATED_REGEX 		= "^(R|RELATED-TO)[ ]*:.*$";
-	public static final String PREREQUISITE_REGEX 	= "^(P|PREREQUISITE)[ ]*:.*$";
-	public static final String LINK_LIST_REGEX 		= "^(L|LINK-LIST)[ ]*:.*$"; 
-	public static final String NEXT_REGEX 			= "^NEXT[ ]*:.*$";
-	public static final String PREV_REGEX 			= "^PREV[ ]*:.*$";
-	private static final String TARGET_BASE_REGEX	= "T(([0-9]+)|(\\-[ ]*[A-Za-z0-9\\-_]+))";
+	public static final String RELATED_REGEX 		= "^(R|RELATED-TO|REFERS-TO)[ ]*:(.|(\r?\n))*$";
+	public static final String PREREQUISITE_REGEX 	= "^(P|PREREQUISITE)[ ]*:(.|(\r?\n))*$";
+	public static final String LINK_LIST_REGEX 		= "^(L|LINK-LIST)[ ]*:(.|(\r?\n))*$"; 
+	public static final String NEXT_REGEX 			= "^NEXT[ ]*:(.|(\r?\n))*$";
+	public static final String PREV_REGEX 			= "^PREV[ ]*:(.|(\r?\n))*$";
+	public static final String TARGET_BASE_REGEX	= "T(([0-9]+)|(\\-[ ]*[A-Za-z0-9\\-_]+))";
 	public static final String TARGET_REGEX 		= "^" + TARGET_BASE_REGEX + "$"; 
-	public static final String BRANCH_REGEX 		= "^B[ ]*:.*$";
+	public static final String BRANCH_REGEX 		= "^B[ ]*:(.|(\r?\n))*$";
 	public static final String EXTERNAL_TARGET_REGEX	= "^ET[0-9]+$";
 	public static final String EXTERNAL_CSP_REGEX	= "^CS[0-9]+[ ]*(:[ ]*[0-9]+)?$";
 	
@@ -95,7 +95,7 @@ public class ProcessorConstants
 	public static final String ERROR_INCORRECT_TOPIC_ID_LOCATION_MSG 	= LINE + INVALID_CS + " Topic ID specified in the wrong location." + CSLINE_MSG;
 
 	public static final String ERROR_NO_ENDING_BRACKET_MSG 			= LINE + INVALID_CS + " Missing ending bracket (%c) detected.";
-	public static final String ERROR_MISSING_SEPARATOR_MSG 			= LINE + INVALID_CS + " Missing separator (%c) detected.";
+	public static final String ERROR_MISSING_SEPARATOR_MSG 			= LINE + INVALID_CS + " Missing separator(%c) detected.";
 	public static final String ERROR_INCORRECT_INDENTATION_MSG		= LINE + INVALID_CS + " Indentation is invalid." + CSLINE_MSG;
 	public static final String ERROR_RELATIONSHIP_BASE_LEVEL_MSG 	= LINE + INVALID_CS + " Relationships can't be at the base level." + CSLINE_MSG;
 
@@ -156,7 +156,9 @@ public class ProcessorConstants
 	public static final String ERROR_TOPIC_NO_NEW_TRANSLATION_TOPIC	= LINE + INVALID_TOPIC + " New topics aren't allowed to be created for translated topics." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NO_TAGS_TRANSLATION_TOPIC	= LINE + INVALID_TOPIC + " Tags aren't allowed to be added to translated topics." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_INVALID_REVISION_FORMAT	= LINE + INVALID_TOPIC + " " + CSLINE_MSG;
+	public static final String ERROR_TOPIC_NOT_IN_PART_INTRO_MSG    = LINE + INVALID_TOPIC + " A topic must be before any chapters inside of a part." + CSLINE_MSG;
 
+	
 	// Warnings
 	public static final String WARN_DESCRIPTION_IGNORE_MSG			= LINE + "%s topics can't have a description, so the description will be ignored.";
 	public static final String WARN_TYPE_IGNORE_MSG					= LINE + "%s topics can't have a type, so the type will be ignored.";
@@ -181,7 +183,7 @@ public class ProcessorConstants
 	//Relationship Errors
 	public static final String ERROR_DUPLICATE_TARGET_ID_MSG		= "Target ID is duplicated. Target ID's must be unique." + NEW_LINE_SPACER + LINE + " %s" + NEW_LINE_SPACER + LINE + " %s";
 	public static final String ERROR_TARGET_NONEXIST_MSG			= LINE + INVALID_RELATIONSHIP + " The Target specified doesn't exist in the content specification." + CSLINE_MSG;
-	public static final String ERROR_RELATED_TOPIC_NONEXIST_MSG		= LINE + INVALID_RELATIONSHIP + " The related topic specified doesn't exist in the content specification." + CSLINE_MSG;
+	public static final String ERROR_RELATED_TOPIC_NONEXIST_MSG		= LINE + INVALID_RELATIONSHIP + " The related topic specified (%s) doesn't exist in the content specification." + CSLINE_MSG;
 	public static final String ERROR_INVALID_RELATIONSHIP_MSG		= LINE + INVALID_RELATIONSHIP + " Topics that are used twice inside of a Content Specification cannot be related to directly. To relate to one of these topics please use a Target." + CSLINE_MSG;
 	public static final String ERROR_TOO_MANY_NEXTS_MSG				= LINE + INVALID_RELATIONSHIP + " A topic may only have one next Topic." + CSLINE_MSG;
 	public static final String ERROR_TOO_MANY_PREVS_MSG				= LINE + INVALID_RELATIONSHIP + " A topic may only have one previous Topic." + CSLINE_MSG;

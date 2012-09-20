@@ -2,6 +2,7 @@ package com.redhat.contentspec.processor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -358,16 +359,17 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
 								}
 							}
 							// Check to make sure the topic doesn't relate to itself
-							if (relatedTopic != specTopics.get(topicId))
+							final SpecTopic specTopic = specTopics.get(topicId);
+							if (relatedTopic != specTopic)
 							{
 								if (count > 1)
 								{
-									log.error(String.format(ProcessorConstants.ERROR_INVALID_RELATIONSHIP_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
+									log.error(String.format(ProcessorConstants.ERROR_INVALID_RELATIONSHIP_MSG, specTopic.getLineNumber(), specTopic.getText()));
 									error = true;
 								}
 								else if (count == 0)
 								{
-									log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
+									log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId, specTopic.getText()));
 									error = true;
 								}
 
@@ -466,22 +468,23 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
 			valid = false;
 		}
 
-		// Validate the sub levels
-		for (final Level l : level.getChildLevels())
+		// Validate the sub levels and topics
+		for (final Node childNode : level.getChildNodes())
 		{
-			if (!validateLevel(l, specTopics, csAllowEmptyLevels, bookType))
-			{
-				valid = false;
-			}
-		}
-
-		// Validate the topics in this level
-		for (final SpecTopic t : level.getSpecTopics())
-		{
-			if (!validateTopic(t, specTopics, bookType))
-			{
-				valid = false;
-			}
+		    if (childNode instanceof Level)
+		    {
+    			if (!validateLevel((Level) childNode, specTopics, csAllowEmptyLevels, bookType))
+    			{
+    				valid = false;
+    			}
+		    }
+		    else if (childNode instanceof SpecTopic)
+		    {
+		        if (!validateTopic((SpecTopic) childNode, specTopics, bookType))
+	            {
+	                valid = false;
+	            }
+		    }
 		}
 
 		// Validate certain requirements depending on the type of level
@@ -643,11 +646,29 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
 			// Check that the topic is inside a chapter/section/process/appendix/part
 			if (specTopic.getParent() == null || !(specTopic.getParent().getType() == LevelType.CHAPTER
 					|| specTopic.getParent().getType() == LevelType.APPENDIX || specTopic.getParent().getType() == LevelType.PROCESS
-					|| specTopic.getParent().getType() == LevelType.SECTION	/*|| specTopic.getParent().getType() == LevelType.PART*/))
+					|| specTopic.getParent().getType() == LevelType.SECTION || specTopic.getParent().getType() == LevelType.PART))
 			{
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_OUTSIDE_CHAPTER_MSG, specTopic.getLineNumber(), specTopic.getText()));
 				valid = false;
 			}
+			
+			// Check that there are no levels in the parent part (ie the topic is in the intro)
+			if (specTopic.getParent() != null && specTopic.getParent().getType() == LevelType.PART)
+            {
+			    final LinkedList<Node> parentChildren = specTopic.getParent().getChildNodes();
+			    final int index = parentChildren.indexOf(specTopic);
+			    
+			    for (int i  = 0; i < index; i++)
+			    {
+			        final Node node = parentChildren.get(i);
+			        if (node instanceof Level)
+			        {
+			            log.error(String.format(ProcessorConstants.ERROR_TOPIC_NOT_IN_PART_INTRO_MSG, specTopic.getLineNumber(), specTopic.getText()));
+		                valid = false;
+			            break;
+			        }
+			    }
+            }
 		}
 
 		// Check that the title exists
