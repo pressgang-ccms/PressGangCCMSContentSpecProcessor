@@ -1523,7 +1523,14 @@ public class ContentSpecParser
                 }
                 else
                 {
-                    log.error(String.format(ProcessorConstants.ERROR_INVALID_REFERS_TO_RELATIONSHIP, lineCounter));
+                    if (relatedId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*"))
+                    {
+                        log.error(String.format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineCounter, ','));
+                    }
+                    else
+                    {
+                        log.error(String.format(ProcessorConstants.ERROR_INVALID_REFERS_TO_RELATIONSHIP, lineCounter));
+                    }
                     return false;
                 }
             }
@@ -1551,7 +1558,14 @@ public class ContentSpecParser
                 }
                 else
                 {
-                    log.error(String.format(ProcessorConstants.ERROR_INVALID_PREREQUISITE_RELATIONSHIP, lineCounter));
+                    if (prerequisiteId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*"))
+                    {
+                        log.error(String.format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineCounter, ','));
+                    }
+                    else
+                    {
+                        log.error(String.format(ProcessorConstants.ERROR_INVALID_PREREQUISITE_RELATIONSHIP, lineCounter));
+                    }
                     return false;
                 }
             }
@@ -1579,7 +1593,14 @@ public class ContentSpecParser
                 }
                 else
                 {
-                    log.error(String.format(ProcessorConstants.ERROR_INVALID_LINK_LIST_RELATIONSHIP, lineCounter));
+                    if (linkListId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*"))
+                    {
+                        log.error(String.format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineCounter, ','));
+                    }
+                    else
+                    {
+                        log.error(String.format(ProcessorConstants.ERROR_INVALID_LINK_LIST_RELATIONSHIP, lineCounter));
+                    }
                     return false;
                 }
             }
@@ -1833,7 +1854,7 @@ public class ContentSpecParser
 		for (final VariableSet set : varSets)
 		{
 			final ArrayList<String> variables = new ArrayList<String>();
-			final String variableSet = set.getContents().substring(1, set.getContents().length() - 1).replaceAll("(\r\n|\n)", "");
+			final String variableSet = set.getContents().substring(1, set.getContents().length() - 1);//.replaceAll("(\r\n|\n)", "");
 			
 			// Check that a closing bracket wasn't missed
 			if (set.getEndPos() == null)
@@ -1854,14 +1875,15 @@ public class ContentSpecParser
 					splitString = StringUtilities.split(splitString[1], separator);
 					for (final String s: splitString)
 					{
+					    final String var = s.replaceAll("(^\r?\n)|(\r?\n$)", "");
 						// Check that a separator wasn't missed.
-						if (StringUtilities.lastIndexOf(s, startDelim) != StringUtilities.indexOf(s, startDelim))
+						if (StringUtilities.lastIndexOf(var, startDelim) != StringUtilities.indexOf(var, startDelim) || var.indexOf('\n') != -1)
 						{
 							throw new ParsingException(String.format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, initialCount, separator));
 						}
 						else
 						{
-							variables.add(s.trim());
+							variables.add(var.trim());
 						}
 					}
 				}
