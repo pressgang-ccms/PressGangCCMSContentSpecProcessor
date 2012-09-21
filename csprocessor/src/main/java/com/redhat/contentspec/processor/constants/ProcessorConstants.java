@@ -13,7 +13,7 @@ public class ProcessorConstants
 	public static final String BRACKET_VALIDATE_REGEX		= ".*%s[ ]*$"; // ".*%s(([ ]*$)|([ ]*#.*$))" For use to allow comments at the end of a line
 	public static final String VERSION_VALIDATE_REGEX		= "([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+)";
 
-	public static final String RELATED_REGEX 		= "^(R|RELATED-TO|REFERS-TO)[ ]*:(.|(\r?\n))*$";
+	public static final String RELATED_REGEX 		= "^(R|RELATED-TO|REFER-TO)[ ]*:(.|(\r?\n))*$";
 	public static final String PREREQUISITE_REGEX 	= "^(P|PREREQUISITE)[ ]*:(.|(\r?\n))*$";
 	public static final String LINK_LIST_REGEX 		= "^(L|LINK-LIST)[ ]*:(.|(\r?\n))*$"; 
 	public static final String NEXT_REGEX 			= "^NEXT[ ]*:(.|(\r?\n))*$";
