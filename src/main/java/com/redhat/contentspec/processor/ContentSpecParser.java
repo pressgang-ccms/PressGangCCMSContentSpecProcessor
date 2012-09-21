@@ -1875,7 +1875,7 @@ public class ContentSpecParser
 					splitString = StringUtilities.split(splitString[1], separator);
 					for (final String s: splitString)
 					{
-					    final String var = s.replaceAll("(^(\r?\n)*)|((\r?\n)*$)", "");
+					    final String var = s.replaceAll("(^\\s*(\r?\n)*)|((\r?\n)*\\s*$)", "");
 						// Check that a separator wasn't missed.
 						if (StringUtilities.lastIndexOf(var, startDelim) != StringUtilities.indexOf(var, startDelim) || var.indexOf('\n') != -1)
 						{
