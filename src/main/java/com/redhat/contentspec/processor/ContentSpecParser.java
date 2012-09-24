@@ -548,7 +548,6 @@ public class ContentSpecParser
 	 * @param input A line of input from the content specification
 	 * @return True if the line of input was processed successfully otherwise false.
 	 */
-	@SuppressWarnings("deprecation")
     protected boolean processLine(final String line) throws IndentationException
 	{	
 		spec.appendPreProcessedLine(line);
@@ -666,6 +665,30 @@ public class ContentSpecParser
 				return false;
 			}
 		}
+		else if (input.toUpperCase().matches("^BOOK VERSION[ ]*((=.*)|$)"))
+        {
+            String tempInput[] = StringUtilities.split(input, '=');
+            // Remove the whitespace from each value in the split array
+            tempInput = CollectionUtilities.trimStringArray(tempInput);
+            if (tempInput.length >= 2)
+            {
+                final String bookVersion = tempInput[1];
+                if (bookVersion.matches(ProcessorConstants.VERSION_VALIDATE_REGEX))
+                {
+                    spec.setBookVersion(bookVersion);
+                }
+                else
+                {
+                    log.error(String.format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, lineCounter, input));
+                    return false;
+                }
+            }
+            else
+            {
+                log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+                return false;
+            }
+        }
 		else if (input.toUpperCase().matches("^PUBSNUMBER[ ]*((=.*)|$)"))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
