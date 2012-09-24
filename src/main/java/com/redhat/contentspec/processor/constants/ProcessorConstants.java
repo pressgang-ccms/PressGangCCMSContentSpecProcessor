@@ -102,7 +102,8 @@ public class ProcessorConstants
 	public static final String ERROR_INCORRECT_INDENTATION_MSG		= LINE + INVALID_CS + " Indentation is invalid." + CSLINE_MSG;
 	public static final String ERROR_RELATIONSHIP_BASE_LEVEL_MSG 	= LINE + INVALID_CS + " Relationships can't be at the base level." + CSLINE_MSG;
 
-	public static final String ERROR_INCORRECT_MODE_MSG 			= "Mode does not match the contents of the Content Specification.";
+	public static final String ERROR_INCORRECT_EDIT_MODE_MSG 		= "Invalid Operation! You cannot update a new Content Specification.";
+	public static final String ERROR_INCORRECT_NEW_MODE_MSG      = "Invalid Operation! You cannot create a new Content Specification, from an exiting Content Specification.";
 	public static final String ERROR_NONEXIST_CS_TYPE_MSG 			= "No processing type specified! Please specify whether to process as a Content Specification or a Setup Processor.";
 	public static final String ERROR_NONEXIST_CS_MODE_MSG 			= "No processing mode specified! Please specify whether to process as a New or Edited Content Specification.";
 	public static final String ERROR_INVALID_CS_ID_MSG				= "The Content Specification ID doesn't exist in the database." + CSLINE_MSG;
