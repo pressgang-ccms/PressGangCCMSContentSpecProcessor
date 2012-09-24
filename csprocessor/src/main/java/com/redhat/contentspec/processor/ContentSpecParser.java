@@ -348,10 +348,15 @@ public class ContentSpecParser
 				// Content Specification
 				if (lineVars[0].equals("Title"))
 				{
-					if ((mode == ParsingMode.NEW && editing) || (mode == ParsingMode.EDITED && !editing))
+					if (mode == ParsingMode.NEW && editing)
 					{
-						log.error(ProcessorConstants.ERROR_INCORRECT_MODE_MSG);
+						log.error(ProcessorConstants.ERROR_INCORRECT_NEW_MODE_MSG);
 						return false;
+					}
+					else if (mode == ParsingMode.EDITED && !editing)
+					{
+					    log.error(ProcessorConstants.ERROR_INCORRECT_EDIT_MODE_MSG);
+                        return false;
 					}
 					spec.setTitle(lineVars[1]);
 					lvl = spec.getBaseLevel();
@@ -411,7 +416,7 @@ public class ContentSpecParser
 				{
 					if (mode == ParsingMode.NEW)
 					{
-						log.error(ProcessorConstants.ERROR_INCORRECT_MODE_MSG);
+						log.error(ProcessorConstants.ERROR_INCORRECT_NEW_MODE_MSG);
 						return false;
 					}
 					
@@ -476,7 +481,7 @@ public class ContentSpecParser
 				{
 					if (mode == ParsingMode.NEW)
 					{
-						log.error(ProcessorConstants.ERROR_INCORRECT_MODE_MSG);
+						log.error(ProcessorConstants.ERROR_INCORRECT_NEW_MODE_MSG);
 						return false;
 					}
 					
