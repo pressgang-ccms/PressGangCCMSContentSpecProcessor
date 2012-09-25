@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.rest.v1.entities.RESTTagV1;
-import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTCategoryTagV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTCategoryInTagV1;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 
@@ -29,15 +29,15 @@ public class ProcessorUtilities
 	 * @param tags The List of tags to be converted.
 	 * @return The mapping of Categories to Tags.
 	 */
-	public static Map<RESTCategoryTagV1, List<RESTTagV1>> getCategoryMappingFromTagList(final List<RESTTagV1> tags)
+	public static Map<RESTCategoryInTagV1, List<RESTTagV1>> getCategoryMappingFromTagList(final List<RESTTagV1> tags)
 	{
-		final HashMap<RESTCategoryTagV1, List<RESTTagV1>> mapping = new HashMap<RESTCategoryTagV1, List<RESTTagV1>>();
+		final HashMap<RESTCategoryInTagV1, List<RESTTagV1>> mapping = new HashMap<RESTCategoryInTagV1, List<RESTTagV1>>();
 		for (final RESTTagV1 tag: tags)
 		{
-			final List<RESTCategoryTagV1> catList = tag.getCategories().returnItems();
+			final List<RESTCategoryInTagV1> catList = tag.getCategories().returnItems();
 			if (catList != null)
 			{
-				for (final RESTCategoryTagV1 cat: catList)
+				for (final RESTCategoryInTagV1 cat: catList)
 				{
 					if (!mapping.containsKey(cat)) mapping.put(cat, new ArrayList<RESTTagV1>());
 					mapping.get(cat).add(tag);
