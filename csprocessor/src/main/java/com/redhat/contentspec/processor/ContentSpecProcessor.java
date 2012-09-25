@@ -30,7 +30,7 @@ import org.jboss.pressgang.ccms.rest.v1.entities.RESTTopicSourceUrlV1;
 import org.jboss.pressgang.ccms.rest.v1.entities.RESTTopicV1;
 import org.jboss.pressgang.ccms.rest.v1.entities.RESTUserV1;
 import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTAssignedPropertyTagV1;
-import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTCategoryTagV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTCategoryInTagV1;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.ExceptionUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
@@ -518,7 +518,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 					tags.add(tagList.get(0));
 				}
 			}
-			final Map<RESTCategoryTagV1, List<RESTTagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
+			final Map<RESTCategoryInTagV1, List<RESTTagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
 			
 			// Check if the app should be shutdown
 			if (isShuttingDown.get())
@@ -533,7 +533,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 				// Save the new tags
 				// Find tags that aren't already in the database and adds them
 				final List<RESTTagV1> tttList = topic.getTags().returnItems();
-				for (final Entry<RESTCategoryTagV1, List<RESTTagV1>> catEntry: mapping.entrySet())
+				for (final Entry<RESTCategoryInTagV1, List<RESTTagV1>> catEntry: mapping.entrySet())
 				{
 					for (final RESTTagV1 tag: catEntry.getValue()) 
 					{
@@ -598,7 +598,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			{
 				// Finds tags that aren't already in the database and adds them
 				final List<RESTTagV1> tttList = topic.getTags().returnItems();
-				for (final Entry<RESTCategoryTagV1, List<RESTTagV1>> cat: mapping.entrySet())
+				for (final Entry<RESTCategoryInTagV1, List<RESTTagV1>> cat: mapping.entrySet())
 				{					
 					for (final RESTTagV1 tag: cat.getValue())
 					{
@@ -621,7 +621,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			else
 			{
 				// Save the tags
-				for (final Entry<RESTCategoryTagV1, List<RESTTagV1>> cat: mapping.entrySet())
+				for (final Entry<RESTCategoryInTagV1, List<RESTTagV1>> cat: mapping.entrySet())
 				{
 					for (final RESTTagV1 tag: cat.getValue())
 					{

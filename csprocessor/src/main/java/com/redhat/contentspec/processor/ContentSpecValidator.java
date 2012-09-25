@@ -33,7 +33,7 @@ import org.jboss.pressgang.ccms.rest.v1.entities.RESTTagV1;
 import org.jboss.pressgang.ccms.rest.v1.entities.RESTTopicV1;
 import org.jboss.pressgang.ccms.rest.v1.entities.RESTTranslatedTopicV1;
 import org.jboss.pressgang.ccms.rest.v1.entities.base.RESTBaseTopicV1;
-import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTCategoryTagV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTCategoryInTagV1;
 import org.jboss.pressgang.ccms.utils.common.DocBookUtilities;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
@@ -994,7 +994,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
 		}
 
 		// Check that the writer tag is actually part of the Assigned Writer category
-		final RESTCategoryTagV1 cat = reader.getCategoryByTagId(tagList.get(0).getId());
+		final RESTCategoryInTagV1 cat = reader.getCategoryByTagId(tagList.get(0).getId());
 		if (cat == null)
 		{
 			log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getLineNumber(), topic.getText()));
@@ -1054,10 +1054,10 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
 			}
 
 			// Check that the mutex value entered is correct
-			final Map<RESTCategoryTagV1, List<RESTTagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
-			for (final Entry<RESTCategoryTagV1, List<RESTTagV1>> catEntry : mapping.entrySet())
+			final Map<RESTCategoryInTagV1, List<RESTTagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
+			for (final Entry<RESTCategoryInTagV1, List<RESTTagV1>> catEntry : mapping.entrySet())
 			{
-			    final RESTCategoryTagV1 cat = catEntry.getKey();
+			    final RESTCategoryInTagV1 cat = catEntry.getKey();
 			    final List<RESTTagV1> catTags = catEntry.getValue();
 			    
 				// Check if the app should be shutdown
