@@ -12,28 +12,33 @@ public class ProcessorConstants
 	public static final String BRACKET_PATTERN 				= "(?<!\\\\)\\%c((.|\n)*?)(?<!\\\\)\\%c";
 	public static final String BRACKET_VALIDATE_REGEX		= ".*%s[ ]*$"; // ".*%s(([ ]*$)|([ ]*#.*$))" For use to allow comments at the end of a line
 	public static final String VERSION_VALIDATE_REGEX		= "([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+)";
-
-	public static final String RELATED_REGEX 		= "^(R|RELATED-TO)[ ]*:.*$";
-	public static final String PREREQUISITE_REGEX 	= "^(P|PREREQUISITE)[ ]*:.*$";
-	public static final String LINK_LIST_REGEX 		= "^(L|LINK-LIST)[ ]*:.*$"; 
-	public static final String NEXT_REGEX 			= "^NEXT[ ]*:.*$";
-	public static final String PREV_REGEX 			= "^PREV[ ]*:.*$";
-	private static final String TARGET_BASE_REGEX	= "T(([0-9]+)|(\\-[ ]*[A-Za-z0-9\\-_]+))";
+	public static final String VERSION_EPOCH_VALIDATE_REGEX = "(" + VERSION_VALIDATE_REGEX + ")(-[0-9]+)?";
+	
+	public static final String RELATED_REGEX 		= "^(R|RELATED-TO|REFER-TO)[ ]*:(.|(\r?\n))*$";
+	public static final String PREREQUISITE_REGEX 	= "^(P|PREREQUISITE)[ ]*:(.|(\r?\n))*$";
+	public static final String LINK_LIST_REGEX 		= "^(L|LINK-LIST)[ ]*:(.|(\r?\n))*$"; 
+	public static final String NEXT_REGEX 			= "^NEXT[ ]*:(.|(\r?\n))*$";
+	public static final String PREV_REGEX 			= "^PREV[ ]*:(.|(\r?\n))*$";
+	public static final String TARGET_BASE_REGEX	= "T(([0-9]+)|(\\-[ ]*[A-Za-z0-9\\-_]+))";
 	public static final String TARGET_REGEX 		= "^" + TARGET_BASE_REGEX + "$"; 
-	public static final String BRANCH_REGEX 		= "^B[ ]*:.*$";
+	public static final String BRANCH_REGEX 		= "^B[ ]*:(.|(\r?\n))*$";
 	public static final String EXTERNAL_TARGET_REGEX	= "^ET[0-9]+$";
 	public static final String EXTERNAL_CSP_REGEX	= "^CS[0-9]+[ ]*(:[ ]*[0-9]+)?$";
+	
+	public static final String CSP_TITLE_REGEX     = "^[0-9a-zA-Z_\\-\\.\\+\\s]+$";
+	public static final String CSP_PRODUCT_REGEX     = "^[0-9a-zA-Z_\\-\\.\\+\\s]+$";
 
 	public static final String RELATION_ID_REGEX		= "^(" + TARGET_BASE_REGEX + ")|(N?[0-9]+)$";
 	public static final String RELATION_ID_LONG_REGEX	= "^.*\\[((" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
 	public static final String RELATION_ID_LONG_PATTERN	= "^(?<TopicTitle>.*)[ ]*\\[(?<TopicID>(" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
 
-	public static final String VALID_BOOK_TYPE_REGEX	= "^(BOOK|ARTICLE)$";
+	public static final String VALID_BOOK_TYPE_REGEX	= "^(BOOK|ARTICLE)(-DRAFT)?$";
 
 	public static final String LINE = "Line %d: ";
 	public static final String INVALID_CS = "Invalid Content Specification!";
 	public static final String INVALID_TOPIC = "Invalid Topic!";
 	public static final String INVALID_RELATIONSHIP = "Invalid Relationship!";
+	public static final String AMBIGUOUS_RELATIONSHIP = "Ambiguous Relationship!";
 	public static final String INVALID_PROCESS = "Invalid Process!";
 	public static final String GENERIC_INVALID_LEVEL = "Invalid Chapter/Section/Appendix!";
 	public static final String NEW_LINE_SPACER = "\n       -> ";
@@ -48,6 +53,7 @@ public class ProcessorConstants
 	// Content Spec Errors
 	public static final String ERROR_CS_INVALID_ID_MSG				= INVALID_CS + " The specified ID doesn't exist in the database.";
 	public static final String ERROR_CS_NO_TITLE_MSG				= INVALID_CS + " No Title.";
+	public static final String ERROR_CS_INVALID_TITLE_MSG           = INVALID_CS + " Invalid Title. The title can only contain plus (+), hyphen (-), dot(.) or alpha numeric characters.";
 	public static final String ERROR_CS_NO_PRODUCT_MSG				= INVALID_CS + " No Product specified.";
 	public static final String ERROR_CS_NO_VERSION_MSG				= INVALID_CS + " No Version specified.";
 	public static final String ERROR_CS_NO_DTD_MSG					= INVALID_CS + " No DTD specified.";
@@ -85,17 +91,19 @@ public class ProcessorConstants
 	// Article based level errors
 	public static final String ERROR_ARTICLE_CHAPTER_MSG		 	= LINE + INVALID_CS + " Chapters can't be used in Articles." + CSLINE_MSG;
 	public static final String ERROR_ARTICLE_PART_MSG		 		= LINE + INVALID_CS + " Parts can't be used in Articles." + CSLINE_MSG;
+	public static final String ERROR_ARTICLE_PROCESS_MSG               = LINE + INVALID_CS + " Processes can't be used in Articles." + CSLINE_MSG;
 	public static final String ERROR_ARTICLE_NESTED_APPENDIX_MSG	= LINE + INVALID_CS + " An Appendix must have no indentation." + CSLINE_MSG;
 	public static final String ERROR_ARTICLE_SECTION_MSG			= LINE + INVALID_CS + " A Section must be within another section." + CSLINE_MSG;
 	
 	public static final String ERROR_INCORRECT_TOPIC_ID_LOCATION_MSG 	= LINE + INVALID_CS + " Topic ID specified in the wrong location." + CSLINE_MSG;
 
 	public static final String ERROR_NO_ENDING_BRACKET_MSG 			= LINE + INVALID_CS + " Missing ending bracket (%c) detected.";
-	public static final String ERROR_MISSING_SEPARATOR_MSG 			= LINE + INVALID_CS + " Missing separator (%c) detected.";
+	public static final String ERROR_MISSING_SEPARATOR_MSG 			= LINE + INVALID_CS + " Missing separator(%c) detected.";
 	public static final String ERROR_INCORRECT_INDENTATION_MSG		= LINE + INVALID_CS + " Indentation is invalid." + CSLINE_MSG;
 	public static final String ERROR_RELATIONSHIP_BASE_LEVEL_MSG 	= LINE + INVALID_CS + " Relationships can't be at the base level." + CSLINE_MSG;
 
-	public static final String ERROR_INCORRECT_MODE_MSG 			= "Mode does not match the contents of the Content Specification.";
+	public static final String ERROR_INCORRECT_EDIT_MODE_MSG 		= "Invalid Operation! You cannot update a new Content Specification.";
+	public static final String ERROR_INCORRECT_NEW_MODE_MSG      = "Invalid Operation! You cannot create a new Content Specification, from an exiting Content Specification.";
 	public static final String ERROR_NONEXIST_CS_TYPE_MSG 			= "No processing type specified! Please specify whether to process as a Content Specification or a Setup Processor.";
 	public static final String ERROR_NONEXIST_CS_MODE_MSG 			= "No processing mode specified! Please specify whether to process as a New or Edited Content Specification.";
 	public static final String ERROR_INVALID_CS_ID_MSG				= "The Content Specification ID doesn't exist in the database." + CSLINE_MSG;
@@ -152,7 +160,9 @@ public class ProcessorConstants
 	public static final String ERROR_TOPIC_NO_NEW_TRANSLATION_TOPIC	= LINE + INVALID_TOPIC + " New topics aren't allowed to be created for translated topics." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_NO_TAGS_TRANSLATION_TOPIC	= LINE + INVALID_TOPIC + " Tags aren't allowed to be added to translated topics." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_INVALID_REVISION_FORMAT	= LINE + INVALID_TOPIC + " " + CSLINE_MSG;
+	public static final String ERROR_TOPIC_NOT_IN_PART_INTRO_MSG    = LINE + INVALID_TOPIC + " A topic must be before any chapters inside of a part." + CSLINE_MSG;
 
+	
 	// Warnings
 	public static final String WARN_DESCRIPTION_IGNORE_MSG			= LINE + "%s topics can't have a description, so the description will be ignored.";
 	public static final String WARN_TYPE_IGNORE_MSG					= LINE + "%s topics can't have a type, so the type will be ignored.";
@@ -176,17 +186,20 @@ public class ProcessorConstants
 
 	//Relationship Errors
 	public static final String ERROR_DUPLICATE_TARGET_ID_MSG		= "Target ID is duplicated. Target ID's must be unique." + NEW_LINE_SPACER + LINE + " %s" + NEW_LINE_SPACER + LINE + " %s";
-	public static final String ERROR_TARGET_NONEXIST_MSG			= LINE + INVALID_RELATIONSHIP + " The Target specified doesn't exist in the content specification." + CSLINE_MSG;
-	public static final String ERROR_RELATED_TOPIC_NONEXIST_MSG		= LINE + INVALID_RELATIONSHIP + " The related topic specified doesn't exist in the content specification." + CSLINE_MSG;
-	public static final String ERROR_INVALID_RELATIONSHIP_MSG		= LINE + INVALID_RELATIONSHIP + " Topics that are used twice inside of a Content Specification cannot be related to directly. To relate to one of these topics please use a Target." + CSLINE_MSG;
+	public static final String ERROR_TARGET_NONEXIST_MSG			= LINE + INVALID_RELATIONSHIP + " The Target specified (%s) doesn't exist in the content specification." + CSLINE_MSG;
+	public static final String ERROR_RELATED_TOPIC_NONEXIST_MSG		= LINE + INVALID_RELATIONSHIP + " The related topic specified (%s) doesn't exist in the content specification." + CSLINE_MSG;
+	public static final String ERROR_INVALID_RELATIONSHIP_MSG		= LINE + AMBIGUOUS_RELATIONSHIP + " Topic %s is included on lines %s of the Content Specification. To relate to one of these topics please use a Target." + CSLINE_MSG;
 	public static final String ERROR_TOO_MANY_NEXTS_MSG				= LINE + INVALID_RELATIONSHIP + " A topic may only have one next Topic." + CSLINE_MSG;
 	public static final String ERROR_TOO_MANY_PREVS_MSG				= LINE + INVALID_RELATIONSHIP + " A topic may only have one previous Topic." + CSLINE_MSG;
 	public static final String ERROR_NEXT_RELATED_LEVEL_MSG			= LINE + INVALID_RELATIONSHIP + " Next relationships must target a topic." + CSLINE_MSG;
 	public static final String ERROR_PREV_RELATED_LEVEL_MSG			= LINE + INVALID_RELATIONSHIP + " Previous relationships must target a topic." + CSLINE_MSG;
-	public static final String ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG	= LINE + INVALID_RELATIONSHIP + " The link target is ambiguous, please use an explicit link target ID. Add [T<uniqueID>] to the instance you want to relate to, and use that as the link target." + CSLINE_MSG;
+	public static final String ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG	= LINE + AMBIGUOUS_RELATIONSHIP + " The link target is ambiguous, please use an explicit link target ID. Add [T<uniqueID>] to the instance you want to relate to, and use that as the link target." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_RELATED_TO_ITSELF_MSG		= LINE + INVALID_RELATIONSHIP + " You can't relate a topic to itself." + CSLINE_MSG;
 	public static final String ERROR_RELATED_TITLE_NO_MATCH_MSG		= LINE + INVALID_RELATIONSHIP + " The topic/target relationship title specified doesn't match the actual topic/target title." + NEW_LINE_SPACER + "Specified: %s" + NEW_LINE_SPACER + "Actual:    %s";
-
+	public static final String ERROR_INVALID_REFERS_TO_RELATIONSHIP = LINE + INVALID_RELATIONSHIP + " Invalid Refers-To Relationship format";
+	public static final String ERROR_INVALID_PREREQUISITE_RELATIONSHIP = LINE + INVALID_RELATIONSHIP + " Invalid Prerequisite Relationship format";
+	public static final String ERROR_INVALID_LINK_LIST_RELATIONSHIP = LINE + INVALID_RELATIONSHIP + " Invalid Link-List Relationship format";
+	
 	// Setup Processor Constants
 	public static final String ERROR_INVALID_MUTEX_MSG				= LINE + "Mutex value must be either 0 or 1." + CSLINE_MSG;
 	public static final String ERROR_INVALID_CATEGORY_FORMAT_MSG	= LINE + "Invalid Category attribute format. (%s)" + CSLINE_MSG;

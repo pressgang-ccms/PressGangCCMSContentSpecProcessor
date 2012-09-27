@@ -2,40 +2,41 @@ package com.redhat.contentspec.processor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.jboss.pressgangccms.contentspec.Appendix;
-import org.jboss.pressgangccms.contentspec.ContentSpec;
-import org.jboss.pressgangccms.contentspec.Level;
-import org.jboss.pressgangccms.contentspec.Node;
-import org.jboss.pressgangccms.contentspec.Process;
-import org.jboss.pressgangccms.contentspec.SpecNode;
-import org.jboss.pressgangccms.contentspec.SpecTopic;
-import org.jboss.pressgangccms.contentspec.constants.CSConstants;
-import org.jboss.pressgangccms.contentspec.entities.Relationship;
-import org.jboss.pressgangccms.contentspec.enums.BookType;
-import org.jboss.pressgangccms.contentspec.enums.LevelType;
-import org.jboss.pressgangccms.contentspec.enums.RelationshipType;
-import org.jboss.pressgangccms.contentspec.interfaces.ShutdownAbleApp;
-import org.jboss.pressgangccms.contentspec.rest.RESTManager;
-import org.jboss.pressgangccms.contentspec.rest.RESTReader;
-import org.jboss.pressgangccms.contentspec.utils.logging.ErrorLogger;
-import org.jboss.pressgangccms.contentspec.utils.logging.ErrorLoggerManager;
-import org.jboss.pressgangccms.rest.v1.collections.base.BaseRestCollectionV1;
-import org.jboss.pressgangccms.rest.v1.components.ComponentBaseTopicV1;
-import org.jboss.pressgangccms.rest.v1.components.ComponentTagV1;
-import org.jboss.pressgangccms.rest.v1.components.ComponentTopicV1;
-import org.jboss.pressgangccms.rest.v1.entities.RESTCategoryV1;
-import org.jboss.pressgangccms.rest.v1.entities.RESTTagV1;
-import org.jboss.pressgangccms.rest.v1.entities.RESTTopicV1;
-import org.jboss.pressgangccms.rest.v1.entities.RESTTranslatedTopicV1;
-import org.jboss.pressgangccms.rest.v1.entities.base.RESTBaseTopicV1;
-import org.jboss.pressgangccms.utils.common.DocBookUtilities;
-import org.jboss.pressgangccms.utils.common.HashUtilities;
-import org.jboss.pressgangccms.utils.constants.CommonConstants;
+import org.jboss.pressgang.ccms.contentspec.Appendix;
+import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.Level;
+import org.jboss.pressgang.ccms.contentspec.Node;
+import org.jboss.pressgang.ccms.contentspec.Process;
+import org.jboss.pressgang.ccms.contentspec.SpecNode;
+import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
+import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
+import org.jboss.pressgang.ccms.contentspec.enums.BookType;
+import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
+import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
+import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
+import org.jboss.pressgang.ccms.contentspec.rest.RESTManager;
+import org.jboss.pressgang.ccms.contentspec.rest.RESTReader;
+import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
+import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
+import org.jboss.pressgang.ccms.rest.v1.components.ComponentBaseTopicV1;
+import org.jboss.pressgang.ccms.rest.v1.components.ComponentTagV1;
+import org.jboss.pressgang.ccms.rest.v1.components.ComponentTopicV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.RESTTagV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.RESTTopicV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.RESTTranslatedTopicV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.base.RESTBaseTopicV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTCategoryInTagV1;
+import org.jboss.pressgang.ccms.utils.common.DocBookUtilities;
+import org.jboss.pressgang.ccms.utils.common.HashUtilities;
+import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
 import com.redhat.contentspec.processor.structures.ProcessingOptions;
@@ -50,7 +51,7 @@ import com.redhat.contentspec.processor.utils.ProcessorUtilities;
  * @param <T> The REST Topic class that the Validator will be validating against.
  * @param <U> The REST Topic Collection class that the Validator will be validating against.
  */
-public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends BaseRestCollectionV1<T, U>> implements ShutdownAbleApp
+public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements ShutdownAbleApp
 {
 	private final RESTReader reader;
 	private final ErrorLogger log;
@@ -169,12 +170,15 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 		// If editing then check that the ID exists & the CHECKSUM/SpecRevision match
 		if (contentSpec.getId() != 0)
 		{
-			final RESTTopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(), null);
+			final RESTTopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(), processingOptions.getRevision());
 			if (contentSpecTopic == null)
 			{
 				log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
 				valid = false;
 			}
+
+			/* Set the revision the content spec is being validated for */
+			contentSpec.setRevision(contentSpecTopic.getRevision());
 
 			// Check that the revision is valid
 			if (!processingOptions.isIgnoreSpecRevision() && contentSpecTopic != null)
@@ -188,13 +192,13 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 						valid = false;
 					}
 				}
-				else if (contentSpec.getRevision() != null)
+				else if (contentSpec.getSpecRevision() != null)
 				{
 					// Check that the revision matches
 					int latestRev = reader.getLatestCSRevById(contentSpec.getId());
-					if (contentSpec.getRevision() != latestRev)
+					if (contentSpec.getSpecRevision() != latestRev)
 					{
-						log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_SPEC_REVISION_MSG, contentSpec.getRevision(), latestRev));
+						log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_SPEC_REVISION_MSG, contentSpec.getSpecRevision(), latestRev));
 						valid = false;
 					}
 				}
@@ -263,8 +267,11 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			final HashMap<String, Level> targetLevels, final HashMap<String, SpecTopic> targetTopics)
 	{
 		boolean error = false;
-		for (final String topicId : relationships.keySet())
+		for (final Entry<String, List<Relationship>> relationshipEntry : relationships.entrySet())
 		{
+		    final String topicId = relationshipEntry.getKey();
+		    final SpecTopic specTopic = specTopics.get(topicId);
+
 			// Check if the app should be shutdown
 			if (isShuttingDown.get())
 			{
@@ -272,7 +279,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 				return false;
 			}
 
-			for (final Relationship relationship : relationships.get(topicId))
+			for (final Relationship relationship : relationshipEntry.getValue())
 			{
 				// Check if the app should be shutdown
 				if (isShuttingDown.get())
@@ -302,12 +309,12 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 						//final Level targetLevel = targetLevels.get(relatedId);
 						if (relationship.getType() == RelationshipType.NEXT)
 						{
-							log.error(String.format(ProcessorConstants.ERROR_NEXT_RELATED_LEVEL_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
+							log.error(String.format(ProcessorConstants.ERROR_NEXT_RELATED_LEVEL_MSG, specTopic.getLineNumber(), specTopic.getText()));
 							error = true;
 						}
 						else if (relationship.getType() == RelationshipType.PREVIOUS)
 						{
-							log.error(String.format(ProcessorConstants.ERROR_PREV_RELATED_LEVEL_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
+							log.error(String.format(ProcessorConstants.ERROR_PREV_RELATED_LEVEL_MSG, specTopic.getLineNumber(), specTopic.getText()));
 							error = true;
 						}
 						/*else if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(targetLevel.getTitle()))
@@ -321,7 +328,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 					}
 					else
 					{
-						log.error(String.format(ProcessorConstants.ERROR_TARGET_NONEXIST_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
+						log.error(String.format(ProcessorConstants.ERROR_TARGET_NONEXIST_MSG, specTopic.getLineNumber(), relatedId, specTopic.getText()));
 						error = true;
 					}
 				// The relationship isn't a target so it must point to a topic directly
@@ -334,49 +341,69 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 						if (relatedId.startsWith("X"))
 						{
 							// Duplicated topics are never unique so throw an error straight away.
-							log.error(String.format(ProcessorConstants.ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
+							log.error(String.format(ProcessorConstants.ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG, specTopic.getLineNumber(), specTopic.getText()));
 							error = true;
 						}
 						else
 						{
 							int count = 0;
-							SpecTopic relatedTopic = null;
+							final List<SpecTopic> relatedTopics = new ArrayList<SpecTopic>();
 							// Get the related topic and count if more then one is found
-							for (final String specTopicId : specTopics.keySet())
+							for (final Entry<String, SpecTopic> entry : specTopics.entrySet())
 							{
+							    final String specTopicId = entry.getKey();
+							    
 								if (specTopicId.matches("^[0-9]+-" + relatedId + "$"))
 								{
-									relatedTopic = specTopics.get(specTopicId);
+									relatedTopics.add(entry.getValue());
 									count++;
 								}
 							}
-							// Check to make sure the topic doesn't relate to itself
-							if (relatedTopic != specTopics.get(topicId))
+							
+							if (count > 1)
 							{
-								if (count > 1)
-								{
-									log.error(String.format(ProcessorConstants.ERROR_INVALID_RELATIONSHIP_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
-									error = true;
-								}
-								else if (count == 0)
-								{
-									log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
-									error = true;
-								}
-
-								// Check to ensure the title matches
-								/*if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(relatedTopic.getTitle()))
-								{
-									if (!processingOptions.isPermissiveMode())
-									{
-										log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopics.get(topicId).getLineNumber(), relationship.getRelationshipTitle(), relatedTopic.getTitle()));
-										error = true;
-									}
-								}*/
+							    // Build up the line numbers message
+							    final StringBuilder lineNumbers = new StringBuilder();
+							    for (int i = 0; i < relatedTopics.size(); i++)
+							    {
+							        if (i == relatedTopics.size() - 1)
+							        {
+							            lineNumbers.append(" and ");
+							        }
+							        else if (lineNumbers.length() != 0)
+							        {
+							            lineNumbers.append(", ");
+							        }
+							        
+							        lineNumbers.append(relatedTopics.get(i).getLineNumber());
+							    }
+							    
+								log.error(String.format(ProcessorConstants.ERROR_INVALID_RELATIONSHIP_MSG, specTopic.getLineNumber(), relatedId, lineNumbers.toString(), specTopic.getText()));
+								error = true;
+							}
+							else if (count == 0)
+							{
+								log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId, specTopic.getText()));
+								error = true;
 							}
 							else
 							{
-								log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
+							    // Check to make sure the topic doesn't relate to itself
+							    final SpecTopic relatedTopic = relatedTopics.get(0);
+	                            if (relatedTopic == specTopic)
+	                            {
+	                                log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopic.getLineNumber(), specTopic.getText()));
+	                            }
+	                            
+	                            // Check to ensure the title matches
+	                            /*if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(relatedTopic.getTitle()))
+	                            {
+	                                if (!processingOptions.isPermissiveMode())
+	                                {
+	                                    log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(), relationship.getRelationshipTitle(), relatedTopic.getTitle()));
+	                                    error = true;
+	                                }
+	                            }*/
 							}
 						}
 					}
@@ -387,23 +414,23 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 							final SpecTopic relatedTopic = specTopics.get(relatedId);
 
 							// Check to make sure the topic doesn't relate to itself
-							if (relatedTopic == specTopics.get(topicId))
+							if (relatedTopic == specTopic)
 							{
-								log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
+								log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopic.getLineNumber(), specTopic.getText()));
 							}
 							// Check to ensure the title matches
 							/*else if (relationship.getRelationshipTitle() != null && relationship.getRelationshipTitle().equals(relatedTopic.getTitle()))
 							{
 								if (!processingOptions.isPermissiveMode())
 								{
-									log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopics.get(topicId).getLineNumber(), relationship.getRelationshipTitle(), relatedTopic.getTitle()));
+									log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(), relationship.getRelationshipTitle(), relatedTopic.getTitle()));
 									error = true;
 								}
 							}*/
 						}
 						else
 						{
-							log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopics.get(topicId).getLineNumber(), specTopics.get(topicId).getText()));
+							log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
 							error = true;
 						}
 					}
@@ -459,26 +486,27 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			valid = false;
 		}
 
-		// Validate the sub levels
-		for (final Level l : level.getChildLevels())
+		// Validate the sub levels and topics
+		for (final Node childNode : level.getChildNodes())
 		{
-			if (!validateLevel(l, specTopics, csAllowEmptyLevels, bookType))
-			{
-				valid = false;
-			}
-		}
-
-		// Validate the topics in this level
-		for (final SpecTopic t : level.getSpecTopics())
-		{
-			if (!validateTopic(t, specTopics, bookType))
-			{
-				valid = false;
-			}
+		    if (childNode instanceof Level)
+		    {
+    			if (!validateLevel((Level) childNode, specTopics, csAllowEmptyLevels, bookType))
+    			{
+    				valid = false;
+    			}
+		    }
+		    else if (childNode instanceof SpecTopic)
+		    {
+		        if (!validateTopic((SpecTopic) childNode, specTopics, bookType))
+	            {
+	                valid = false;
+	            }
+		    }
 		}
 
 		// Validate certain requirements depending on the type of level
-		if (bookType == BookType.ARTICLE)
+		if (bookType == BookType.ARTICLE || bookType == BookType.ARTICLE_DRAFT)
 		{
 			switch (level.getType())
 			{
@@ -508,14 +536,9 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 				valid = false;
 				break;
 			case PROCESS:
-				// Check that the process has no children
-				Process process = (Process) level;
-				if (process.getNumberOfChildLevels() != 0)
-				{
-					log.error(String.format(ProcessorConstants.ERROR_PROCESS_HAS_LEVELS_MSG, process.getLineNumber(), process.getText()));
-					valid = false;
-				}
-				break;
+			    log.error(String.format(ProcessorConstants.ERROR_ARTICLE_PROCESS_MSG, level.getLineNumber(), level.getText()));
+                valid = false;
+                break;
 			case PART:
 				log.error(String.format(ProcessorConstants.ERROR_ARTICLE_PART_MSG, level.getLineNumber(), level.getText()));
 				valid = false;
@@ -631,16 +654,34 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			valid = false;
 		}
 
-		if (bookType != BookType.ARTICLE)
+		if (bookType != BookType.ARTICLE && bookType != BookType.ARTICLE_DRAFT)
 		{
 			// Check that the topic is inside a chapter/section/process/appendix/part
 			if (specTopic.getParent() == null || !(specTopic.getParent().getType() == LevelType.CHAPTER
 					|| specTopic.getParent().getType() == LevelType.APPENDIX || specTopic.getParent().getType() == LevelType.PROCESS
-					|| specTopic.getParent().getType() == LevelType.SECTION	/*|| specTopic.getParent().getType() == LevelType.PART*/))
+					|| specTopic.getParent().getType() == LevelType.SECTION || specTopic.getParent().getType() == LevelType.PART))
 			{
 				log.error(String.format(ProcessorConstants.ERROR_TOPIC_OUTSIDE_CHAPTER_MSG, specTopic.getLineNumber(), specTopic.getText()));
 				valid = false;
 			}
+			
+			// Check that there are no levels in the parent part (ie the topic is in the intro)
+			if (specTopic.getParent() != null && specTopic.getParent().getType() == LevelType.PART)
+            {
+			    final LinkedList<Node> parentChildren = specTopic.getParent().getChildNodes();
+			    final int index = parentChildren.indexOf(specTopic);
+			    
+			    for (int i  = 0; i < index; i++)
+			    {
+			        final Node node = parentChildren.get(i);
+			        if (node instanceof Level)
+			        {
+			            log.error(String.format(ProcessorConstants.ERROR_TOPIC_NOT_IN_PART_INTRO_MSG, specTopic.getLineNumber(), specTopic.getText()));
+		                valid = false;
+			            break;
+			        }
+			    }
+            }
 		}
 
 		// Check that the title exists
@@ -706,20 +747,31 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 		// Existing Topics
 		else if (specTopic.isTopicAnExistingTopic())
 		{
+		    // Calculate the revision for the topic
+		    final Integer revision;
+		    if (specTopic.getRevision() == null || processingOptions.isUpdateRevisions())
+		    {
+		        revision = processingOptions.getRevision();
+		    }
+		    else
+		    {
+		        revision = specTopic.getRevision();
+		    }
+		    
 			// Check that the id actually exists
 			final T topic;
 			if (clazz == RESTTranslatedTopicV1.class)
 			{
-				topic = (T) reader.getTranslatedTopicByTopicId(Integer.parseInt(specTopic.getId()), null, locale);
-				if (processingOptions.isAddRevisions() && specTopic.getRevision() == null)
+				topic = (T) reader.getTranslatedTopicByTopicId(Integer.parseInt(specTopic.getId()), revision, locale);
+				if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions()))
 				{
 					specTopic.setRevision(((RESTTranslatedTopicV1) topic).getTopicRevision());
 				}
 			}
 			else
 			{
-				topic = (T) reader.getTopicById(Integer.parseInt(specTopic.getId()), specTopic.getRevision());
-				if (processingOptions.isAddRevisions() && specTopic.getRevision() == null)
+				topic = (T) reader.getTopicById(Integer.parseInt(specTopic.getId()), revision);
+				if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions()))
 				{
 					specTopic.setRevision(topic.getRevision());
 				}
@@ -882,11 +934,13 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			final String temp = specTopic.getId().substring(1);
 			int count = 0;
 			SpecTopic clonedTopic = null;
-			for (final String topicId : specTopics.keySet())
+			for (final Entry<String, SpecTopic> entry : specTopics.entrySet())
 			{
+			    final String topicId = entry.getKey();
+			    
 				if (topicId.endsWith(temp) && !topicId.endsWith(specTopic.getId()))
 				{
-					clonedTopic = specTopics.get(topicId);
+					clonedTopic = entry.getValue();
 					count++;
 				}
 			}
@@ -940,7 +994,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 		}
 
 		// Check that the writer tag is actually part of the Assigned Writer category
-		final RESTCategoryV1 cat = reader.getCategoryByTagId(tagList.get(0).getId());
+		final RESTCategoryInTagV1 cat = reader.getCategoryByTagId(tagList.get(0).getId());
 		if (cat == null)
 		{
 			log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getLineNumber(), topic.getText()));
@@ -1000,9 +1054,12 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 			}
 
 			// Check that the mutex value entered is correct
-			final Map<RESTCategoryV1, List<RESTTagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
-			for (final RESTCategoryV1 cat : mapping.keySet())
+			final Map<RESTCategoryInTagV1, List<RESTTagV1>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
+			for (final Entry<RESTCategoryInTagV1, List<RESTTagV1>> catEntry : mapping.entrySet())
 			{
+			    final RESTCategoryInTagV1 cat = catEntry.getKey();
+			    final List<RESTTagV1> catTags = catEntry.getValue();
+			    
 				// Check if the app should be shutdown
 				if (isShuttingDown.get())
 				{
@@ -1011,21 +1068,21 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, U>, U extends Bas
 				}
 
 				// Check that only one tag has been set if the category is mutually exclusive
-				if (cat.getMutuallyExclusive() && mapping.get(cat).size() > 1)
+				if (cat.getMutuallyExclusive() && catTags.size() > 1)
 				{
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TOO_MANY_CATS_MSG, specNode.getLineNumber(), cat.getName(), specNode.getText()));
 					valid = false;
 				}
 
 				// Check that the tag isn't a type or writer
-				if (cat.getId() == CSConstants.WRITER_CATEGORY_ID)
+				if (cat.getId().equals(CSConstants.WRITER_CATEGORY_ID))
 				{
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_WRITER_AS_TAG_MSG, specNode.getLineNumber(), specNode.getText()));
 					valid = false;
 				}
 
 				// Check that the tag isn't a topic type
-				if (cat.getId() == CSConstants.TYPE_CATEGORY_ID)
+				if (cat.getId().equals(CSConstants.TYPE_CATEGORY_ID))
 				{
 					log.error(String.format(ProcessorConstants.ERROR_TOPIC_TYPE_AS_TAG_MSG, specNode.getLineNumber(), specNode.getText()));
 					valid = false;

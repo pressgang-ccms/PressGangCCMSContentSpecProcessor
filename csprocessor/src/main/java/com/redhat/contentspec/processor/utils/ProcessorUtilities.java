@@ -4,14 +4,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
-import org.jboss.pressgangccms.contentspec.ContentSpec;
-import org.jboss.pressgangccms.contentspec.SpecTopic;
-import org.jboss.pressgangccms.rest.v1.entities.RESTCategoryV1;
-import org.jboss.pressgangccms.rest.v1.entities.RESTTagV1;
-import org.jboss.pressgangccms.utils.common.HashUtilities;
-import org.jboss.pressgangccms.utils.common.StringUtilities;
+import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.rest.v1.entities.RESTTagV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTCategoryInTagV1;
+import org.jboss.pressgang.ccms.utils.common.HashUtilities;
+import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 
 import com.google.code.regexp.NamedMatcher;
 import com.google.code.regexp.NamedPattern;
@@ -28,15 +29,15 @@ public class ProcessorUtilities
 	 * @param tags The List of tags to be converted.
 	 * @return The mapping of Categories to Tags.
 	 */
-	public static Map<RESTCategoryV1, List<RESTTagV1>> getCategoryMappingFromTagList(final List<RESTTagV1> tags)
+	public static Map<RESTCategoryInTagV1, List<RESTTagV1>> getCategoryMappingFromTagList(final List<RESTTagV1> tags)
 	{
-		final HashMap<RESTCategoryV1, List<RESTTagV1>> mapping = new HashMap<RESTCategoryV1, List<RESTTagV1>>();
+		final HashMap<RESTCategoryInTagV1, List<RESTTagV1>> mapping = new HashMap<RESTCategoryInTagV1, List<RESTTagV1>>();
 		for (final RESTTagV1 tag: tags)
 		{
-			final List<RESTCategoryV1> catList = tag.getCategories().getItems();
+			final List<RESTCategoryInTagV1> catList = tag.getCategories().returnItems();
 			if (catList != null)
 			{
-				for (final RESTCategoryV1 cat: catList)
+				for (final RESTCategoryInTagV1 cat: catList)
 				{
 					if (!mapping.containsKey(cat)) mapping.put(cat, new ArrayList<RESTTagV1>());
 					mapping.get(cat).add(tag);
@@ -87,13 +88,14 @@ public class ProcessorUtilities
 			while (m.find())
 			{
 				log.debug("Existing Topic Match");
-			    for (final String key: specTopics.keySet())
-			    {
-			    	if (specTopics.get(key).getLineNumber() == count)
+				for (final Entry<String, SpecTopic> entry : specTopics.entrySet())
+                {
+                    final SpecTopic specTopic = entry.getValue();
+
+			    	if (specTopic.getLineNumber() == count)
 			    	{
 			    		if (m.group().startsWith("["))
 			    		{
-			    			final SpecTopic specTopic = specTopics.get(key);
 			    			line = stripVariables(line, specTopic, specTopic.getTitle());
 			    		}
 			    		break;
@@ -106,11 +108,12 @@ public class ProcessorUtilities
 			while (m.find())
 			{
 				log.debug("New Topic without an Identifier Match");
-			    for (final String key: specTopics.keySet())
+			    for (final Entry<String, SpecTopic> entry : specTopics.entrySet())
 			    {
-			    	if (specTopics.get(key).getLineNumber() == count)
+			        final SpecTopic specTopic = entry.getValue();
+
+			    	if (specTopic.getLineNumber() == count)
 			    	{
-			    		final SpecTopic specTopic = specTopics.get(key);
 			    		line = stripVariables(line, specTopic, null);
 			    		break;
 			    	}
@@ -159,11 +162,12 @@ public class ProcessorUtilities
 			{
 				log.debug("Cloned Topic Match");
 				String s = m.group(ProcessorConstants.TOPIC_ID_CONTENTS);
-			    for (String key: specTopics.keySet())
+			    for (final Entry<String, SpecTopic> entry : specTopics.entrySet())
 			    {
-			    	if (specTopics.get(key).getLineNumber() == count)
+			        final SpecTopic specTopic = entry.getValue();
+			        
+			    	if (specTopic.getLineNumber() == count)
 			    	{
-			    		final SpecTopic specTopic = specTopics.get(key);
 			    		if (m.group().startsWith("["))
 			    		{
 			    			line = stripVariables(line, specTopic, specTopic.getTitle());
@@ -182,11 +186,13 @@ public class ProcessorUtilities
 				String s = m.group(ProcessorConstants.TOPIC_ID_CONTENTS);
 			    // Remove the X
 			    String clonedId = s.substring(1);
-			    for (String key: specTopics.keySet())
+			    for (final Entry<String, SpecTopic> entry : specTopics.entrySet())
 			    {
+			        final String key = entry.getKey();
+			        
 			    	if (key.matches("^[0-9]+-" + clonedId + "$"))
 			    	{
-			    		final SpecTopic specTopic = specTopics.get(key);
+			    		final SpecTopic specTopic = entry.getValue();
 			    		if (m.group().startsWith("["))
 			    		{
 			    			line = stripVariables(line, specTopic, specTopic.getTitle());
