@@ -8,15 +8,13 @@
 	<packaging>pom</packaging>
 	<name>ECS Content Specification Tools</name>
 
+	<parent>
+		<groupId>org.jboss.pressgang</groupId>
+		<artifactId>pressgang-parent</artifactId>
+		<version>1.0-SNAPSHOT</version>
+	</parent>
+
 	<repositories>
-		<repository>
-			<id>JBoss</id>
-			<url>https://repository.jboss.org/nexus/</url>
-		</repository>
-		<repository>
-			<id>Apache</id>
-			<url>https://repository.apache.org</url>
-		</repository>
 		<repository>
 			<id>Zanata</id>
 			<url>http://repository-zanata.forge.cloudbees.com/release/</url>
@@ -43,11 +41,6 @@
 			</plugin>
 		</plugins>
 	</build>
-
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
-
 
 	<dependencies>
 		<!-- Jackson Libraries -->
