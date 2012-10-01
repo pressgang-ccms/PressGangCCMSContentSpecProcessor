@@ -1,112 +1,102 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.redhat</groupId>
-  <artifactId>contentspec</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <packaging>pom</packaging>
-  <name>ECS Content Specification Tools</name>
-  
-  <repositories>
-	<repository>
-		<id>JBoss</id>
-		<url>https://repository.jboss.org/nexus/</url>
-	</repository>
-	<repository>
-		<id>Apache</id>
-		<url>https://repository.apache.org</url>
-	</repository>
-	<repository>
-		<id>Zanata</id>
-		<url>http://repository-zanata.forge.cloudbees.com/release/</url>
-	</repository>
-	<repository>
-		<id>ECS Maven</id>
-		<url>http://ecsmaven.usersys.redhat.com/nexus/content/groups/public/</url>
-	</repository>
-  </repositories>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.redhat</groupId>
+	<artifactId>contentspec</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>ECS Content Specification Tools</name>
 
-  <distributionManagement>
-    <repository>
-      <id>ecsmaven-nexus</id>
-      <name>ECS Maven Repo</name>
-      <url>http://ecsmaven.usersys.redhat.com/nexus/content/repositories/snapshots/</url>
-    </repository>
-  </distributionManagement>
-  
-  <build>
-	<plugins>
-		<plugin>
-        		<groupId>org.apache.maven.plugins</groupId>
-        		<artifactId>maven-compiler-plugin</artifactId>
-			<version>2.3.1</version>
-        		<configuration>
-          			<source>1.6</source>
-          			<target>1.6</target>
-				<optimize>true</optimize>
-        		</configuration>
-      		</plugin>
-   	</plugins>
-  </build>
+	<repositories>
+		<repository>
+			<id>JBoss</id>
+			<url>https://repository.jboss.org/nexus/</url>
+		</repository>
+		<repository>
+			<id>Apache</id>
+			<url>https://repository.apache.org</url>
+		</repository>
+		<repository>
+			<id>Zanata</id>
+			<url>http://repository-zanata.forge.cloudbees.com/release/</url>
+		</repository>
+		<repository>
+			<id>SonatypeSnapshotRepository</id>
+			<name>Sonatype Snapshot Repository</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+			<layout>default</layout>
+		</repository>
+	</repositories>
 
-  <properties>
-	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.1</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+					<optimize>true</optimize>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
-  
-  <dependencies>
-	<!-- Jackson Libraries -->
-	<dependency>
-		<groupId>org.codehaus.jackson</groupId>
-		<artifactId>jackson-mapper-asl</artifactId>
-		<version>1.9.8</version>
-	</dependency>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
 
-	<dependency>
-		<groupId>org.codehaus.jackson</groupId>
-		<artifactId>jackson-core-asl</artifactId>
-		<version>1.9.8</version>
-	</dependency>
 
-	<!-- PressGang CCMS libraries -->
-	<dependency>
-	    <groupId>org.jboss.pressgang.ccms</groupId>
-	    <artifactId>pressgang-ccms-utils</artifactId>
-	    <version>1.0-SNAPSHOT</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.jboss.pressgang.ccms</groupId>
-	    <artifactId>pressgang-ccms-rest</artifactId>
-	    <version>1.0-SNAPSHOT</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.jboss.pressgang.ccms</groupId>
-	    <artifactId>pressgang-ccms-restv1</artifactId>
-	    <version>1.0-SNAPSHOT</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.jboss.pressgang.ccms</groupId>
-	    <artifactId>pressgang-ccms-zanata</artifactId>
-	    <version>1.0-SNAPSHOT</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.jboss.pressgang.ccms</groupId>
-	    <artifactId>pressgang-ccms-contentspec</artifactId>
-	    <version>1.0-SNAPSHOT</version>
-	</dependency>
+	<dependencies>
+		<!-- Jackson Libraries -->
+		<dependency>
+			<groupId>org.codehaus.jackson</groupId>
+			<artifactId>jackson-mapper-asl</artifactId>
+			<version>1.9.8</version>
+		</dependency>
 
-	<!-- Testing libraries -->
-	<dependency>
-  		<groupId>junit</groupId>
-  		<artifactId>junit</artifactId>
-  		<version>4.10</version>
-		<scope>test</scope>
-  	</dependency>
-  </dependencies>
+		<dependency>
+			<groupId>org.codehaus.jackson</groupId>
+			<artifactId>jackson-core-asl</artifactId>
+			<version>1.9.8</version>
+		</dependency>
 
-  <modules>
-	<module>csprocessor</module>
-	<module>csbuilder</module>
-	<module>client</module>
-  </modules>
+		<!-- PressGang CCMS libraries -->
+		<dependency>
+			<groupId>org.jboss.pressgang.ccms</groupId>
+			<artifactId>pressgang-ccms-utils</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.pressgang.ccms</groupId>
+			<artifactId>pressgang-ccms-restv1</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.pressgang.ccms</groupId>
+			<artifactId>pressgang-ccms-zanata</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.pressgang.ccms</groupId>
+			<artifactId>pressgang-ccms-contentspec</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+
+		<!-- Testing libraries -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.10</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<modules>
+		<module>csprocessor</module>
+		<module>csbuilder</module>
+		<module>client</module>
+	</modules>
 </project>
