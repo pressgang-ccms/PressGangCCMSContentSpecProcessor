@@ -1,0 +1,6 @@
+client/rpm-script/rpm/BUILD/*
+client/rpm-script/rpm/BUILDROOT/*
+client/rpm-script/rpm/SOURCES/*
+client/rpm-script/rpm/RPMS/*
+client/rpm-script/rpm/SRPMS/*
+*~
