@@ -179,21 +179,25 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			return false;
 		}
 		
+		// Validate the content specification before doing any rest calls
+        LOG.info("Starting first validation pass...");
+		
 		// Validate the relationships
 		validator = new ContentSpecValidator<RESTTopicV1>(RESTTopicV1.class, elm, dbManager, processingOptions);
 		
-		if (!validator.validateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics()))
+		if (!validator.preValidateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(), csp.getTargetTopics())
+		        || !validator.preValidateContentSpec(csp.getContentSpec(), csp.getSpecTopics()))
 		{
 			log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
 			return false;
 		}
-
+		
 		// Check if the app should be shutdown
-		if (isShuttingDown.get())
-		{
-			shutdown.set(true);
-			return false;
-		}
+        if (isShuttingDown.get())
+        {
+            shutdown.set(true);
+            return false;
+        }
 		
 		// Download all of the latest and/or revision topics
 		downloadAllTopics();
@@ -205,10 +209,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			return false;
 		}
 		
-		// Validate the content specification
-		LOG.info("Starting to validate...");
+		// Validate the content specification now that we have most of the data from the REST API
+		LOG.info("Starting second validation pass...");
 
-		if (!validator.validateContentSpec(csp.getContentSpec(), csp.getSpecTopics()))
+		if (!validator.postValidateContentSpec(csp.getContentSpec(), csp.getSpecTopics()))
 		{
 			log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
 			return false;

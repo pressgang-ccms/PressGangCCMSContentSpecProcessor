@@ -9,6 +9,6 @@
   </parent>
   
   <artifactId>csprocessor</artifactId>
-  <version>0.0.3-SNAPSHOT</version>
+  <version>0.0.4-SNAPSHOT</version>
   <name>Content Specification Processor</name>
 </project>
