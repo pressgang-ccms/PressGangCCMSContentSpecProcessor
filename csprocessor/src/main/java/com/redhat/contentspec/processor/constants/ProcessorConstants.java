@@ -88,6 +88,7 @@ public class ProcessorConstants
 	public static final String ERROR_INVALID_OPTION_MSG				= LINE + INVALID_CS + " Unknown metadata tag found. \"Description\", \"URL\" and \"Writer\" are currently the only supported metadata." + CSLINE_MSG;
 	public static final String ERROR_INVALID_CONDITION_MSG			= LINE + INVALID_CS + " The condition statement must be a valid regular expression string." + CSLINE_MSG;
 	public static final String ERROR_TOPIC_WITH_DIFFERENT_REVS_MSG  = INVALID_CS + " Topic %d has two or more different revisions included in the Content Specification. The topic is located at:";
+	public static final String ERROR_TOPIC_WITH_DIFFERENT_REVS_REV_MSG = "Revision %s, lines(s) %s.";
 	
 	// Article based level errors
 	public static final String ERROR_ARTICLE_CHAPTER_MSG		 	= LINE + INVALID_CS + " Chapters can't be used in Articles." + CSLINE_MSG;
