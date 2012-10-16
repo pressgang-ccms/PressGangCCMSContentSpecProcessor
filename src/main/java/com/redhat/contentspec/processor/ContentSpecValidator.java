@@ -95,6 +95,24 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
     }
 
     /**
+     * Validates that a Content Specification is valid by checking the META data, child levels and topics. This method is a
+     * wrapper to first call PreValidate and then PostValidate.
+     * 
+     * @param contentSpec The content specification to be validated.
+     * @param specTopics The list of topics that exist within the content specification.
+     * @return True if the content specification is valid, otherwise false.
+     */
+    public boolean validateContentSpec(final ContentSpec contentSpec, final Map<String, SpecTopic> specTopics) {
+        boolean valid = preValidateContentSpec(contentSpec, specTopics);
+
+        if (!postValidateContentSpec(contentSpec, specTopics)) {
+            valid = false;
+        }
+
+        return valid;
+    }
+
+    /**
      * Validates that a Content Specification is valid by checking the META data, child levels and topics.
      * 
      * @param contentSpec The content specification to be validated.
@@ -161,9 +179,13 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
                 contentSpec.getBookType())) {
             valid = false;
         }
-        
-        // Ensure that no topics exist that have the same ID but different revisions
-        if (!validateContentSpecTopics(contentSpec)) {
+
+        /*
+         * Ensure that no topics exist that have the same ID but different revisions. This needs to be done at the Content Spec
+         * level rather than the Topic level as it isn't the topic that would be invalid but rather the set of topics in the
+         * content specification.
+         */
+        if (!checkTopicsForInvalidDuplicates(contentSpec)) {
             valid = false;
         }
 
@@ -172,101 +194,94 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
 
         return valid;
     }
-    
+
     /**
      * Checks a Content Specification to see if it contains existing topics that have the same ID but different revisions.
      * 
      * @param contentSpec The content specification to be validated.
      * @return True if no duplicates were found, otherwise false.
      */
-    private boolean validateContentSpecTopics(final ContentSpec contentSpec)
-    {
+    private boolean checkTopicsForInvalidDuplicates(final ContentSpec contentSpec) {
         boolean valid = true;
-        
+
         /* Find all Topics that have two or more different revisions */
         final List<SpecTopic> allSpecTopics = contentSpec.getSpecTopics();
         final Map<Integer, Map<Integer, Set<SpecTopic>>> invalidSpecTopics = new HashMap<Integer, Map<Integer, Set<SpecTopic>>>();
-        for (final SpecTopic specTopic1 : allSpecTopics)
-        {
+        for (final SpecTopic specTopic1 : allSpecTopics) {
             if (!specTopic1.isTopicAnExistingTopic())
                 continue;
-            
-            for (final SpecTopic specTopic2 : allSpecTopics)
-            {
-                if (specTopic1 == specTopic2 || !specTopic2.isTopicAnExistingTopic() || specTopic1.getDBId() != specTopic2.getDBId())
+
+            for (final SpecTopic specTopic2 : allSpecTopics) {
+                // If the Topic isn't an existing topic and doesn't match the first spec topic's id, then continue
+                if (specTopic1 == specTopic2 || !specTopic2.isTopicAnExistingTopic()
+                        || specTopic1.getDBId() != specTopic2.getDBId())
                     continue;
-                
-                if (specTopic1.getRevision() == null && specTopic2.getRevision() != null
-                        || specTopic1.getRevision() != null && specTopic2.getRevision() == null
-                        || specTopic1.getRevision() != null && !specTopic1.getRevision().equals(specTopic2.getRevision()))
-                {
-                    if (!invalidSpecTopics.containsKey(specTopic1.getDBId()))
-                    {
+
+                // Check if the revisions between the two topics are the same
+                if (specTopic1.getRevision() == null && specTopic2.getRevision() != null || specTopic1.getRevision() != null
+                        && specTopic2.getRevision() == null || specTopic1.getRevision() != null
+                        && !specTopic1.getRevision().equals(specTopic2.getRevision())) {
+                    if (!invalidSpecTopics.containsKey(specTopic1.getDBId())) {
                         invalidSpecTopics.put(specTopic1.getDBId(), new HashMap<Integer, Set<SpecTopic>>());
                     }
-                    
+
                     final Map<Integer, Set<SpecTopic>> revisionsToSpecTopic = invalidSpecTopics.get(specTopic1.getDBId());
-                    if (!revisionsToSpecTopic.containsKey(specTopic1.getRevision()))
-                    {
+                    if (!revisionsToSpecTopic.containsKey(specTopic1.getRevision())) {
                         revisionsToSpecTopic.put(specTopic1.getRevision(), new HashSet<SpecTopic>());
                     }
-                    
+
                     revisionsToSpecTopic.get(specTopic1.getRevision()).add(specTopic1);
-                    
+
                     valid = false;
                 }
             }
         }
-        
-        /* Loop through and generate an error message for each invalid topic */ 
-        for (final Entry<Integer, Map<Integer, Set<SpecTopic>>> entry : invalidSpecTopics.entrySet())
-        {
+
+        /* Loop through and generate an error message for each invalid topic */
+        for (final Entry<Integer, Map<Integer, Set<SpecTopic>>> entry : invalidSpecTopics.entrySet()) {
             final Integer topicId = entry.getKey();
             final Map<Integer, Set<SpecTopic>> revisionsToSpecTopic = entry.getValue();
-           
+
             final List<String> revNumbers = new ArrayList<String>();
             final List<Integer> revisions = new ArrayList<Integer>(revisionsToSpecTopic.keySet());
             Collections.sort(revisions, new NullNumberSort<Integer>());
-            
-            for (final Integer revision : revisions)
-            {
+
+            for (final Integer revision : revisions) {
                 final List<SpecTopic> specTopics = new ArrayList<SpecTopic>(revisionsToSpecTopic.get(revision));
 
                 // Build up the line numbers message
                 final StringBuilder lineNumbers = new StringBuilder();
-                if (specTopics.size() > 1)
-                {
+                if (specTopics.size() > 1) {
                     /* Sort the Topics by line numbers */
                     Collections.sort(specTopics, new SpecTopicLineNumberComparator());
-                    
+
                     for (int i = 0; i < specTopics.size(); i++) {
                         if (i == specTopics.size() - 1) {
                             lineNumbers.append(" and ");
                         } else if (lineNumbers.length() != 0) {
                             lineNumbers.append(", ");
                         }
-    
+
                         lineNumbers.append(specTopics.get(i).getLineNumber());
                     }
-                }
-                else if (specTopics.size() == 1)
-                {
+                } else if (specTopics.size() == 1) {
                     lineNumbers.append(specTopics.get(0).getLineNumber());
                 }
-                
+
                 // Build the revision message
-                revNumbers.add(String.format("Revision %s, lines(s) %s.", (revision == null ? "Latest" : revision), lineNumbers));
+                revNumbers.add(String.format(ProcessorConstants.ERROR_TOPIC_WITH_DIFFERENT_REVS_REV_MSG,
+                        (revision == null ? "Latest" : revision), lineNumbers));
             }
-            
-            final StringBuilder message = new StringBuilder(String.format(ProcessorConstants.ERROR_TOPIC_WITH_DIFFERENT_REVS_MSG, topicId));
-            for (int i = 0; i < revNumbers.size(); i++)
-            {
+
+            final StringBuilder message = new StringBuilder(String.format(
+                    ProcessorConstants.ERROR_TOPIC_WITH_DIFFERENT_REVS_MSG, topicId));
+            for (int i = 0; i < revNumbers.size(); i++) {
                 message.append(String.format(ProcessorConstants.CSLINE_MSG, revNumbers.get(i)));
             }
-            
+
             log.error(message.toString());
         }
-        
+
         return valid;
     }
 
@@ -826,7 +841,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             if (!preValidateAssignedWriter(specTopic)) {
                 valid = false;
             }
-        // Existing Topics
+            // Existing Topics
         } else if (specTopic.isTopicAnExistingTopic()) {
             // Check that tags aren't trying to be removed
             if (!specTopic.getRemoveTags(false).isEmpty()) {
@@ -868,7 +883,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
                     valid = false;
                 }
             }
-         // Cloned Topics
+            // Cloned Topics
         } else if (specTopic.isTopicAClonedTopic()) {
             // Check if a description or type exists. If one does then generate a warning.
             if ((specTopic.getType() != null && !specTopic.getType().equals(""))
@@ -888,7 +903,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
 
                 log.warn(String.format("%s" + ProcessorConstants.CSLINE_MSG, format, specTopic.getText()));
             }
-        // Duplicated Cloned Topics
+            // Duplicated Cloned Topics
         } else if (specTopic.isTopicAClonedDuplicateTopic()) {
             // Find the duplicate topic in the content spec
             final String temp = specTopic.getId().substring(1);
@@ -1030,7 +1045,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             if (!validateTopicTags(specTopic, specTopic.getTags(false))) {
                 valid = false;
             }
-        // Cloned Topics
+            // Cloned Topics
         } else if (specTopic.isTopicAClonedTopic()) {
             // Get the original topic from the database
             int temp = Integer.parseInt(specTopic.getId().substring(1));
@@ -1065,7 +1080,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
                 valid = false;
             }
         }
-        
+
         return valid;
     }
 
