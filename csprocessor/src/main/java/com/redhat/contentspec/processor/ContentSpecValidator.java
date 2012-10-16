@@ -27,6 +27,7 @@ import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
 import org.jboss.pressgang.ccms.contentspec.rest.RESTManager;
 import org.jboss.pressgang.ccms.contentspec.rest.RESTReader;
+import org.jboss.pressgang.ccms.contentspec.sort.NullNumberSort;
 import org.jboss.pressgang.ccms.contentspec.sort.SpecTopicLineNumberComparator;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
@@ -184,7 +185,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
         
         /* Find all Topics that have two or more different revisions */
         final List<SpecTopic> allSpecTopics = contentSpec.getSpecTopics();
-        final Map<Integer, Set<SpecTopic>> invalidSpecTopics = new HashMap<Integer, Set<SpecTopic>>();
+        final Map<Integer, Map<Integer, Set<SpecTopic>>> invalidSpecTopics = new HashMap<Integer, Map<Integer, Set<SpecTopic>>>();
         for (final SpecTopic specTopic1 : allSpecTopics)
         {
             if (!specTopic1.isTopicAnExistingTopic())
@@ -201,10 +202,16 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
                 {
                     if (!invalidSpecTopics.containsKey(specTopic1.getDBId()))
                     {
-                        invalidSpecTopics.put(specTopic1.getDBId(), new HashSet<SpecTopic>());
+                        invalidSpecTopics.put(specTopic1.getDBId(), new HashMap<Integer, Set<SpecTopic>>());
                     }
                     
-                    invalidSpecTopics.get(specTopic1.getDBId()).add(specTopic1);
+                    final Map<Integer, Set<SpecTopic>> revisionsToSpecTopic = invalidSpecTopics.get(specTopic1.getDBId());
+                    if (!revisionsToSpecTopic.containsKey(specTopic1.getRevision()))
+                    {
+                        revisionsToSpecTopic.put(specTopic1.getRevision(), new HashSet<SpecTopic>());
+                    }
+                    
+                    revisionsToSpecTopic.get(specTopic1.getRevision()).add(specTopic1);
                     
                     valid = false;
                 }
@@ -212,29 +219,52 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
         }
         
         /* Loop through and generate an error message for each invalid topic */ 
-        for (final Entry<Integer, Set<SpecTopic>> entry : invalidSpecTopics.entrySet())
+        for (final Entry<Integer, Map<Integer, Set<SpecTopic>>> entry : invalidSpecTopics.entrySet())
         {
             final Integer topicId = entry.getKey();
-            final List<SpecTopic> specTopics = new ArrayList<SpecTopic>(entry.getValue());
+            final Map<Integer, Set<SpecTopic>> revisionsToSpecTopic = entry.getValue();
+           
+            final List<String> revNumbers = new ArrayList<String>();
+            final List<Integer> revisions = new ArrayList<Integer>(revisionsToSpecTopic.keySet());
+            Collections.sort(revisions, new NullNumberSort<Integer>());
             
-            Collections.sort(specTopics, new SpecTopicLineNumberComparator());
-            
-            if (specTopics.size() > 1)
+            for (final Integer revision : revisions)
             {
+                final List<SpecTopic> specTopics = new ArrayList<SpecTopic>(revisionsToSpecTopic.get(revision));
+
                 // Build up the line numbers message
                 final StringBuilder lineNumbers = new StringBuilder();
-                for (int i = 0; i < specTopics.size(); i++) {
-                    if (i == specTopics.size() - 1) {
-                        lineNumbers.append(" and ");
-                    } else if (lineNumbers.length() != 0) {
-                        lineNumbers.append(", ");
+                if (specTopics.size() > 1)
+                {
+                    /* Sort the Topics by line numbers */
+                    Collections.sort(specTopics, new SpecTopicLineNumberComparator());
+                    
+                    for (int i = 0; i < specTopics.size(); i++) {
+                        if (i == specTopics.size() - 1) {
+                            lineNumbers.append(" and ");
+                        } else if (lineNumbers.length() != 0) {
+                            lineNumbers.append(", ");
+                        }
+    
+                        lineNumbers.append(specTopics.get(i).getLineNumber());
                     }
-
-                    lineNumbers.append(specTopics.get(i).getLineNumber());
+                }
+                else if (specTopics.size() == 1)
+                {
+                    lineNumbers.append(specTopics.get(0).getLineNumber());
                 }
                 
-                log.error(String.format(ProcessorConstants.ERROR_TOPIC_WITH_DIFFERENT_REVS_MSG, topicId, lineNumbers.toString()));
+                // Build the revision message
+                revNumbers.add(String.format("Revision %s, lines(s) %s.", (revision == null ? "Latest" : revision), lineNumbers));
             }
+            
+            final StringBuilder message = new StringBuilder(String.format(ProcessorConstants.ERROR_TOPIC_WITH_DIFFERENT_REVS_MSG, topicId));
+            for (int i = 0; i < revNumbers.size(); i++)
+            {
+                message.append(String.format(ProcessorConstants.CSLINE_MSG, revNumbers.get(i)));
+            }
+            
+            log.error(message.toString());
         }
         
         return valid;
