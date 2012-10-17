@@ -219,4 +219,32 @@ public class ProcessorConstants
 	public static final String ERROR_NO_TYPE_NAME_MSG				= LINE + "No type name entered." + CSLINE_MSG;
 	public static final String ERROR_INVALID_TYPE_FORMAT_MSG		= LINE + "Invalid Type attribute format. (%s)" + CSLINE_MSG;
 	public static final String INFO_NEW_TYPE_MSG					= LINE + "New Type created - ID = %d, Name = %s";
+	
+	// Meta Data Regex Constants
+	public static final String SPEC_REVISION_REGEX     = "^SPECREVISION[ ]*((=.*)|$)";
+	public static final String CHECKSUM_REGEX          = "^CHECKSUM[ ]*((=.*)|$)";
+	public static final String ID_REGEX                = "^ID[ ]*((=.*)|$)";
+	public static final String SUBTITLE_REGEX          = "^SUBTITLE[ ]*((=.*)|$)";
+	public static final String EDITION_REGEX           = "^EDITION[ ]*((=.*)|$)";
+	public static final String BOOK_VERSION_REGEX      = "^BOOK VERSION[ ]*((=.*)|$)";
+	public static final String PUBSNUMBER_REGEX        = "^PUBSNUMBER[ ]*((=.*)|$)";
+	public static final String PRODUCT_REGEX           = "^PRODUCT[ ]*((=.*)|$)";
+	public static final String ABSTRACT_REGEX          = "^(DESCRIPTION|ABSTRACT)[ ]*((=.*)|$)";
+	public static final String COPYRIGHT_HOLDER_REGEX  = "^COPYRIGHT HOLDER[ ]*((=.*)|$)";
+	public static final String DEBUG_REGEX             = "^DEBUG[ ]*((=.*)|$)";
+	public static final String VERSION_REGEX           = "^VERSION[ ]*((=.*)|$)";
+	public static final String BRAND_REGEX             = "^BRAND[ ]*((=.*)|$)";
+	public static final String BUG_LINKS_REGEX         = "^BUG[ ]*LINKS[ ]*((=.*)|$)";
+	public static final String BUGZILLA_PRODUCT_REGEX  = "^BZPRODUCT[ ]*((=.*)|$)";
+	public static final String BUGZILLA_COMPONENT_REGEX  = "^BZCOMPONENT[ ]*((=.*)|$)";
+	public static final String BUGZILLA_VERSION_REGEX  = "^BZVERSION[ ]*((=.*)|$)";
+	public static final String SURVEY_LINK_REGEX       = "^SURVEY[ ]*LINKS[ ]*((=.*)|$)";
+	public static final String BOOK_TYPE_REGEX         = "^TYPE[ ]*((=.*)|$)";
+	public static final String PUBLICAN_CFG_REGEX      = "^PUBLICAN\\.CFG[ ]*((=.*)|$)";
+	public static final String INLINE_INJECTION_REGEX  = "^INLINE INJECTION[ ]*((=.*)|$)";
+	public static final String SPACES_REGEX            = "^SPACES[ ]*((=.*)|$)";
+	public static final String DTD_REGEX               = "^DTD[ ]*((=.*)|$)";
+	
+	// Outdated Meta Data Regex Constants
+	public static final String OUTPUT_STYLE_REGEX      = "^OUTPUT STYLE[ ]*((=.*)|$)";
 }

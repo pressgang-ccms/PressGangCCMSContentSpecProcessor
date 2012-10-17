@@ -621,17 +621,17 @@ public class ContentSpecParser
 		}
 		
 		// Process the input depending on what is parsed
-		if (input.toUpperCase().matches("^SPECREVISION[ ]*((=.*)|$)"))
+		if (input.toUpperCase().matches(ProcessorConstants.SPEC_REVISION_REGEX))
 		{
 			log.error(String.format(ProcessorConstants.ERROR_CS_INVALID_SPEC_REVISION_MSG, lineCounter));
 			return false;
 		}
-		else if (input.toUpperCase().matches("^CHECKSUM[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.CHECKSUM_REGEX))
 		{
 			log.error(String.format(ProcessorConstants.ERROR_CS_INVALID_CHECKSUM_MSG, lineCounter));
 			return false;
 		}
-		else if (input.toUpperCase().matches("^SUBTITLE[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.SUBTITLE_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -646,7 +646,7 @@ public class ContentSpecParser
 				return false;
 			}			
 		}
-		else if (input.toUpperCase().matches("^EDITION[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.EDITION_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -670,7 +670,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^BOOK VERSION[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.BOOK_VERSION_REGEX))
         {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
@@ -694,7 +694,7 @@ public class ContentSpecParser
                 return false;
             }
         }
-		else if (input.toUpperCase().matches("^PUBSNUMBER[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.PUBSNUMBER_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -717,7 +717,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^PRODUCT[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.PRODUCT_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -732,7 +732,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^(DESCRIPTION|ABSTRACT)[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.ABSTRACT_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -747,7 +747,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^COPYRIGHT HOLDER[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.COPYRIGHT_HOLDER_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -762,7 +762,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^DEBUG[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.DEBUG_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -782,7 +782,7 @@ public class ContentSpecParser
 				}
 			} 
 		}
-		else if (input.toUpperCase().matches("^VERSION[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.VERSION_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -806,7 +806,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^BRAND[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.BRAND_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -821,7 +821,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^BUG[ ]*LINKS[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.BUG_LINKS_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -844,7 +844,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^BZPRODUCT[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.BUGZILLA_PRODUCT_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -859,7 +859,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^BZCOMPONENT[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.BUGZILLA_COMPONENT_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -874,7 +874,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^BZVERSION[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.BUGZILLA_VERSION_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -889,7 +889,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^SURVEY[ ]*LINKS[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.SURVEY_LINK_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -912,6 +912,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
+		// TODO Look at removing Translation Locale as it should be a command line property (maybe?)
 		else if (input.toUpperCase().matches("^TRANSLATION LOCALE[ ]*((=.*)|$)"))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
@@ -927,7 +928,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^TYPE[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.BOOK_TYPE_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -951,7 +952,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^OUTPUT STYLE[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.OUTPUT_STYLE_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -1004,7 +1005,7 @@ public class ContentSpecParser
 				return false;
 			}*/
 		}
-		else if (input.toUpperCase().matches("^PUBLICAN\\.CFG[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.PUBLICAN_CFG_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -1065,7 +1066,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^INLINE INJECTION[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.INLINE_INJECTION_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -1127,7 +1128,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toLowerCase().matches("^spaces[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.SPACES_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
@@ -1153,7 +1154,7 @@ public class ContentSpecParser
 			}
 		}
 		else if (input.toUpperCase().matches("^CHAPTER[ ]*((:.*)|$)") || input.toUpperCase().matches("^SECTION[ ]*((:.*)|$)") || input.toUpperCase().matches("^APPENDIX[ ]*((:.*)|$)") 
-				|| input.toUpperCase().matches("^PART[ ]*((:.*)|$)") || input.toUpperCase().matches("^PROCESS[ ]*((:.*)|$)")  || input.toUpperCase().matches("^ARTICLE[ ]*((:.*)|$)"))
+				|| input.toUpperCase().matches("^PART[ ]*((:.*)|$)") || input.toUpperCase().matches("^PROCESS[ ]*((:.*)|$)"))
 		{
 			String tempInput[] = StringUtilities.split(input, ':', 2);
 			// Remove the whitespace from each value in the split array
@@ -1289,7 +1290,7 @@ public class ContentSpecParser
 				return false;
 			}
 		}
-		else if (input.toUpperCase().matches("^DTD[ ]*((=.*)|$)"))
+		else if (input.toUpperCase().matches(ProcessorConstants.DTD_REGEX))
 		{
 			String tempInput[] = StringUtilities.split(input, '=');
 			// Remove the whitespace from each value in the split array
