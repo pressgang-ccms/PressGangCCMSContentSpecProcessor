@@ -183,9 +183,9 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
         /*
          * Ensure that no topics exist that have the same ID but different revisions. This needs to be done at the Content Spec
          * level rather than the Topic level as it isn't the topic that would be invalid but rather the set of topics in the
-         * content specification.
+         * content specification. If we are updating revisions however, we can ignore this check.
          */
-        if (!checkTopicsForInvalidDuplicates(contentSpec)) {
+        if (!processingOptions.isUpdateRevisions() && !checkTopicsForInvalidDuplicates(contentSpec)) {
             valid = false;
         }
 
