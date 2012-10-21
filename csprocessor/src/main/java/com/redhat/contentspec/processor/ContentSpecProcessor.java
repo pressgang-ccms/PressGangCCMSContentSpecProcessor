@@ -257,10 +257,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 	     */
 	    if (processingOptions.isUpdateRevisions() && processingOptions.getRevision() == null)
         {
-	        // Download the list of topics in one go to reduce I/O overhead
-            LOG.info("Attempting to download all the latest topics...");
-            final List<Integer> topicIds = csp.getReferencedTopicIds();
-            reader.getTopicsByIds(topicIds, csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE));
+	        final List<Integer> topicIds = csp.getReferencedTopicIds();
+	        if (!topicIds.isEmpty()) {
+    	        // Download the list of topics in one go to reduce I/O overhead
+                LOG.info("Attempting to download all the latest topics...");
+                reader.getTopicsByIds(topicIds, csp.getContentSpec().getLocale() != null && !csp.getContentSpec().getLocale().equals(CommonConstants.DEFAULT_LOCALE));
+            }
         }
 	    else
 	    {
