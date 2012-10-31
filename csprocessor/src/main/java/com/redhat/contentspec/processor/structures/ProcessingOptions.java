@@ -4,7 +4,7 @@ public class ProcessingOptions {
 
 	private boolean permissiveMode = false;
 	private boolean validate = false;
-	private boolean ignoreSpecRevision = false;
+	private boolean ignoreChecksum = false;
 	private boolean allowEmptyLevels = false;
 	private boolean allowNewTopics = true;
 	private boolean addRevisions = false;
@@ -31,13 +31,13 @@ public class ProcessingOptions {
 		this.validate = validating;
 	}
 
-	public boolean isIgnoreSpecRevision() {
-		return ignoreSpecRevision;
+	public boolean isIgnoreChecksum() {
+		return ignoreChecksum;
 	}
 
-	public void setIgnoreChecksum(boolean ignoreSpecRevision)
+	public void setIgnoreChecksum(boolean ignoreChecksum)
 	{
-		this.ignoreSpecRevision = ignoreSpecRevision;
+		this.ignoreChecksum = ignoreChecksum;
 	}
 
 	public boolean isAllowEmptyLevels()

@@ -311,42 +311,41 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             if (contentSpecTopic == null) {
                 log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
                 valid = false;
-            }
+            } else {
+                /* Set the revision the content spec is being validated for */
+                contentSpec.setRevision(contentSpecTopic.getRevision());
 
-            /* Set the revision the content spec is being validated for */
-            contentSpec.setRevision(contentSpecTopic.getRevision());
-
-            // Check that the revision is valid
-            if (!processingOptions.isIgnoreSpecRevision() && contentSpecTopic != null) {
-                final String currentChecksum = HashUtilities.generateMD5(contentSpecTopic.getXml().replaceFirst(
-                        "CHECKSUM[ ]*=.*(\r)?\n", ""));
-                if (contentSpec.getChecksum() != null) {
-                    if (!contentSpec.getChecksum().equals(currentChecksum)) {
-                        log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_CHECKSUM_MSG, contentSpec.getChecksum(),
-                                currentChecksum));
+                // Check that the checksum is valid
+                if (!processingOptions.isIgnoreChecksum()) {
+                    final String currentChecksum = HashUtilities.generateMD5(contentSpecTopic.getXml().replaceFirst(
+                            "CHECKSUM[ ]*=.*(\r)?\n", ""));
+                    if (contentSpec.getChecksum() != null) {
+                        if (!contentSpec.getChecksum().equals(currentChecksum)) {
+                            log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_CHECKSUM_MSG,
+                                    contentSpec.getChecksum(), currentChecksum));
+                            valid = false;
+                        }
+                    } else if (contentSpec.getSpecRevision() != null) {
+                        // Check that the revision matches
+                        int latestRev = reader.getLatestCSRevById(contentSpec.getId());
+                        if (contentSpec.getSpecRevision() != latestRev) {
+                            log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_SPEC_REVISION_MSG,
+                                    contentSpec.getSpecRevision(), latestRev));
+                            valid = false;
+                        }
+                    } else {
+                        log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_CHECKSUM_MSG, null, currentChecksum));
                         valid = false;
                     }
-                } else if (contentSpec.getSpecRevision() != null) {
-                    // Check that the revision matches
-                    int latestRev = reader.getLatestCSRevById(contentSpec.getId());
-                    if (contentSpec.getSpecRevision() != latestRev) {
-                        log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_SPEC_REVISION_MSG,
-                                contentSpec.getSpecRevision(), latestRev));
-                        valid = false;
-                    }
-                } else {
-                    log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_CHECKSUM_MSG, null, currentChecksum));
-                    valid = false;
                 }
-            }
 
-            // Check that the Content Spec isn't read only
-            if (contentSpecTopic != null
-                    && ComponentTopicV1.returnProperty(contentSpecTopic, CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID) != null) {
-                if (!ComponentTopicV1.returnProperty(contentSpecTopic, CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID).getValue()
-                        .matches("(^|.*,)" + contentSpec.getCreatedBy() + "(,.*|$)")) {
-                    log.error(ProcessorConstants.ERROR_CS_READ_ONLY_MSG);
-                    valid = false;
+                // Check that the Content Spec isn't read only
+                if (ComponentTopicV1.returnProperty(contentSpecTopic, CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID) != null) {
+                    if (!ComponentTopicV1.returnProperty(contentSpecTopic, CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID)
+                            .getValue().matches("(^|.*,)" + contentSpec.getCreatedBy() + "(,.*|$)")) {
+                        log.error(ProcessorConstants.ERROR_CS_READ_ONLY_MSG);
+                        valid = false;
+                    }
                 }
             }
         }
