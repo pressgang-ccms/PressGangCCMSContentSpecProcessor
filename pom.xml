@@ -19,6 +19,7 @@
 		<jackson.version>1.9.8</jackson.version>
 		<resteasy.version>2.3.4.Final</resteasy.version>
 		<log4j.version>1.2.16</log4j.version>
+		<slf4j.version>1.6.4</slf4j.version>
 		<shadeplugin.version>2.0</shadeplugin.version>
 	</properties>
 
@@ -94,9 +95,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>${log4j.version}</version>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>${slf4j.version}</version>
 		</dependency>
 
 		<!-- Testing libraries -->
