@@ -654,7 +654,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 				for (final String url: urls)
 				{
 					final RESTTopicSourceUrlV1 sourceUrl = new RESTTopicSourceUrlV1();
-					sourceUrl.setUrlExplicit(url);
+					sourceUrl.explicitSetUrl(url);
 					sourceUrls.addNewItem(sourceUrl);
 				}
 				
@@ -845,7 +845,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp
 			syncDuplicatedTopics(specTopics);
 			
 			// Create the post processed content spec
-			final String postCS = ProcessorUtilities.generatePostContentSpec(contentSpec, specTopics, edit);
+			final String postCS = ProcessorUtilities.generatePostContentSpec(contentSpec, specTopics);
 			if (postCS == null)
 			{
 				throw new ProcessingException("Failed to create the Post Content Specification.");
