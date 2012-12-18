@@ -1,12 +1,39 @@
 package com.redhat.contentspec.processor;
 
+import static java.lang.String.format;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
 import com.google.code.regexp.NamedMatcher;
 import com.google.code.regexp.NamedPattern;
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
 import com.redhat.contentspec.processor.structures.VariableSet;
 import com.redhat.contentspec.processor.utils.ProcessorUtilities;
-import org.jboss.pressgang.ccms.contentspec.*;
+import org.apache.log4j.Logger;
+import org.jboss.pressgang.ccms.contentspec.Appendix;
+import org.jboss.pressgang.ccms.contentspec.Chapter;
+import org.jboss.pressgang.ccms.contentspec.Comment;
+import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.Level;
+import org.jboss.pressgang.ccms.contentspec.Node;
+import org.jboss.pressgang.ccms.contentspec.Part;
 import org.jboss.pressgang.ccms.contentspec.Process;
+import org.jboss.pressgang.ccms.contentspec.Section;
+import org.jboss.pressgang.ccms.contentspec.SpecNode;
+import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.contentspec.TextNode;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.entities.InjectionOptions;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
@@ -15,24 +42,15 @@ import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
 import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgang.ccms.contentspec.exceptions.IndentationException;
 import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
-import org.jboss.pressgang.ccms.contentspec.rest.RESTManager;
+import org.jboss.pressgang.ccms.contentspec.provider.DataProviderFactory;
+import org.jboss.pressgang.ccms.contentspec.provider.TopicProvider;
 import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
-import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
-import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
-import org.jboss.pressgang.ccms.rest.v1.entities.RESTTopicV1;
-import org.jboss.pressgang.ccms.rest.v1.entities.RESTUserV1;
+import org.jboss.pressgang.ccms.contentspec.utils.logging.LoggerManager;
+import org.jboss.pressgang.ccms.contentspec.wrapper.TopicWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.UserWrapper;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.*;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-
-import static java.lang.String.format;
 
 /**
  * A class that parses a Content Specification and stores the parsed data into a ContentSpec Object. The Object then
@@ -50,9 +68,9 @@ public class ContentSpecParser {
         NEW, EDITED, EITHER
     }
 
-    private final ErrorLogger log;
-    private final ErrorLoggerManager elm;
-    private final RESTManager restManager;
+    private final DataProviderFactory factory;
+    private final Logger log;
+    private final TopicProvider topicProvider;
 
     private int spaces = 2;
     private ContentSpec spec = new ContentSpec();
@@ -71,26 +89,11 @@ public class ContentSpecParser {
 
     /**
      * Constructor
-     *
-     * @param serverUrl The URL of the server to connect to.
      */
-    public ContentSpecParser(final String serverUrl) {
-        elm = new ErrorLoggerManager();
-        log = elm.getLogger(ContentSpecParser.class);
-        restManager = new RESTManager(serverUrl);
-    }
-
-    /**
-     * Constructor
-     *
-     * @param elm         An Error Logger Manager that will be used to store all the log messages in case they need
-     *                    to be accessed at a later stage.
-     * @param restManager TODO
-     */
-    public ContentSpecParser(final ErrorLoggerManager elm, final RESTManager restManager) {
-        this.elm = elm;
-        log = elm.getLogger(ContentSpecParser.class);
-        this.restManager = restManager;
+    public ContentSpecParser(final DataProviderFactory factory) {
+        this.factory = factory;
+        topicProvider = factory.getProvider(TopicProvider.class);
+        log = LoggerManager.getLogger(ContentSpecParser.class);
     }
 
     /**
@@ -116,7 +119,7 @@ public class ContentSpecParser {
      * @return True if everything was parsed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when parsing.
      */
-    public boolean parse(final String contentSpec, final RESTUserV1 user) throws Exception {
+    public boolean parse(final String contentSpec, final UserWrapper user) throws Exception {
         return parse(contentSpec, user, ParsingMode.EITHER);
     }
 
@@ -131,7 +134,7 @@ public class ContentSpecParser {
      * @return True if everything was parsed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when parsing.
      */
-    public boolean parse(final String contentSpec, final RESTUserV1 user, final ParsingMode mode) throws Exception {
+    public boolean parse(final String contentSpec, final UserWrapper user, final ParsingMode mode) throws Exception {
         return parse(contentSpec, user, mode, false);
     }
 
@@ -140,14 +143,15 @@ public class ContentSpecParser {
      * <p/>
      * Note: Relationships in Processes won't be added as they require access to a TopicIndex REST Interface.
      *
-     * @param contentSpec A string representation of the Content Specification.
-     * @param user        The user who requested the parse.
-     * @param mode        The mode in which the Content Specification should be parsed.
+     * @param contentSpec      A string representation of the Content Specification.
+     * @param user             The user who requested the parse.
+     * @param mode             The mode in which the Content Specification should be parsed.
+     * @param processProcesses Whether or not processes should call the data provider to be processed.
      * @return True if everything was parsed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when parsing.
      */
-    public boolean parse(final String contentSpec, final RESTUserV1 user, final ParsingMode mode,
-                         final boolean processProcesses) throws Exception {
+    public boolean parse(final String contentSpec, final UserWrapper user, final ParsingMode mode,
+            final boolean processProcesses) throws Exception {
         // Reset the variables
         spaces = 2;
         spec = new ContentSpec();
@@ -177,8 +181,7 @@ public class ContentSpecParser {
         final Set<Integer> ids = new HashSet<Integer>();
         for (final String topicId : specTopics.keySet()) {
             final SpecTopic specTopic = specTopics.get(topicId);
-            if (specTopic.getDBId() != 0)
-                ids.add(specTopic.getDBId());
+            if (specTopic.getDBId() != 0) ids.add(specTopic.getDBId());
         }
 
         return CollectionUtilities.toArrayList(ids);
@@ -195,8 +198,7 @@ public class ContentSpecParser {
         final Set<Integer> ids = new HashSet<Integer>();
         for (final String topicId : specTopics.keySet()) {
             final SpecTopic specTopic = specTopics.get(topicId);
-            if (specTopic.getDBId() != 0 && specTopic.getRevision() == null)
-                ids.add(specTopic.getDBId());
+            if (specTopic.getDBId() != 0 && specTopic.getRevision() == null) ids.add(specTopic.getDBId());
         }
 
         return CollectionUtilities.toArrayList(ids);
@@ -284,8 +286,7 @@ public class ContentSpecParser {
      * @throws Exception Any uncaught exception that occurs when parsing.
      */
     @SuppressWarnings("deprecation")
-    protected boolean readFileData(final BufferedReader br, final RESTUserV1 user,
-                                   final ParsingMode mode) throws Exception {
+    protected boolean readFileData(final BufferedReader br, final UserWrapper user, final ParsingMode mode) throws Exception {
         // Read in the entire file so we can peek ahead later on
         String line;
         while ((line = br.readLine()) != null) {
@@ -319,8 +320,8 @@ public class ContentSpecParser {
                     }
                     spec.setTitle(lineVars[1]);
                     lvl = spec.getBaseLevel();
-                    spec.setCreatedBy(user == null ? null : user.getName());
-                    lvl.setAssignedWriter(user == null ? null : user.getName());
+                    spec.setCreatedBy(user == null ? null : user.getUsername());
+                    lvl.setAssignedWriter(user == null ? null : user.getUsername());
                     while (lines.peek() != null) {
                         lineCounter++;
                         // Process the content specification and print an error message if an error occurs
@@ -338,7 +339,7 @@ public class ContentSpecParser {
                     // relationships and targets are created
                     if (processProcesses) {
                         for (final Process process : processes) {
-                            if (process.processTopics(specTopics, targetTopics, restManager.getReader())) {
+                            if (process.processTopics(specTopics, targetTopics, topicProvider)) {
                                 // Add all of the process topic targets
                                 for (final String targetId : process.getProcessTargets().keySet()) {
                                     targetTopics.put(targetId, process.getProcessTargets().get(targetId));
@@ -347,11 +348,9 @@ public class ContentSpecParser {
                                 // Add all of the relationships in the process to the list of content spec relationships
                                 for (String uniqueTopicId : process.getProcessRelationships().keySet()) {
                                     if (relationships.containsKey(uniqueTopicId)) {
-                                        relationships.get(uniqueTopicId).addAll(process.getProcessRelationships().get
-                                                (uniqueTopicId));
+                                        relationships.get(uniqueTopicId).addAll(process.getProcessRelationships().get(uniqueTopicId));
                                     } else {
-                                        relationships.put(uniqueTopicId, process.getProcessRelationships().get
-                                                (uniqueTopicId));
+                                        relationships.put(uniqueTopicId, process.getProcessRelationships().get(uniqueTopicId));
                                     }
                                 }
                             }
@@ -391,8 +390,7 @@ public class ContentSpecParser {
                                 try {
                                     specRev = Integer.parseInt(revVars[1]);
                                 } catch (Exception e) {
-                                    log.error(format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineCounter,
-                                            rev.trim()));
+                                    log.error(format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineCounter, rev.trim()));
                                     return false;
                                 }
                                 spec.setSpecRevision(specRev);
@@ -401,8 +399,7 @@ public class ContentSpecParser {
                                 return false;
                             }
                         } else {
-                            log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter,
-                                    rev.trim()));
+                            log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, rev.trim()));
                             return false;
                         }
                     } else {
@@ -425,8 +422,7 @@ public class ContentSpecParser {
                     if (specId != null) {
                         spec.appendPreProcessedLine(specId);
 
-                        final String[] specIdVars = CollectionUtilities.trimStringArray(StringUtilities.split(specId,
-                                '='));
+                        final String[] specIdVars = CollectionUtilities.trimStringArray(StringUtilities.split(specId, '='));
                         if (specIdVars.length >= 2) {
                             if (specIdVars[0].equalsIgnoreCase("ID")) {
                                 int contentSpecId;
@@ -443,8 +439,7 @@ public class ContentSpecParser {
                                 return false;
                             }
                         } else {
-                            log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter,
-                                    specId.trim()));
+                            log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, specId.trim()));
                             return false;
                         }
                     } else {
@@ -468,14 +463,19 @@ public class ContentSpecParser {
      *
      * @param line A line of input from the content specification
      * @return True if the line of input was processed successfully otherwise false.
+     * @throws IndentationException Thrown if any invalid indentation occurs.
      */
     protected boolean processLine(final String line) throws IndentationException {
+        assert line != null;
+
         spec.appendPreProcessedLine(line);
         char[] tempInputChar = line.toCharArray();
         int spaceCount = 0;
 
         // Trim the whitespace
         final String input = line.trim();
+        assert input != null;
+
         if (input.equals("")) {
             if (lvl.getType() == LevelType.BASE) {
                 spec.appendChild(new TextNode("\n"));
@@ -513,20 +513,19 @@ public class ContentSpecParser {
         }
         if (curLevel < level && !input.startsWith("#")) {
             for (int i = (level - curLevel); i > 0; i--) {
-                if (lvl.getParent() != null)
-                    lvl = lvl.getParent();
+                if (lvl.getParent() != null) lvl = lvl.getParent();
             }
             level = curLevel;
         }
 
         // Process the input depending on what is parsed
-        if (input.toUpperCase().matches(ProcessorConstants.SPEC_REVISION_REGEX)) {
+        if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.SPEC_REVISION_REGEX)) {
             log.error(format(ProcessorConstants.ERROR_CS_INVALID_SPEC_REVISION_MSG, lineCounter));
             return false;
-        } else if (input.toUpperCase().matches(ProcessorConstants.CHECKSUM_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.CHECKSUM_REGEX)) {
             log.error(format(ProcessorConstants.ERROR_CS_INVALID_CHECKSUM_MSG, lineCounter));
             return false;
-        } else if (input.toUpperCase().matches(ProcessorConstants.SUBTITLE_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.SUBTITLE_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -536,7 +535,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.EDITION_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.EDITION_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -552,7 +551,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.BOOK_VERSION_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.BOOK_VERSION_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -568,7 +567,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.PUBSNUMBER_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.PUBSNUMBER_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -583,7 +582,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.PRODUCT_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.PRODUCT_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -593,7 +592,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.ABSTRACT_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.ABSTRACT_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -603,7 +602,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.COPYRIGHT_HOLDER_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.COPYRIGHT_HOLDER_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -613,19 +612,21 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.DEBUG_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.DEBUG_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             tempInput = CollectionUtilities.trimStringArray(tempInput);
             if (tempInput.length >= 2) {
                 if (tempInput[1].equals("1")) {
-                    elm.setVerboseDebug(1);
+                    LoggerManager.setVerboseDebug(org.apache.log4j.Level.INFO);
                 } else if (tempInput[1].equals("2")) {
-                    elm.setVerboseDebug(2);
-                } else if (!tempInput[1].equals("0")) {
+                    LoggerManager.setVerboseDebug(org.apache.log4j.Level.ERROR);
+                } else if (tempInput[1].equals("0")) {
+                    LoggerManager.setVerboseDebug(org.apache.log4j.Level.DEBUG);
+                } else {
                     log.warn(ProcessorConstants.WARN_DEBUG_IGNORE_MSG);
                 }
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.VERSION_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.VERSION_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -641,7 +642,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.BRAND_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.BRAND_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -651,7 +652,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.BUG_LINKS_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.BUG_LINKS_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -666,7 +667,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.BUGZILLA_PRODUCT_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.BUGZILLA_PRODUCT_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -676,7 +677,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.BUGZILLA_COMPONENT_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.BUGZILLA_COMPONENT_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -686,7 +687,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.BUGZILLA_VERSION_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.BUGZILLA_VERSION_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -696,7 +697,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.SURVEY_LINK_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.SURVEY_LINK_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -713,7 +714,7 @@ public class ContentSpecParser {
             }
         }
         // TODO Look at removing Translation Locale as it should be a command line property (maybe?)
-        else if (input.toUpperCase().matches("^TRANSLATION LOCALE[ ]*((=.*)|$)")) {
+        else if (input.toUpperCase(Locale.ENGLISH).matches("^TRANSLATION LOCALE[ ]*((=.*)|$)")) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -723,13 +724,13 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.BOOK_TYPE_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.BOOK_TYPE_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
             if (tempInput.length >= 2) {
                 final String bookType = StringUtilities.replaceEscapeChars(tempInput[1]);
-                if (bookType.toUpperCase().matches(ProcessorConstants.VALID_BOOK_TYPE_REGEX)) {
+                if (bookType.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.VALID_BOOK_TYPE_REGEX)) {
                     spec.setBookType(BookType.getBookType(bookType));
                 } else {
                     log.error(ProcessorConstants.ERROR_INVALID_BOOK_TYPE_MSG);
@@ -739,7 +740,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.OUTPUT_STYLE_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.OUTPUT_STYLE_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -750,7 +751,7 @@ public class ContentSpecParser {
                 return false;
             }
             // TODO Fix empty chapter processing
-            /*} else if (input.toUpperCase().matches("^ALLOW EMPTY LEVELS[ ]*((=.*)|$)")) {
+            /*} else if (input.toUpperCase(Locale.ENGLISH).matches("^ALLOW EMPTY LEVELS[ ]*((=.*)|$)")) {
                String tempInput[] = StringUtilities.split(input, '=');
                // Remove the whitespace from each value in the split array
                tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -769,7 +770,7 @@ public class ContentSpecParser {
                    return false;
                }*/
             // TODO Fix the CSP to allow for an spec to not have duplicate topics
-            /*} else if (input.toUpperCase().matches("^DUPLICATE TOPICS[ ]*((=.*)|$)")) {
+            /*} else if (input.toUpperCase(Locale.ENGLISH).matches("^DUPLICATE TOPICS[ ]*((=.*)|$)")) {
                String tempInput[] = StringUtilities.split(input, '=');
                // Remove the whitespace from each value in the split array
                tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -788,7 +789,7 @@ public class ContentSpecParser {
                    log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                    return false;
                }*/
-        } else if (input.toUpperCase().matches(ProcessorConstants.PUBLICAN_CFG_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.PUBLICAN_CFG_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -819,14 +820,12 @@ public class ContentSpecParser {
                     final String finalCfg = cfg.toString();
 
                     // Check that the ']' character was found and that it was found before another '[' character
-                    if (StringUtilities.lastIndexOf(finalCfg, ']') == -1 || StringUtilities.lastIndexOf(finalCfg,
-                            '[') != startingPos) {
+                    if (StringUtilities.lastIndexOf(finalCfg, ']') == -1 || StringUtilities.lastIndexOf(finalCfg, '[') != startingPos) {
                         log.error(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, startLineCount,
                                 tempInput[0] + " = " + finalCfg.replaceAll("\n", "\n          ")));
                         return false;
                     } else {
-                        spec.setPublicanCfg(StringUtilities.replaceEscapeChars(finalCfg).substring(1,
-                                cfg.length() - 2));
+                        spec.setPublicanCfg(StringUtilities.replaceEscapeChars(finalCfg).substring(1, cfg.length() - 2));
                     }
                 } else {
                     log.error(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineCounter, input));
@@ -836,7 +835,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.INLINE_INJECTION_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.INLINE_INJECTION_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -845,8 +844,8 @@ public class ContentSpecParser {
                 String[] types = null;
                 if (StringUtilities.indexOf(tempInput[1], '[') != -1) {
                     if (StringUtilities.indexOf(tempInput[1], ']') != -1) {
-                        final NamedPattern bracketPattern = NamedPattern.compile(format(ProcessorConstants
-                                .BRACKET_NAMED_PATTERN, '[', ']'));
+                        final NamedPattern bracketPattern = NamedPattern.compile(
+                                format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']'));
                         final NamedMatcher matcher = bracketPattern.matcher(tempInput[1]);
 
                         // Find all of the variables inside of the brackets defined by the regex
@@ -858,8 +857,8 @@ public class ContentSpecParser {
                             }
                         }
                     } else {
-                        log.error(format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG + ProcessorConstants
-                                .CSLINE_MSG, lineCounter, ']', input));
+                        log.error(format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG + ProcessorConstants.CSLINE_MSG, lineCounter, ']',
+                                input));
                         return false;
                     }
                 }
@@ -881,7 +880,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.SPACES_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.SPACES_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -898,10 +897,9 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches("^CHAPTER[ ]*((:.*)|$)") || input.toUpperCase().matches("^SECTION[ ]*(" +
-                "(:.*)|$)") || input.toUpperCase().matches("^APPENDIX[ ]*((:.*)|$)")
-                || input.toUpperCase().matches("^PART[ ]*((:.*)|$)") || input.toUpperCase().matches("^PROCESS[ ]*((:" +
-                ".*)|$)")) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches("^CHAPTER[ ]*((:.*)|$)") || input.toUpperCase(Locale.ENGLISH).matches(
+                "^SECTION[ ]*(" + "(:.*)|$)") || input.toUpperCase(Locale.ENGLISH).matches("^APPENDIX[ ]*((:.*)|$)") || input.toUpperCase(
+                Locale.ENGLISH).matches("^PART[ ]*((:.*)|$)") || input.toUpperCase(Locale.ENGLISH).matches("^PROCESS[ ]*((:" + ".*)|$)")) {
             String tempInput[] = StringUtilities.split(input, ':', 2);
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -991,7 +989,7 @@ public class ContentSpecParser {
                 log.error(format(ProcessorConstants.ERROR_LEVEL_FORMAT_MSG, lineCounter, input));
                 return false;
             }
-        } else if (input.toUpperCase().matches("^CS[ ]*:.*")) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches("^CS[ ]*:.*")) {
             String splitVars[] = StringUtilities.split(input, ':', 2);
             // Remove the whitespace from each value in the split array
             splitVars = CollectionUtilities.trimStringArray(splitVars);
@@ -1006,7 +1004,7 @@ public class ContentSpecParser {
                 log.error(e.getMessage());
                 return false;
             }
-        } else if (input.toUpperCase().matches(ProcessorConstants.DTD_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.DTD_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -1040,8 +1038,7 @@ public class ContentSpecParser {
 
             // Check that some options were found, if so then parse them
             if (variables.length > 0) {
-                if (!addOptions(lvl, variables, 0, input))
-                    return false;
+                if (!addOptions(lvl, variables, 0, input)) return false;
             } else {
                 log.warn(format(ProcessorConstants.WARN_EMPTY_BRACKETS_MSG, lineCounter));
             }
@@ -1096,17 +1093,16 @@ public class ContentSpecParser {
             }
             // If we have two variables for a existing topic then check to see if the second variable is the revision
             else if (variables[0].matches(CSConstants.EXISTING_TOPIC_ID_REGEX)) {
-                if (variables[1].toLowerCase().startsWith("rev")) {
+                if (variables[1].toLowerCase(Locale.ENGLISH).startsWith("rev")) {
                     // Ensure that the attribute syntax is correct
-                    if (variables[1].toLowerCase().matches("rev[ ]*:[ ]*\\d+")) {
+                    if (variables[1].toLowerCase(Locale.ENGLISH).matches("rev[ ]*:[ ]*\\d+")) {
                         String[] vars = variables[1].split(":");
                         vars = CollectionUtilities.trimStringArray(vars);
 
                         try {
                             tempTopic.setRevision(Integer.parseInt(vars[1]));
                         } catch (NumberFormatException ex) {
-                            log.error(format(ProcessorConstants.ERROR_TOPIC_INVALID_REVISION_FORMAT, lineCounter,
-                                    input));
+                            log.error(format(ProcessorConstants.ERROR_TOPIC_INVALID_REVISION_FORMAT, lineCounter, input));
                             return null;
                         }
                     } else {
@@ -1120,8 +1116,7 @@ public class ContentSpecParser {
                 varStartPos = 1;
             }
         } else if (variables.length == 1) {
-            if (!variables[0].matches("(" + CSConstants.DUPLICATE_TOPIC_ID_REGEX + ")|(" + CSConstants
-                    .CLONED_TOPIC_ID_REGEX + ")|(" +
+            if (!variables[0].matches("(" + CSConstants.DUPLICATE_TOPIC_ID_REGEX + ")|(" + CSConstants.CLONED_TOPIC_ID_REGEX + ")|(" +
                     CSConstants.EXISTING_TOPIC_ID_REGEX + ")|(" + CSConstants.NEW_TOPIC_ID_REGEX + ")|(" +
                     CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX + ")")) {
                 log.error(format(ProcessorConstants.ERROR_INVALID_TITLE_ID_MSG, lineCounter, input));
@@ -1149,13 +1144,11 @@ public class ContentSpecParser {
            * using the line number and topic ID.
            */
         String uniqueId = variables[0];
-        if (variables[0].matches(CSConstants.NEW_TOPIC_ID_REGEX) && !variables[0].equals("N") && !specTopics
-                .containsKey(variables[0])) {
+        if (variables[0].matches(CSConstants.NEW_TOPIC_ID_REGEX) && !variables[0].equals("N") && !specTopics.containsKey(variables[0])) {
             specTopics.put(uniqueId, tempTopic);
         } else if (variables[0].equals("N") || variables[0].matches(CSConstants.DUPLICATE_TOPIC_ID_REGEX) ||
-                variables[0].matches(CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX)
-                || variables[0].matches(CSConstants.CLONED_TOPIC_ID_REGEX) || variables[0].matches(CSConstants
-                .EXISTING_TOPIC_ID_REGEX)) {
+                variables[0].matches(CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX) || variables[0].matches(
+                CSConstants.CLONED_TOPIC_ID_REGEX) || variables[0].matches(CSConstants.EXISTING_TOPIC_ID_REGEX)) {
             uniqueId = Integer.toString(lineCounter) + "-" + variables[0];
             specTopics.put(uniqueId, tempTopic);
         } else if (variables[0].startsWith("N")) {
@@ -1175,8 +1168,8 @@ public class ContentSpecParser {
             }
             // Display warnings if options are specified for existing or duplicated topics
         } else if (variables.length > varStartPos) {
-            if (variables[0].matches(CSConstants.DUPLICATE_TOPIC_ID_REGEX) || variables[0].matches(CSConstants
-                    .CLONED_DUPLICATE_TOPIC_ID_REGEX)) {
+            if (variables[0].matches(CSConstants.DUPLICATE_TOPIC_ID_REGEX) || variables[0].matches(
+                    CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX)) {
                 log.warn(format(ProcessorConstants.WARN_IGNORE_DUP_INFO_MSG, lineCounter, input));
             }
         }
@@ -1188,8 +1181,16 @@ public class ContentSpecParser {
         return tempTopic;
     }
 
-    protected boolean processTopicRelationships(final SpecTopic tempTopic, final HashMap<RelationshipType,
-            String[]> variableMap, final String input) {
+    /**
+     * Process the relationships parsed for a topic.
+     *
+     * @param tempTopic   The temporary topic that will be turned into a full topic once fully parsed.
+     * @param variableMap The list of variables containing the parsed relationships.
+     * @param input       The line representing the topic and it's relationships.
+     * @return True if everything processed correctly otherwise false.
+     */
+    protected boolean processTopicRelationships(final SpecTopic tempTopic, final HashMap<RelationshipType, String[]> variableMap,
+            final String input) {
         // Process the relationships
         final String uniqueId = tempTopic.getUniqueId();
         final ArrayList<Relationship> topicRelationships = new ArrayList<Relationship>();
@@ -1232,8 +1233,7 @@ public class ContentSpecParser {
                     final String id = matcher.group("TopicID");
                     final String relationshipTitle = matcher.group("TopicTitle");
 
-                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.PREREQUISITE,
-                            relationshipTitle.trim()));
+                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.PREREQUISITE, relationshipTitle.trim()));
                 } else {
                     if (prerequisiteId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
                             ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
@@ -1259,8 +1259,7 @@ public class ContentSpecParser {
                     final String id = matcher.group("TopicID");
                     final String relationshipTitle = matcher.group("TopicTitle");
 
-                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.LINKLIST,
-                            relationshipTitle.trim()));
+                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.LINKLIST, relationshipTitle.trim()));
                 } else {
                     if (linkListId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
                             ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
@@ -1302,14 +1301,12 @@ public class ContentSpecParser {
         if (variableMap.containsKey(RelationshipType.TARGET)) {
             final String targetId = variableMap.get(RelationshipType.TARGET)[0];
             if (targetTopics.containsKey(targetId)) {
-                log.error(format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG,
-                        targetTopics.get(targetId).getLineNumber(), targetTopics.get(targetId).getText(),
-                        lineCounter, input));
+                log.error(format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetTopics.get(targetId).getLineNumber(),
+                        targetTopics.get(targetId).getText(), lineCounter, input));
                 return false;
             } else if (targetLevels.containsKey(targetId)) {
-                log.error(format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG,
-                        targetLevels.get(targetId).getLineNumber(), targetLevels.get(targetId).getText(),
-                        lineCounter, input));
+                log.error(format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetLevels.get(targetId).getLineNumber(),
+                        targetLevels.get(targetId).getText(), lineCounter, input));
                 return false;
             } else {
                 targetTopics.put(targetId, tempTopic);
@@ -1376,8 +1373,7 @@ public class ContentSpecParser {
             newLvl.setTitle(title);
             try {
                 // Get the mapping of variables
-                final HashMap<RelationshipType, String[]> variableMap = getLineVariables(splitVars[1], '[', ']', ',',
-                        false);
+                final HashMap<RelationshipType, String[]> variableMap = getLineVariables(splitVars[1], '[', ']', ',', false);
                 if (variableMap.containsKey(RelationshipType.NONE)) {
                     variables = variableMap.get(RelationshipType.NONE);
                 }
@@ -1387,14 +1383,12 @@ public class ContentSpecParser {
                     if (targetTopics.containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
                         log.error(format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG,
                                 targetTopics.get(variableMap.get(RelationshipType.TARGET)[0]).getLineNumber(),
-                                targetTopics.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter,
-                                input));
+                                targetTopics.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter, input));
                         return null;
                     } else if (targetLevels.containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
                         log.error(format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG,
                                 targetLevels.get(variableMap.get(RelationshipType.TARGET)[0]).getLineNumber(),
-                                targetLevels.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter,
-                                input));
+                                targetLevels.get(variableMap.get(RelationshipType.TARGET)[0]).getText(), lineCounter, input));
                         return null;
                     } else {
                         targetLevels.put(variableMap.get(RelationshipType.TARGET)[0], newLvl);
@@ -1410,17 +1404,15 @@ public class ContentSpecParser {
 
                 // Check if the level is injecting data from another content spec
                 if (variableMap.containsKey(RelationshipType.EXTERNAL_CONTENT_SPEC)) {
-                    processExternalLevel(newLvl, variableMap.get(RelationshipType.EXTERNAL_CONTENT_SPEC)[0], title,
-                            input);
+                    processExternalLevel(newLvl, variableMap.get(RelationshipType.EXTERNAL_CONTENT_SPEC)[0], title, input);
                 }
 
                 // Check that no relationships were specified for the appendix
-                if (variableMap.containsKey(RelationshipType.RELATED) || variableMap.containsKey(RelationshipType
-                        .PREREQUISITE)
-                        || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType
-                        .PREVIOUS)) {
-                    log.error(format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineCounter,
-                            CSConstants.CHAPTER, CSConstants.CHAPTER, input));
+                if (variableMap.containsKey(RelationshipType.RELATED) || variableMap.containsKey(
+                        RelationshipType.PREREQUISITE) || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(
+                        RelationshipType.PREVIOUS)) {
+                    log.error(format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineCounter, CSConstants.CHAPTER, CSConstants.CHAPTER,
+                            input));
                     return null;
                 }
             } catch (Exception e) {
@@ -1450,10 +1442,8 @@ public class ContentSpecParser {
      * @throws ParsingException Thrown if the line can't be successfully parsed.
      * @throws IOException      Thrown if a problem occurs reading a new line.
      */
-    public HashMap<RelationshipType, String[]> getLineVariables(String input, char startDelim, char endDelim,
-                                                                char separator,
-                                                                boolean ignoreTypes) throws ParsingException,
-            IOException {
+    public HashMap<RelationshipType, String[]> getLineVariables(String input, char startDelim, char endDelim, char separator,
+            boolean ignoreTypes) throws ParsingException, IOException {
         return getLineVariables(input, startDelim, endDelim, separator, ignoreTypes, false);
     }
 
@@ -1470,10 +1460,8 @@ public class ContentSpecParser {
      * @return A Map of String arrays for different relationship. Inside each string array is the singular variables.
      * @throws ParsingException Thrown if the line can't be successfully parsed.
      */
-    public HashMap<RelationshipType, String[]> getLineVariables(final String input, final char startDelim,
-                                                                final char endDelim, final char separator,
-                                                                final boolean ignoreTypes,
-                                                                final boolean groupTypes) throws ParsingException {
+    public HashMap<RelationshipType, String[]> getLineVariables(final String input, final char startDelim, final char endDelim,
+            final char separator, final boolean ignoreTypes, final boolean groupTypes) throws ParsingException {
         final HashMap<RelationshipType, String[]> output = new HashMap<RelationshipType, String[]>();
 
         final int lastStartDelimPos = StringUtilities.lastIndexOf(input, startDelim);
@@ -1489,7 +1477,7 @@ public class ContentSpecParser {
            * Check to see if the line doesn't match the regex even once. Also check to see if the next
            * line is a continuation of the current line. If so then attempt to read the next line.
            */
-        if (lastEndDelimPos < lastStartDelimPos || (nextLine != null && nextLine.trim().toUpperCase().matches("^\\" +
+        if (lastEndDelimPos < lastStartDelimPos || (nextLine != null && nextLine.trim().toUpperCase(Locale.ENGLISH).matches("^\\" +
                 startDelim + "[ ]*(R|L|P|T|B).*")) || input.trim().matches("(.|\n|\r\n)*(?<!\\\\)" + separator + "$")) {
             // Read in a new line and increment relevant counters
             String temp = lines.poll();
@@ -1512,16 +1500,13 @@ public class ContentSpecParser {
 
             // Check that a closing bracket wasn't missed
             if (set.getEndPos() == null) {
-                throw new ParsingException(format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG, initialCount,
-                        endDelim));
+                throw new ParsingException(format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG, initialCount, endDelim));
             }
 
             // Split the variables set into individual variables
             final RelationshipType type = getRelationshipType(variableSet);
-            if (!ignoreTypes && (type == RelationshipType.RELATED || type == RelationshipType.PREREQUISITE || type ==
-                    RelationshipType.NEXT
-                    || type == RelationshipType.PREVIOUS || type == RelationshipType.BRANCH || type ==
-                    RelationshipType.LINKLIST)) {
+            if (!ignoreTypes && (type == RelationshipType.RELATED || type == RelationshipType.PREREQUISITE || type == RelationshipType
+                    .NEXT || type == RelationshipType.PREVIOUS || type == RelationshipType.BRANCH || type == RelationshipType.LINKLIST)) {
                 // Remove the type specifier from the start of the variable set
                 String splitString[] = StringUtilities.split(variableSet.trim(), ':', 2);
                 // Check that there are actually variables set
@@ -1530,17 +1515,15 @@ public class ContentSpecParser {
                     for (final String s : splitString) {
                         final String var = s.replaceAll("(^\\s*(\r?\n)*)|((\r?\n)*\\s*$)", "");
                         // Check that a separator wasn't missed.
-                        if (StringUtilities.lastIndexOf(var, startDelim) != StringUtilities.indexOf(var,
-                                startDelim) || var.indexOf('\n') != -1) {
-                            throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG,
-                                    initialCount, separator));
+                        if (StringUtilities.lastIndexOf(var, startDelim) != StringUtilities.indexOf(var, startDelim) || var.indexOf(
+                                '\n') != -1) {
+                            throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, initialCount, separator));
                         } else {
                             variables.add(var.trim());
                         }
                     }
                 } else {
-                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG,
-                            initialCount, input));
+                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, initialCount, input));
                 }
             } else if (!ignoreTypes && type == RelationshipType.TARGET) {
                 variables.add(variableSet.replaceAll("\\s", ""));
@@ -1563,8 +1546,7 @@ public class ContentSpecParser {
                     tempVariables.addAll(variables);
                     output.put(type, tempVariables.toArray(new String[tempVariables.size()]));
                 } else {
-                    throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG,
-                            initialCount, input));
+                    throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG, initialCount, input));
                 }
             } else {
                 output.put(type, variables.toArray(new String[variables.size()]));
@@ -1583,7 +1565,7 @@ public class ContentSpecParser {
      *         a NONE relationship type is returned.
      */
     protected RelationshipType getRelationshipType(final String variableString) {
-        final String uppercaseVarSet = variableString.trim().toUpperCase();
+        final String uppercaseVarSet = variableString.trim().toUpperCase(Locale.ENGLISH);
         if (uppercaseVarSet.matches(ProcessorConstants.RELATED_REGEX)) {
             return RelationshipType.RELATED;
         } else if (uppercaseVarSet.matches(ProcessorConstants.PREREQUISITE_REGEX)) {
@@ -1618,8 +1600,7 @@ public class ContentSpecParser {
      * @param originalInput The original string used to create these options.
      * @return Returns true if the options were parsed successfully or false if an error occurred.
      */
-    protected boolean addOptions(final SpecNode node, final String[] vars, final int startPos,
-                                 final String originalInput) {
+    protected boolean addOptions(final SpecNode node, final String[] vars, final int startPos, final String originalInput) {
         // Process each variable in vars starting from the start position
         for (int i = startPos; i < vars.length; i++) {
             String str = vars[i];
@@ -1640,8 +1621,7 @@ public class ContentSpecParser {
                         try {
                             Pattern.compile(condition);
                         } catch (PatternSyntaxException exception) {
-                            log.error(format(ProcessorConstants.ERROR_INVALID_CONDITION_MSG, lineCounter,
-                                    originalInput));
+                            log.error(format(ProcessorConstants.ERROR_INVALID_CONDITION_MSG, lineCounter, originalInput));
                             return false;
                         }
                     } else {
@@ -1660,7 +1640,7 @@ public class ContentSpecParser {
                 if (temp.length == 2) {
                     // Check if the category has an array of tags
                     if (StringUtilities.indexOf(temp[1], '(') != -1) {
-                        String[] tempTags = new String[0];
+                        String[] tempTags;
                         final StringBuilder input = new StringBuilder(temp[1]);
                         if (StringUtilities.indexOf(temp[1], ')') == -1) {
                             for (int j = i + 1; j < vars.length; j++) {
@@ -1676,10 +1656,11 @@ public class ContentSpecParser {
 
                         try {
                             // Get the mapping of variables
-                            HashMap<RelationshipType, String[]> variableMap = getLineVariables(input.toString(), '(',
-                                    ')', ',', false);
+                            HashMap<RelationshipType, String[]> variableMap = getLineVariables(input.toString(), '(', ')', ',', false);
                             if (variableMap.containsKey(RelationshipType.NONE)) {
                                 tempTags = variableMap.get(RelationshipType.NONE);
+                            } else {
+                                tempTags = new String[0];
                             }
                         } catch (Exception e) {
                             log.error(e.getMessage());
@@ -1691,13 +1672,11 @@ public class ContentSpecParser {
                             System.arraycopy(tempTags, 1, tags, 0, tempTags.length - 1);
 
                             if (!node.addTags(Arrays.asList(tags))) {
-                                log.error(format(ProcessorConstants.ERROR_MULTI_TAG_DUPLICATED_MSG, lineCounter,
-                                        originalInput));
+                                log.error(format(ProcessorConstants.ERROR_MULTI_TAG_DUPLICATED_MSG, lineCounter, originalInput));
                                 return false;
                             }
                         } else {
-                            log.error(format(ProcessorConstants.ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG, lineCounter,
-                                    originalInput));
+                            log.error(format(ProcessorConstants.ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG, lineCounter, originalInput));
                             return false;
                         }
                     }
@@ -1709,16 +1688,14 @@ public class ContentSpecParser {
                         }
                     }
                 } else {
-                    log.error(format(ProcessorConstants.ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG, lineCounter,
-                            originalInput));
+                    log.error(format(ProcessorConstants.ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG, lineCounter, originalInput));
                     return false;
                 }
             }
             // Variable is a tag with no category specified
             else {
                 if (str.matches(CSConstants.ALL_TOPIC_ID_REGEX)) {
-                    log.error(format(ProcessorConstants.ERROR_INCORRECT_TOPIC_ID_LOCATION_MSG, lineCounter,
-                            originalInput));
+                    log.error(format(ProcessorConstants.ERROR_INCORRECT_TOPIC_ID_LOCATION_MSG, lineCounter, originalInput));
                     return false;
                 }
 
@@ -1754,7 +1731,7 @@ public class ContentSpecParser {
             for (final Relationship relationship : relationships.get(topicId)) {
                 final String relatedId = relationship.getSecondaryRelationshipTopicId();
                 // The relationship points to a target so it must be a level or topic
-                if (relatedId.toUpperCase().matches(ProcessorConstants.TARGET_REGEX)) {
+                if (relatedId.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.TARGET_REGEX)) {
                     if (targetTopics.containsKey(relatedId) && !targetLevels.containsKey(relatedId)) {
                         specTopic.addRelationshipToTarget(targetTopics.get(relatedId), relationship.getType(),
                                 relationship.getRelationshipTitle());
@@ -1790,8 +1767,7 @@ public class ContentSpecParser {
                                     * output.
                                     */
                             if (count > 0 && relatedTopic != specTopic) {
-                                specTopic.addRelationshipToTopic(relatedTopic, relationship.getType(),
-                                        relationship.getRelationshipTitle());
+                                specTopic.addRelationshipToTopic(relatedTopic, relationship.getType(), relationship.getRelationshipTitle());
                             } else {
                                 final SpecTopic dummyTopic = new SpecTopic(0, "");
                                 dummyTopic.setId(relatedId);
@@ -1823,12 +1799,9 @@ public class ContentSpecParser {
                                 } else {
                                     // Only create a new target if one doesn't already exist
                                     if (relatedSpecTopic.getTargetId() == null) {
-                                        String targetId = ContentSpecUtilities.generateRandomTargetId
-                                                (relatedSpecTopic.getLineNumber());
-                                        while (targetTopics.containsKey(targetId) || targetLevels.containsKey
-                                                (targetId)) {
-                                            targetId = ContentSpecUtilities.generateRandomTargetId(relatedSpecTopic
-                                                    .getLineNumber());
+                                        String targetId = ContentSpecUtilities.generateRandomTargetId(relatedSpecTopic.getLineNumber());
+                                        while (targetTopics.containsKey(targetId) || targetLevels.containsKey(targetId)) {
+                                            targetId = ContentSpecUtilities.generateRandomTargetId(relatedSpecTopic.getLineNumber());
                                         }
                                         specTopics.get(relatedId).setTargetId(targetId);
                                         targetTopics.put(targetId, relatedSpecTopic);
@@ -1856,8 +1829,7 @@ public class ContentSpecParser {
      * @param title                The title of the external level.
      * @param input                The original input used to specify the external level.
      */
-    protected void processExternalLevel(final Level lvl, final String externalCSPReference, final String title,
-                                        final String input) {
+    protected void processExternalLevel(final Level lvl, final String externalCSPReference, final String title, final String input) {
         //TODO Add the level/topic contents to the local parser variables
         String[] vars = externalCSPReference.split(":");
         vars = CollectionUtilities.trimStringArray(vars);
@@ -1866,12 +1838,12 @@ public class ContentSpecParser {
         final Integer cspId = Integer.parseInt(vars[0]);
         final Integer targetId = vars.length > 1 ? Integer.parseInt(vars[1]) : null;
 
-        final RESTTopicV1 externalContentSpec = this.restManager.getReader().getContentSpecById(cspId, null);
+        final TopicWrapper externalContentSpec = topicProvider.getTopic(cspId);
 
         if (externalContentSpec != null) {
             /* We are importing part of an external content specification */
             if (targetId != null) {
-                final ContentSpecParser parser = new ContentSpecParser(new ErrorLoggerManager(), restManager);
+                final ContentSpecParser parser = new ContentSpecParser(factory);
                 boolean foundTargetId = false;
                 try {
                     parser.parse(externalContentSpec.getXml());
@@ -1958,8 +1930,8 @@ public class ContentSpecParser {
                      * line and see if it's a continuation (ie another relationship) and if it is then add the
                      * line and continue to find sets.
                      */
-                if ((set == null || set.getContents() == null) && (nextLine != null && nextLine.trim().toUpperCase()
-                        .matches("^\\" + startDelim + "[ ]*(R|L|P|T|B).*"))) {
+                if ((set == null || set.getContents() == null) && (nextLine != null && nextLine.trim().toUpperCase(Locale.ENGLISH).matches(
+                        "^\\" + startDelim + "[ ]*(R|L|P|T|B).*"))) {
                     final String line = lines.poll();
                     lineCounter++;
 
@@ -1978,8 +1950,7 @@ public class ContentSpecParser {
                     varLine.append("\n").append(line);
 
                     spec.appendPreProcessedLine(line);
-                    set = ProcessorUtilities.findVariableSet(varLine.toString(), startDelim, endDelim,
-                            set.getStartPos());
+                    set = ProcessorUtilities.findVariableSet(varLine.toString(), startDelim, endDelim, set.getStartPos());
                 } else {
                     retValue.add(set);
                     break;

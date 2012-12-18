@@ -1,5 +1,11 @@
 package com.redhat.contentspec.processor.utils;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import com.google.code.regexp.NamedMatcher;
 import com.google.code.regexp.NamedPattern;
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
@@ -7,16 +13,10 @@ import com.redhat.contentspec.processor.structures.VariableSet;
 import org.apache.log4j.Logger;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
-import org.jboss.pressgang.ccms.rest.v1.entities.RESTTagV1;
-import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTCategoryInTagV1;
+import org.jboss.pressgang.ccms.contentspec.wrapper.CategoryWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class ProcessorUtilities {
     private static final Logger log = Logger.getLogger(ProcessorUtilities.class);
@@ -28,14 +28,13 @@ public class ProcessorUtilities {
      * @param tags The List of tags to be converted.
      * @return The mapping of Categories to Tags.
      */
-    public static Map<RESTCategoryInTagV1, List<RESTTagV1>> getCategoryMappingFromTagList(final List<RESTTagV1> tags) {
-        final HashMap<RESTCategoryInTagV1, List<RESTTagV1>> mapping = new HashMap<RESTCategoryInTagV1,
-                List<RESTTagV1>>();
-        for (final RESTTagV1 tag : tags) {
-            final List<RESTCategoryInTagV1> catList = tag.getCategories().returnItems();
+    public static Map<CategoryWrapper, List<TagWrapper>> getCategoryMappingFromTagList(final List<TagWrapper> tags) {
+        final HashMap<CategoryWrapper, List<TagWrapper>> mapping = new HashMap<CategoryWrapper, List<TagWrapper>>();
+        for (final TagWrapper tag : tags) {
+            final List<CategoryWrapper> catList = tag.getCategories().getItems();
             if (catList != null) {
-                for (final RESTCategoryInTagV1 cat : catList) {
-                    if (!mapping.containsKey(cat)) mapping.put(cat, new ArrayList<RESTTagV1>());
+                for (final CategoryWrapper cat : catList) {
+                    if (!mapping.containsKey(cat)) mapping.put(cat, new ArrayList<TagWrapper>());
                     mapping.get(cat).add(tag);
                 }
             }
@@ -51,25 +50,23 @@ public class ProcessorUtilities {
      *                    Specification. The key is the Topics ID.
      * @return A string that contains the Post Content Specification or null if an error occurred.
      */
-    public static String generatePostContentSpec(final ContentSpec contentSpec, final HashMap<String,
-            SpecTopic> specTopics) {
+    public static String generatePostContentSpec(final ContentSpec contentSpec, final HashMap<String, SpecTopic> specTopics) {
         String output = "ID=" + contentSpec.getId() + "\n";
-        final NamedPattern newTopicPattern = NamedPattern.compile("\\[[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS
-                + ">[0-9]+)[ ]*(,|\\])");
-        final NamedPattern newTopicPattern2 = NamedPattern.compile("\\[[ ]*(?<" + ProcessorConstants
-                .TOPIC_ID_CONTENTS + ">N[ ]*,.*?)\\]");
+        final NamedPattern newTopicPattern = NamedPattern.compile(
+                "\\[[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">[0-9]+)[ ]*(,|\\])");
+        final NamedPattern newTopicPattern2 = NamedPattern.compile("\\[[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">N[ ]*,.*?)\\]");
         final NamedPattern newTopicRelationshipPattern = NamedPattern.compile("" +
-                "(B:|P:|PREREQUISITE:|R:|RELATED-TO:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants
-                .TOPIC_ID_CONTENTS + ">N[0-9]+)[ ]*(?=(,|\\]))");
+                "(B:|P:|PREREQUISITE:|R:|RELATED-TO:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">N[0-9]+)[ ]*" +
+                "(?=(,|\\]))");
         final NamedPattern duplicateTopicPattern = NamedPattern.compile("" +
-                "(B:|P:|PREREQUISITE:|R:|RELATED-TO:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants
-                .TOPIC_ID_CONTENTS + ">X[0-9]+)[ ]*(?=(,|\\]))");
+                "(B:|P:|PREREQUISITE:|R:|RELATED-TO:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">X[0-9]+)[ ]*" +
+                "(?=(,|\\]))");
         final NamedPattern clonedTopicPattern = NamedPattern.compile("" +
-                "(B:|P:|PREREQUISITE:|R:|RELATED-TO:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants
-                .TOPIC_ID_CONTENTS + ">C[0-9]+)[ ]*(?=(,|\\]))");
+                "(B:|P:|PREREQUISITE:|R:|RELATED-TO:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">C[0-9]+)[ ]*" +
+                "(?=(,|\\]))");
         final NamedPattern clonedDuplicateTopicPattern = NamedPattern.compile("" +
-                "(B:|P:|PREREQUISITE:|R:|RELATED-TO:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants
-                .TOPIC_ID_CONTENTS + ">XC[0-9]+)[ ]*(?=(,|\\]))");
+                "(B:|P:|PREREQUISITE:|R:|RELATED-TO:|NEXT:|PREV:|,|\\[)[ ]*(?<" + ProcessorConstants.TOPIC_ID_CONTENTS + ">XC[0-9]+)[ ]*" +
+                "(?=(,|\\]))");
         int count = 1;
         //if (editing) count += 2;
         // For each line in the CS check if it matches each pattern and then do an action depending on what pattern
@@ -132,8 +129,7 @@ public class ProcessorUtilities {
                         line += " [" + specTopic.getTargetId() + "]";
                     }
                 }
-                line = line.replace(s, specTopic.getTargetId() == null ? Integer.toString(specTopic.getDBId()) :
-                        specTopic.getTargetId());
+                line = line.replace(s, specTopic.getTargetId() == null ? Integer.toString(specTopic.getDBId()) : specTopic.getTargetId());
             }
 
             // Duplicated Topic
@@ -207,26 +203,23 @@ public class ProcessorUtilities {
         VariableSet idSet = findVariableSet(input, '[', ']', 0);
         assert idSet != null;
         String replacementTarget = idSet.getContents();
-        while ((replacementTarget.toUpperCase().matches(ProcessorConstants.RELATED_REGEX) || replacementTarget
-                .toUpperCase().matches(ProcessorConstants.PREREQUISITE_REGEX)
-                || replacementTarget.toUpperCase().matches(ProcessorConstants.NEXT_REGEX) || replacementTarget
-                .toUpperCase().matches(ProcessorConstants.PREV_REGEX)
-                || replacementTarget.toUpperCase().matches(ProcessorConstants.TARGET_REGEX) || replacementTarget
-                .toUpperCase().matches(ProcessorConstants.BRANCH_REGEX)
-                || replacementTarget.toUpperCase().matches(ProcessorConstants.LINK_LIST_REGEX) || replacementTarget
-                .toUpperCase().matches(ProcessorConstants.EXTERNAL_TARGET_REGEX)
-                || replacementTarget.toUpperCase().matches(ProcessorConstants.EXTERNAL_CSP_REGEX)) && idSet != null
-                && idSet.getContents() != null && idSet.getEndPos() != null) {
+        while ((replacementTarget.toUpperCase().matches(ProcessorConstants.RELATED_REGEX) || replacementTarget.toUpperCase().matches(
+                ProcessorConstants.PREREQUISITE_REGEX) || replacementTarget.toUpperCase().matches(
+                ProcessorConstants.NEXT_REGEX) || replacementTarget.toUpperCase().matches(
+                ProcessorConstants.PREV_REGEX) || replacementTarget.toUpperCase().matches(
+                ProcessorConstants.TARGET_REGEX) || replacementTarget.toUpperCase().matches(
+                ProcessorConstants.BRANCH_REGEX) || replacementTarget.toUpperCase().matches(
+                ProcessorConstants.LINK_LIST_REGEX) || replacementTarget.toUpperCase().matches(
+                ProcessorConstants.EXTERNAL_TARGET_REGEX) || replacementTarget.toUpperCase().matches(
+                ProcessorConstants.EXTERNAL_CSP_REGEX)) && idSet != null && idSet.getContents() != null && idSet.getEndPos() != null) {
             idSet = findVariableSet(input, '[', ']', idSet.getEndPos() + 1);
-            if (idSet != null)
-                replacementTarget = idSet.getContents();
+            if (idSet != null) replacementTarget = idSet.getContents();
         }
 
         // Replace the non relationship variable set with the database id.
-        String output = input.replace(replacementTarget, "[" + Integer.toString(specTopic.getDBId()) + (specTopic
-                .getRevision() == null ? "" : (", rev: " + specTopic.getRevision()))
-                + (specTopic.getConditionStatement() == null ? "" : (", condition=" + specTopic.getConditionStatement
-                ())) + "]");
+        String output = input.replace(replacementTarget, "[" + Integer.toString(
+                specTopic.getDBId()) + (specTopic.getRevision() == null ? "" : (", rev: " + specTopic.getRevision())) + (specTopic
+                .getConditionStatement() == null ? "" : (", condition=" + specTopic.getConditionStatement())) + "]");
         // Replace the title
         if (topicTitle != null && StringUtilities.indexOf(output, '[') != -1) {
             // Get the original whitespace to add to the line
@@ -253,8 +246,7 @@ public class ProcessorUtilities {
      * @return A VariableSet object that contains the contents of the set, the start position
      *         in the string and the end position.
      */
-    public static VariableSet findVariableSet(final String input, final char startDelim, final char endDelim,
-                                              final int startPos) {
+    public static VariableSet findVariableSet(final String input, final char startDelim, final char endDelim, final int startPos) {
         final int startIndex = StringUtilities.indexOf(input, startDelim, startPos);
         int endIndex = StringUtilities.indexOf(input, endDelim, startPos);
         int nextStartIndex = StringUtilities.indexOf(input, startDelim, startIndex + 1);
