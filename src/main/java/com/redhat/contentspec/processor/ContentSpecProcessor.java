@@ -24,7 +24,8 @@ import org.jboss.pressgang.ccms.contentspec.provider.TagProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.TopicProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.TopicSourceURLProvider;
 import org.jboss.pressgang.ccms.contentspec.utils.TopicPool;
-import org.jboss.pressgang.ccms.contentspec.utils.logging.LoggerManager;
+import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
+import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
 import org.jboss.pressgang.ccms.contentspec.wrapper.CategoryWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.PropertyTagWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
@@ -46,7 +47,8 @@ import org.jboss.pressgang.ccms.utils.structures.Pair;
 public class ContentSpecProcessor implements ShutdownAbleApp {
     private final Logger LOG = Logger.getLogger("com.redhat.contentspec.processor.CustomContentSpecProcessor");
 
-    private final Logger log;
+    private final ErrorLoggerManager loggerManager;
+    private final ErrorLogger log;
     private final DataProviderFactory factory;
     private final TopicProvider topicProvider;
     private final TagProvider tagProvider;
@@ -64,9 +66,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * Constructor
      *
      * @param factory           A DBManager object that manages the REST connection and the functions to read/write to the REST Interface.
+     * @param loggerManager
      * @param processingOptions The set of options to use when processing.
      */
-    public ContentSpecProcessor(final DataProviderFactory factory, final ProcessingOptions processingOptions) {
+    public ContentSpecProcessor(final DataProviderFactory factory, ErrorLoggerManager loggerManager,
+            final ProcessingOptions processingOptions) {
         this.factory = factory;
 
         topicProvider = factory.getProvider(TopicProvider.class);
@@ -74,8 +78,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         propertyTagProvider = factory.getProvider(PropertyTagProvider.class);
         topicSourceUrlProvider = factory.getProvider(TopicSourceURLProvider.class);
 
-        log = LoggerManager.getLogger(ContentSpecProcessor.class);
-        csp = new ContentSpecParser(factory);
+        this.loggerManager = loggerManager;
+        log = loggerManager.getLogger(ContentSpecProcessor.class);
+        csp = new ContentSpecParser(factory, loggerManager);
         topics = new TopicPool(factory);
         this.processingOptions = processingOptions;
     }
@@ -171,7 +176,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         LOG.info("Starting first validation pass...");
 
         // Validate the relationships
-        validator = new ContentSpecValidator(factory, processingOptions);
+        validator = new ContentSpecValidator(factory, loggerManager, processingOptions);
 
         if (!validator.preValidateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(),
                 csp.getTargetTopics()) || !validator.preValidateContentSpec(csp.getContentSpec(), csp.getSpecTopics())) {
@@ -186,7 +191,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // Download all of the latest and/or revision topics
-        downloadAllTopics();
+        //downloadAllTopics();
 
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
@@ -653,8 +658,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
             // A new content specification
             if (contentSpec.getId() == 0) {
-                contentSpec.setId(writer.createContentSpec(contentSpec.getTitle(), fullText.toString(), contentSpec.getDtd(),
-                        contentSpec.getCreatedBy()));
+                contentSpec.setId(
+                        createContentSpec(contentSpec.getTitle(), fullText.toString(), contentSpec.getDtd(), contentSpec.getCreatedBy()));
                 if (contentSpec.getId() == 0) {
                     log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
                     throw new Exception("Failed to create the pre content specification.");
@@ -662,7 +667,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
             // An existing content specification
             else {
-                if (!writer.updateContentSpec(contentSpec.getId(), contentSpec.getTitle(), fullText.toString(), contentSpec.getDtd())) {
+                if (!updateContentSpec(contentSpec.getId(), contentSpec.getTitle(), fullText.toString(), contentSpec.getDtd())) {
                     log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
                     throw new Exception("Failed to create the pre content specification.");
                 }
@@ -734,7 +739,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 throw new ProcessingException("Failed to create the Post Content Specification.");
             }
 
-            if (!writer.updatePostContentSpec(contentSpec.getId(), postCS)) {
+            if (!updatePostContentSpec(contentSpec.getId(), postCS)) {
                 log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
                 throw new Exception("Failed to save the post content Specification");
             }
@@ -807,6 +812,150 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         return true;
+    }
+
+    /**
+     * Writes a ContentSpecs tuple to the database using the data provided.
+     */
+    protected Integer createContentSpec(final String title, final String preContentSpec, final String dtd, final String createdBy) {
+        try {
+            TopicWrapper contentSpec = topicProvider.newTopic();
+            contentSpec.setTitle(title);
+            contentSpec.setXml(preContentSpec);
+
+            // Create the Added By, Content Spec Type and DTD property tags
+            final UpdateableCollectionWrapper<PropertyTagWrapper> properties = propertyTagProvider.newAssignedPropertyTagCollection();
+            final PropertyTagWrapper addedBy = propertyTagProvider.newAssignedPropertyTag(
+                    propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID));
+            addedBy.setValue(createdBy);
+
+            final PropertyTagWrapper typePropertyTag = propertyTagProvider.newAssignedPropertyTag(
+                    propertyTagProvider.getPropertyTag(CSConstants.CSP_TYPE_PROPERTY_TAG_ID));
+            typePropertyTag.setValue(CSConstants.CSP_PRE_PROCESSED_STRING);
+
+            final PropertyTagWrapper dtdPropertyTag = propertyTagProvider.newAssignedPropertyTag(
+                    propertyTagProvider.getPropertyTag(CSConstants.DTD_PROPERTY_TAG_ID, null));
+            dtdPropertyTag.setValue(dtd);
+
+            properties.addNewItem(addedBy);
+            properties.addNewItem(dtdPropertyTag);
+            properties.addNewItem(typePropertyTag);
+
+            contentSpec.setProperties(properties);
+
+            // Add the Content Specification Type Tag
+            final CollectionWrapper<TagWrapper> tags = tagProvider.newTagCollection();
+            final TagWrapper typeTag = tagProvider.getTag(CSConstants.CONTENT_SPEC_TAG_ID);
+            tags.addNewItem(typeTag);
+
+            contentSpec.setTags(tags);
+
+            contentSpec = topicProvider.createTopic(contentSpec);
+            if (contentSpec != null) return contentSpec.getId();
+        } catch (Exception e) {
+            log.error("", e);
+        }
+        return null;
+    }
+
+    /**
+     * Updates a ContentSpecs tuple from the database using the data provided.
+     */
+    public boolean updateContentSpec(final Integer id, final String title, final String preContentSpec, final String dtd) {
+        try {
+            TopicWrapper contentSpec = topicProvider.getTopic(id);
+
+            if (contentSpec == null) return false;
+
+            // Change the title if it's different
+            if (!contentSpec.getTitle().equals(title)) {
+                contentSpec.setTitle(title);
+            }
+
+            contentSpec.setXml(preContentSpec);
+
+            // Update the Content Spec Type and DTD property tags
+            final UpdateableCollectionWrapper<PropertyTagWrapper> properties = contentSpec.getProperties();
+            UpdateableCollectionWrapper<PropertyTagWrapper> fixedProperties = propertyTagProvider.newAssignedPropertyTagCollection();
+            if (properties.getItems() != null && !properties.getItems().isEmpty()) {
+                boolean foundCSPType = false;
+
+                // Loop through and remove any Type or DTD tags if they don't
+                // match
+                for (final PropertyTagWrapper property : properties.getItems()) {
+                    if (property.getId().equals(CSConstants.CSP_TYPE_PROPERTY_TAG_ID)) {
+                        property.setValue(CSConstants.CSP_PRE_PROCESSED_STRING);
+                        fixedProperties.addUpdateItem(property);
+                        foundCSPType = true;
+                    } else if (property.getId().equals(CSConstants.DTD_PROPERTY_TAG_ID)) {
+                        if (!property.getValue().equals(dtd)) {
+                            property.setValue(dtd);
+                            fixedProperties.addUpdateItem(property);
+                        } else {
+                            fixedProperties.addItem(property);
+                        }
+                    } else {
+                        fixedProperties.addItem(property);
+                    }
+                }
+
+                if (!foundCSPType) {
+                    // The property tag should never match a pre tag
+                    final PropertyTagWrapper typePropertyTag = propertyTagProvider.newAssignedPropertyTag(
+                            propertyTagProvider.getPropertyTag(CSConstants.CSP_TYPE_PROPERTY_TAG_ID));
+                    typePropertyTag.setValue(CSConstants.CSP_PRE_PROCESSED_STRING);
+
+                    fixedProperties.addNewItem(typePropertyTag);
+                }
+            }
+
+            contentSpec.setProperties(fixedProperties);
+
+            contentSpec = topicProvider.updateTopic(contentSpec);
+            if (contentSpec != null) {
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("", e);
+        }
+        return false;
+    }
+
+    /**
+     * Writes a ContentSpecs tuple to the database using the data provided.
+     */
+    public boolean updatePostContentSpec(final Integer id, final String postContentSpec) {
+        try {
+            TopicWrapper contentSpec = topicProvider.getTopic(id);
+            if (contentSpec == null) return false;
+
+            contentSpec.setXml(postContentSpec);
+
+            // Update Content Spec Type
+            final UpdateableCollectionWrapper<PropertyTagWrapper> properties = contentSpec.getProperties();
+            UpdateableCollectionWrapper<PropertyTagWrapper> fixedProperties = propertyTagProvider.newAssignedPropertyTagCollection();
+            if (properties.getItems() != null && !properties.getItems().isEmpty()) {
+                // Loop through and remove the type
+                for (final PropertyTagWrapper property : properties.getItems()) {
+                    if (property.getId().equals(CSConstants.CSP_TYPE_PROPERTY_TAG_ID)) {
+                        property.setValue(CSConstants.CSP_POST_PROCESSED_STRING);
+                        fixedProperties.addUpdateItem(property);
+                    } else {
+                        fixedProperties.addItem(property);
+                    }
+                }
+
+                contentSpec.setProperties(fixedProperties);
+            }
+
+            contentSpec = topicProvider.updateTopic(contentSpec);
+            if (contentSpec != null) {
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("", e);
+        }
+        return false;
     }
 
     /**

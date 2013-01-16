@@ -21,7 +21,6 @@ import com.google.code.regexp.NamedPattern;
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
 import com.redhat.contentspec.processor.structures.VariableSet;
 import com.redhat.contentspec.processor.utils.ProcessorUtilities;
-import org.apache.log4j.Logger;
 import org.jboss.pressgang.ccms.contentspec.Appendix;
 import org.jboss.pressgang.ccms.contentspec.Chapter;
 import org.jboss.pressgang.ccms.contentspec.Comment;
@@ -45,7 +44,8 @@ import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
 import org.jboss.pressgang.ccms.contentspec.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.contentspec.provider.TopicProvider;
 import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
-import org.jboss.pressgang.ccms.contentspec.utils.logging.LoggerManager;
+import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
+import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.UserWrapper;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
@@ -69,8 +69,9 @@ public class ContentSpecParser {
     }
 
     private final DataProviderFactory factory;
-    private final Logger log;
+    private final ErrorLogger log;
     private final TopicProvider topicProvider;
+    private final ErrorLoggerManager loggerManager;
 
     private int spaces = 2;
     private ContentSpec spec = new ContentSpec();
@@ -90,10 +91,11 @@ public class ContentSpecParser {
     /**
      * Constructor
      */
-    public ContentSpecParser(final DataProviderFactory factory) {
+    public ContentSpecParser(final DataProviderFactory factory, ErrorLoggerManager loggerManager) {
         this.factory = factory;
         topicProvider = factory.getProvider(TopicProvider.class);
-        log = LoggerManager.getLogger(ContentSpecParser.class);
+        this.loggerManager = loggerManager;
+        log = loggerManager.getLogger(ContentSpecParser.class);
     }
 
     /**
@@ -617,11 +619,11 @@ public class ContentSpecParser {
             tempInput = CollectionUtilities.trimStringArray(tempInput);
             if (tempInput.length >= 2) {
                 if (tempInput[1].equals("1")) {
-                    LoggerManager.setVerboseDebug(org.apache.log4j.Level.INFO);
+                    log.setVerboseDebug(1);
                 } else if (tempInput[1].equals("2")) {
-                    LoggerManager.setVerboseDebug(org.apache.log4j.Level.ERROR);
+                    log.setVerboseDebug(2);
                 } else if (tempInput[1].equals("0")) {
-                    LoggerManager.setVerboseDebug(org.apache.log4j.Level.DEBUG);
+                    log.setVerboseDebug(0);
                 } else {
                     log.warn(ProcessorConstants.WARN_DEBUG_IGNORE_MSG);
                 }
@@ -1843,7 +1845,7 @@ public class ContentSpecParser {
         if (externalContentSpec != null) {
             /* We are importing part of an external content specification */
             if (targetId != null) {
-                final ContentSpecParser parser = new ContentSpecParser(factory);
+                final ContentSpecParser parser = new ContentSpecParser(factory, loggerManager);
                 boolean foundTargetId = false;
                 try {
                     parser.parse(externalContentSpec.getXml());

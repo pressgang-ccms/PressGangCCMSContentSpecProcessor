@@ -18,7 +18,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
 import com.redhat.contentspec.processor.structures.ProcessingOptions;
 import com.redhat.contentspec.processor.utils.ProcessorUtilities;
-import org.apache.log4j.Logger;
 import org.jboss.pressgang.ccms.contentspec.Appendix;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.Level;
@@ -38,7 +37,8 @@ import org.jboss.pressgang.ccms.contentspec.provider.TopicProvider;
 import org.jboss.pressgang.ccms.contentspec.sort.NullNumberSort;
 import org.jboss.pressgang.ccms.contentspec.sort.SpecTopicLineNumberComparator;
 import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
-import org.jboss.pressgang.ccms.contentspec.utils.logging.LoggerManager;
+import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
+import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
 import org.jboss.pressgang.ccms.contentspec.wrapper.BaseTopicWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.CategoryWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
@@ -61,7 +61,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private final DataProviderFactory factory;
     private final TopicProvider topicProvider;
     private final TagProvider tagProvider;
-    private final Logger log;
+    private final ErrorLogger log;
     private final ProcessingOptions processingOptions;
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
@@ -81,13 +81,15 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     /**
      * Constructor.
      *
+     * @param loggerManager
      * @param processingOptions The set of processing options to be used when validating.
      */
-    public ContentSpecValidator(final DataProviderFactory factory, final ProcessingOptions processingOptions) {
+    public ContentSpecValidator(final DataProviderFactory factory, ErrorLoggerManager loggerManager,
+            final ProcessingOptions processingOptions) {
         this.factory = factory;
         topicProvider = factory.getProvider(TopicProvider.class);
         tagProvider = factory.getProvider(TagProvider.class);
-        log = LoggerManager.getLogger(ContentSpecValidator.class);
+        log = loggerManager.getLogger(ContentSpecValidator.class);
         this.processingOptions = processingOptions;
         locale = CommonConstants.DEFAULT_LOCALE;
     }
