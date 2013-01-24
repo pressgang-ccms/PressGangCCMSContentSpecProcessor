@@ -11,6 +11,7 @@ public class ProcessorConstants {
     public static final String BRACKET_PATTERN = "(?<!\\\\)\\%c((.|\n)*?)(?<!\\\\)\\%c";
     public static final String BRACKET_VALIDATE_REGEX = ".*%s[ ]*$"; // ".*%s(([ ]*$)|([ ]*#.*$))" For use to allow comments at the end
     // of a line
+    public static final String PRODUCT_VERSION_VALIDATE_REGEX = "(([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+))(-[a-zA-Z]+)";
     public static final String VERSION_VALIDATE_REGEX = "([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+)";
     public static final String VERSION_EPOCH_VALIDATE_REGEX = "(" + VERSION_VALIDATE_REGEX + ")(-[0-9]+)?";
 
@@ -310,7 +311,7 @@ public class ProcessorConstants {
     public static final String ABSTRACT_REGEX = "^(DESCRIPTION|ABSTRACT)[ ]*((=.*)|$)";
     public static final String COPYRIGHT_HOLDER_REGEX = "^COPYRIGHT HOLDER[ ]*((=.*)|$)";
     public static final String DEBUG_REGEX = "^DEBUG[ ]*((=.*)|$)";
-    public static final String VERSION_REGEX = "^VERSION[ ]*((=.*)|$)";
+    public static final String PRODUCT_VERSION_REGEX = "^VERSION[ ]*((=.*)|$)";
     public static final String BRAND_REGEX = "^BRAND[ ]*((=.*)|$)";
     public static final String BUG_LINKS_REGEX = "^BUG[ ]*LINKS[ ]*((=.*)|$)";
     public static final String BUGZILLA_PRODUCT_REGEX = "^BZPRODUCT[ ]*((=.*)|$)";

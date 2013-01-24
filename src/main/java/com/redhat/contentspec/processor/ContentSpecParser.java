@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -68,9 +69,9 @@ public class ContentSpecParser {
         NEW, EDITED, EITHER
     }
 
-    private final DataProviderFactory factory;
-    private final ErrorLogger log;
+    private final DataProviderFactory providerFactory;
     private final TopicProvider topicProvider;
+    private final ErrorLogger log;
     private final ErrorLoggerManager loggerManager;
 
     private int spaces = 2;
@@ -90,18 +91,19 @@ public class ContentSpecParser {
 
     /**
      * Constructor
+     *
+     * @param providerFactory The Factory to produce various different Entity DataProviders.
+     * @param loggerManager The Logging Manager that contains any errors/warnings produced while parsing.
      */
-    public ContentSpecParser(final DataProviderFactory factory, ErrorLoggerManager loggerManager) {
-        this.factory = factory;
-        topicProvider = factory.getProvider(TopicProvider.class);
+    public ContentSpecParser(final DataProviderFactory providerFactory, final ErrorLoggerManager loggerManager) {
+        this.providerFactory = providerFactory;
+        topicProvider = providerFactory.getProvider(TopicProvider.class);
         this.loggerManager = loggerManager;
         log = loggerManager.getLogger(ContentSpecParser.class);
     }
 
     /**
      * Parse a Content Specification to put the string into usable objects that can then be validate.
-     * <p/>
-     * Note: Relationships in Processes won't be added as they require access to a TopicIndex REST Interface.
      *
      * @param contentSpec A string representation of the Content Specification.
      * @return True if everything was parsed successfully otherwise false.
@@ -113,8 +115,6 @@ public class ContentSpecParser {
 
     /**
      * Parse a Content Specification to put the string into usable objects that can then be validate.
-     * <p/>
-     * Note: Relationships in Processes won't be added as they require access to a TopicIndex REST Interface.
      *
      * @param contentSpec A string representation of the Content Specification.
      * @param user        The user who requested the parse.
@@ -127,8 +127,6 @@ public class ContentSpecParser {
 
     /**
      * Parse a Content Specification to put the string into usable objects that can then be validate.
-     * <p/>
-     * Note: Relationships in Processes won't be added as they require access to a TopicIndex REST Interface.
      *
      * @param contentSpec A string representation of the Content Specification.
      * @param user        The user who requested the parse.
@@ -142,8 +140,6 @@ public class ContentSpecParser {
 
     /**
      * Parse a Content Specification to put the string into usable objects that can then be validate.
-     * <p/>
-     * Note: Relationships in Processes won't be added as they require access to a TopicIndex REST Interface.
      *
      * @param contentSpec      A string representation of the Content Specification.
      * @param user             The user who requested the parse.
@@ -154,6 +150,9 @@ public class ContentSpecParser {
      */
     public boolean parse(final String contentSpec, final UserWrapper user, final ParsingMode mode,
             final boolean processProcesses) throws Exception {
+        // Clear the logs
+        log.clearLogs();
+
         // Reset the variables
         spaces = 2;
         spec = new ContentSpec();
@@ -628,13 +627,13 @@ public class ContentSpecParser {
                     log.warn(ProcessorConstants.WARN_DEBUG_IGNORE_MSG);
                 }
             }
-        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.VERSION_REGEX)) {
+        } else if (input.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.PRODUCT_VERSION_REGEX)) {
             String tempInput[] = StringUtilities.split(input, '=');
             // Remove the whitespace from each value in the split array
             tempInput = CollectionUtilities.trimStringArray(tempInput);
             if (tempInput.length >= 2) {
                 final String version = tempInput[1];
-                if (version.matches(ProcessorConstants.VERSION_VALIDATE_REGEX)) {
+                if (version.matches(ProcessorConstants.PRODUCT_VERSION_VALIDATE_REGEX)) {
                     spec.setVersion(version);
                 } else {
                     log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, lineCounter, input));
@@ -771,7 +770,7 @@ public class ContentSpecParser {
                    log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                    return false;
                }*/
-            // TODO Fix the CSP to allow for an spec to not have duplicate topics
+            // TODO Fix the CSP to allow for a spec to not have duplicate topics
             /*} else if (input.toUpperCase(Locale.ENGLISH).matches("^DUPLICATE TOPICS[ ]*((=.*)|$)")) {
                String tempInput[] = StringUtilities.split(input, '=');
                // Remove the whitespace from each value in the split array
@@ -1196,11 +1195,11 @@ public class ContentSpecParser {
         // Process the relationships
         final String uniqueId = tempTopic.getUniqueId();
         final ArrayList<Relationship> topicRelationships = new ArrayList<Relationship>();
-        if (variableMap.containsKey(RelationshipType.RELATED)) {
-            final String[] related = variableMap.get(RelationshipType.RELATED);
+        if (variableMap.containsKey(RelationshipType.REFER_TO)) {
+            final String[] related = variableMap.get(RelationshipType.REFER_TO);
             for (final String relatedId : related) {
                 if (relatedId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
-                    topicRelationships.add(new Relationship(uniqueId, relatedId, RelationshipType.RELATED));
+                    topicRelationships.add(new Relationship(uniqueId, relatedId, RelationshipType.REFER_TO));
                 } else if (relatedId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
                     final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
                     final NamedMatcher matcher = pattern.matcher(relatedId);
@@ -1209,7 +1208,7 @@ public class ContentSpecParser {
                     final String id = matcher.group("TopicID");
                     final String relationshipTitle = matcher.group("TopicTitle").trim();
 
-                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.RELATED, relationshipTitle));
+                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.REFER_TO, relationshipTitle));
                 } else {
                     if (relatedId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
                             ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
@@ -1318,14 +1317,14 @@ public class ContentSpecParser {
 
         // Throw an error for external targets
         if (variableMap.containsKey(RelationshipType.EXTERNAL_TARGET)) {
-            // TODO Log an error
+            // TODO Log an error properly using a constant
             log.error("Unable to use external targets on topics.");
             return false;
         }
 
         // Throw an error for external content spec injections
         if (variableMap.containsKey(RelationshipType.EXTERNAL_CONTENT_SPEC)) {
-            // TODO Log an error
+            // TODO Log an error properly using a constant
             log.error("Unable to use external content specs as topics.");
             return false;
         }
@@ -1410,7 +1409,7 @@ public class ContentSpecParser {
                 }
 
                 // Check that no relationships were specified for the appendix
-                if (variableMap.containsKey(RelationshipType.RELATED) || variableMap.containsKey(
+                if (variableMap.containsKey(RelationshipType.REFER_TO) || variableMap.containsKey(
                         RelationshipType.PREREQUISITE) || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(
                         RelationshipType.PREVIOUS)) {
                     log.error(format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineCounter, CSConstants.CHAPTER, CSConstants.CHAPTER,
@@ -1507,7 +1506,7 @@ public class ContentSpecParser {
 
             // Split the variables set into individual variables
             final RelationshipType type = getRelationshipType(variableSet);
-            if (!ignoreTypes && (type == RelationshipType.RELATED || type == RelationshipType.PREREQUISITE || type == RelationshipType
+            if (!ignoreTypes && (type == RelationshipType.REFER_TO || type == RelationshipType.PREREQUISITE || type == RelationshipType
                     .NEXT || type == RelationshipType.PREVIOUS || type == RelationshipType.BRANCH || type == RelationshipType.LINKLIST)) {
                 // Remove the type specifier from the start of the variable set
                 String splitString[] = StringUtilities.split(variableSet.trim(), ':', 2);
@@ -1569,7 +1568,7 @@ public class ContentSpecParser {
     protected RelationshipType getRelationshipType(final String variableString) {
         final String uppercaseVarSet = variableString.trim().toUpperCase(Locale.ENGLISH);
         if (uppercaseVarSet.matches(ProcessorConstants.RELATED_REGEX)) {
-            return RelationshipType.RELATED;
+            return RelationshipType.REFER_TO;
         } else if (uppercaseVarSet.matches(ProcessorConstants.PREREQUISITE_REGEX)) {
             return RelationshipType.PREREQUISITE;
         } else if (uppercaseVarSet.matches(ProcessorConstants.NEXT_REGEX)) {
@@ -1725,12 +1724,13 @@ public class ContentSpecParser {
      * Process the relationships without logging any errors.
      */
     protected void processRelationships() {
-        for (final String topicId : relationships.keySet()) {
+        for (final Map.Entry<String, List<Relationship>> entry : relationships.entrySet()) {
+            final String topicId = entry.getKey();
             final SpecTopic specTopic = specTopics.get(topicId);
 
             assert specTopic != null;
 
-            for (final Relationship relationship : relationships.get(topicId)) {
+            for (final Relationship relationship : entry.getValue()) {
                 final String relatedId = relationship.getSecondaryRelationshipTopicId();
                 // The relationship points to a target so it must be a level or topic
                 if (relatedId.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.TARGET_REGEX)) {
@@ -1741,9 +1741,9 @@ public class ContentSpecParser {
                         specTopic.addRelationshipToTarget(targetLevels.get(relatedId), relationship.getType(),
                                 relationship.getRelationshipTitle());
                     } else {
-                        final SpecTopic dummyTopic = new SpecTopic(0, "");
+                        final SpecTopic dummyTopic = new SpecTopic(-1, "");
                         dummyTopic.setTargetId(relatedId);
-                        specTopic.addRelationshipToTarget(dummyTopic, relationship.getType());
+                        specTopic.addRelationshipToTarget(dummyTopic, relationship.getType(), relationship.getRelationshipTitle());
                     }
                 }
                 // The relationship isn't a target so it must point to a topic directly
@@ -1771,14 +1771,14 @@ public class ContentSpecParser {
                             if (count > 0 && relatedTopic != specTopic) {
                                 specTopic.addRelationshipToTopic(relatedTopic, relationship.getType(), relationship.getRelationshipTitle());
                             } else {
-                                final SpecTopic dummyTopic = new SpecTopic(0, "");
+                                final SpecTopic dummyTopic = new SpecTopic(-1, "");
                                 dummyTopic.setId(relatedId);
-                                specTopic.addRelationshipToTopic(dummyTopic, relationship.getType());
+                                specTopic.addRelationshipToTopic(dummyTopic, relationship.getType(), relationship.getRelationshipTitle());
                             }
                         } else {
-                            final SpecTopic dummyTopic = new SpecTopic(0, "");
+                            final SpecTopic dummyTopic = new SpecTopic(-1, "");
                             dummyTopic.setId(relatedId);
-                            specTopic.addRelationshipToTopic(dummyTopic, relationship.getType());
+                            specTopic.addRelationshipToTopic(dummyTopic, relationship.getType(), relationship.getRelationshipTitle());
                         }
                     } else {
                         if (specTopics.containsKey(relatedId)) {
@@ -1813,9 +1813,9 @@ public class ContentSpecParser {
                                 }
                             }
                         } else {
-                            final SpecTopic dummyTopic = new SpecTopic(0, "");
+                            final SpecTopic dummyTopic = new SpecTopic(-1, "");
                             dummyTopic.setId(relatedId);
-                            specTopic.addRelationshipToTopic(dummyTopic, relationship.getType());
+                            specTopic.addRelationshipToTopic(dummyTopic, relationship.getType(), relationship.getRelationshipTitle());
                         }
                     }
                 }
@@ -1831,6 +1831,7 @@ public class ContentSpecParser {
      * @param title                The title of the external level.
      * @param input                The original input used to specify the external level.
      */
+    // TODO Finish External level processing so specs can reference other specs levels
     protected void processExternalLevel(final Level lvl, final String externalCSPReference, final String title, final String input) {
         //TODO Add the level/topic contents to the local parser variables
         String[] vars = externalCSPReference.split(":");
@@ -1845,7 +1846,7 @@ public class ContentSpecParser {
         if (externalContentSpec != null) {
             /* We are importing part of an external content specification */
             if (targetId != null) {
-                final ContentSpecParser parser = new ContentSpecParser(factory, loggerManager);
+                final ContentSpecParser parser = new ContentSpecParser(providerFactory, loggerManager);
                 boolean foundTargetId = false;
                 try {
                     parser.parse(externalContentSpec.getXml());

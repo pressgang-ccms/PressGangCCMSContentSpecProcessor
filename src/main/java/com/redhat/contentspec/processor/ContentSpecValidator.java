@@ -27,22 +27,26 @@ import org.jboss.pressgang.ccms.contentspec.SpecNode;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
+import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
 import org.jboss.pressgang.ccms.contentspec.enums.BookType;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
 import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
+import org.jboss.pressgang.ccms.contentspec.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.contentspec.provider.TagProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.TopicProvider;
 import org.jboss.pressgang.ccms.contentspec.sort.NullNumberSort;
 import org.jboss.pressgang.ccms.contentspec.sort.SpecTopicLineNumberComparator;
+import org.jboss.pressgang.ccms.contentspec.utils.CSTransformer;
 import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
-import org.jboss.pressgang.ccms.contentspec.wrapper.BaseTopicWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.CategoryWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.CategoryInTagWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.ContentSpecWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TopicWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.base.BaseTopicWrapper;
 import org.jboss.pressgang.ccms.utils.common.DocBookUtilities;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
@@ -59,7 +63,9 @@ import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 public class ContentSpecValidator implements ShutdownAbleApp {
 
     private final DataProviderFactory factory;
+    private final CSTransformer csTransformer;
     private final TopicProvider topicProvider;
+    private final ContentSpecProvider contentSpecProvider;
     private final TagProvider tagProvider;
     private final ErrorLogger log;
     private final ProcessingOptions processingOptions;
@@ -84,11 +90,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @param loggerManager
      * @param processingOptions The set of processing options to be used when validating.
      */
-    public ContentSpecValidator(final DataProviderFactory factory, ErrorLoggerManager loggerManager,
+    public <T> ContentSpecValidator(final DataProviderFactory factory, final ErrorLoggerManager loggerManager,
             final ProcessingOptions processingOptions) {
         this.factory = factory;
+        this.csTransformer = new CSTransformer();
         topicProvider = factory.getProvider(TopicProvider.class);
         tagProvider = factory.getProvider(TagProvider.class);
+        contentSpecProvider = factory.getProvider(ContentSpecProvider.class);
         log = loggerManager.getLogger(ContentSpecValidator.class);
         this.processingOptions = processingOptions;
         locale = CommonConstants.DEFAULT_LOCALE;
@@ -100,13 +108,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * wrapper to first call PreValidate and then PostValidate.
      *
      * @param contentSpec The content specification to be validated.
-     * @param specTopics  The list of topics that exist within the content specification.
      * @return True if the content specification is valid, otherwise false.
      */
-    public boolean validateContentSpec(final ContentSpec contentSpec, final Map<String, SpecTopic> specTopics) {
-        boolean valid = preValidateContentSpec(contentSpec, specTopics);
+    public boolean validateContentSpec(final ContentSpec contentSpec) {
+        boolean valid = preValidateContentSpec(contentSpec);
 
-        if (!postValidateContentSpec(contentSpec, specTopics)) {
+        if (!postValidateContentSpec(contentSpec)) {
             valid = false;
         }
 
@@ -120,8 +127,15 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @param specTopics  The list of topics that exist within the content specification.
      * @return True if the content specification is valid, otherwise false.
      */
-    public boolean preValidateContentSpec(final ContentSpec contentSpec, final Map<String, SpecTopic> specTopics) {
+    public boolean preValidateContentSpec(final ContentSpec contentSpec) {
         locale = contentSpec.getLocale() == null ? locale : contentSpec.getLocale();
+
+        // Create the map of unique ids to spec topics
+        final Map<String, SpecTopic> specTopicMap = new HashMap<String, SpecTopic>();
+        final List<SpecTopic> specTopics = contentSpec.getSpecTopics();
+        for (final SpecTopic specTopic : specTopics) {
+            specTopicMap.put(specTopic.getId(), specTopic);
+        }
 
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
@@ -176,7 +190,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that each level is valid
-        if (!preValidateLevel(contentSpec.getBaseLevel(), specTopics, contentSpec.getAllowEmptyLevels(), contentSpec.getBookType())) {
+        if (!preValidateLevel(contentSpec.getBaseLevel(), specTopicMap, contentSpec.getAllowEmptyLevels(), contentSpec.getBookType())) {
             valid = false;
         }
 
@@ -289,11 +303,10 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * Validates that a Content Specification is valid by checking the META data, child levels and topics.
      *
      * @param contentSpec The content specification to be validated.
-     * @param specTopics  The list of topics that exist within the content specification.
      * @return True if the content specification is valid, otherwise false.
      */
     @SuppressWarnings("deprecation")
-    public boolean postValidateContentSpec(final ContentSpec contentSpec, final Map<String, SpecTopic> specTopics) {
+    public boolean postValidateContentSpec(final ContentSpec contentSpec) {
         locale = contentSpec.getLocale() == null ? locale : contentSpec.getLocale();
 
         // Check if the app should be shutdown
@@ -307,7 +320,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // If editing then check that the ID exists & the CHECKSUM/SpecRevision match
         if (contentSpec.getId() != 0) {
             // TODO Use the correct entity here
-            final TopicWrapper contentSpecTopic = topicProvider.getTopic(contentSpec.getId(), processingOptions.getRevision());
+            final ContentSpecWrapper contentSpecTopic = contentSpecProvider.getContentSpec(contentSpec.getId(),
+                    processingOptions.getRevision());
+
+            final ContentSpec serverContentSpec = csTransformer.transform(contentSpecTopic);
+            //final TopicWrapper contentSpecTopic = topicProvider.getTopic(contentSpec.getId(), processingOptions.getRevision());
             if (contentSpecTopic == null) {
                 log.error(format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
                 valid = false;
@@ -318,7 +335,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 // Check that the checksum is valid
                 if (!processingOptions.isIgnoreChecksum()) {
                     final String currentChecksum = HashUtilities.generateMD5(
-                            contentSpecTopic.getXml().replaceFirst("CHECKSUM[ ]*=.*(\r)?\n", ""));
+                            serverContentSpec.toString().replaceFirst("CHECKSUM[ ]*=.*(\r)?\n", ""));
                     if (contentSpec.getChecksum() != null) {
                         if (!contentSpec.getChecksum().equals(currentChecksum)) {
                             log.error(
@@ -367,7 +384,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that each level is valid
-        if (!postValidateLevel(contentSpec.getBaseLevel(), specTopics, contentSpec.getAllowEmptyLevels(), contentSpec.getBookType())) {
+        if (!postValidateLevel(contentSpec.getBaseLevel(), contentSpec.getAllowEmptyLevels())) {
             valid = false;
         }
 
@@ -380,19 +397,22 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     /**
      * Validate a set of relationships created when parsing.
      *
-     * @param relationships A list of all the relationships in a content specification.
-     * @param specTopics    The list of topics that exist within the content specification.
-     * @param targetLevels  The list of target levels in a content specification.
-     * @param targetTopics  The list of target topics in a content specification.
+     * @param contentSpec The content spec to be validated.
      * @return True if the relationships are valid, otherwise false.
      */
-    public boolean preValidateRelationships(final HashMap<String, List<Relationship>> relationships,
-            final HashMap<String, SpecTopic> specTopics, final HashMap<String, Level> targetLevels,
-            final HashMap<String, SpecTopic> targetTopics) {
+    public boolean preValidateRelationships(final ContentSpec contentSpec) {
         boolean error = false;
-        for (final Entry<String, List<Relationship>> relationshipEntry : relationships.entrySet()) {
-            final String topicId = relationshipEntry.getKey();
-            final SpecTopic specTopic = specTopics.get(topicId);
+
+        // Create the map of unique ids to spec topics
+        final Map<String, SpecTopic> specTopicMap = new HashMap<String, SpecTopic>();
+        final List<SpecTopic> specTopics = contentSpec.getSpecTopics();
+        for (final SpecTopic specTopic : specTopics) {
+            specTopicMap.put(specTopic.getId(), specTopic);
+        }
+
+        final Map<SpecTopic, List<Relationship>> relationships = contentSpec.getRelationships();
+        for (final Entry<SpecTopic, List<Relationship>> relationshipEntry : relationships.entrySet()) {
+            final SpecTopic specTopic = relationshipEntry.getKey();
 
             // Check if the app should be shutdown
             if (isShuttingDown.get()) {
@@ -409,18 +429,25 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
                 final String relatedId = relationship.getSecondaryRelationshipTopicId();
                 // The relationship points to a target so it must be a level or topic
-                if (relatedId.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.TARGET_REGEX)) {
-                    if (targetTopics.containsKey(relatedId) && !targetLevels.containsKey(relatedId)) {
-                        /*
-                         * final SpecTopic targetTopic = targetTopics.get(relatedId); if (relationship
-                         * .getRelationshipTitle() !=
-                         * null && !relationship.getRelationshipTitle().equals(targetTopic.getTitle())) { if
-                         * (!processingOptions.isPermissiveMode()) {
-                         * log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
-                         * specTopics.get(topicId).getLineNumber(), relationship.getRelationshipTitle(),
-                         * targetTopic.getTitle())); error = true; } }
-                         */
-                    } else if (!targetTopics.containsKey(relatedId) && targetLevels.containsKey(relatedId)) {
+                if (relationship instanceof TargetRelationship) {
+                    final SpecNode node = ((TargetRelationship) relationship).getSecondaryElement();
+                    if (node instanceof SpecTopic) {
+                        if (((SpecTopic) node).getDBId() < 0) {
+                            log.error(format(ProcessorConstants.ERROR_TARGET_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
+                                    specTopic.getText()));
+                            error = true;
+                        } else {
+                            /*
+                             * final SpecTopic targetTopic = targetTopics.get(relatedId); if (relationship
+                             * .getRelationshipTitle() !=
+                             * null && !relationship.getRelationshipTitle().equals(targetTopic.getTitle())) { if
+                             * (!processingOptions.isPermissiveMode()) {
+                             * log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
+                             * specTopics.get(topicId).getLineNumber(), relationship.getRelationshipTitle(),
+                             * targetTopic.getTitle())); error = true; } }
+                             */
+                        }
+                    } else if (node instanceof Level) {
                         // final Level targetLevel = targetLevels.get(relatedId);
                         if (relationship.getType() == RelationshipType.NEXT) {
                             log.error(format(ProcessorConstants.ERROR_NEXT_RELATED_LEVEL_MSG, specTopic.getLineNumber(),
@@ -439,10 +466,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                          * specTopics.get(topicId).getLineNumber(), relationship.getRelationshipTitle(),
                          * targetLevel.getTitle())); error = true; } }
                          */
-                    } else {
-                        log.error(format(ProcessorConstants.ERROR_TARGET_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
-                                specTopic.getText()));
-                        error = true;
                     }
                     // The relationship isn't a target so it must point to a topic directly
                 } else {
@@ -458,7 +481,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             int count = 0;
                             final List<SpecTopic> relatedTopics = new ArrayList<SpecTopic>();
                             // Get the related topic and count if more then one is found
-                            for (final Entry<String, SpecTopic> entry : specTopics.entrySet()) {
+                            for (final Entry<String, SpecTopic> entry : specTopicMap.entrySet()) {
                                 final String specTopicId = entry.getKey();
 
                                 if (specTopicId.matches("^[0-9]+-" + relatedId + "$")) {
@@ -508,8 +531,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             }
                         }
                     } else {
-                        if (specTopics.containsKey(relatedId)) {
-                            final SpecTopic relatedTopic = specTopics.get(relatedId);
+                        if (specTopicMap.containsKey(relatedId)) {
+                            final SpecTopic relatedTopic = specTopicMap.get(relatedId);
 
                             // Check to make sure the topic doesn't relate to itself
                             if (relatedTopic == specTopic) {
@@ -696,13 +719,10 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * Validates a level to ensure its format and child levels/topics are valid.
      *
      * @param level              The level to be validated.
-     * @param specTopics         The list of topics that exist within the content specification.
      * @param csAllowEmptyLevels If the "Allow Empty Levels" bit is set in a content specification.
-     * @param bookType           The type of book the level should be validated for.
      * @return True if the level is valid otherwise false.
      */
-    public boolean postValidateLevel(final Level level, final Map<String, SpecTopic> specTopics, final boolean csAllowEmptyLevels,
-            final BookType bookType) {
+    public boolean postValidateLevel(final Level level, final boolean csAllowEmptyLevels) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -719,11 +739,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // Validate the sub levels and topics
         for (final Node childNode : level.getChildNodes()) {
             if (childNode instanceof Level) {
-                if (!postValidateLevel((Level) childNode, specTopics, csAllowEmptyLevels, bookType)) {
+                if (!postValidateLevel((Level) childNode, csAllowEmptyLevels)) {
                     valid = false;
                 }
             } else if (childNode instanceof SpecTopic) {
-                if (!postValidateTopic((SpecTopic) childNode, specTopics, bookType)) {
+                if (!postValidateTopic((SpecTopic) childNode)) {
                     valid = false;
                 }
             }
@@ -928,7 +948,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @return True if the topic is valid otherwise false.
      */
     @SuppressWarnings("unchecked")
-    public boolean postValidateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics, final BookType bookType) {
+    public boolean postValidateTopic(final SpecTopic specTopic) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -1129,9 +1149,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
 
             // Check that the mutex value entered is correct
-            final Map<CategoryWrapper, List<TagWrapper>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
-            for (final Entry<CategoryWrapper, List<TagWrapper>> catEntry : mapping.entrySet()) {
-                final CategoryWrapper cat = catEntry.getKey();
+            final Map<CategoryInTagWrapper, List<TagWrapper>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
+            for (final Entry<CategoryInTagWrapper, List<TagWrapper>> catEntry : mapping.entrySet()) {
+                final CategoryInTagWrapper cat = catEntry.getKey();
                 final List<TagWrapper> catTags = catEntry.getValue();
 
                 // Check if the app should be shutdown

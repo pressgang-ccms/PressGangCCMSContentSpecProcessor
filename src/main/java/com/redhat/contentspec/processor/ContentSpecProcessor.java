@@ -26,15 +26,14 @@ import org.jboss.pressgang.ccms.contentspec.provider.TopicSourceURLProvider;
 import org.jboss.pressgang.ccms.contentspec.utils.TopicPool;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
-import org.jboss.pressgang.ccms.contentspec.wrapper.CategoryWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.PropertyTagWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.CategoryInTagWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.PropertyTagInTopicWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TopicSourceURLWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.UserWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.collection.CollectionWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.collection.UpdateableCollectionWrapper;
-import org.jboss.pressgang.ccms.utils.structures.Pair;
 
 /**
  * A class to fully process a Content Specification. It first parses the data using a ContentSpecParser,
@@ -45,7 +44,7 @@ import org.jboss.pressgang.ccms.utils.structures.Pair;
  */
 @SuppressWarnings("rawtypes")
 public class ContentSpecProcessor implements ShutdownAbleApp {
-    private final Logger LOG = Logger.getLogger("com.redhat.contentspec.processor.CustomContentSpecProcessor");
+    private final Logger LOG = Logger.getLogger(ContentSpecProcessor.class.getPackage().getName() + ".CustomContentSpecProcessor");
 
     private final ErrorLoggerManager loggerManager;
     private final ErrorLogger log;
@@ -56,7 +55,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     private final TopicSourceURLProvider topicSourceUrlProvider;
 
     private final ProcessingOptions processingOptions;
-    private final ContentSpecParser csp;
     private ContentSpecValidator validator;
     private final TopicPool topics;
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
@@ -69,8 +67,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param loggerManager
      * @param processingOptions The set of options to use when processing.
      */
-    public ContentSpecProcessor(final DataProviderFactory factory, ErrorLoggerManager loggerManager,
-            final ProcessingOptions processingOptions) {
+    public ContentSpecProcessor(final DataProviderFactory factory,
+            final ErrorLoggerManager loggerManager, final ProcessingOptions processingOptions) {
         this.factory = factory;
 
         topicProvider = factory.getProvider(TopicProvider.class);
@@ -80,27 +78,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         this.loggerManager = loggerManager;
         log = loggerManager.getLogger(ContentSpecProcessor.class);
-        csp = new ContentSpecParser(factory, loggerManager);
         topics = new TopicPool(factory);
         this.processingOptions = processingOptions;
-    }
-
-    /**
-     * Gets the Content Specification Object for the content specification.
-     *
-     * @return The ContentSpec object that's used to store the processed data.
-     */
-    public ContentSpec getContentSpec() {
-        return csp.getContentSpec();
-    }
-
-    /**
-     * Gets the Content Specification Topics inside of a content specification
-     *
-     * @return The mapping of topics to their unique content specification ID's.
-     */
-    public HashMap<String, SpecTopic> getSpecTopics() {
-        return csp.getSpecTopics();
+        validator = new ContentSpecValidator(factory, loggerManager, processingOptions);
     }
 
     /**
@@ -112,25 +92,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if everything was processed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when processing.
      */
-    public boolean processContentSpec(final String contentSpec, final UserWrapper user,
+    public boolean processContentSpec(final ContentSpec contentSpec, final UserWrapper user,
             final ContentSpecParser.ParsingMode mode) throws Exception {
         return processContentSpec(contentSpec, user, mode, null);
     }
 
-    /**
-     * Process a content specification so that it is parsed, validated and saved.
-     *
-     * @param contentSpec    The Content Specification that is to be processed.
-     * @param user           The user who requested the process operation.
-     * @param mode           The mode to parse the content specification in.
-     * @param overrideLocale Override the default locale using this parameter.
-     * @return True if everything was processed successfully otherwise false.
-     * @throws Exception Any unexpected exception that occurred when processing.
-     */
-    public boolean processContentSpec(final String contentSpec, final UserWrapper user, final ContentSpecParser.ParsingMode mode,
-            final String overrideLocale) throws Exception {
-        return processContentSpec(contentSpec, user, mode, overrideLocale, false);
-    }
 
     /**
      * Process a content specification so that it is parsed, validated and saved.
@@ -139,31 +105,18 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param user           The user who requested the process operation.
      * @param mode           The mode to parse the content specification in.
      * @param overrideLocale Override the default locale using this parameter.
-     * @param addRevisions   If revision numbers should be added to each SpecTopic in the output.
      * @return True if everything was processed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when processing.
      */
     @SuppressWarnings({"unchecked"})
-    public boolean processContentSpec(final String contentSpec, final UserWrapper user, final ContentSpecParser.ParsingMode mode,
-            final String overrideLocale, final boolean addRevisions) throws Exception {
+    public boolean processContentSpec(final ContentSpec contentSpec, final UserWrapper user, final ContentSpecParser.ParsingMode mode,
+            final String overrideLocale) throws Exception {
         boolean editing = false;
-
-        // Check if the app should be shutdown
-        if (isShuttingDown.get()) {
-            shutdown.set(true);
-            return false;
-        }
-
-        LOG.info("Starting to parse...");
         if (mode == ContentSpecParser.ParsingMode.EDITED) editing = true;
-        if (!csp.parse(contentSpec, user, mode, true)) {
-            log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
-            return false;
-        }
 
         // Change the locale if the overrideLocale isn't null
         if (overrideLocale != null) {
-            csp.getContentSpec().setLocale(overrideLocale);
+            contentSpec.setLocale(overrideLocale);
         }
 
         // Check if the app should be shutdown
@@ -176,10 +129,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         LOG.info("Starting first validation pass...");
 
         // Validate the relationships
-        validator = new ContentSpecValidator(factory, loggerManager, processingOptions);
-
-        if (!validator.preValidateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(),
-                csp.getTargetTopics()) || !validator.preValidateContentSpec(csp.getContentSpec(), csp.getSpecTopics())) {
+        if (!validator.preValidateRelationships(contentSpec) || !validator.preValidateContentSpec(contentSpec)) {
             log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
             return false;
         }
@@ -190,19 +140,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return false;
         }
 
-        // Download all of the latest and/or revision topics
-        //downloadAllTopics();
-
-        // Check if the app should be shutdown
-        if (isShuttingDown.get()) {
-            shutdown.set(true);
-            return false;
-        }
-
         // Validate the content specification now that we have most of the data from the REST API
         LOG.info("Starting second validation pass...");
 
-        if (!validator.postValidateContentSpec(csp.getContentSpec(), csp.getSpecTopics())) {
+        if (!validator.postValidateContentSpec(contentSpec)) {
             log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
             return false;
         } else {
@@ -217,7 +158,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
 
                 LOG.info("Saving the Content Specification to the server...");
-                if (saveContentSpec(csp.getContentSpec(), csp.getSpecTopics(), editing)) {
+                if (saveContentSpec(contentSpec, editing)) {
                     log.info(ProcessorConstants.INFO_SUCCESSFUL_SAVE_MSG);
                 } else {
                     return false;
@@ -225,73 +166,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
         }
         return true;
-    }
-
-    /**
-     * Download all the topics that are to be used during processing from the
-     * parsed Content Specification.
-     */
-    protected void downloadAllTopics() {        /* If we are updating the revisions and no processing revision is passed then
-         * we can just get the latest version for all of the topics. Other wise we need to
-	     * get the topics one by one that specify a revision.
-	     */
-        if (processingOptions.isUpdateRevisions() && processingOptions.getRevision() == null) {
-            final List<Integer> topicIds = csp.getReferencedTopicIds();
-            if (!topicIds.isEmpty()) {
-                // Download the list of topics in one go to reduce I/O overhead
-                LOG.info("Attempting to download all the latest topics...");
-                topicProvider.getTopics(topicIds);
-            }
-        } else {
-            final List<Integer> topicIds = csp.getReferencedLatestTopicIds();
-            final List<Pair<Integer, Integer>> referencedRevisionTopicIds = csp.getReferencedRevisionTopicIds();
-
-            // Check if a maximum revision was specified for processing
-            if (processingOptions.getRevision() == null && !topicIds.isEmpty()) {
-                // Download the list of topics in one go to reduce I/O overhead
-                LOG.info("Attempting to download all the latest topics...");
-                topicProvider.getTopics(topicIds);
-            } else if (!topicIds.isEmpty()) {
-                // Add to the list of referenced topic ids
-                for (final Integer topicId : topicIds) {
-                    referencedRevisionTopicIds.add(new Pair<Integer, Integer>(topicId, processingOptions.getRevision()));
-                }
-            }
-
-            if (!referencedRevisionTopicIds.isEmpty()) {
-                downloadRevisionTopics(referencedRevisionTopicIds);
-            }
-        }
-    }
-
-    /**
-     * Download the Topics from the REST API that specify a revision.
-     *
-     * @param referencedRevisionTopicIds The Set of topic ids and revision to download.
-     */
-    protected void downloadRevisionTopics(final List<Pair<Integer, Integer>> referencedRevisionTopicIds) {
-        LOG.info("Attempting to download all the revision topics...");
-
-        final int showPercent = 5;
-        final float total = referencedRevisionTopicIds.size();
-        float current = 0;
-        int lastPercent = 0;
-
-        for (final Pair<Integer, Integer> topicToRevision : referencedRevisionTopicIds) {
-            // If we want to update the revisions then we should get the latest topic and not the revision
-            if (processingOptions.isUpdateRevisions()) {
-                topicProvider.getTopic(topicToRevision.getFirst(), processingOptions.getRevision());
-            } else {
-                topicProvider.getTopic(topicToRevision.getFirst(), topicToRevision.getSecond());
-            }
-
-            ++current;
-            final int percent = Math.round(current / total * 100);
-            if (percent - lastPercent >= showPercent) {
-                lastPercent = percent;
-                LOG.info("\tDownloading revision topics " + percent + "% Done");
-            }
-        }
     }
 
     /**
@@ -309,7 +183,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         boolean changed = false;
 
         try {
-            final UpdateableCollectionWrapper<PropertyTagWrapper> properties = propertyTagProvider.newAssignedPropertyTagCollection();
+            final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties = propertyTagProvider.newPropertyTagInTopicCollection();
 
             TopicWrapper topic = null;
 
@@ -336,7 +210,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 topicTags.addNewItem(tags.getItems().get(0));
 
                 // Create the unique ID for the property
-                final PropertyTagWrapper cspProperty = propertyTagProvider.newAssignedPropertyTag();
+                final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic();
                 cspProperty.setValue(Integer.toString(specTopic.getLineNumber()));
                 cspProperty.setId(CSConstants.CSP_PROPERTY_ID);
                 properties.addNewItem(cspProperty);
@@ -382,9 +256,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
                 topic.setSourceURLs(sourceUrls);
 
-                final List<PropertyTagWrapper> propertyItems = topic.getProperties().getItems();
+                final List<PropertyTagInTopicWrapper> propertyItems = topic.getProperties().getItems();
                 boolean cspPropertyFound = false;
-                for (final PropertyTagWrapper property : propertyItems) {
+                for (final PropertyTagInTopicWrapper property : propertyItems) {
                     // Ignore the CSP Property ID as we will add a new one
                     if (!property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
                         properties.addNewItem(property);
@@ -397,7 +271,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
 
                 if (!cspPropertyFound) {
-                    final PropertyTagWrapper cspProperty = propertyTagProvider.newAssignedPropertyTag();
+                    final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic();
                     cspProperty.setValue(Integer.toString(specTopic.getLineNumber()));
                     cspProperty.setId(CSConstants.CSP_PROPERTY_ID);
                     properties.addNewItem(cspProperty);
@@ -415,9 +289,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 topic = originalTopic.clone(true);
 
                 // Remove any existing property tags
-                final List<PropertyTagWrapper> propertyItems = topic.getProperties().getItems();
+                final List<PropertyTagInTopicWrapper> propertyItems = topic.getProperties().getItems();
                 boolean cspPropertyFound = false;
-                for (final PropertyTagWrapper property : propertyItems) {
+                for (final PropertyTagInTopicWrapper property : propertyItems) {
                     // Remove the CSP Property ID as we will add a new one
                     if (property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
                         cspPropertyFound = true;
@@ -428,7 +302,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
 
                 if (!cspPropertyFound) {
-                    final PropertyTagWrapper cspProperty = propertyTagProvider.newAssignedPropertyTag();
+                    final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic();
                     cspProperty.setValue(Integer.toString(specTopic.getLineNumber()));
                     cspProperty.setId(CSConstants.CSP_PROPERTY_ID);
                     properties.addNewItem(cspProperty);
@@ -469,7 +343,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     tags.add(tagList.get(0));
                 }
             }
-            final Map<CategoryWrapper, List<TagWrapper>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
+            final Map<CategoryInTagWrapper, List<TagWrapper>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
 
             // Check if the app should be shutdown
             if (isShuttingDown.get()) {
@@ -482,7 +356,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 // Save the new tags
                 // Find tags that aren't already in the database and adds them
                 final List<TagWrapper> tttList = topic.getTags().getItems();
-                for (final Entry<CategoryWrapper, List<TagWrapper>> catEntry : mapping.entrySet()) {
+                for (final Entry<CategoryInTagWrapper, List<TagWrapper>> catEntry : mapping.entrySet()) {
                     for (final TagWrapper tag : catEntry.getValue()) {
                         boolean found = false;
                         for (final TagWrapper ttt : tttList) {
@@ -535,7 +409,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             } else if (specTopic.isTopicAnExistingTopic() && specTopic.getRevision() == null) {
                 // Finds tags that aren't already in the database and adds them
                 final List<TagWrapper> tttList = topic.getTags().getItems();
-                for (final Entry<CategoryWrapper, List<TagWrapper>> cat : mapping.entrySet()) {
+                for (final Entry<CategoryInTagWrapper, List<TagWrapper>> cat : mapping.entrySet()) {
                     for (final TagWrapper tag : cat.getValue()) {
                         boolean found = false;
                         for (final TagWrapper ttt : tttList) {
@@ -551,7 +425,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
             } else {
                 // Save the tags
-                for (final Entry<CategoryWrapper, List<TagWrapper>> cat : mapping.entrySet()) {
+                for (final Entry<CategoryInTagWrapper, List<TagWrapper>> cat : mapping.entrySet()) {
                     for (final TagWrapper tag : cat.getValue()) {
                         topicTags.addNewItem(tag);
                     }
@@ -569,8 +443,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 final List<String> urls = specTopic.getSourceUrls();
 
                 final CollectionWrapper<TopicSourceURLWrapper> sourceUrls = topic.getSourceURLs() == null ? topicSourceUrlProvider
-                        .newTopicSourceURLCollection(
-                        topic) : topic.getSourceURLs();
+                        .newTopicSourceURLCollection(topic) : topic.getSourceURLs();
 
                 for (final String url : urls) {
                     final TopicSourceURLWrapper sourceUrl = topicSourceUrlProvider.newTopicSourceURL(topic);
@@ -612,14 +485,20 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param specTopics A HashMap of the all the topics in the Content Specification. The key is the Topics ID.
      * @return True if the duplicated topics saved successfully otherwise false.
      */
-    protected void syncDuplicatedTopics(final HashMap<String, SpecTopic> specTopics) {
-        for (final Entry<String, SpecTopic> entry : specTopics.entrySet()) {
-            final SpecTopic topic = entry.getValue();
+    protected void syncDuplicatedTopics(final List<SpecTopic> specTopics) {
+        for (final SpecTopic topic : specTopics) {
             // Sync the normal duplicates first
             if (topic.isTopicADuplicateTopic()) {
-                String id = topic.getId();
-                String temp = "N" + id.substring(1);
-                SpecTopic cloneTopic = specTopics.get(temp);
+                final String id = topic.getId();
+                final String temp = "N" + id.substring(1);
+                SpecTopic cloneTopic = null;
+                for (final SpecTopic specTopic : specTopics) {
+                    final String key = specTopic.getId();
+                    if (key.equals(temp)) {
+                        cloneTopic = specTopic;
+                        break;
+                    }
+                }
                 topic.setDBId(cloneTopic.getDBId());
             }
             // Sync the duplicate cloned topics
@@ -627,10 +506,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 final String id = topic.getId();
                 final String idType = id.substring(1);
                 SpecTopic cloneTopic = null;
-                for (final Entry<String, SpecTopic> cloneEntry : specTopics.entrySet()) {
-                    final String key = cloneEntry.getKey();
+                for (final SpecTopic specTopic : specTopics) {
+                    final String key = specTopic.getId();
                     if (key.endsWith(idType) && !key.endsWith(id)) {
-                        cloneTopic = cloneEntry.getValue();
+                        cloneTopic = specTopic;
+                        break;
                     }
                 }
                 topic.setDBId(cloneTopic.getDBId());
@@ -643,12 +523,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * Saves the Content Specification and all of the topics in the content specification
      *
      * @param contentSpec The Content Specification to be saved.
-     * @param specTopics  A HashMap of the all the Content Specification Topics that exist in the Content Specification. The key is the
-     *                    Topics ID.
      * @param edit        Whether the content specification is being edited or created.
      * @return True if the topic saved successfully otherwise false.
      */
-    public boolean saveContentSpec(final ContentSpec contentSpec, final HashMap<String, SpecTopic> specTopics, final boolean edit) {
+    public boolean saveContentSpec(final ContentSpec contentSpec, final boolean edit) {
         try {
             // Get the full text representation of the processed content spec
             final StringBuilder fullText = new StringBuilder("");
@@ -674,8 +552,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
 
             // Create the new topic entities
-            for (final Entry<String, SpecTopic> entry : specTopics.entrySet()) {
-                final String specTopicId = entry.getKey();
+            final List<SpecTopic> specTopics = contentSpec.getSpecTopics();
+            for (final SpecTopic specTopic : specTopics) {
 
                 // Check if the app should be shutdown
                 if (isShuttingDown.get()) {
@@ -684,7 +562,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
 
                 // Add topics to the TopicPool that need to be added or updated
-                final SpecTopic specTopic = entry.getValue();
                 if (specTopic.getId().matches("(" + CSConstants.NEW_TOPIC_ID_REGEX + "|" + CSConstants.CLONED_TOPIC_ID_REGEX + ")")) {
                     try {
                         final TopicWrapper topic = createTopicEntity(specTopic);
@@ -692,7 +569,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                             topics.addNewTopic(topic);
                         }
                     } catch (Exception e) {
-                        throw new ProcessingException("Failed to create topic: " + specTopicId);
+                        throw new ProcessingException("Failed to create topic: " + specTopic.getId());
                     }
                 } else if (specTopic.isTopicAnExistingTopic() && !specTopic.getTags(true).isEmpty() && specTopic.getRevision() == null) {
                     try {
@@ -701,7 +578,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                             topics.addUpdatedTopic(topic);
                         }
                     } catch (Exception e) {
-                        throw new ProcessingException("Failed to create topic: " + specTopicId);
+                        throw new ProcessingException("Failed to create topic: " + specTopic.getId());
                     }
                 }
             }
@@ -721,15 +598,19 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
 
             // Initialise the new and cloned topics using the populated topic pool
-            for (final Entry<String, SpecTopic> key : specTopics.entrySet()) {
-                topics.initialiseFromPool(key.getValue());
+            for (final SpecTopic specTopic : specTopics) {
+                topics.initialiseFromPool(specTopic);
             }
 
             // Sync the Duplicated Topics (ID = X<Number>)
             syncDuplicatedTopics(specTopics);
 
             // Create the post processed content spec
-            final String postCS = ProcessorUtilities.generatePostContentSpec(contentSpec, specTopics);
+            final Map<String, SpecTopic> specTopicMap = new HashMap<String, SpecTopic>();
+            for (final SpecTopic specTopic : specTopics) {
+                specTopicMap.put(specTopic.getId(), specTopic);
+            }
+            final String postCS = ProcessorUtilities.generatePostContentSpec(contentSpec, specTopicMap);
             if (postCS == null) {
                 throw new ProcessingException("Failed to create the Post Content Specification.");
             }
@@ -824,16 +705,16 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             contentSpec.setXml(preContentSpec);
 
             // Create the Added By, Content Spec Type and DTD property tags
-            final UpdateableCollectionWrapper<PropertyTagWrapper> properties = propertyTagProvider.newAssignedPropertyTagCollection();
-            final PropertyTagWrapper addedBy = propertyTagProvider.newAssignedPropertyTag(
+            final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties = propertyTagProvider.newPropertyTagInTopicCollection();
+            final PropertyTagInTopicWrapper addedBy = propertyTagProvider.newPropertyTagInTopic(
                     propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID));
             addedBy.setValue(createdBy);
 
-            final PropertyTagWrapper typePropertyTag = propertyTagProvider.newAssignedPropertyTag(
+            final PropertyTagInTopicWrapper typePropertyTag = propertyTagProvider.newPropertyTagInTopic(
                     propertyTagProvider.getPropertyTag(CSConstants.CSP_TYPE_PROPERTY_TAG_ID));
             typePropertyTag.setValue(CSConstants.CSP_PRE_PROCESSED_STRING);
 
-            final PropertyTagWrapper dtdPropertyTag = propertyTagProvider.newAssignedPropertyTag(
+            final PropertyTagInTopicWrapper dtdPropertyTag = propertyTagProvider.newPropertyTagInTopic(
                     propertyTagProvider.getPropertyTag(CSConstants.DTD_PROPERTY_TAG_ID, null));
             dtdPropertyTag.setValue(dtd);
 
@@ -875,14 +756,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             contentSpec.setXml(preContentSpec);
 
             // Update the Content Spec Type and DTD property tags
-            final UpdateableCollectionWrapper<PropertyTagWrapper> properties = contentSpec.getProperties();
-            UpdateableCollectionWrapper<PropertyTagWrapper> fixedProperties = propertyTagProvider.newAssignedPropertyTagCollection();
+            final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties = contentSpec.getProperties();
+            UpdateableCollectionWrapper<PropertyTagInTopicWrapper> fixedProperties = propertyTagProvider.newPropertyTagInTopicCollection();
             if (properties.getItems() != null && !properties.getItems().isEmpty()) {
                 boolean foundCSPType = false;
 
                 // Loop through and remove any Type or DTD tags if they don't
                 // match
-                for (final PropertyTagWrapper property : properties.getItems()) {
+                for (final PropertyTagInTopicWrapper property : properties.getItems()) {
                     if (property.getId().equals(CSConstants.CSP_TYPE_PROPERTY_TAG_ID)) {
                         property.setValue(CSConstants.CSP_PRE_PROCESSED_STRING);
                         fixedProperties.addUpdateItem(property);
@@ -901,7 +782,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
                 if (!foundCSPType) {
                     // The property tag should never match a pre tag
-                    final PropertyTagWrapper typePropertyTag = propertyTagProvider.newAssignedPropertyTag(
+                    final PropertyTagInTopicWrapper typePropertyTag = propertyTagProvider.newPropertyTagInTopic(
                             propertyTagProvider.getPropertyTag(CSConstants.CSP_TYPE_PROPERTY_TAG_ID));
                     typePropertyTag.setValue(CSConstants.CSP_PRE_PROCESSED_STRING);
 
@@ -932,11 +813,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             contentSpec.setXml(postContentSpec);
 
             // Update Content Spec Type
-            final UpdateableCollectionWrapper<PropertyTagWrapper> properties = contentSpec.getProperties();
-            UpdateableCollectionWrapper<PropertyTagWrapper> fixedProperties = propertyTagProvider.newAssignedPropertyTagCollection();
+            final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties = contentSpec.getProperties();
+            UpdateableCollectionWrapper<PropertyTagInTopicWrapper> fixedProperties = propertyTagProvider.newPropertyTagInTopicCollection();
             if (properties.getItems() != null && !properties.getItems().isEmpty()) {
                 // Loop through and remove the type
-                for (final PropertyTagWrapper property : properties.getItems()) {
+                for (final PropertyTagInTopicWrapper property : properties.getItems()) {
                     if (property.getId().equals(CSConstants.CSP_TYPE_PROPERTY_TAG_ID)) {
                         property.setValue(CSConstants.CSP_POST_PROCESSED_STRING);
                         fixedProperties.addUpdateItem(property);
@@ -956,16 +837,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             log.error("", e);
         }
         return false;
-    }
-
-    /**
-     * Get the Content Specification Parser used in this
-     * Processor.
-     *
-     * @return The ContentSpecParser used within this processor.
-     */
-    public ContentSpecParser getParser() {
-        return csp;
     }
 
     @Override
