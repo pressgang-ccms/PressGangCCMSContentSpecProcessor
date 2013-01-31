@@ -1,4 +1,4 @@
-package com.redhat.contentspec.processor.structures;
+package org.jboss.pressgang.ccms.contentspec.processor.structures;
 
 public class VariableSet {
     Integer startPos = null;

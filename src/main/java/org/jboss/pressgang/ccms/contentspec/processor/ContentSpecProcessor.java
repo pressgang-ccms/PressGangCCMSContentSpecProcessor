@@ -1,4 +1,4 @@
-package com.redhat.contentspec.processor;
+package org.jboss.pressgang.ccms.contentspec.processor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,15 +9,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.redhat.contentspec.processor.constants.ProcessorConstants;
-import com.redhat.contentspec.processor.exceptions.ProcessingException;
-import com.redhat.contentspec.processor.structures.ProcessingOptions;
-import com.redhat.contentspec.processor.utils.ProcessorUtilities;
 import org.apache.log4j.Logger;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
+import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
+import org.jboss.pressgang.ccms.contentspec.processor.exceptions.ProcessingException;
+import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptions;
+import org.jboss.pressgang.ccms.contentspec.processor.utils.ProcessorUtilities;
 import org.jboss.pressgang.ccms.contentspec.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.contentspec.provider.PropertyTagProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.TagProvider;
@@ -46,9 +46,7 @@ import org.jboss.pressgang.ccms.contentspec.wrapper.collection.UpdateableCollect
 public class ContentSpecProcessor implements ShutdownAbleApp {
     private final Logger LOG = Logger.getLogger(ContentSpecProcessor.class.getPackage().getName() + ".CustomContentSpecProcessor");
 
-    private final ErrorLoggerManager loggerManager;
     private final ErrorLogger log;
-    private final DataProviderFactory factory;
     private final TopicProvider topicProvider;
     private final TagProvider tagProvider;
     private final PropertyTagProvider propertyTagProvider;
@@ -67,16 +65,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param loggerManager
      * @param processingOptions The set of options to use when processing.
      */
-    public ContentSpecProcessor(final DataProviderFactory factory,
-            final ErrorLoggerManager loggerManager, final ProcessingOptions processingOptions) {
-        this.factory = factory;
+    public ContentSpecProcessor(final DataProviderFactory factory, final ErrorLoggerManager loggerManager,
+            final ProcessingOptions processingOptions) {
 
         topicProvider = factory.getProvider(TopicProvider.class);
         tagProvider = factory.getProvider(TagProvider.class);
         propertyTagProvider = factory.getProvider(PropertyTagProvider.class);
         topicSourceUrlProvider = factory.getProvider(TopicSourceURLProvider.class);
 
-        this.loggerManager = loggerManager;
         log = loggerManager.getLogger(ContentSpecProcessor.class);
         topics = new TopicPool(factory);
         this.processingOptions = processingOptions;
@@ -112,7 +108,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     public boolean processContentSpec(final ContentSpec contentSpec, final UserWrapper user, final ContentSpecParser.ParsingMode mode,
             final String overrideLocale) throws Exception {
         boolean editing = false;
-        if (mode == ContentSpecParser.ParsingMode.EDITED) editing = true;
+        if (mode == ContentSpecParser.ParsingMode.EDITED) {
+            editing = true;
+        }
+
+        // Set the user as the assigned writer
+        contentSpec.setAssignedWriter(user == null ? null : user.getUsername());
 
         // Change the locale if the overrideLocale isn't null
         if (overrideLocale != null) {
@@ -143,7 +144,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Validate the content specification now that we have most of the data from the REST API
         LOG.info("Starting second validation pass...");
 
-        if (!validator.postValidateContentSpec(contentSpec)) {
+        if (!validator.postValidateContentSpec(contentSpec, user)) {
             log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
             return false;
         } else {
@@ -158,7 +159,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
 
                 LOG.info("Saving the Content Specification to the server...");
-                if (saveContentSpec(contentSpec, editing)) {
+                if (saveContentSpec(contentSpec, editing, user)) {
                     log.info(ProcessorConstants.INFO_SUCCESSFUL_SAVE_MSG);
                 } else {
                     return false;
@@ -443,7 +444,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 final List<String> urls = specTopic.getSourceUrls();
 
                 final CollectionWrapper<TopicSourceURLWrapper> sourceUrls = topic.getSourceURLs() == null ? topicSourceUrlProvider
-                        .newTopicSourceURLCollection(topic) : topic.getSourceURLs();
+                        .newTopicSourceURLCollection(
+                        topic) : topic.getSourceURLs();
 
                 for (final String url : urls) {
                     final TopicSourceURLWrapper sourceUrl = topicSourceUrlProvider.newTopicSourceURL(topic);
@@ -483,7 +485,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * Syncs all duplicated topics with their real topic counterpart in the content specification.
      *
      * @param specTopics A HashMap of the all the topics in the Content Specification. The key is the Topics ID.
-     * @return True if the duplicated topics saved successfully otherwise false.
      */
     protected void syncDuplicatedTopics(final List<SpecTopic> specTopics) {
         for (final SpecTopic topic : specTopics) {
@@ -524,9 +525,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      *
      * @param contentSpec The Content Specification to be saved.
      * @param edit        Whether the content specification is being edited or created.
+     * @param user        The User who requested the Content Spec be saved.
      * @return True if the topic saved successfully otherwise false.
      */
-    public boolean saveContentSpec(final ContentSpec contentSpec, final boolean edit) {
+    public boolean saveContentSpec(final ContentSpec contentSpec, final boolean edit, final UserWrapper user) {
         try {
             // Get the full text representation of the processed content spec
             final StringBuilder fullText = new StringBuilder("");
@@ -536,8 +538,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
             // A new content specification
             if (contentSpec.getId() == 0) {
-                contentSpec.setId(
-                        createContentSpec(contentSpec.getTitle(), fullText.toString(), contentSpec.getDtd(), contentSpec.getCreatedBy()));
+                contentSpec.setId(createContentSpec(contentSpec.getTitle(), fullText.toString(), contentSpec.getDtd(), user.getUsername()));
                 if (contentSpec.getId() == 0) {
                     log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
                     throw new Exception("Failed to create the pre content specification.");
@@ -697,6 +698,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
     /**
      * Writes a ContentSpecs tuple to the database using the data provided.
+     *
+     * @param title
+     * @param preContentSpec
+     * @param dtd
+     * @param createdBy
+     * @return
      */
     protected Integer createContentSpec(final String title, final String preContentSpec, final String dtd, final String createdBy) {
         try {

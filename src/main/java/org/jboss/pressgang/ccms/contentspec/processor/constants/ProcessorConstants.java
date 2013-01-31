@@ -1,4 +1,4 @@
-package com.redhat.contentspec.processor.constants;
+package org.jboss.pressgang.ccms.contentspec.processor.constants;
 
 public class ProcessorConstants {
     public static final String RELEASE_CATEGORY_NAME = "Release";

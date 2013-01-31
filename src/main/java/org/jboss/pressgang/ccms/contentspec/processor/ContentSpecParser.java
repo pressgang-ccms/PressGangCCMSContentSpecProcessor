@@ -1,4 +1,4 @@
-package com.redhat.contentspec.processor;
+package org.jboss.pressgang.ccms.contentspec.processor;
 
 import static java.lang.String.format;
 
@@ -19,9 +19,6 @@ import java.util.regex.PatternSyntaxException;
 
 import com.google.code.regexp.NamedMatcher;
 import com.google.code.regexp.NamedPattern;
-import com.redhat.contentspec.processor.constants.ProcessorConstants;
-import com.redhat.contentspec.processor.structures.VariableSet;
-import com.redhat.contentspec.processor.utils.ProcessorUtilities;
 import org.jboss.pressgang.ccms.contentspec.Appendix;
 import org.jboss.pressgang.ccms.contentspec.Chapter;
 import org.jboss.pressgang.ccms.contentspec.Comment;
@@ -42,13 +39,15 @@ import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
 import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgang.ccms.contentspec.exceptions.IndentationException;
 import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
+import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
+import org.jboss.pressgang.ccms.contentspec.processor.structures.VariableSet;
+import org.jboss.pressgang.ccms.contentspec.processor.utils.ProcessorUtilities;
 import org.jboss.pressgang.ccms.contentspec.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.contentspec.provider.TopicProvider;
 import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TopicWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.UserWrapper;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
@@ -66,7 +65,18 @@ public class ContentSpecParser {
      * An Enumerator used to specify the parsing mode of the Parser.
      */
     public static enum ParsingMode {
-        NEW, EDITED, EITHER
+        /**
+         * The Content Spec should be Parsed as a new Content Spec.
+         */
+        NEW,
+        /**
+         * The Content Spec should be Parsed as an edited Content Spec.
+         */
+        EDITED,
+        /**
+         * The Parser shouldn't care if the Content Spec is new or edited.
+         */
+        EITHER
     }
 
     private final DataProviderFactory providerFactory;
@@ -93,7 +103,7 @@ public class ContentSpecParser {
      * Constructor
      *
      * @param providerFactory The Factory to produce various different Entity DataProviders.
-     * @param loggerManager The Logging Manager that contains any errors/warnings produced while parsing.
+     * @param loggerManager   The Logging Manager that contains any errors/warnings produced while parsing.
      */
     public ContentSpecParser(final DataProviderFactory providerFactory, final ErrorLoggerManager loggerManager) {
         this.providerFactory = providerFactory;
@@ -110,46 +120,31 @@ public class ContentSpecParser {
      * @throws Exception Any unexpected exception that occurred when parsing.
      */
     public boolean parse(final String contentSpec) throws Exception {
-        return parse(contentSpec, null);
+        return parse(contentSpec, ParsingMode.EITHER);
     }
 
     /**
      * Parse a Content Specification to put the string into usable objects that can then be validate.
      *
      * @param contentSpec A string representation of the Content Specification.
-     * @param user        The user who requested the parse.
-     * @return True if everything was parsed successfully otherwise false.
-     * @throws Exception Any unexpected exception that occurred when parsing.
-     */
-    public boolean parse(final String contentSpec, final UserWrapper user) throws Exception {
-        return parse(contentSpec, user, ParsingMode.EITHER);
-    }
-
-    /**
-     * Parse a Content Specification to put the string into usable objects that can then be validate.
-     *
-     * @param contentSpec A string representation of the Content Specification.
-     * @param user        The user who requested the parse.
      * @param mode        The mode in which the Content Specification should be parsed.
      * @return True if everything was parsed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when parsing.
      */
-    public boolean parse(final String contentSpec, final UserWrapper user, final ParsingMode mode) throws Exception {
-        return parse(contentSpec, user, mode, false);
+    public boolean parse(final String contentSpec, final ParsingMode mode) throws Exception {
+        return parse(contentSpec, mode, false);
     }
 
     /**
      * Parse a Content Specification to put the string into usable objects that can then be validate.
      *
      * @param contentSpec      A string representation of the Content Specification.
-     * @param user             The user who requested the parse.
      * @param mode             The mode in which the Content Specification should be parsed.
      * @param processProcesses Whether or not processes should call the data provider to be processed.
      * @return True if everything was parsed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when parsing.
      */
-    public boolean parse(final String contentSpec, final UserWrapper user, final ParsingMode mode,
-            final boolean processProcesses) throws Exception {
+    public boolean parse(final String contentSpec, final ParsingMode mode, final boolean processProcesses) throws Exception {
         // Clear the logs
         log.clearLogs();
 
@@ -170,7 +165,7 @@ public class ContentSpecParser {
         this.processProcesses = processProcesses;
 
         final BufferedReader br = new BufferedReader(new StringReader(contentSpec));
-        return readFileData(br, user, mode);
+        return readFileData(br, mode);
     }
 
     /**
@@ -281,13 +276,12 @@ public class ContentSpecParser {
      * Reads the data from a file that is passed into a BufferedReader and processes it accordingly.
      *
      * @param br   A BufferedReader object that has been initialised with a file's data.
-     * @param user The database User entity object for the user who loaded the content specification.
      * @param mode The mode to process the Content Spec in (edited, either or new).
      * @return True if the Content Specification was read successfully otherwise false.
      * @throws Exception Any uncaught exception that occurs when parsing.
      */
     @SuppressWarnings("deprecation")
-    protected boolean readFileData(final BufferedReader br, final UserWrapper user, final ParsingMode mode) throws Exception {
+    protected boolean readFileData(final BufferedReader br, final ParsingMode mode) throws Exception {
         // Read in the entire file so we can peek ahead later on
         String line;
         while ((line = br.readLine()) != null) {
@@ -321,8 +315,6 @@ public class ContentSpecParser {
                     }
                     spec.setTitle(lineVars[1]);
                     lvl = spec.getBaseLevel();
-                    spec.setCreatedBy(user == null ? null : user.getUsername());
-                    lvl.setAssignedWriter(user == null ? null : user.getUsername());
                     while (lines.peek() != null) {
                         lineCounter++;
                         // Process the content specification and print an error message if an error occurs
@@ -1369,7 +1361,7 @@ public class ContentSpecParser {
 
         // Parse the input
         if (splitVars.length >= 2) {
-            String[] variables = new String[0];
+            String[] variables = null;
             final String title = StringUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
             newLvl.setTitle(title);
             try {
@@ -1421,7 +1413,7 @@ public class ContentSpecParser {
                 return null;
             }
             // Process the options
-            if (variables.length >= 1) {
+            if (variables != null && variables.length >= 1) {
                 if (!addOptions(newLvl, variables, 0, input)) {
                     return null;
                 }
@@ -1661,14 +1653,14 @@ public class ContentSpecParser {
                             if (variableMap.containsKey(RelationshipType.NONE)) {
                                 tempTags = variableMap.get(RelationshipType.NONE);
                             } else {
-                                tempTags = new String[0];
+                                tempTags = null;
                             }
                         } catch (Exception e) {
                             log.error(e.getMessage());
                             return false;
                         }
 
-                        if (tempTags.length >= 2) {
+                        if (tempTags != null && tempTags.length >= 2) {
                             final String tags[] = new String[tempTags.length - 1];
                             System.arraycopy(tempTags, 1, tags, 0, tempTags.length - 1);
 

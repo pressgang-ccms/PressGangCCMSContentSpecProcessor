@@ -1,4 +1,4 @@
-package com.redhat.contentspec.processor.utils;
+package org.jboss.pressgang.ccms.contentspec.processor.utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,11 +8,11 @@ import java.util.Map.Entry;
 
 import com.google.code.regexp.NamedMatcher;
 import com.google.code.regexp.NamedPattern;
-import com.redhat.contentspec.processor.constants.ProcessorConstants;
-import com.redhat.contentspec.processor.structures.VariableSet;
 import org.apache.log4j.Logger;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
+import org.jboss.pressgang.ccms.contentspec.processor.structures.VariableSet;
 import org.jboss.pressgang.ccms.contentspec.wrapper.CategoryInTagWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;

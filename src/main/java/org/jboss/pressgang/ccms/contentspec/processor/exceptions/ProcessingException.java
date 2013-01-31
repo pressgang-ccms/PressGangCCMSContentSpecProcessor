@@ -1,4 +1,4 @@
-package com.redhat.contentspec.processor.exceptions;
+package org.jboss.pressgang.ccms.contentspec.processor.exceptions;
 
 public class ProcessingException extends Exception {
     private static final long serialVersionUID = 5545431739360420849L;
