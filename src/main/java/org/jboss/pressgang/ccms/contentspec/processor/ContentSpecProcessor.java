@@ -23,6 +23,7 @@ import org.jboss.pressgang.ccms.contentspec.provider.PropertyTagProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.TagProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.TopicProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.TopicSourceURLProvider;
+import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.TopicPool;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
@@ -344,7 +345,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     tags.add(tagList.get(0));
                 }
             }
-            final Map<CategoryInTagWrapper, List<TagWrapper>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
+            final Map<CategoryInTagWrapper, List<TagWrapper>> mapping = EntityUtilities.getCategoryMappingFromTagList(tags);
 
             // Check if the app should be shutdown
             if (isShuttingDown.get()) {

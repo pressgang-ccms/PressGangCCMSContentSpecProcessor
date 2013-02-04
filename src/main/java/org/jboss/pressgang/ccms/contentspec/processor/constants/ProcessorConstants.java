@@ -20,7 +20,7 @@ public class ProcessorConstants {
     public static final String LINK_LIST_REGEX = "^(L|LINK-LIST)[ ]*:(.|(\r?\n))*$";
     public static final String NEXT_REGEX = "^NEXT[ ]*:(.|(\r?\n))*$";
     public static final String PREV_REGEX = "^PREV[ ]*:(.|(\r?\n))*$";
-    public static final String TARGET_BASE_REGEX = "T(([0-9]+)|(\\-[ ]*[A-Za-z0-9\\-_]+))";
+    public static final String TARGET_BASE_REGEX = "T(([0-9]+)|(\\-[A-Za-z0-9\\-_]+))";
     public static final String TARGET_REGEX = "^" + TARGET_BASE_REGEX + "$";
     public static final String BRANCH_REGEX = "^B[ ]*:(.|(\r?\n))*$";
     public static final String EXTERNAL_TARGET_REGEX = "^ET[0-9]+$";
@@ -111,6 +111,7 @@ public class ProcessorConstants {
     public static final String ERROR_TOPIC_WITH_DIFFERENT_REVS_MSG = INVALID_CS + " Topic %d has two or more different revisions included" +
             " in the Content Specification. The topic is located at:";
     public static final String ERROR_TOPIC_WITH_DIFFERENT_REVS_REV_MSG = "Revision %s, lines(s) %s.";
+    public static final String ERROR_INVALID_VERSION_NUMBER_MSG = "Invalid %s specified. The value must be a valid version.";
 
     // Article based level errors
     public static final String ERROR_ARTICLE_CHAPTER_MSG = LINE + INVALID_CS + " Chapters can't be used in Articles." + CSLINE_MSG;
@@ -150,14 +151,9 @@ public class ProcessorConstants {
     public static final String ERROR_LEVEL_FORMAT_MSG = LINE + GENERIC_INVALID_LEVEL + " Incorrect format." + CSLINE_MSG;
     public static final String ERROR_LEVEL_RELATIONSHIP_MSG = LINE + "Invalid %s! Relationships can't be used for a %s." + CSLINE_MSG;
 
-    public static final String ERROR_INVALID_NUMBER_MSG = LINE + "Invalid number specified." + CSLINE_MSG;
-    public static final String ERROR_INVALID_VERSION_NUMBER_MSG = LINE + "Invalid number specified. The value must be a valid version." +
+    public static final String ERROR_INVALID_NUMBER_MSG = LINE + "Number expected but the value specified is not a valid number." +
             CSLINE_MSG;
     public static final String WARN_EMPTY_BRACKETS_MSG = LINE + "Empty brackets found.";
-
-    public static final String ERROR_HIBERNATE_ROLLBACK_MSG = "Hibernate Transaction rollback.";
-    public static final String ERROR_HIBERNATE_ROLLBACK_FAILED_MSG = "Hibernate Transaction rollback failed. Please contact a system " +
-            "administrator.";
 
     // Topic errors
     public static final String ERROR_TYPE_NONEXIST_MSG = LINE + INVALID_TOPIC + " Type doesn't exist." + CSLINE_MSG;
@@ -299,31 +295,11 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_TYPE_FORMAT_MSG = LINE + "Invalid Type attribute format. (%s)" + CSLINE_MSG;
     public static final String INFO_NEW_TYPE_MSG = LINE + "New Type created - ID = %d, Name = %s";
 
-    // Meta Data Regex Constants
-    public static final String SPEC_REVISION_REGEX = "^SPECREVISION[ ]*((=.*)|$)";
-    public static final String CHECKSUM_REGEX = "^CHECKSUM[ ]*((=.*)|$)";
-    public static final String ID_REGEX = "^ID[ ]*((=.*)|$)";
-    public static final String SUBTITLE_REGEX = "^SUBTITLE[ ]*((=.*)|$)";
-    public static final String EDITION_REGEX = "^EDITION[ ]*((=.*)|$)";
-    public static final String BOOK_VERSION_REGEX = "^BOOK VERSION[ ]*((=.*)|$)";
-    public static final String PUBSNUMBER_REGEX = "^PUBSNUMBER[ ]*((=.*)|$)";
-    public static final String PRODUCT_REGEX = "^PRODUCT[ ]*((=.*)|$)";
-    public static final String ABSTRACT_REGEX = "^(DESCRIPTION|ABSTRACT)[ ]*((=.*)|$)";
-    public static final String COPYRIGHT_HOLDER_REGEX = "^COPYRIGHT HOLDER[ ]*((=.*)|$)";
-    public static final String DEBUG_REGEX = "^DEBUG[ ]*((=.*)|$)";
-    public static final String PRODUCT_VERSION_REGEX = "^VERSION[ ]*((=.*)|$)";
-    public static final String BRAND_REGEX = "^BRAND[ ]*((=.*)|$)";
-    public static final String BUG_LINKS_REGEX = "^BUG[ ]*LINKS[ ]*((=.*)|$)";
-    public static final String BUGZILLA_PRODUCT_REGEX = "^BZPRODUCT[ ]*((=.*)|$)";
-    public static final String BUGZILLA_COMPONENT_REGEX = "^BZCOMPONENT[ ]*((=.*)|$)";
-    public static final String BUGZILLA_VERSION_REGEX = "^BZVERSION[ ]*((=.*)|$)";
-    public static final String SURVEY_LINK_REGEX = "^SURVEY[ ]*LINKS[ ]*((=.*)|$)";
-    public static final String BOOK_TYPE_REGEX = "^TYPE[ ]*((=.*)|$)";
-    public static final String PUBLICAN_CFG_REGEX = "^PUBLICAN\\.CFG[ ]*((=.*)|$)";
-    public static final String INLINE_INJECTION_REGEX = "^INLINE INJECTION[ ]*((=.*)|$)";
-    public static final String SPACES_REGEX = "^SPACES[ ]*((=.*)|$)";
-    public static final String DTD_REGEX = "^DTD[ ]*((=.*)|$)";
-
-    // Outdated Meta Data Regex Constants
-    public static final String OUTPUT_STYLE_REGEX = "^OUTPUT STYLE[ ]*((=.*)|$)";
+    // Level Regex Cosntants
+    public static final String CHAPTER_REGEX = "^CHAPTER[ ]*((:.*)|$)";
+    public static final String SECTION_REGEX = "^SECTION[ ]*((:.*)|$)";
+    public static final String APPENDIX_REGEX = "^APPENDIX[ ]*((:.*)|$)";
+    public static final String PART_REGEX = "^PART[ ]*((:.*)|$)";
+    public static final String PROCESS_REGEX = "^PROCESS[ ]*((:.*)|$)";
+    public static final String LEVEL_REGEX = "^(CHAPTER|SECTION|APPENDIX|PART|PROCESS)[ ]*((:.*)|$)";
 }

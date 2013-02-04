@@ -1,8 +1,5 @@
 package org.jboss.pressgang.ccms.contentspec.processor.utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -12,35 +9,15 @@ import org.apache.log4j.Logger;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
+import org.jboss.pressgang.ccms.contentspec.processor.exceptions.InvalidKeyValueException;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.VariableSet;
-import org.jboss.pressgang.ccms.contentspec.wrapper.CategoryInTagWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
+import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
+import org.jboss.pressgang.ccms.utils.structures.Pair;
 
 public class ProcessorUtilities {
     private static final Logger log = Logger.getLogger(ProcessorUtilities.class);
-
-    /**
-     * Converts a list of tags into a mapping of categories to tags. The key is the Category and the value is a List
-     * of Tags for that category.
-     *
-     * @param tags The List of tags to be converted.
-     * @return The mapping of Categories to Tags.
-     */
-    public static Map<CategoryInTagWrapper, List<TagWrapper>> getCategoryMappingFromTagList(final List<TagWrapper> tags) {
-        final HashMap<CategoryInTagWrapper, List<TagWrapper>> mapping = new HashMap<CategoryInTagWrapper, List<TagWrapper>>();
-        for (final TagWrapper tag : tags) {
-            final List<CategoryInTagWrapper> catList = tag.getCategories().getItems();
-            if (catList != null) {
-                for (final CategoryInTagWrapper cat : catList) {
-                    if (!mapping.containsKey(cat)) mapping.put(cat, new ArrayList<TagWrapper>());
-                    mapping.get(cat).add(tag);
-                }
-            }
-        }
-        return mapping;
-    }
 
     /**
      * Creates a Post Processed Content Specification from a processed ContentSpec object.
@@ -284,5 +261,23 @@ public class ProcessorUtilities {
             set.setStartPos(null);
         }
         return set;
+    }
+
+    /**
+     * Validates a KeyValue pair for a content specification and then returns the processed key and value..
+     *
+     * @param keyValueString The string to be broken down and validated.
+     * @return A Pair where the first value is the key and the second is the value.
+     * @throws InvalidKeyValueException
+     */
+    public static Pair<String, String> getAndValidateKeyValuePair(final String keyValueString) throws InvalidKeyValueException {
+        String tempInput[] = StringUtilities.split(keyValueString, '=', 2);
+        // Remove the whitespace from each value in the split array
+        tempInput = CollectionUtilities.trimStringArray(tempInput);
+        if (tempInput.length >= 2) {
+            return new Pair<String, String>(tempInput[0], StringUtilities.replaceEscapeChars(tempInput[1]));
+        } else {
+            throw new InvalidKeyValueException();
+        }
     }
 }

@@ -1,5 +1,7 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
+import static java.lang.String.format;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -7,7 +9,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -29,7 +30,6 @@ import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
 import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptions;
-import org.jboss.pressgang.ccms.contentspec.processor.utils.ProcessorUtilities;
 import org.jboss.pressgang.ccms.contentspec.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.contentspec.provider.TagProvider;
@@ -37,6 +37,7 @@ import org.jboss.pressgang.ccms.contentspec.provider.TopicProvider;
 import org.jboss.pressgang.ccms.contentspec.sort.NullNumberSort;
 import org.jboss.pressgang.ccms.contentspec.sort.SpecTopicLineNumberComparator;
 import org.jboss.pressgang.ccms.contentspec.utils.CSTransformer;
+import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
@@ -132,11 +133,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         locale = contentSpec.getLocale() == null ? locale : contentSpec.getLocale();
 
         // Create the map of unique ids to spec topics
-        final Map<String, SpecTopic> specTopicMap = new HashMap<String, SpecTopic>();
-        final List<SpecTopic> specTopics = contentSpec.getSpecTopics();
-        for (final SpecTopic specTopic : specTopics) {
-            specTopicMap.put(specTopic.getId(), specTopic);
-        }
+        final Map<String, SpecTopic> specTopicMap = ContentSpecUtilities.getUniqueIdSpecTopicMap(contentSpec);
 
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
@@ -158,6 +155,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         if (contentSpec.getVersion() == null || contentSpec.getVersion().equals("")) {
             log.error(ProcessorConstants.ERROR_CS_NO_VERSION_MSG);
             valid = false;
+        } else if (!contentSpec.getVersion().matches(ProcessorConstants.PRODUCT_VERSION_VALIDATE_REGEX)) {
+            log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, CSConstants.VERSION_TITLE));
+            valid = false;
         }
 
         if (contentSpec.getPreProcessedText().isEmpty()) {
@@ -169,13 +169,30 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             log.error(ProcessorConstants.ERROR_CS_NO_DTD_MSG);
             valid = false;
             // Check that the DTD specified is a valid DTD format
-        } else if (!contentSpec.getDtd().toLowerCase(Locale.ENGLISH).equals("docbook 4.5")) {
+        } else if (!contentSpec.getDtd().equalsIgnoreCase("Docbook 4.5")) {
             log.error(ProcessorConstants.ERROR_CS_INVALID_DTD_MSG);
             valid = false;
         }
 
         if (contentSpec.getCopyrightHolder() == null || contentSpec.getCopyrightHolder().equals("")) {
             log.error(ProcessorConstants.ERROR_CS_NO_COPYRIGHT_MSG);
+            valid = false;
+        }
+
+        // Check that the book type is valid
+        if (contentSpec.getBookType() != null || contentSpec.getBookType() == BookType.INVALID) {
+            log.error(ProcessorConstants.ERROR_INVALID_BOOK_TYPE_MSG);
+            valid = false;
+        }
+
+        // Check the version variables are all valid
+        if (contentSpec.getBookVersion() != null && !contentSpec.getBookVersion().matches(ProcessorConstants.VERSION_VALIDATE_REGEX)) {
+            log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, CSConstants.BOOK_VERSION_TITLE));
+            valid = false;
+        }
+
+        if (contentSpec.getEdition() != null && !contentSpec.getEdition().matches(ProcessorConstants.VERSION_VALIDATE_REGEX)) {
+            log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, CSConstants.EDITION_TITLE));
             valid = false;
         }
 
@@ -340,14 +357,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                                     currentChecksum));
                             valid = false;
                         }
-                    } else if (contentSpec.getSpecRevision() != null) {
-                        // Check that the revision matches
-                        int latestRev = topicProvider.getTopic(contentSpec.getId()).getTopicRevision();
-                        if (contentSpec.getSpecRevision() != latestRev) {
-                            log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_SPEC_REVISION_MSG, contentSpec.getSpecRevision(),
-                                    latestRev));
-                            valid = false;
-                        }
                     } else {
                         log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_CHECKSUM_MSG, null, currentChecksum));
                         valid = false;
@@ -402,11 +411,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         boolean error = false;
 
         // Create the map of unique ids to spec topics
-        final Map<String, SpecTopic> specTopicMap = new HashMap<String, SpecTopic>();
-        final List<SpecTopic> specTopics = contentSpec.getSpecTopics();
-        for (final SpecTopic specTopic : specTopics) {
-            specTopicMap.put(specTopic.getId(), specTopic);
-        }
+        final Map<String, SpecTopic> specTopicMap = ContentSpecUtilities.getUniqueIdSpecTopicMap(contentSpec);
 
         final Map<SpecTopic, List<Relationship>> relationships = contentSpec.getRelationships();
         for (final Entry<SpecTopic, List<Relationship>> relationshipEntry : relationships.entrySet()) {
@@ -482,7 +487,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             for (final Entry<String, SpecTopic> entry : specTopicMap.entrySet()) {
                                 final String specTopicId = entry.getKey();
 
-                                if (specTopicId.matches("^[0-9]+-" + relatedId + "$")) {
+                                if (specTopicId.matches("^[\\w\\d]+-" + relatedId + "$")) {
                                     relatedTopics.add(entry.getValue());
                                     count++;
                                 }
@@ -912,13 +917,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             // Duplicated Cloned Topics
         } else if (specTopic.isTopicAClonedDuplicateTopic()) {
             // Find the duplicate topic in the content spec
-            final String temp = specTopic.getId().substring(1);
+            final String topicId = specTopic.getId().substring(1);
             int count = 0;
             SpecTopic clonedTopic = null;
             for (final Entry<String, SpecTopic> entry : specTopics.entrySet()) {
-                final String topicId = entry.getKey();
+                final String uniqueTopicId = entry.getKey();
 
-                if (topicId.endsWith(temp) && !topicId.endsWith(specTopic.getId())) {
+                if (uniqueTopicId.endsWith(topicId) && !uniqueTopicId.endsWith(specTopic.getId())) {
                     clonedTopic = entry.getValue();
                     count++;
                 }
@@ -1157,7 +1162,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
 
             // Check that the mutex value entered is correct
-            final Map<CategoryInTagWrapper, List<TagWrapper>> mapping = ProcessorUtilities.getCategoryMappingFromTagList(tags);
+            final Map<CategoryInTagWrapper, List<TagWrapper>> mapping = EntityUtilities.getCategoryMappingFromTagList(tags);
             for (final Entry<CategoryInTagWrapper, List<TagWrapper>> catEntry : mapping.entrySet()) {
                 final CategoryInTagWrapper cat = catEntry.getKey();
                 final List<TagWrapper> catTags = catEntry.getValue();
