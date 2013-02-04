@@ -342,7 +342,7 @@ public class ContentSpecParser {
      * @param contentSpec      The content spec object to process the string into.
      * @param mode             The mode to parse the string as.
      * @param processProcesses Whether or not processes should call the data provider to be processed.
-     * @return
+     * @return True if the content spec was processed successfully otherwise false.
      */
     protected boolean processSpec(final ContentSpec contentSpec, final ParsingMode mode, final boolean processProcesses) {
         // Find the first line that isn't a blank line or a comment
@@ -376,6 +376,13 @@ public class ContentSpecParser {
         }
     }
 
+    /**
+     * Process a New Content Specification. That is that it should start with a Title, instead of a CHECKSUM and ID.
+     *
+     * @param contentSpec      The content spec object to parse the content spec into.
+     * @param processProcesses If processes should be processed to populate the relationships.
+     * @return True if the content spec was processed successfully otherwise false.
+     */
     protected boolean processNewSpec(final ContentSpec contentSpec, final boolean processProcesses) {
         final String input = getLines().poll();
 
@@ -399,6 +406,13 @@ public class ContentSpecParser {
         }
     }
 
+    /**
+     * Process an Edited Content Specification. That is that it should start with a CHECKSUM and ID, instead of a Title.
+     *
+     * @param contentSpec      The content spec object to parse the content spec into.
+     * @param processProcesses If processes should be processed to populate the relationships.
+     * @return True if the content spec was processed successfully otherwise false.
+     */
     protected boolean processEditedSpec(final ContentSpec contentSpec, final boolean processProcesses) {
         final String input = getLines().poll();
 
@@ -452,10 +466,17 @@ public class ContentSpecParser {
         }
     }
 
+    /**
+     * Process Content Specification that is either NEW or EDITED. That is that it should start with a CHECKSUM and ID or a Title.
+     *
+     * @param contentSpec      The content spec object to parse the content spec into.
+     * @param processProcesses If processes should be processed to populate the relationships.
+     * @return True if the content spec was processed successfully otherwise false.
+     */
     protected boolean processEitherSpec(final ContentSpec contentSpec, final boolean processProcesses) {
         final String[] lineVars = CollectionUtilities.trimStringArray(StringUtilities.split(getLines().peek(), '='));
         if (lineVars.length >= 2) {
-            if (lineVars[0].equals("CHECKSUM")) {
+            if (lineVars[0].equals(CSConstants.CHECKSUM_TITLE)) {
                 return processEditedSpec(contentSpec, processProcesses);
             } else {
                 return processNewSpec(contentSpec, processProcesses);
@@ -466,6 +487,13 @@ public class ContentSpecParser {
         }
     }
 
+    /**
+     * Process the contents of a content specification and parse it into a ContentSpec object.
+     *
+     * @param contentSpec      The content spec object to parse the content spec into.
+     * @param processProcesses If processes should be processed to populate the relationships.
+     * @return True if the contents were processed successfully otherwise false.
+     */
     protected boolean processSpecContents(final ContentSpec contentSpec, final boolean processProcesses) {
         setCurrentLevel(contentSpec.getBaseLevel());
         boolean error = false;
@@ -705,7 +733,7 @@ public class ContentSpecParser {
     /**
      * TODO The external level processing still needs to be implemented. DO NOT use this method at this time.
      *
-     * @param contentSpec
+     * @param contentSpec The content spec object to add the level to.
      * @param line        The line to be processed.
      * @return True if the line was processed without errors, otherwise false.
      */
@@ -736,6 +764,7 @@ public class ContentSpecParser {
      * @return True if the line was processed without errors, otherwise false.
      */
     protected boolean processMetaDataLine(final ContentSpec contentSpec, final String line) {
+        // Parse the line and break it up into the key/value pair
         Pair<String, String> keyValue = null;
         try {
             keyValue = ProcessorUtilities.getAndValidateKeyValuePair(line);
@@ -750,7 +779,7 @@ public class ContentSpecParser {
         final String key = keyValue.getFirst();
         final String value = keyValue.getSecond();
 
-        // first deal with metadata that is used by the parser or needs to be parsed in itself
+        // first deal with metadata that is used by the parser or needs to be parsed further
         if (key.equalsIgnoreCase(CSConstants.SPACES_TITLE)) {
             // Read in the amount of spaces that were used for the content specification
             try {
@@ -909,18 +938,20 @@ public class ContentSpecParser {
     /**
      * Processes the input to create a new topic
      *
-     * @param input The line of input to be processed
+     * @param contentSpec The content spec object that the topic is being created for.
+     * @param line        The line of input to be processed
      * @return A topics object initialised with the data from the input line.
+     * @throws ParsingException Thrown if the line can't be parsed as a Topic, due to incorrect syntax.
      */
-    protected SpecTopic processTopic(final ContentSpec contentSpec, final String input) throws ParsingException {
-        final SpecTopic tempTopic = new SpecTopic(null, lineCounter, input, null);
+    protected SpecTopic processTopic(final ContentSpec contentSpec, final String line) throws ParsingException {
+        final SpecTopic tempTopic = new SpecTopic(null, lineCounter, line, null);
 
         // Process a new topic
         String[] variables;
         // Read in the variables inside of the brackets
-        HashMap<RelationshipType, String[]> variableMap = getLineVariables(contentSpec, input, '[', ']', ',', false);
+        HashMap<RelationshipType, String[]> variableMap = getLineVariables(contentSpec, line, '[', ']', ',', false);
         if (!variableMap.containsKey(RelationshipType.NONE)) {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, line));
         }
         variables = variableMap.get(RelationshipType.NONE);
         int varStartPos = 2;
@@ -946,10 +977,10 @@ public class ContentSpecParser {
                         try {
                             tempTopic.setRevision(Integer.parseInt(vars[1]));
                         } catch (NumberFormatException ex) {
-                            throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_INVALID_REVISION_FORMAT, lineCounter, input));
+                            throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_INVALID_REVISION_FORMAT, lineCounter, line));
                         }
                     } else {
-                        log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+                        log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, line));
                         throw new ParsingException();
                     }
                 } else {
@@ -962,17 +993,17 @@ public class ContentSpecParser {
             if (!variables[0].matches("(" + CSConstants.DUPLICATE_TOPIC_ID_REGEX + ")|(" + CSConstants.CLONED_TOPIC_ID_REGEX + ")|(" +
                     CSConstants.EXISTING_TOPIC_ID_REGEX + ")|(" + CSConstants.NEW_TOPIC_ID_REGEX + ")|(" +
                     CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX + ")")) {
-                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TITLE_ID_MSG, lineCounter, input));
+                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TITLE_ID_MSG, lineCounter, line));
             } else if (variables[0].matches(CSConstants.NEW_TOPIC_ID_REGEX)) {
-                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TYPE_TITLE_ID_MSG, lineCounter, input));
+                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TYPE_TITLE_ID_MSG, lineCounter, line));
             }
             varStartPos = 1;
         } else {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TITLE_ID_MSG, lineCounter, input));
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TITLE_ID_MSG, lineCounter, line));
         }
 
         // Set the title
-        String title = StringUtilities.replaceEscapeChars(getTitle(input, '['));
+        String title = StringUtilities.replaceEscapeChars(getTitle(line, '['));
         tempTopic.setTitle(title);
 
         // Set the topic ID
@@ -993,26 +1024,26 @@ public class ContentSpecParser {
             uniqueId = Integer.toString(lineCounter) + "-" + variables[0];
             getSpecTopics().put(uniqueId, tempTopic);
         } else if (variables[0].startsWith("N")) {
-            throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_ID_MSG, lineCounter, variables[0], input));
+            throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_ID_MSG, lineCounter, variables[0], line));
         } else {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TOPIC_ID_MSG, lineCounter, input));
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TOPIC_ID_MSG, lineCounter, line));
         }
         tempTopic.setUniqueId(uniqueId);
 
         // Get the options if the topic is a new or cloned topic
         if (variables[0].matches("(" + CSConstants.NEW_TOPIC_ID_REGEX + ")|(" + CSConstants.CLONED_TOPIC_ID_REGEX +
                 ")|(" + CSConstants.EXISTING_TOPIC_ID_REGEX + ")")) {
-            addOptions(contentSpec, tempTopic, variables, varStartPos, input);
+            addOptions(contentSpec, tempTopic, variables, varStartPos, line);
         } else if (variables.length > varStartPos) {
             // Display warnings if options are specified for existing or duplicated topics
             if (variables[0].matches(CSConstants.DUPLICATE_TOPIC_ID_REGEX) || variables[0].matches(
                     CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX)) {
-                log.warn(format(ProcessorConstants.WARN_IGNORE_DUP_INFO_MSG, lineCounter, input));
+                log.warn(format(ProcessorConstants.WARN_IGNORE_DUP_INFO_MSG, lineCounter, line));
             }
         }
 
         // Process the Topic Relationships
-        processTopicRelationships(tempTopic, variableMap, input);
+        processTopicRelationships(tempTopic, variableMap, line);
 
         return tempTopic;
     }
@@ -1023,6 +1054,7 @@ public class ContentSpecParser {
      * @param tempTopic   The temporary topic that will be turned into a full topic once fully parsed.
      * @param variableMap The list of variables containing the parsed relationships.
      * @param input       The line representing the topic and it's relationships.
+     * @throws ParsingException Thrown if the variables can't be parsed due to incorrect syntax.
      */
     protected void processTopicRelationships(final SpecTopic tempTopic, final HashMap<RelationshipType, String[]> variableMap,
             final String input) throws ParsingException {
@@ -1186,19 +1218,21 @@ public class ContentSpecParser {
     /**
      * Processes and creates a level based on the level type.
      *
-     * @param line      The line number the level is on.
-     * @param levelType The type the level will represent. ie. A Chapter or Appendix
-     * @param input     The chapter string in the content specification.
+     * @param contentSpec The content spec object the level is being created for.
+     * @param lineNumber  The line number the level is on.
+     * @param levelType   The type the level will represent. ie. A Chapter or Appendix
+     * @param line        The chapter string in the content specification.
      * @return The created level or null if an error occurred.
+     * @throws ParsingException Thrown if the line can't be parsed as a Level, due to incorrect syntax.
      */
-    protected Level processLevel(final ContentSpec contentSpec, final int line, final LevelType levelType,
-            final String input) throws ParsingException {
-        String splitVars[] = StringUtilities.split(input, ':', 2);
+    protected Level processLevel(final ContentSpec contentSpec, final int lineNumber, final LevelType levelType,
+            final String line) throws ParsingException {
+        String splitVars[] = StringUtilities.split(line, ':', 2);
         // Remove the whitespace from each value in the split array
         splitVars = CollectionUtilities.trimStringArray(splitVars);
 
         // Create the level based on the type
-        final Level newLvl = createEmptyLevelFromType(line, levelType, input);
+        final Level newLvl = createEmptyLevelFromType(lineNumber, levelType, line);
 
         // Parse the input
         if (splitVars.length >= 2) {
@@ -1217,11 +1251,11 @@ public class ContentSpecParser {
                 if (getTargetTopics().containsKey(targetId)) {
                     throw new ParsingException(
                             format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetTopics().get(targetId).getLineNumber(),
-                                    getTargetTopics().get(targetId).getText(), lineCounter, input));
+                                    getTargetTopics().get(targetId).getText(), lineCounter, line));
                 } else if (getTargetLevels().containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
                     throw new ParsingException(
                             format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetLevels().get(targetId).getLineNumber(),
-                                    getTargetLevels().get(targetId).getText(), lineCounter, input));
+                                    getTargetLevels().get(targetId).getText(), lineCounter, line));
                 } else {
                     getTargetLevels().put(targetId, newLvl);
                     newLvl.setTargetId(targetId);
@@ -1237,7 +1271,7 @@ public class ContentSpecParser {
 
             // Check if the level is injecting data from another content spec
             if (variableMap.containsKey(RelationshipType.EXTERNAL_CONTENT_SPEC)) {
-                processExternalLevel(newLvl, variableMap.get(RelationshipType.EXTERNAL_CONTENT_SPEC)[0], title, input);
+                processExternalLevel(newLvl, variableMap.get(RelationshipType.EXTERNAL_CONTENT_SPEC)[0], title, line);
             }
 
             // Check that no relationships were specified for the appendix
@@ -1246,12 +1280,12 @@ public class ContentSpecParser {
                     RelationshipType.PREVIOUS)) {
                 throw new ParsingException(
                         format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineCounter, CSConstants.CHAPTER, CSConstants.CHAPTER,
-                                input));
+                                line));
             }
 
             // Process the options
             if (variables != null && variables.length >= 1) {
-                addOptions(contentSpec, newLvl, variables, 0, input);
+                addOptions(contentSpec, newLvl, variables, 0, line);
             }
         }
         return newLvl;
@@ -1262,7 +1296,7 @@ public class ContentSpecParser {
      * separated by the separator.
      *
      * @param contentSpec The content spec object the variables will be added to.
-     * @param input       The line of input to get the variables for.
+     * @param line        The line of input to get the variables for.
      * @param startDelim  The starting delimiter of the variables.
      * @param endDelim    The ending delimiter of the variables.
      * @param separator   The separator used to separate the variables.
@@ -1270,9 +1304,9 @@ public class ContentSpecParser {
      * @return A Map of String arrays for different relationship. Inside each string array is the singular variables.
      * @throws ParsingException Thrown if the line can't be successfully parsed.
      */
-    public HashMap<RelationshipType, String[]> getLineVariables(final ContentSpec contentSpec, String input, char startDelim, char endDelim,
+    public HashMap<RelationshipType, String[]> getLineVariables(final ContentSpec contentSpec, String line, char startDelim, char endDelim,
             char separator, boolean ignoreTypes) throws ParsingException {
-        return getLineVariables(contentSpec, input, startDelim, endDelim, separator, ignoreTypes, false);
+        return getLineVariables(contentSpec, line, startDelim, endDelim, separator, ignoreTypes, false);
     }
 
     /**
@@ -1421,6 +1455,7 @@ public class ContentSpecParser {
      * Adds the options from an array of variables to a node (Level or Topic). It starts checking the variables from the startPos
      * position of the variable array, then check to see if the variable is a tag or attribute and processes it.
      *
+     * @param contentSpec   The content spec object that the node belongs to.
      * @param node          The node to add the options to.
      * @param vars          An array of variables to get the options for.
      * @param startPos      The starting position in the variable array to start checking.
