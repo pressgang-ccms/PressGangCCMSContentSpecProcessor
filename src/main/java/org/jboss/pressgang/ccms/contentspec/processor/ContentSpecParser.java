@@ -198,9 +198,8 @@ public class ContentSpecParser {
      *
      * @param contentSpec A string representation of the Content Specification.
      * @return True if everything was parsed successfully otherwise false.
-     * @throws Exception Any unexpected exception that occurred when parsing.
      */
-    public boolean parse(final String contentSpec) throws Exception {
+    public boolean parse(final String contentSpec) {
         return parse(contentSpec, ParsingMode.EITHER);
     }
 
@@ -210,9 +209,8 @@ public class ContentSpecParser {
      * @param contentSpec A string representation of the Content Specification.
      * @param mode        The mode in which the Content Specification should be parsed.
      * @return True if everything was parsed successfully otherwise false.
-     * @throws Exception Any unexpected exception that occurred when parsing.
      */
-    public boolean parse(final String contentSpec, final ParsingMode mode) throws Exception {
+    public boolean parse(final String contentSpec, final ParsingMode mode) {
         return parse(contentSpec, mode, false);
     }
 
@@ -223,15 +221,18 @@ public class ContentSpecParser {
      * @param mode             The mode in which the Content Specification should be parsed.
      * @param processProcesses Whether or not processes should call the data provider to be processed.
      * @return True if everything was parsed successfully otherwise false.
-     * @throws Exception Any unexpected exception that occurred when parsing.
      */
-    public boolean parse(final String contentSpec, final ParsingMode mode, final boolean processProcesses) throws Exception {
+    public boolean parse(final String contentSpec, final ParsingMode mode, final boolean processProcesses) {
         // Reset the variables
         reset();
 
         // Read in the file contents
         final BufferedReader br = new BufferedReader(new StringReader(contentSpec));
-        readFileData(br);
+        try {
+            readFileData(br);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         // Process the spec contents.
         return processSpec(spec, mode, processProcesses);
