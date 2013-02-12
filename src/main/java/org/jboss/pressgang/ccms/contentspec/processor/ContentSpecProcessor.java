@@ -535,9 +535,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
 
             // A new content specification
-            if (contentSpec.getId() == 0) {
+            if (contentSpec.getId() == null) {
                 contentSpec.setId(createContentSpec(contentSpec.getTitle(), fullText.toString(), contentSpec.getDtd(), user.getUsername()));
-                if (contentSpec.getId() == 0) {
+                if (contentSpec.getId() == null) {
                     log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
                     throw new Exception("Failed to create the pre content specification.");
                 }
@@ -625,7 +625,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
         } catch (ProcessingException e) {
             // Clean up the data that was created
-            if (contentSpec.getId() != 0 && !edit) {
+            if (contentSpec.getId() != null && !edit) {
                 try {
                     topicProvider.deleteTopic(contentSpec.getId());
                 } catch (Exception e1) {
@@ -636,7 +636,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             log.error(String.format("%s\n%7s%s", ProcessorConstants.ERROR_PROCESSING_ERROR_MSG, "", e.getMessage()));
         } catch (Exception e) {
             // Clean up the data that was created
-            if (contentSpec.getId() != 0 && !edit) {
+            if (contentSpec.getId() != null && !edit) {
                 try {
                     topicProvider.deleteTopic(contentSpec.getId());
                 } catch (Exception e1) {
