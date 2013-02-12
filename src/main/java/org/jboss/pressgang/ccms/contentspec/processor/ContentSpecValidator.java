@@ -333,7 +333,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         boolean valid = true;
 
         // If editing then check that the ID exists & the CHECKSUM/SpecRevision match
-        if (contentSpec.getId() != 0) {
+        if (contentSpec.getId() != null) {
             // TODO Use the correct entity here
             final ContentSpecWrapper contentSpecTopic = contentSpecProvider.getContentSpec(contentSpec.getId(),
                     processingOptions.getRevision());

@@ -87,10 +87,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param user        The user who requested the process operation.
      * @param mode        The mode to parse the content specification in.
      * @return True if everything was processed successfully otherwise false.
-     * @throws Exception Any unexpected exception that occurred when processing.
      */
-    public boolean processContentSpec(final ContentSpec contentSpec, final UserWrapper user,
-            final ContentSpecParser.ParsingMode mode) throws Exception {
+    public boolean processContentSpec(final ContentSpec contentSpec, final UserWrapper user, final ContentSpecParser.ParsingMode mode) {
         return processContentSpec(contentSpec, user, mode, null);
     }
 
@@ -103,11 +101,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param mode           The mode to parse the content specification in.
      * @param overrideLocale Override the default locale using this parameter.
      * @return True if everything was processed successfully otherwise false.
-     * @throws Exception Any unexpected exception that occurred when processing.
      */
     @SuppressWarnings({"unchecked"})
     public boolean processContentSpec(final ContentSpec contentSpec, final UserWrapper user, final ContentSpecParser.ParsingMode mode,
-            final String overrideLocale) throws Exception {
+            final String overrideLocale) {
         boolean editing = false;
         if (mode == ContentSpecParser.ParsingMode.EDITED) {
             editing = true;
