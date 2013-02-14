@@ -1,5 +1,6 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
 
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.common.base.Predicate;
 import org.jboss.pressgang.ccms.contentspec.Appendix;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.Level;
@@ -142,17 +144,17 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         boolean valid = true;
-        if (contentSpec.getTitle() == null || contentSpec.getTitle().equals("")) {
+        if (isNullOrEmpty(contentSpec.getTitle())) {
             log.error(ProcessorConstants.ERROR_CS_NO_TITLE_MSG);
             valid = false;
         }
 
-        if (contentSpec.getProduct() == null || contentSpec.getProduct().equals("")) {
+        if (isNullOrEmpty(contentSpec.getProduct())) {
             log.error(ProcessorConstants.ERROR_CS_NO_PRODUCT_MSG);
             valid = false;
         }
 
-        if (contentSpec.getVersion() == null || contentSpec.getVersion().equals("")) {
+        if (isNullOrEmpty(contentSpec.getVersion())) {
             log.error(ProcessorConstants.ERROR_CS_NO_VERSION_MSG);
             valid = false;
         } else if (!contentSpec.getVersion().matches(ProcessorConstants.PRODUCT_VERSION_VALIDATE_REGEX)) {
@@ -165,7 +167,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
-        if (contentSpec.getDtd() == null || contentSpec.getDtd().equals("")) {
+        if (isNullOrEmpty(contentSpec.getDtd())) {
             log.error(ProcessorConstants.ERROR_CS_NO_DTD_MSG);
             valid = false;
             // Check that the DTD specified is a valid DTD format
@@ -174,13 +176,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
-        if (contentSpec.getCopyrightHolder() == null || contentSpec.getCopyrightHolder().equals("")) {
+        if (isNullOrEmpty(contentSpec.getCopyrightHolder())) {
             log.error(ProcessorConstants.ERROR_CS_NO_COPYRIGHT_MSG);
             valid = false;
         }
 
         // Check that the book type is valid
-        if (contentSpec.getBookType() != null || contentSpec.getBookType() == BookType.INVALID) {
+        if (contentSpec.getBookType() == null || contentSpec.getBookType() == BookType.INVALID) {
             log.error(ProcessorConstants.ERROR_INVALID_BOOK_TYPE_MSG);
             valid = false;
         }
