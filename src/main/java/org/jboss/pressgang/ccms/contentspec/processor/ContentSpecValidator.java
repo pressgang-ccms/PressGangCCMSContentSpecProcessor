@@ -182,7 +182,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that the book type is valid
-        if (contentSpec.getBookType() == null || contentSpec.getBookType() == BookType.INVALID) {
+        if (contentSpec.getBookType() == BookType.INVALID) {
             log.error(ProcessorConstants.ERROR_INVALID_BOOK_TYPE_MSG);
             valid = false;
         }
