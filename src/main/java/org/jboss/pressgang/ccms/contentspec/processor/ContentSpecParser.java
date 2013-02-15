@@ -22,11 +22,9 @@ import com.google.code.regexp.NamedMatcher;
 import com.google.code.regexp.NamedPattern;
 import org.jboss.pressgang.ccms.contentspec.Appendix;
 import org.jboss.pressgang.ccms.contentspec.Chapter;
-import org.jboss.pressgang.ccms.contentspec.Comment;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
-import org.jboss.pressgang.ccms.contentspec.Node;
 import org.jboss.pressgang.ccms.contentspec.Part;
 import org.jboss.pressgang.ccms.contentspec.Process;
 import org.jboss.pressgang.ccms.contentspec.Section;
@@ -49,7 +47,6 @@ import org.jboss.pressgang.ccms.contentspec.provider.TopicProvider;
 import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
-import org.jboss.pressgang.ccms.contentspec.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
@@ -112,6 +109,14 @@ public class ContentSpecParser {
         topicProvider = providerFactory.getProvider(TopicProvider.class);
         this.loggerManager = loggerManager;
         log = loggerManager.getLogger(ContentSpecParser.class);
+    }
+
+    protected int getLineCount() {
+        return lineCounter;
+    }
+
+    protected int getIndentationLevel() {
+        return indentationLevel;
     }
 
     protected int getIndentationSize() {
@@ -351,7 +356,6 @@ public class ContentSpecParser {
             final String input = getLines().peek();
             if (isCommentLine(input) || isBlankLine(input)) {
                 lineCounter++;
-                contentSpec.appendPreProcessedLine(input);
 
                 if (isCommentLine(input)) {
                     contentSpec.appendComment(input);
@@ -388,7 +392,6 @@ public class ContentSpecParser {
         final String input = getLines().poll();
 
         lineCounter++;
-        contentSpec.appendPreProcessedLine(input);
         final String[] lineVars = CollectionUtilities.trimStringArray(StringUtilities.split(input, '='));
 
         if (lineVars.length >= 2) {
@@ -418,7 +421,6 @@ public class ContentSpecParser {
         final String input = getLines().poll();
 
         lineCounter++;
-        contentSpec.appendPreProcessedLine(input);
         final String[] lineVars = CollectionUtilities.trimStringArray(StringUtilities.split(input, '='));
 
         if (lineVars.length >= 2) {
@@ -430,8 +432,6 @@ public class ContentSpecParser {
                 final String specId = getLines().poll();
                 lineCounter++;
                 if (specId != null) {
-                    contentSpec.appendPreProcessedLine(specId);
-
                     final String[] specIdVars = CollectionUtilities.trimStringArray(StringUtilities.split(specId, '='));
                     if (specIdVars.length >= 2) {
                         if (specIdVars[0].equalsIgnoreCase(CSConstants.ID_TITLE)) {
@@ -450,7 +450,7 @@ public class ContentSpecParser {
                             return false;
                         }
                     } else {
-                        log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, specId.trim()));
+                        log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, getLineCount(), specId.trim()));
                         return false;
                     }
                 } else {
@@ -502,11 +502,11 @@ public class ContentSpecParser {
             lineCounter++;
             // Process the content specification and print an error message if an error occurs
             try {
-                if (!processLine(contentSpec, getLines().poll())) {
+                if (!processLine(contentSpec, getLines().poll(), getLineCount())) {
                     error = true;
                 }
             } catch (IndentationException e) {
-                log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
+                log.error(e.getMessage());
                 return false;
             }
         }
@@ -547,55 +547,63 @@ public class ContentSpecParser {
      * @return True if the line of input was processed successfully otherwise false.
      * @throws IndentationException Thrown if any invalid indentation occurs.
      */
-    protected boolean processLine(final ContentSpec contentSpec, final String line) throws IndentationException {
+    protected boolean processLine(final ContentSpec contentSpec, final String line, int lineNumber) throws IndentationException {
         assert line != null;
-        contentSpec.appendPreProcessedLine(line);
 
         // Trim the whitespace
         final String trimmedLine = line.trim();
 
-        // If the line is a blank or a comment add the node and return
+        // If the line is a blank or a comment, then nothing needs processing. So add the line and return
         if (isBlankLine(trimmedLine) || isCommentLine(trimmedLine)) {
             return processEmptyOrCommentLine(contentSpec, line);
-        }
-
-        // Calculate the lines indentation level
-        int lineIndentationLevel = calculateLineIndentationLevel(line);
-
-        if (lineIndentationLevel > indentationLevel) {
-            // The line has indented without a new level so print an error
-            log.error(format(ProcessorConstants.ERROR_INCORRECT_INDENTATION_MSG, lineCounter, trimmedLine));
-            throw new IndentationException();
-        } else if (lineIndentationLevel < indentationLevel) {
-            // The line has left the previous level so move the current level up to the right level
-            for (int i = (indentationLevel - lineIndentationLevel); i > 0; i--) {
-                if (getCurrentLevel().getParent() != null) {
-                    setCurrentLevel(getCurrentLevel().getParent());
-                }
-            }
-            indentationLevel = lineIndentationLevel;
-        }
-
-        if (isMetaDataLine(trimmedLine)) {
-            return processMetaDataLine(contentSpec, line);
-        } else if (isLevelLine(trimmedLine)) {
-            return processLevelLine(contentSpec, trimmedLine, lineIndentationLevel);
-        } else if (trimmedLine.toUpperCase(Locale.ENGLISH).matches("^CS[ ]*:.*")) {
-            return processExternalLevelLine(contentSpec, line);
-        } else if (StringUtilities.indexOf(trimmedLine, '[') == 0 && getCurrentLevel().getType() == LevelType.BASE) {
-            processGlobalOptionsLine(contentSpec, line);
         } else {
-            // Process a new topic
+            // Calculate the lines indentation level
+            int lineIndentationLevel = calculateLineIndentationLevel(line, lineNumber);
+            if (lineIndentationLevel > getIndentationLevel()) {
+                // The line was indented without a new level so throw an error
+                throw new IndentationException(format(ProcessorConstants.ERROR_INCORRECT_INDENTATION_MSG, lineNumber, trimmedLine));
+            } else if (lineIndentationLevel < getIndentationLevel()) {
+                // The line has left the previous level so move the current level up to the right level
+                Level newCurrentLevel = getCurrentLevel();
+                for (int i = (getIndentationLevel() - lineIndentationLevel); i > 0; i--) {
+                    if (newCurrentLevel.getParent() != null) {
+                        newCurrentLevel = newCurrentLevel.getParent();
+                    }
+                }
+                changeCurrentLevel(newCurrentLevel, lineIndentationLevel);
+            }
+
+            // Process the line based on what type the line is
             try {
-                final SpecTopic tempTopic = processTopic(contentSpec, trimmedLine);
-                // Adds the topic to the current level
-                getCurrentLevel().appendSpecTopic(tempTopic);
+                if (isMetaDataLine(trimmedLine)) {
+                    processMetaDataLine(contentSpec, line, lineNumber);
+                } else if (isLevelLine(trimmedLine)) {
+                    final Level level = processLevelLine(trimmedLine, lineNumber);
+                    if (level instanceof Process) {
+                        getProcesses().add((Process) level);
+                    }
+                    getCurrentLevel().appendChild(level);
+
+                    // Change the current level to use the new parsed level
+                    changeCurrentLevel(level, getIndentationLevel() + 1);
+                    //            } else if (trimmedLine.toUpperCase(Locale.ENGLISH).matches("^CS[ ]*:.*")) {
+                    //                processExternalLevelLine(getCurrentLevel(), line);
+                } else if (StringUtilities.indexOf(trimmedLine, '[') == 0 && getCurrentLevel().getType() == LevelType.BASE) {
+                    processGlobalOptionsLine(getCurrentLevel(), line, lineNumber);
+                } else {
+                    // Process a new topic
+                    final SpecTopic tempTopic = processTopic(trimmedLine, lineNumber);
+                    // Adds the topic to the current level
+                    getCurrentLevel().appendSpecTopic(tempTopic);
+
+                }
             } catch (ParsingException e) {
                 log.error(e.getMessage());
                 return false;
             }
+
+            return true;
         }
-        return true;
     }
 
     /**
@@ -605,7 +613,7 @@ public class ContentSpecParser {
      * @return The lines indentation level.
      * @throws IndentationException Thrown if the indentation for the line isn't valid.
      */
-    protected int calculateLineIndentationLevel(final String line) throws IndentationException {
+    protected int calculateLineIndentationLevel(final String line, int lineNumber) throws IndentationException {
         char[] lineCharArray = line.toCharArray();
         int indentationCount = 0;
         // Count the amount of whitespace characters before any text to determine the level
@@ -618,7 +626,7 @@ public class ContentSpecParser {
                 }
             }
             if (indentationCount % getIndentationSize() != 0) {
-                log.error(format(ProcessorConstants.ERROR_INCORRECT_INDENTATION_MSG, lineCounter, line.trim()));
+                log.error(format(ProcessorConstants.ERROR_INCORRECT_INDENTATION_MSG, lineNumber, line.trim()));
                 throw new IndentationException();
             }
         }
@@ -696,12 +704,10 @@ public class ContentSpecParser {
      * Processes a line that represents the start of a Content Specification Level. This method creates the level based on the data in
      * the line and then changes the current processing level to the new level.
      *
-     * @param contentSpec          The content spec object to add the level to.
-     * @param line                 The line to be processed as a level.
-     * @param lineIndentationLevel The lines indentation level.
+     * @param line The line to be processed as a level.
      * @return True if the line was processed without errors, otherwise false.
      */
-    protected boolean processLevelLine(final ContentSpec contentSpec, final String line, int lineIndentationLevel) {
+    protected Level processLevelLine(final String line, int lineNumber) throws ParsingException {
         String tempInput[] = StringUtilities.split(line, ':', 2);
         // Remove the whitespace from each value in the split array
         tempInput = CollectionUtilities.trimStringArray(tempInput);
@@ -709,72 +715,48 @@ public class ContentSpecParser {
         if (tempInput.length >= 1) {
             final LevelType levelType = LevelType.getLevelType(tempInput[0]);
             try {
-                final Level newLevel = processLevel(contentSpec, lineCounter, levelType, line);
-                changeCurrentLevel(newLevel, lineIndentationLevel + 1);
-                if (levelType == LevelType.PROCESS) {
-                    getProcesses().add((Process) newLevel);
-                }
-                return true;
+                return processLevel(lineNumber, levelType, line);
             } catch (ParsingException e) {
                 log.error(e.getMessage());
                 // Create a basic level so the rest of the spec can be processed
-                final Level dummyLevel = createEmptyLevelFromType(lineCounter, levelType, line);
-                changeCurrentLevel(dummyLevel, lineIndentationLevel + 1);
-                if (levelType == LevelType.PROCESS) {
-                    getProcesses().add((Process) dummyLevel);
-                }
-                return false;
+                return createEmptyLevelFromType(lineNumber, levelType, line);
             }
         } else {
-            log.error(format(ProcessorConstants.ERROR_LEVEL_FORMAT_MSG, lineCounter, line));
-            return false;
+            throw new ParsingException(format(ProcessorConstants.ERROR_LEVEL_FORMAT_MSG, lineNumber, line));
         }
     }
 
-    /**
-     * TODO The external level processing still needs to be implemented. DO NOT use this method at this time.
-     *
-     * @param contentSpec The content spec object to add the level to.
-     * @param line        The line to be processed.
-     * @return True if the line was processed without errors, otherwise false.
-     */
-    protected boolean processExternalLevelLine(final ContentSpec contentSpec, final String line) {
-        String splitVars[] = StringUtilities.split(line, ':', 2);
-        // Remove the whitespace from each value in the split array
-        splitVars = CollectionUtilities.trimStringArray(splitVars);
-
-        // Get the mapping of variables
-        HashMap<RelationshipType, String[]> variableMap;
-        try {
-            variableMap = getLineVariables(contentSpec, splitVars[1], '[', ']', ',', false);
-            final String title = StringUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
-            processExternalLevel(getCurrentLevel(), variableMap.get(RelationshipType.EXTERNAL_CONTENT_SPEC)[0], title, line);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return false;
-        }
-
-        return true;
-    }
+//    /**
+//     * TODO The external level processing still needs to be implemented. DO NOT use this method at this time.
+//     *
+//     * @param line        The line to be processed.
+//     */
+//    protected void processExternalLevelLine(final Level currentLevel, final String line) throws ParsingException {
+//        String splitVars[] = StringUtilities.split(line, ':', 2);
+//        // Remove the whitespace from each value in the split array
+//        splitVars = CollectionUtilities.trimStringArray(splitVars);
+//
+//        // Get the mapping of variables
+//        HashMap<RelationshipType, String[]> variableMap = getLineVariables(splitVars[1], '[', ']', ',', false);
+//        final String title = StringUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
+//        processExternalLevel(currentLevel, variableMap.get(RelationshipType.EXTERNAL_CONTENT_SPEC)[0], title, line);
+//    }
 
     /**
      * Processes a line that represents some Meta Data in a Content Specification.
      *
      * @param contentSpec The content spec object to add the meta data to.
      * @param line        The line to be processed.
-     * @return True if the line was processed without errors, otherwise false.
      */
-    protected boolean processMetaDataLine(final ContentSpec contentSpec, final String line) {
+    protected void processMetaDataLine(final ContentSpec contentSpec, final String line, int lineNumber) throws ParsingException {
         // Parse the line and break it up into the key/value pair
         Pair<String, String> keyValue = null;
         try {
             keyValue = ProcessorUtilities.getAndValidateKeyValuePair(line);
         } catch (InvalidKeyValueException e) {
-            log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, line));
-            return false;
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineNumber, line));
         } catch (NumberFormatException e) {
-            log.error(format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineCounter, line));
-            return false;
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineNumber, line));
         }
 
         final String key = keyValue.getFirst();
@@ -789,8 +771,7 @@ public class ContentSpecParser {
                     setIndentationSize(2);
                 }
             } catch (Exception e) {
-                log.error(format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineCounter, line));
-                return false;
+                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineNumber, line));
             }
         } else if (key.equalsIgnoreCase(CSConstants.DEBUG_TITLE)) {
             if (value.equals("1")) {
@@ -806,7 +787,7 @@ public class ContentSpecParser {
             int startingPos = StringUtilities.indexOf(value, '[');
             if (startingPos != -1) {
                 final StringBuilder cfg = new StringBuilder(value);
-                int startLineCount = lineCounter;
+                int startLineCount = lineNumber;
                 // If the ']' character isn't on this line try the next line
                 if (StringUtilities.indexOf(cfg.toString(), ']') == -1) {
                     cfg.append("\n");
@@ -816,7 +797,6 @@ public class ContentSpecParser {
                     while (newLine != null) {
                         cfg.append(newLine).append("\n");
                         lineCounter++;
-                        contentSpec.appendPreProcessedLine(newLine);
                         // If the ']' character still isn't found keep trying
                         if (StringUtilities.lastIndexOf(cfg.toString(), ']') == -1) {
                             newLine = getLines().poll();
@@ -829,15 +809,13 @@ public class ContentSpecParser {
                 // Check that the ']' character was found and that it was found before another '[' character
                 final String finalCfg = cfg.toString();
                 if (StringUtilities.lastIndexOf(finalCfg, ']') == -1 || StringUtilities.lastIndexOf(finalCfg, '[') != startingPos) {
-                    log.error(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, startLineCount,
+                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, startLineCount,
                             key + " = " + finalCfg.replaceAll("\n", "\n          ")));
-                    return false;
                 } else {
                     contentSpec.setPublicanCfg(StringUtilities.replaceEscapeChars(finalCfg).substring(1, cfg.length() - 2));
                 }
             } else {
-                log.error(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineCounter, line));
-                return false;
+                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber, line));
             }
         } else if (key.equalsIgnoreCase(CSConstants.INLINE_INJECTION_TITLE)) {
             final InjectionOptions injectionOptions = new InjectionOptions();
@@ -856,9 +834,8 @@ public class ContentSpecParser {
                         }
                     }
                 } else {
-                    log.error(
-                            format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG + ProcessorConstants.CSLINE_MSG, lineCounter, ']', line));
-                    return false;
+                    throw new ParsingException(
+                            format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG + ProcessorConstants.CSLINE_MSG, lineNumber, ']', line));
                 }
             }
             String injectionSetting = getTitle(value, '[');
@@ -871,54 +848,38 @@ public class ContentSpecParser {
             } else if (injectionSetting.trim().equalsIgnoreCase("off")) {
                 injectionOptions.setContentSpecType(InjectionOptions.UserType.OFF);
             } else {
-                log.error(format(ProcessorConstants.ERROR_INVALID_INJECTION_MSG, lineCounter, line));
-                return false;
+                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_INJECTION_MSG, lineNumber, line));
             }
             contentSpec.setInjectionOptions(injectionOptions);
         } else {
             final KeyValueNode<String> node = new KeyValueNode<String>(key, value);
             contentSpec.appendKeyValueNode(node);
         }
-
-        return true;
     }
 
     /**
      * Processes a line that represents the Global Options for the Content Specification.
      *
-     * @param contentSpec The content spec object to add the options to.
-     * @param line        The line to be processed.
+     * @param line The line to be processed.
      * @return True if the line was processed without errors, otherwise false.
      */
-    protected boolean processGlobalOptionsLine(final ContentSpec contentSpec, final String line) {
+    protected boolean processGlobalOptionsLine(final Level currentLevel, final String line, int lineNumber) throws ParsingException {
         // Read in the variables from the line
-        String[] variables;
-        try {
-            final HashMap<RelationshipType, String[]> variableMap = getLineVariables(contentSpec, line, '[', ']', ',', false);
-            // Check the read in values are valid
-            if (!variableMap.containsKey(RelationshipType.NONE)) {
-                log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, line));
-                return false;
-            } else if (variableMap.size() > 1) {
-                log.error(format(ProcessorConstants.ERROR_RELATIONSHIP_BASE_LEVEL_MSG, lineCounter, line));
-                return false;
-            }
-            variables = variableMap.get(RelationshipType.NONE);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return false;
+        final HashMap<RelationshipType, String[]> variableMap = getLineVariables(line, '[', ']', ',', false);
+
+        // Check the read in values are valid
+        if (!variableMap.containsKey(RelationshipType.NONE)) {
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineNumber, line));
+        } else if (variableMap.size() > 1) {
+            throw new ParsingException(format(ProcessorConstants.ERROR_RELATIONSHIP_BASE_LEVEL_MSG, lineNumber, line));
         }
+        String[] variables = variableMap.get(RelationshipType.NONE);
 
         // Check that some options were found, if so then parse them
         if (variables.length > 0) {
-            try {
-                addOptions(contentSpec, getCurrentLevel(), variables, 0, line);
-            } catch (ParsingException e) {
-                log.error(e.getMessage());
-                return false;
-            }
+            addOptions(currentLevel, variables, 0, line, lineNumber);
         } else {
-            log.warn(format(ProcessorConstants.WARN_EMPTY_BRACKETS_MSG, lineCounter));
+            log.warn(format(ProcessorConstants.WARN_EMPTY_BRACKETS_MSG, lineNumber));
         }
 
         return true;
@@ -932,27 +893,25 @@ public class ContentSpecParser {
      */
     protected void changeCurrentLevel(final Level newLevel, int newIndentationLevel) {
         indentationLevel = newIndentationLevel;
-        getCurrentLevel().appendChild(newLevel);
         setCurrentLevel(newLevel);
     }
 
     /**
      * Processes the input to create a new topic
      *
-     * @param contentSpec The content spec object that the topic is being created for.
-     * @param line        The line of input to be processed
+     * @param line The line of input to be processed
      * @return A topics object initialised with the data from the input line.
      * @throws ParsingException Thrown if the line can't be parsed as a Topic, due to incorrect syntax.
      */
-    protected SpecTopic processTopic(final ContentSpec contentSpec, final String line) throws ParsingException {
-        final SpecTopic tempTopic = new SpecTopic(null, lineCounter, line, null);
+    protected SpecTopic processTopic(final String line, int lineNumber) throws ParsingException {
+        final SpecTopic tempTopic = new SpecTopic(null, lineNumber, line, null);
 
         // Process a new topic
         String[] variables;
         // Read in the variables inside of the brackets
-        HashMap<RelationshipType, String[]> variableMap = getLineVariables(contentSpec, line, '[', ']', ',', false);
+        HashMap<RelationshipType, String[]> variableMap = getLineVariables(line, '[', ']', ',', false);
         if (!variableMap.containsKey(RelationshipType.NONE)) {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, line));
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineNumber, line));
         }
         variables = variableMap.get(RelationshipType.NONE);
         int varStartPos = 2;
@@ -978,10 +937,10 @@ public class ContentSpecParser {
                         try {
                             tempTopic.setRevision(Integer.parseInt(vars[1]));
                         } catch (NumberFormatException ex) {
-                            throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_INVALID_REVISION_FORMAT, lineCounter, line));
+                            throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_INVALID_REVISION_FORMAT, lineNumber, line));
                         }
                     } else {
-                        log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, line));
+                        log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineNumber, line));
                         throw new ParsingException();
                     }
                 } else {
@@ -994,13 +953,13 @@ public class ContentSpecParser {
             if (!variables[0].matches("(" + CSConstants.DUPLICATE_TOPIC_ID_REGEX + ")|(" + CSConstants.CLONED_TOPIC_ID_REGEX + ")|(" +
                     CSConstants.EXISTING_TOPIC_ID_REGEX + ")|(" + CSConstants.NEW_TOPIC_ID_REGEX + ")|(" +
                     CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX + ")")) {
-                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TITLE_ID_MSG, lineCounter, line));
+                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TITLE_ID_MSG, lineNumber, line));
             } else if (variables[0].matches(CSConstants.NEW_TOPIC_ID_REGEX)) {
-                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TYPE_TITLE_ID_MSG, lineCounter, line));
+                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TYPE_TITLE_ID_MSG, lineNumber, line));
             }
             varStartPos = 1;
         } else {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TITLE_ID_MSG, lineCounter, line));
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TITLE_ID_MSG, lineNumber, line));
         }
 
         // Set the title
@@ -1022,29 +981,29 @@ public class ContentSpecParser {
         } else if (variables[0].equals("N") || variables[0].matches(CSConstants.DUPLICATE_TOPIC_ID_REGEX) ||
                 variables[0].matches(CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX) || variables[0].matches(
                 CSConstants.CLONED_TOPIC_ID_REGEX) || variables[0].matches(CSConstants.EXISTING_TOPIC_ID_REGEX)) {
-            uniqueId = Integer.toString(lineCounter) + "-" + variables[0];
+            uniqueId = Integer.toString(lineNumber) + "-" + variables[0];
             getSpecTopics().put(uniqueId, tempTopic);
         } else if (variables[0].startsWith("N")) {
-            throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_ID_MSG, lineCounter, variables[0], line));
+            throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_ID_MSG, lineNumber, variables[0], line));
         } else {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TOPIC_ID_MSG, lineCounter, line));
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TOPIC_ID_MSG, lineNumber, line));
         }
         tempTopic.setUniqueId(uniqueId);
 
         // Get the options if the topic is a new or cloned topic
         if (variables[0].matches("(" + CSConstants.NEW_TOPIC_ID_REGEX + ")|(" + CSConstants.CLONED_TOPIC_ID_REGEX +
                 ")|(" + CSConstants.EXISTING_TOPIC_ID_REGEX + ")")) {
-            addOptions(contentSpec, tempTopic, variables, varStartPos, line);
+            addOptions(tempTopic, variables, varStartPos, line, lineNumber);
         } else if (variables.length > varStartPos) {
             // Display warnings if options are specified for existing or duplicated topics
             if (variables[0].matches(CSConstants.DUPLICATE_TOPIC_ID_REGEX) || variables[0].matches(
                     CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX)) {
-                log.warn(format(ProcessorConstants.WARN_IGNORE_DUP_INFO_MSG, lineCounter, line));
+                log.warn(format(ProcessorConstants.WARN_IGNORE_DUP_INFO_MSG, lineNumber, line));
             }
         }
 
         // Process the Topic Relationships
-        processTopicRelationships(tempTopic, variableMap, line);
+        processTopicRelationships(tempTopic, variableMap, line, lineNumber);
 
         return tempTopic;
     }
@@ -1058,7 +1017,7 @@ public class ContentSpecParser {
      * @throws ParsingException Thrown if the variables can't be parsed due to incorrect syntax.
      */
     protected void processTopicRelationships(final SpecTopic tempTopic, final HashMap<RelationshipType, String[]> variableMap,
-            final String input) throws ParsingException {
+            final String input, int lineNumber) throws ParsingException {
         // Process the relationships
         final String uniqueId = tempTopic.getUniqueId();
         final ArrayList<Relationship> topicRelationships = new ArrayList<Relationship>();
@@ -1079,9 +1038,9 @@ public class ContentSpecParser {
                 } else {
                     if (relatedId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
                             ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineCounter, ','));
+                        throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineNumber, ','));
                     } else {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_REFERS_TO_RELATIONSHIP, lineCounter));
+                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_REFERS_TO_RELATIONSHIP, lineNumber));
                     }
                 }
             }
@@ -1104,9 +1063,9 @@ public class ContentSpecParser {
                 } else {
                     if (prerequisiteId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
                             ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineCounter, ','));
+                        throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineNumber, ','));
                     } else {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PREREQUISITE_RELATIONSHIP, lineCounter));
+                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PREREQUISITE_RELATIONSHIP, lineNumber));
                     }
                 }
             }
@@ -1129,9 +1088,9 @@ public class ContentSpecParser {
                 } else {
                     if (linkListId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
                             ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineCounter, ','));
+                        throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineNumber, ','));
                     } else {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_LINK_LIST_RELATIONSHIP, lineCounter));
+                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_LINK_LIST_RELATIONSHIP, lineNumber));
                     }
                 }
             }
@@ -1139,7 +1098,7 @@ public class ContentSpecParser {
 
         // Next and Previous relationships should only be created internally and shouldn't be specified by the user
         if (variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType.PREVIOUS)) {
-            throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_NEXT_PREV_MSG, lineCounter, input));
+            throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_NEXT_PREV_MSG, lineNumber, input));
         }
 
         /* 
@@ -1151,7 +1110,7 @@ public class ContentSpecParser {
                 final String[] branches = variableMap.get(RelationshipType.BRANCH);
                 ((Process) getCurrentLevel()).addBranches(uniqueId, Arrays.asList(branches));
             } else {
-                throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_BRANCH_OUTSIDE_PROCESS, lineCounter, input));
+                throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_BRANCH_OUTSIDE_PROCESS, lineNumber, input));
             }
         }
 
@@ -1166,11 +1125,11 @@ public class ContentSpecParser {
             if (getTargetTopics().containsKey(targetId)) {
                 throw new ParsingException(
                         format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetTopics().get(targetId).getLineNumber(),
-                                getTargetTopics().get(targetId).getText(), lineCounter, input));
+                                getTargetTopics().get(targetId).getText(), lineNumber, input));
             } else if (getTargetTopics().containsKey(targetId)) {
                 throw new ParsingException(
                         format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetLevels().get(targetId).getLineNumber(),
-                                getTargetLevels().get(targetId).getText(), lineCounter, input));
+                                getTargetLevels().get(targetId).getText(), lineNumber, input));
             } else {
                 getTargetTopics().put(targetId, tempTopic);
                 tempTopic.setTargetId(targetId);
@@ -1193,41 +1152,39 @@ public class ContentSpecParser {
     /**
      * Creates an empty Level using the LevelType to determine which Level subclass to instantiate.
      *
-     * @param line      The line number of the level.
-     * @param levelType The Level Type.
-     * @param input     The string that represents the level, if one exists,
+     * @param lineNumber The line number of the level.
+     * @param levelType  The Level Type.
+     * @param input      The string that represents the level, if one exists,
      * @return The empty Level subclass object, or a plain Level object if no type matches a subclass.
      */
-    protected Level createEmptyLevelFromType(final int line, final LevelType levelType, final String input) {
+    protected Level createEmptyLevelFromType(final int lineNumber, final LevelType levelType, final String input) {
         // Create the level based on the type
         switch (levelType) {
             case APPENDIX:
-                return new Appendix(null, line, input);
+                return new Appendix(null, lineNumber, input);
             case CHAPTER:
-                return new Chapter(null, line, input);
+                return new Chapter(null, lineNumber, input);
             case SECTION:
-                return new Section(null, line, input);
+                return new Section(null, lineNumber, input);
             case PART:
-                return new Part(null, line, input);
+                return new Part(null, lineNumber, input);
             case PROCESS:
-                return new Process(null, line, input);
+                return new Process(null, lineNumber, input);
             default:
-                return new Level(null, line, input, levelType);
+                return new Level(null, lineNumber, input, levelType);
         }
     }
 
     /**
      * Processes and creates a level based on the level type.
      *
-     * @param contentSpec The content spec object the level is being created for.
-     * @param lineNumber  The line number the level is on.
-     * @param levelType   The type the level will represent. ie. A Chapter or Appendix
-     * @param line        The chapter string in the content specification.
+     * @param lineNumber The line number the level is on.
+     * @param levelType  The type the level will represent. ie. A Chapter or Appendix
+     * @param line       The chapter string in the content specification.
      * @return The created level or null if an error occurred.
      * @throws ParsingException Thrown if the line can't be parsed as a Level, due to incorrect syntax.
      */
-    protected Level processLevel(final ContentSpec contentSpec, final int lineNumber, final LevelType levelType,
-            final String line) throws ParsingException {
+    protected Level processLevel(final int lineNumber, final LevelType levelType, final String line) throws ParsingException {
         String splitVars[] = StringUtilities.split(line, ':', 2);
         // Remove the whitespace from each value in the split array
         splitVars = CollectionUtilities.trimStringArray(splitVars);
@@ -1241,7 +1198,7 @@ public class ContentSpecParser {
             final String title = StringUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
             newLvl.setTitle(title);
             // Get the mapping of variables
-            final HashMap<RelationshipType, String[]> variableMap = getLineVariables(contentSpec, splitVars[1], '[', ']', ',', false);
+            final HashMap<RelationshipType, String[]> variableMap = getLineVariables(splitVars[1], '[', ']', ',', false);
             if (variableMap.containsKey(RelationshipType.NONE)) {
                 variables = variableMap.get(RelationshipType.NONE);
             }
@@ -1252,11 +1209,11 @@ public class ContentSpecParser {
                 if (getTargetTopics().containsKey(targetId)) {
                     throw new ParsingException(
                             format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetTopics().get(targetId).getLineNumber(),
-                                    getTargetTopics().get(targetId).getText(), lineCounter, line));
+                                    getTargetTopics().get(targetId).getText(), lineNumber, line));
                 } else if (getTargetLevels().containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
                     throw new ParsingException(
                             format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetLevels().get(targetId).getLineNumber(),
-                                    getTargetLevels().get(targetId).getText(), lineCounter, line));
+                                    getTargetLevels().get(targetId).getText(), lineNumber, line));
                 } else {
                     getTargetLevels().put(targetId, newLvl);
                     newLvl.setTargetId(targetId);
@@ -1270,23 +1227,23 @@ public class ContentSpecParser {
                 newLvl.setExternalTargetId(externalTargetId);
             }
 
-            // Check if the level is injecting data from another content spec
-            if (variableMap.containsKey(RelationshipType.EXTERNAL_CONTENT_SPEC)) {
-                processExternalLevel(newLvl, variableMap.get(RelationshipType.EXTERNAL_CONTENT_SPEC)[0], title, line);
-            }
+//            // Check if the level is injecting data from another content spec
+//            if (variableMap.containsKey(RelationshipType.EXTERNAL_CONTENT_SPEC)) {
+//                processExternalLevel(newLvl, variableMap.get(RelationshipType.EXTERNAL_CONTENT_SPEC)[0], title, line);
+//            }
 
             // Check that no relationships were specified for the appendix
             if (variableMap.containsKey(RelationshipType.REFER_TO) || variableMap.containsKey(
                     RelationshipType.PREREQUISITE) || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(
                     RelationshipType.PREVIOUS)) {
                 throw new ParsingException(
-                        format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineCounter, CSConstants.CHAPTER, CSConstants.CHAPTER,
+                        format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineNumber, CSConstants.CHAPTER, CSConstants.CHAPTER,
                                 line));
             }
 
             // Process the options
             if (variables != null && variables.length >= 1) {
-                addOptions(contentSpec, newLvl, variables, 0, line);
+                addOptions(newLvl, variables, 0, line, lineNumber);
             }
         }
         return newLvl;
@@ -1296,7 +1253,6 @@ public class ContentSpecParser {
      * Gets the variables from a string. The variables are inside of the starting and ending delimiter and are
      * separated by the separator.
      *
-     * @param contentSpec The content spec object the variables will be added to.
      * @param line        The line of input to get the variables for.
      * @param startDelim  The starting delimiter of the variables.
      * @param endDelim    The ending delimiter of the variables.
@@ -1305,16 +1261,15 @@ public class ContentSpecParser {
      * @return A Map of String arrays for different relationship. Inside each string array is the singular variables.
      * @throws ParsingException Thrown if the line can't be successfully parsed.
      */
-    public HashMap<RelationshipType, String[]> getLineVariables(final ContentSpec contentSpec, String line, char startDelim, char endDelim,
-            char separator, boolean ignoreTypes) throws ParsingException {
-        return getLineVariables(contentSpec, line, startDelim, endDelim, separator, ignoreTypes, false);
+    public HashMap<RelationshipType, String[]> getLineVariables(final String line, char startDelim, char endDelim, char separator,
+            boolean ignoreTypes) throws ParsingException {
+        return getLineVariables(line, startDelim, endDelim, separator, ignoreTypes, false);
     }
 
     /**
      * Gets the variables from a string. The variables are inside of the starting and ending delimiter and are
      * separated by the separator.
      *
-     * @param contentSpec The content spec object the variables will be added to.
      * @param input       The line of input to get the variables for.
      * @param startDelim  The starting delimiter of the variables.
      * @param endDelim    The ending delimiter of the variables.
@@ -1324,8 +1279,8 @@ public class ContentSpecParser {
      * @return A Map of String arrays for different relationship. Inside each string array is the singular variables.
      * @throws ParsingException Thrown if the line can't be successfully parsed.
      */
-    public HashMap<RelationshipType, String[]> getLineVariables(final ContentSpec contentSpec, final String input, final char startDelim,
-            final char endDelim, final char separator, final boolean ignoreTypes, final boolean groupTypes) throws ParsingException {
+    public HashMap<RelationshipType, String[]> getLineVariables(final String input, final char startDelim, final char endDelim,
+            final char separator, final boolean ignoreTypes, final boolean groupTypes) throws ParsingException {
         final HashMap<RelationshipType, String[]> output = new HashMap<RelationshipType, String[]>();
 
         final int lastStartDelimPos = StringUtilities.lastIndexOf(input, startDelim);
@@ -1334,7 +1289,7 @@ public class ContentSpecParser {
         // Check that we have variables to process
         if (lastStartDelimPos == -1) return output;
 
-        int initialCount = lineCounter;
+        int initialCount = getLineCount();
         final String nextLine = getLines().peek();
 
         /*
@@ -1347,14 +1302,13 @@ public class ContentSpecParser {
             String temp = getLines().poll();
             if (temp != null) {
                 lineCounter++;
-                contentSpec.appendPreProcessedLine(temp);
 
-                return getLineVariables(contentSpec, input + "\n" + temp, startDelim, endDelim, separator, ignoreTypes, groupTypes);
+                return getLineVariables(input + "\n" + temp, startDelim, endDelim, separator, ignoreTypes, groupTypes);
             }
         }
 
         /* Get the variables from the line */
-        final List<VariableSet> varSets = findVariableSets(contentSpec, input, startDelim, endDelim);
+        final List<VariableSet> varSets = findVariableSets(input, startDelim, endDelim);
 
         /* Process the variables that were found */
         for (final VariableSet set : varSets) {
@@ -1456,15 +1410,14 @@ public class ContentSpecParser {
      * Adds the options from an array of variables to a node (Level or Topic). It starts checking the variables from the startPos
      * position of the variable array, then check to see if the variable is a tag or attribute and processes it.
      *
-     * @param contentSpec   The content spec object that the node belongs to.
      * @param node          The node to add the options to.
      * @param vars          An array of variables to get the options for.
      * @param startPos      The starting position in the variable array to start checking.
      * @param originalInput The original string used to create these options.
      * @throws ParsingException Thrown if the variables can't be successfully parsed as options.
      */
-    protected void addOptions(final ContentSpec contentSpec, final SpecNode node, final String[] vars, final int startPos,
-            final String originalInput) throws ParsingException {
+    protected void addOptions(final SpecNode node, final String[] vars, final int startPos, final String originalInput,
+            int lineNumber) throws ParsingException {
         // Process each variable in vars starting from the start position
         for (int i = startPos; i < vars.length; i++) {
             String str = vars[i];
@@ -1485,13 +1438,13 @@ public class ContentSpecParser {
                         try {
                             Pattern.compile(condition);
                         } catch (PatternSyntaxException exception) {
-                            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_CONDITION_MSG, lineCounter, originalInput));
+                            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_CONDITION_MSG, lineNumber, originalInput));
                         }
                     } else {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_OPTION_MSG, lineCounter, originalInput));
+                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_OPTION_MSG, lineNumber, originalInput));
                     }
                 } else {
-                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, originalInput));
+                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineNumber, originalInput));
                 }
             }
             // The variable is a tag with a category specified
@@ -1516,8 +1469,7 @@ public class ContentSpecParser {
                         }
 
                         // Get the mapping of variables
-                        HashMap<RelationshipType, String[]> variableMap = getLineVariables(contentSpec, input.toString(), '(', ')', ',',
-                                false);
+                        HashMap<RelationshipType, String[]> variableMap = getLineVariables(input.toString(), '(', ')', ',', false);
                         if (variableMap.containsKey(RelationshipType.NONE)) {
                             tempTags = variableMap.get(RelationshipType.NONE);
                         } else {
@@ -1530,32 +1482,31 @@ public class ContentSpecParser {
 
                             if (!node.addTags(Arrays.asList(tags))) {
                                 throw new ParsingException(
-                                        format(ProcessorConstants.ERROR_MULTI_TAG_DUPLICATED_MSG, lineCounter, originalInput));
+                                        format(ProcessorConstants.ERROR_MULTI_TAG_DUPLICATED_MSG, lineNumber, originalInput));
                             }
                         } else {
                             throw new ParsingException(
-                                    format(ProcessorConstants.ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG, lineCounter, originalInput));
+                                    format(ProcessorConstants.ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG, lineNumber, originalInput));
                         }
                     }
                     // Just a single tag so add it straight away
                     else {
                         if (!node.addTag(StringUtilities.replaceEscapeChars(temp[1]))) {
-                            throw new ParsingException(format(ProcessorConstants.ERROR_TAG_DUPLICATED_MSG, lineCounter, originalInput));
+                            throw new ParsingException(format(ProcessorConstants.ERROR_TAG_DUPLICATED_MSG, lineNumber, originalInput));
                         }
                     }
                 } else {
-                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG, lineCounter, originalInput));
+                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG, lineNumber, originalInput));
                 }
             }
             // Variable is a tag with no category specified
             else {
                 if (str.matches(CSConstants.ALL_TOPIC_ID_REGEX)) {
-                    throw new ParsingException(
-                            format(ProcessorConstants.ERROR_INCORRECT_TOPIC_ID_LOCATION_MSG, lineCounter, originalInput));
+                    throw new ParsingException(format(ProcessorConstants.ERROR_INCORRECT_TOPIC_ID_LOCATION_MSG, lineNumber, originalInput));
                 }
 
                 if (!node.addTag(str)) {
-                    throw new ParsingException(format(ProcessorConstants.ERROR_TAG_DUPLICATED_MSG, lineCounter, originalInput));
+                    throw new ParsingException(format(ProcessorConstants.ERROR_TAG_DUPLICATED_MSG, lineNumber, originalInput));
                 }
             }
         }
@@ -1675,95 +1626,93 @@ public class ContentSpecParser {
         }
     }
 
-    /**
-     * Process an external level and inject it into the current content specification.
-     *
-     * @param lvl                  The level to inject the external levels contents.
-     * @param externalCSPReference The reference to the external level. The CSP ID and possibly the External Target ID.
-     * @param title                The title of the external level.
-     * @param input                The original input used to specify the external level.
-     */
-    // TODO Finish External level processing so specs can reference other specs levels
-    protected void processExternalLevel(final Level lvl, final String externalCSPReference, final String title,
-            final String input) throws ParsingException {
-        //TODO Add the level/topic contents to the local parser variables
-        String[] vars = externalCSPReference.split(":");
-        vars = CollectionUtilities.trimStringArray(vars);
-
-        /* No need to check for an exception as the regex that produces this will take care of it. */
-        final Integer cspId = Integer.parseInt(vars[0]);
-        final Integer targetId = vars.length > 1 ? Integer.parseInt(vars[1]) : null;
-
-        final TopicWrapper externalContentSpec = topicProvider.getTopic(cspId);
-
-        if (externalContentSpec != null) {
-            /* We are importing part of an external content specification */
-            if (targetId != null) {
-                final ContentSpecParser parser = new ContentSpecParser(providerFactory, loggerManager);
-                boolean foundTargetId = false;
-                try {
-                    parser.parse(externalContentSpec.getXml());
-                    for (final String externalTargetId : parser.getExternalTargetLevels().keySet()) {
-                        final String id = externalTargetId.replaceAll("ET", "");
-                        if (id.equals(targetId.toString())) {
-                            foundTargetId = true;
-
-                            final Level externalLvl = parser.getExternalTargetLevels().get(externalTargetId);
-
-                            // TODO Deal with processes
-
-                            /* Check that the title matches */
-                            if (externalLvl.getTitle().equals(title)) {
-                                for (final Node externalChildNode : externalLvl.getChildNodes()) {
-                                    if (externalChildNode instanceof SpecNode) {
-                                        lvl.appendChild(externalChildNode);
-                                    } else if (externalChildNode instanceof Comment) {
-                                        lvl.appendComment((Comment) externalChildNode);
-                                    }
-                                }
-                            } else {
-                                // TODO Error Message
-                                throw new ParsingException("Title doesn't match the referenced target id.");
-                            }
-                        }
-                    }
-
-                    if (!foundTargetId) {
-                        // TODO Error Message
-                        throw new ParsingException("External target doesn't exist in the content specification");
-                    }
-                } catch (Exception e) {
-                    // TODO Error message
-                    throw new ParsingException("Failed to pull in external content spec reference");
-                }
-            }
-            /* Import the entire content spec, excluding the metadata */
-            else if (lvl.getType() == LevelType.BASE) {
-                // TODO Handle importing the entire content specification
-            } else {
-                //TODO Error Message
-                throw new ParsingException("Invalid place to import external content");
-            }
-        } else {
-            // TODO Error Message
-            throw new ParsingException("Unable to find the external content specification");
-        }
-    }
+//    /**
+//     * Process an external level and inject it into the current content specification.
+//     *
+//     * @param lvl                  The level to inject the external levels contents.
+//     * @param externalCSPReference The reference to the external level. The CSP ID and possibly the External Target ID.
+//     * @param title                The title of the external level.
+//     * @param input                The original input used to specify the external level.
+//     */
+//    // TODO Finish External level processing so specs can reference other specs levels
+//    protected void processExternalLevel(final Level lvl, final String externalCSPReference, final String title,
+//            final String input) throws ParsingException {
+//        //TODO Add the level/topic contents to the local parser variables
+//        String[] vars = externalCSPReference.split(":");
+//        vars = CollectionUtilities.trimStringArray(vars);
+//
+//        /* No need to check for an exception as the regex that produces this will take care of it. */
+//        final Integer cspId = Integer.parseInt(vars[0]);
+//        final Integer targetId = vars.length > 1 ? Integer.parseInt(vars[1]) : null;
+//
+//        final TopicWrapper externalContentSpec = topicProvider.getTopic(cspId);
+//
+//        if (externalContentSpec != null) {
+//            /* We are importing part of an external content specification */
+//            if (targetId != null) {
+//                final ContentSpecParser parser = new ContentSpecParser(providerFactory, loggerManager);
+//                boolean foundTargetId = false;
+//                try {
+//                    parser.parse(externalContentSpec.getXml());
+//                    for (final String externalTargetId : parser.getExternalTargetLevels().keySet()) {
+//                        final String id = externalTargetId.replaceAll("ET", "");
+//                        if (id.equals(targetId.toString())) {
+//                            foundTargetId = true;
+//
+//                            final Level externalLvl = parser.getExternalTargetLevels().get(externalTargetId);
+//
+//                            // TODO Deal with processes
+//
+//                            /* Check that the title matches */
+//                            if (externalLvl.getTitle().equals(title)) {
+//                                for (final Node externalChildNode : externalLvl.getChildNodes()) {
+//                                    if (externalChildNode instanceof SpecNode) {
+//                                        lvl.appendChild(externalChildNode);
+//                                    } else if (externalChildNode instanceof Comment) {
+//                                        lvl.appendComment((Comment) externalChildNode);
+//                                    }
+//                                }
+//                            } else {
+//                                // TODO Error Message
+//                                throw new ParsingException("Title doesn't match the referenced target id.");
+//                            }
+//                        }
+//                    }
+//
+//                    if (!foundTargetId) {
+//                        // TODO Error Message
+//                        throw new ParsingException("External target doesn't exist in the content specification");
+//                    }
+//                } catch (Exception e) {
+//                    // TODO Error message
+//                    throw new ParsingException("Failed to pull in external content spec reference");
+//                }
+//            }
+//            /* Import the entire content spec, excluding the metadata */
+//            else if (lvl.getType() == LevelType.BASE) {
+//                // TODO Handle importing the entire content specification
+//            } else {
+//                //TODO Error Message
+//                throw new ParsingException("Invalid place to import external content");
+//            }
+//        } else {
+//            // TODO Error Message
+//            throw new ParsingException("Unable to find the external content specification");
+//        }
+//    }
 
     /**
      * Finds a List of variable sets within a string. If the end of a set
      * can't be determined then it will continue to parse the following
      * lines until the end is found.
      *
-     * @param contentSpec The content spec object the variables will be added to.
-     * @param input       The string to find the sets in.
-     * @param startDelim  The starting character of the set.
-     * @param endDelim    The ending character of the set.
+     * @param input      The string to find the sets in.
+     * @param startDelim The starting character of the set.
+     * @param endDelim   The ending character of the set.
      * @return A list of VariableSets that contain the contents of each set
      *         and the start and end position of the set.
      */
-    protected List<VariableSet> findVariableSets(final ContentSpec contentSpec, final String input, final char startDelim,
-            final char endDelim) {
+    protected List<VariableSet> findVariableSets(final String input, final char startDelim, final char endDelim) {
         final StringBuilder varLine = new StringBuilder(input);
         final List<VariableSet> retValue = new ArrayList<VariableSet>();
         VariableSet set = ProcessorUtilities.findVariableSet(input, startDelim, endDelim, 0);
@@ -1796,7 +1745,6 @@ public class ContentSpecParser {
                     if (line != null) {
                         varLine.append("\n").append(line);
 
-                        contentSpec.appendPreProcessedLine(line);
                         set = ProcessorUtilities.findVariableSet(varLine.toString(), startDelim, endDelim, nextStart);
                     }
                 }
@@ -1807,7 +1755,6 @@ public class ContentSpecParser {
                 if (line != null) {
                     varLine.append("\n").append(line);
 
-                    contentSpec.appendPreProcessedLine(line);
                     set = ProcessorUtilities.findVariableSet(varLine.toString(), startDelim, endDelim, set.getStartPos());
                 } else {
                     retValue.add(set);
