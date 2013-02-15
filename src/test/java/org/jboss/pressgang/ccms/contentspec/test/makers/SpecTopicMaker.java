@@ -18,6 +18,7 @@ public class SpecTopicMaker {
     public static final Property<SpecTopic, Integer> lineNumber = newProperty();
     public static final Property<SpecTopic, String> specLine = newProperty();
     public static final Property<SpecTopic, String> type = newProperty();
+    public static final Property<SpecTopic, String> assignedWriter = newProperty();
     public static final Property<SpecTopic, Integer> revision = newProperty();
 
     public static final Instantiator<SpecTopic> SpecTopic = new Instantiator<org.jboss.pressgang.ccms.contentspec.SpecTopic>() {
@@ -29,6 +30,7 @@ public class SpecTopicMaker {
                     lookup.valueOf(specLine, randomAlphanumeric(10)),
                     lookup.valueOf(type, randomAlphanumeric(10)));
             specTopic.setRevision(lookup.valueOf(revision, nextInt()));
+            specTopic.setAssignedWriter(lookup.valueOf(assignedWriter, randomAlphanumeric(10)));
             return specTopic;
         }
     };
