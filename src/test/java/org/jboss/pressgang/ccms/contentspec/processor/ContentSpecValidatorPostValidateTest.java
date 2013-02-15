@@ -285,6 +285,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         // Then the result should be a failure
         assertThat(result, is(false));
         // And an error message should be output
-        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! Tag \"" + tagname + "\" doesn't exist."));
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! Tag \""
+                + tagname + "\" doesn't exist."));
     }
 }

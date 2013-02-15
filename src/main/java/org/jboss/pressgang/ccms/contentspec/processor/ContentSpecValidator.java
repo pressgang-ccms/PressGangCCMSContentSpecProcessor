@@ -376,7 +376,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that each level is valid
-        if (!postValidateLevel(contentSpec.getBaseLevel(), contentSpec.getAllowEmptyLevels())) {
+        if (!postValidateLevel(contentSpec.getBaseLevel())) {
             valid = false;
         }
 
@@ -712,10 +712,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * Validates a level to ensure its format and child levels/topics are valid.
      *
      * @param level              The level to be validated.
-     * @param csAllowEmptyLevels If the "Allow Empty Levels" bit is set in a content specification.
      * @return True if the level is valid otherwise false.
      */
-    public boolean postValidateLevel(final Level level, final boolean csAllowEmptyLevels) {
+    public boolean postValidateLevel(final Level level) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -732,7 +731,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // Validate the sub levels and topics
         for (final Node childNode : level.getChildNodes()) {
             if (childNode instanceof Level) {
-                if (!postValidateLevel((Level) childNode, csAllowEmptyLevels)) {
+                if (!postValidateLevel((Level) childNode)) {
                     valid = false;
                 }
             } else if (childNode instanceof SpecTopic) {
