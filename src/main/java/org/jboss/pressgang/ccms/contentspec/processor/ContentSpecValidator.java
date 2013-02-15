@@ -322,12 +322,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             final ContentSpecWrapper contentSpecTopic = contentSpecProvider.getContentSpec(contentSpec.getId(),
                     processingOptions.getRevision());
 
-            final ContentSpec serverContentSpec = csTransformer.transform(contentSpecTopic);
             //final TopicWrapper contentSpecTopic = topicProvider.getTopic(contentSpec.getId(), processingOptions.getRevision());
             if (contentSpecTopic == null) {
                 log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
                 valid = false;
             } else {
+                final ContentSpec serverContentSpec = csTransformer.transform(contentSpecTopic);
+
                 /* Set the revision the content spec is being validated for */
                 contentSpec.setRevision(contentSpecTopic.getRevision());
 
@@ -1127,7 +1128,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     shutdown.set(true);
                     return false;
                 }
-
                 // Get the tag from the database
                 final List<TagWrapper> tagList = tagProvider.getTagsByName(tagName).getItems();
 

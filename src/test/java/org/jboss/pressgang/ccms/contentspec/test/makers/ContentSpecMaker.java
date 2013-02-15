@@ -31,6 +31,8 @@ public class ContentSpecMaker {
     public static final Property<ContentSpec, BookType> bookType = newProperty();
     public static final Property<ContentSpec, String> bookVersion = newProperty();
     public static final Property<ContentSpec, String> edition = newProperty();
+    public static final Property<ContentSpec, Integer> id = newProperty();
+    public static final Property<ContentSpec, String> checksum = newProperty();
 
     public static final Instantiator<ContentSpec> ContentSpec = new Instantiator<org.jboss.pressgang.ccms.contentspec.ContentSpec>() {
         @Override
@@ -43,6 +45,8 @@ public class ContentSpecMaker {
             contentSpec.setBookType(lookup.valueOf(bookType, BookType.BOOK));
             contentSpec.setBookVersion(lookup.valueOf(bookVersion, valueOf(nextInt())));
             contentSpec.setEdition(lookup.valueOf(edition, valueOf(nextInt())));
+            contentSpec.setId(lookup.valueOf(id, nextInt()));
+            contentSpec.setChecksum(lookup.valueOf(checksum, randomAlphanumeric(10)));
             List<String> preProcessedText = contentSpec.getPreProcessedText();
             preProcessedText.add(randomAlphanumeric(10));
             contentSpec.setPreProcessedTextForLine(randomAlphanumeric(10), 1);
