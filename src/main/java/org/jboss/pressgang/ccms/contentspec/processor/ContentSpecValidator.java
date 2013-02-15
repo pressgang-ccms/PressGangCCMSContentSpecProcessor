@@ -1,7 +1,27 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
-import org.jboss.pressgang.ccms.contentspec.*;
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static java.lang.String.format;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.jboss.pressgang.ccms.contentspec.Appendix;
+import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.Level;
+import org.jboss.pressgang.ccms.contentspec.Node;
 import org.jboss.pressgang.ccms.contentspec.Process;
+import org.jboss.pressgang.ccms.contentspec.SpecNode;
+import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
@@ -22,18 +42,15 @@ import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
-import org.jboss.pressgang.ccms.contentspec.wrapper.*;
+import org.jboss.pressgang.ccms.contentspec.wrapper.CategoryInTagWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.ContentSpecWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.TopicWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.UserWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.base.BaseTopicWrapper;
 import org.jboss.pressgang.ccms.utils.common.DocBookUtilities;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
-
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static java.lang.String.format;
 
 
 /**
@@ -141,11 +158,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         } else if (!contentSpec.getVersion().matches(ProcessorConstants.PRODUCT_VERSION_VALIDATE_REGEX)) {
             log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, CSConstants.VERSION_TITLE));
-            valid = false;
-        }
-
-        if (contentSpec.getPreProcessedText().isEmpty()) {
-            log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
             valid = false;
         }
 
@@ -706,7 +718,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     /**
      * Validates a level to ensure its format and child levels/topics are valid.
      *
-     * @param level              The level to be validated.
+     * @param level The level to be validated.
      * @return True if the level is valid otherwise false.
      */
     public boolean postValidateLevel(final Level level) {
