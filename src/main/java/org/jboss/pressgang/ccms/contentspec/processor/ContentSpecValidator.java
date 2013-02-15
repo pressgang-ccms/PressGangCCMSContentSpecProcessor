@@ -180,12 +180,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
-        // Check that the content specification isn't empty
-        if (contentSpec.getBaseLevel() == null) {
-            log.error(ProcessorConstants.ERROR_CS_EMPTY_MSG);
-            valid = false;
-        }
-
         // Check that each level is valid
         if (!preValidateLevel(contentSpec.getBaseLevel(), specTopicMap, contentSpec.getAllowEmptyLevels(), contentSpec.getBookType())) {
             valid = false;
@@ -221,6 +215,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         /* Find all Topics that have two or more different revisions */
         final List<SpecTopic> allSpecTopics = contentSpec.getSpecTopics();
         final Map<Integer, Map<Integer, Set<SpecTopic>>> invalidSpecTopics = new HashMap<Integer, Map<Integer, Set<SpecTopic>>>();
+
         for (final SpecTopic specTopic1 : allSpecTopics) {
             if (!specTopic1.isTopicAnExistingTopic()) continue;
 

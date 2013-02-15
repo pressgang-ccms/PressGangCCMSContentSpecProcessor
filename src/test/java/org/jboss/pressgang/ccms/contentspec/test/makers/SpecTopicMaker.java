@@ -18,15 +18,18 @@ public class SpecTopicMaker {
     public static final Property<SpecTopic, Integer> lineNumber = newProperty();
     public static final Property<SpecTopic, String> specLine = newProperty();
     public static final Property<SpecTopic, String> type = newProperty();
+    public static final Property<SpecTopic, Integer> revision = newProperty();
 
     public static final Instantiator<SpecTopic> SpecTopic = new Instantiator<org.jboss.pressgang.ccms.contentspec.SpecTopic>() {
         @Override
         public SpecTopic instantiate(PropertyLookup<SpecTopic> lookup) {
-            return new SpecTopic(lookup.valueOf(id, randomAlphanumeric(4)),
+            SpecTopic specTopic = new SpecTopic(lookup.valueOf(id, randomAlphanumeric(4)),
                     lookup.valueOf(title, randomAlphanumeric(10)),
                     lookup.valueOf(lineNumber, nextInt()),
                     lookup.valueOf(specLine, randomAlphanumeric(10)),
                     lookup.valueOf(type, randomAlphanumeric(10)));
+            specTopic.setRevision(lookup.valueOf(revision, nextInt()));
+            return specTopic;
         }
     };
 }
