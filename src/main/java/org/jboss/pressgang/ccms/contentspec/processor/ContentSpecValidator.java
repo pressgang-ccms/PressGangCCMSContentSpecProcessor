@@ -334,7 +334,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
                 valid = false;
             } else {
-                final ContentSpec serverContentSpec = csTransformer.transform(contentSpecTopic);
+                final ContentSpec serverContentSpec = csTransformer.transform(contentSpecTopic, factory);
 
                 /* Set the revision the content spec is being validated for */
                 contentSpec.setRevision(contentSpecTopic.getRevision());
