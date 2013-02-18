@@ -865,7 +865,7 @@ public class ContentSpecParser {
      */
     protected boolean processGlobalOptionsLine(final Level currentLevel, final String line, int lineNumber) throws ParsingException {
         // Read in the variables from the line
-        final HashMap<RelationshipType, String[]> variableMap = getLineVariables(line, '[', ']', ',', false);
+        final HashMap<RelationshipType, String[]> variableMap = getLineVariables(line, lineNumber, '[', ']', ',', false);
 
         // Check the read in values are valid
         if (!variableMap.containsKey(RelationshipType.NONE)) {
@@ -909,9 +909,9 @@ public class ContentSpecParser {
         // Process a new topic
         String[] variables;
         // Read in the variables inside of the brackets
-        HashMap<RelationshipType, String[]> variableMap = getLineVariables(line, '[', ']', ',', false);
+        HashMap<RelationshipType, String[]> variableMap = getLineVariables(line, lineNumber, '[', ']', ',', false);
         if (!variableMap.containsKey(RelationshipType.NONE)) {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineNumber, line));
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TOPIC_FORMAT_MSG, lineNumber, line));
         }
         variables = variableMap.get(RelationshipType.NONE);
         int varStartPos = 2;
@@ -981,7 +981,7 @@ public class ContentSpecParser {
         } else if (variables[0].equals("N") || variables[0].matches(CSConstants.DUPLICATE_TOPIC_ID_REGEX) ||
                 variables[0].matches(CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX) || variables[0].matches(
                 CSConstants.CLONED_TOPIC_ID_REGEX) || variables[0].matches(CSConstants.EXISTING_TOPIC_ID_REGEX)) {
-            uniqueId = Integer.toString(lineNumber) + "-" + variables[0];
+            uniqueId = "L" + Integer.toString(lineNumber) + "-" + variables[0];
             getSpecTopics().put(uniqueId, tempTopic);
         } else if (variables[0].startsWith("N")) {
             throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_ID_MSG, lineNumber, variables[0], line));
@@ -1198,7 +1198,7 @@ public class ContentSpecParser {
             final String title = StringUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
             newLvl.setTitle(title);
             // Get the mapping of variables
-            final HashMap<RelationshipType, String[]> variableMap = getLineVariables(splitVars[1], '[', ']', ',', false);
+            final HashMap<RelationshipType, String[]> variableMap = getLineVariables(splitVars[1], lineNumber, '[', ']', ',', false);
             if (variableMap.containsKey(RelationshipType.NONE)) {
                 variables = variableMap.get(RelationshipType.NONE);
             }
@@ -1254,6 +1254,7 @@ public class ContentSpecParser {
      * separated by the separator.
      *
      * @param line        The line of input to get the variables for.
+     * @param lineNumber  TODO
      * @param startDelim  The starting delimiter of the variables.
      * @param endDelim    The ending delimiter of the variables.
      * @param separator   The separator used to separate the variables.
@@ -1261,16 +1262,17 @@ public class ContentSpecParser {
      * @return A Map of String arrays for different relationship. Inside each string array is the singular variables.
      * @throws ParsingException Thrown if the line can't be successfully parsed.
      */
-    public HashMap<RelationshipType, String[]> getLineVariables(final String line, char startDelim, char endDelim, char separator,
-            boolean ignoreTypes) throws ParsingException {
-        return getLineVariables(line, startDelim, endDelim, separator, ignoreTypes, false);
+    public HashMap<RelationshipType, String[]> getLineVariables(final String line, int lineNumber, char startDelim, char endDelim,
+            char separator, boolean ignoreTypes) throws ParsingException {
+        return getLineVariables(line, lineNumber, startDelim, endDelim, separator, ignoreTypes, false);
     }
 
     /**
      * Gets the variables from a string. The variables are inside of the starting and ending delimiter and are
      * separated by the separator.
      *
-     * @param input       The line of input to get the variables for.
+     * @param line        The line of input to get the variables for.
+     * @param lineNumber  TODO
      * @param startDelim  The starting delimiter of the variables.
      * @param endDelim    The ending delimiter of the variables.
      * @param separator   The separator used to separate the variables.
@@ -1279,17 +1281,16 @@ public class ContentSpecParser {
      * @return A Map of String arrays for different relationship. Inside each string array is the singular variables.
      * @throws ParsingException Thrown if the line can't be successfully parsed.
      */
-    public HashMap<RelationshipType, String[]> getLineVariables(final String input, final char startDelim, final char endDelim,
-            final char separator, final boolean ignoreTypes, final boolean groupTypes) throws ParsingException {
+    public HashMap<RelationshipType, String[]> getLineVariables(final String line, int lineNumber, final char startDelim,
+            final char endDelim, final char separator, final boolean ignoreTypes, final boolean groupTypes) throws ParsingException {
         final HashMap<RelationshipType, String[]> output = new HashMap<RelationshipType, String[]>();
 
-        final int lastStartDelimPos = StringUtilities.lastIndexOf(input, startDelim);
-        final int lastEndDelimPos = StringUtilities.lastIndexOf(input, endDelim);
+        final int lastStartDelimPos = StringUtilities.lastIndexOf(line, startDelim);
+        final int lastEndDelimPos = StringUtilities.lastIndexOf(line, endDelim);
 
         // Check that we have variables to process
         if (lastStartDelimPos == -1) return output;
 
-        int initialCount = getLineCount();
         final String nextLine = getLines().peek();
 
         /*
@@ -1297,18 +1298,18 @@ public class ContentSpecParser {
            * line is a continuation of the current line. If so then attempt to read the next line.
            */
         if (lastEndDelimPos < lastStartDelimPos || (nextLine != null && nextLine.trim().toUpperCase(Locale.ENGLISH).matches("^\\" +
-                startDelim + "[ ]*(R|L|P|T|B).*")) || input.trim().matches("(.|\n|\r\n)*(?<!\\\\)" + separator + "$")) {
+                startDelim + "[ ]*(R|L|P|T|B).*")) || line.trim().matches("(.|\n|\r\n)*(?<!\\\\)" + separator + "$")) {
             // Read in a new line and increment relevant counters
             String temp = getLines().poll();
             if (temp != null) {
                 lineCounter++;
 
-                return getLineVariables(input + "\n" + temp, startDelim, endDelim, separator, ignoreTypes, groupTypes);
+                return getLineVariables(line + "\n" + temp, lineNumber, startDelim, endDelim, separator, ignoreTypes, groupTypes);
             }
         }
 
         /* Get the variables from the line */
-        final List<VariableSet> varSets = findVariableSets(input, startDelim, endDelim);
+        final List<VariableSet> varSets = findVariableSets(line, startDelim, endDelim);
 
         /* Process the variables that were found */
         for (final VariableSet set : varSets) {
@@ -1317,7 +1318,7 @@ public class ContentSpecParser {
 
             // Check that a closing bracket wasn't missed
             if (set.getEndPos() == null) {
-                throw new ParsingException(format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG, initialCount, endDelim));
+                throw new ParsingException(format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG, lineNumber, endDelim));
             }
 
             // Split the variables set into individual variables
@@ -1334,13 +1335,13 @@ public class ContentSpecParser {
                         // Check that a separator wasn't missed.
                         if (StringUtilities.lastIndexOf(var, startDelim) != StringUtilities.indexOf(var, startDelim) || var.indexOf(
                                 '\n') != -1) {
-                            throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, initialCount, separator));
+                            throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineNumber, separator));
                         } else {
                             variables.add(var.trim());
                         }
                     }
                 } else {
-                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, initialCount, input));
+                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineNumber, line));
                 }
             } else if (!ignoreTypes && type == RelationshipType.TARGET) {
                 variables.add(variableSet.replaceAll("\\s", ""));
@@ -1348,11 +1349,15 @@ public class ContentSpecParser {
                 variables.add(variableSet.replaceAll("\\s", ""));
             } else if (!ignoreTypes && type == RelationshipType.EXTERNAL_CONTENT_SPEC) {
                 variables.add(variableSet.trim());
-            } else {
+            } else if (!variableSet.trim().isEmpty()) {
                 // Normal set of variables that contains the ID and/or tags
                 final String splitString[] = StringUtilities.split(variableSet, separator);
                 for (final String s : splitString) {
-                    variables.add(s.trim());
+                    if (!s.trim().isEmpty()) {
+                        variables.add(s.trim());
+                    } else {
+                        throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_ATTRIB_FORMAT_MSG, lineNumber, line));
+                    }
                 }
             }
 
@@ -1363,7 +1368,7 @@ public class ContentSpecParser {
                     tempVariables.addAll(variables);
                     output.put(type, tempVariables.toArray(new String[tempVariables.size()]));
                 } else {
-                    throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG, initialCount, input));
+                    throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG, lineNumber, line));
                 }
             } else {
                 output.put(type, variables.toArray(new String[variables.size()]));
@@ -1469,7 +1474,8 @@ public class ContentSpecParser {
                         }
 
                         // Get the mapping of variables
-                        HashMap<RelationshipType, String[]> variableMap = getLineVariables(input.toString(), '(', ')', ',', false);
+                        final HashMap<RelationshipType, String[]> variableMap = getLineVariables(input.toString(), lineNumber, '(', ')',
+                                ',', false);
                         if (variableMap.containsKey(RelationshipType.NONE)) {
                             tempTags = variableMap.get(RelationshipType.NONE);
                         } else {

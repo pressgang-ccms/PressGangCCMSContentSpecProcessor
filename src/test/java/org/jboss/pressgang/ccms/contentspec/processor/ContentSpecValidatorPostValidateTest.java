@@ -1,5 +1,19 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
+import static com.natpryce.makeiteasy.MakeItEasy.a;
+import static com.natpryce.makeiteasy.MakeItEasy.make;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.assertThat;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
@@ -8,8 +22,11 @@ import org.jboss.pressgang.ccms.contentspec.entities.InjectionOptions;
 import org.jboss.pressgang.ccms.contentspec.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.TagProvider;
 import org.jboss.pressgang.ccms.contentspec.test.makers.ContentSpecMaker;
-import org.jboss.pressgang.ccms.contentspec.test.makers.SpecTopicMaker;
-import org.jboss.pressgang.ccms.contentspec.wrapper.*;
+import org.jboss.pressgang.ccms.contentspec.wrapper.CSNodeWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.ContentSpecWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.PropertyTagInContentSpecWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.UserWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.collection.CollectionWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.collection.UpdateableCollectionWrapper;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
@@ -19,22 +36,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static com.natpryce.makeiteasy.MakeItEasy.*;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.SpecTopicMaker.SpecTopic;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.SpecTopicMaker.lineNumber;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.SpecTopicMaker.specLine;
-import static org.junit.Assert.assertThat;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.when;
 
 /**
  * @author kamiller@redhat.com (Katie Miller)
@@ -48,7 +49,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
     @Mock UserWrapper user;
     @Mock ContentSpecProvider contentSpecProvider;
     @Mock ContentSpecWrapper contentSpecWrapper;
-    @Mock UpdateableCollectionWrapper<CSMetaDataInContentSpecWrapper> metaData;
+    @Mock UpdateableCollectionWrapper<CSNodeWrapper> metaData;
     @Mock PropertyTagInContentSpecWrapper propertyTag;
     @Mock TagProvider tagProvider;
     @Mock CollectionWrapper<TagWrapper> tagWrapperCollection;
@@ -84,8 +85,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
         // And a valid content spec wrapper for the id and revision specified
         given(contentSpecProvider.getContentSpec(anyInt(), anyInt())).willReturn(contentSpecWrapper);
-        given(contentSpecWrapper.getMetaData()).willReturn(metaData);
-        given(metaData.getItems()).willReturn(new ArrayList<CSMetaDataInContentSpecWrapper>());
+        given(contentSpecWrapper.getChildren()).willReturn(metaData);
+        given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
         // And that the checksum of the server content spec version matches the local one
         PowerMockito.mockStatic(HashUtilities.class);
         given(HashUtilities.generateMD5(anyString())).willReturn(contentSpec.getChecksum());
@@ -121,8 +122,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
         // And a valid content spec wrapper for the id and revision specified
         given(contentSpecProvider.getContentSpec(anyInt(), anyInt())).willReturn(contentSpecWrapper);
-        given(contentSpecWrapper.getMetaData()).willReturn(metaData);
-        given(metaData.getItems()).willReturn(new ArrayList<CSMetaDataInContentSpecWrapper>());
+        given(contentSpecWrapper.getChildren()).willReturn(metaData);
+        given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
 
         // When the spec is postvalidated
         boolean result = validator.postValidateContentSpec(contentSpec, user);
@@ -140,8 +141,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         contentSpec.setChecksum(null);
         // And a valid content spec wrapper for the id and revision specified
         given(contentSpecProvider.getContentSpec(anyInt(), anyInt())).willReturn(contentSpecWrapper);
-        given(contentSpecWrapper.getMetaData()).willReturn(metaData);
-        given(metaData.getItems()).willReturn(new ArrayList<CSMetaDataInContentSpecWrapper>());
+        given(contentSpecWrapper.getChildren()).willReturn(metaData);
+        given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
 
         // When the spec is postvalidated
         boolean result = validator.postValidateContentSpec(contentSpec, user);
@@ -159,8 +160,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         contentSpec.setChecksum(null);
         // And a valid content spec wrapper for the id and revision specified
         given(contentSpecProvider.getContentSpec(anyInt(), anyInt())).willReturn(contentSpecWrapper);
-        given(contentSpecWrapper.getMetaData()).willReturn(metaData);
-        given(metaData.getItems()).willReturn(new ArrayList<CSMetaDataInContentSpecWrapper>());
+        given(contentSpecWrapper.getChildren()).willReturn(metaData);
+        given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
         // And the ignoreChecksum option is set
         given(processingOptions.isIgnoreChecksum()).willReturn(true);
         PowerMockito.mockStatic(HashUtilities.class);
@@ -183,10 +184,10 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
         // And a valid content spec wrapper for the id and revision specified that specifies the spec is read-only
         given(contentSpecProvider.getContentSpec(anyInt(), anyInt())).willReturn(contentSpecWrapper);
-        given(contentSpecWrapper.getMetaData()).willReturn(metaData);
+        given(contentSpecWrapper.getChildren()).willReturn(metaData);
         given(contentSpecWrapper.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID)).willReturn(propertyTag);
         given(propertyTag.getValue()).willReturn("foo");
-        given(metaData.getItems()).willReturn(new ArrayList<CSMetaDataInContentSpecWrapper>());
+        given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
         // And the ignoreChecksum option is set
         given(processingOptions.isIgnoreChecksum()).willReturn(true);
 
@@ -196,7 +197,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         // Then the result should be a failure
         assertThat(result, is(false));
         // And an error message should be output
-        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! The content specification is read-only."));
+        assertThat(logger.getLogMessages().toString(),
+                containsString("Invalid Content Specification! The content specification is read-only."));
     }
 
     @Test
@@ -205,9 +207,9 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
         // And a valid content spec wrapper for the id and revision specified
         given(contentSpecProvider.getContentSpec(anyInt(), anyInt())).willReturn(contentSpecWrapper);
-        given(contentSpecWrapper.getMetaData()).willReturn(metaData);
+        given(contentSpecWrapper.getChildren()).willReturn(metaData);
         given(contentSpecWrapper.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID)).willReturn(propertyTag);
-        given(metaData.getItems()).willReturn(new ArrayList<CSMetaDataInContentSpecWrapper>());
+        given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
         // And the wrapper has the read-only tag set but it contains the username
         given(propertyTag.getValue()).willReturn(username);
         // And the ignoreChecksum option is set
@@ -240,8 +242,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         // Then the result should be a failure
         assertThat(result, is(false));
         // And an error message should be output
-        assertThat(logger.getLogMessages().toString(), containsString("The injection type \"" + strictTopicType
-                + "\" doesn't exist or isn't a Type."));
+        assertThat(logger.getLogMessages().toString(),
+                containsString("The injection type \"" + strictTopicType + "\" doesn't exist or isn't a Type."));
     }
 
     @Test
@@ -264,8 +266,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         // Then the result should be a failure
         assertThat(result, is(false));
         // And an error message should be output
-        assertThat(logger.getLogMessages().toString(), containsString("The injection type \"" + strictTopicType
-                + "\" doesn't exist or isn't a Type."));
+        assertThat(logger.getLogMessages().toString(),
+                containsString("The injection type \"" + strictTopicType + "\" doesn't exist or isn't a Type."));
     }
 
     @Test
@@ -285,7 +287,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         // Then the result should be a failure
         assertThat(result, is(false));
         // And an error message should be output
-        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! Tag \""
-                + tagname + "\" doesn't exist."));
+        assertThat(logger.getLogMessages().toString(),
+                containsString("Invalid Content Specification! Tag \"" + tagname + "\" doesn't exist."));
     }
 }

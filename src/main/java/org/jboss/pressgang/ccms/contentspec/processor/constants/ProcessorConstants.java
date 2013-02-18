@@ -75,6 +75,7 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_PUBLICAN_CFG_MSG = LINE + INVALID_CS + " Incorrect publican.cfg input." + CSLINE_MSG;
     public static final String ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Incorrect tag attribute format." + CSLINE_MSG;
     public static final String ERROR_INVALID_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Incorrect attribute format." + CSLINE_MSG;
+    public static final String ERROR_MISSING_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Missing attribute detected." + CSLINE_MSG;
     public static final String ERROR_TAG_DUPLICATED_MSG = LINE + INVALID_CS + " Tag is duplicated." + CSLINE_MSG;
     public static final String ERROR_TAG_NONEXIST_MSG = LINE + INVALID_CS + " Tag \"%s\" doesn't exist." + CSLINE_MSG;
     public static final String ERROR_MULTI_TAG_DUPLICATED_MSG = LINE + INVALID_CS + " One or more tags don't exist or are duplicated." +
@@ -156,6 +157,7 @@ public class ProcessorConstants {
     public static final String WARN_EMPTY_BRACKETS_MSG = LINE + "Empty brackets found.";
 
     // Topic errors
+    public static final String ERROR_INVALID_TOPIC_FORMAT_MSG = LINE + INVALID_TOPIC + " Incorrect topic format." + CSLINE_MSG;
     public static final String ERROR_TYPE_NONEXIST_MSG = LINE + INVALID_TOPIC + " Type doesn't exist." + CSLINE_MSG;
     public static final String ERROR_INVALID_TITLE_ID_MSG = LINE + INVALID_TOPIC + " Title and ID must be specified." + CSLINE_MSG;
     public static final String ERROR_INVALID_TYPE_TITLE_ID_MSG = LINE + INVALID_TOPIC + " Title, " +

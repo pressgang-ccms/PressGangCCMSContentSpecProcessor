@@ -1,16 +1,5 @@
 package org.jboss.pressgang.ccms.contentspec.test.makers;
 
-import com.natpryce.makeiteasy.Instantiator;
-import com.natpryce.makeiteasy.Property;
-import com.natpryce.makeiteasy.PropertyLookup;
-import org.apache.commons.lang.math.RandomUtils;
-import org.jboss.pressgang.ccms.contentspec.ContentSpec;
-import org.jboss.pressgang.ccms.contentspec.Level;
-import org.jboss.pressgang.ccms.contentspec.SpecTopic;
-import org.jboss.pressgang.ccms.contentspec.enums.BookType;
-
-import java.util.List;
-
 import static com.natpryce.makeiteasy.MakeItEasy.a;
 import static com.natpryce.makeiteasy.MakeItEasy.make;
 import static com.natpryce.makeiteasy.Property.newProperty;
@@ -18,6 +7,16 @@ import static java.lang.String.valueOf;
 import static org.apache.commons.lang.RandomStringUtils.randomAlphanumeric;
 import static org.apache.commons.lang.math.RandomUtils.nextInt;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.SpecTopicMaker.SpecTopic;
+
+import java.util.List;
+
+import com.natpryce.makeiteasy.Instantiator;
+import com.natpryce.makeiteasy.Property;
+import com.natpryce.makeiteasy.PropertyLookup;
+import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.Level;
+import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.contentspec.enums.BookType;
 
 /**
  * @author kamiller@redhat.com (Katie Miller)
@@ -47,9 +46,6 @@ public class ContentSpecMaker {
             contentSpec.setEdition(lookup.valueOf(edition, valueOf(nextInt())));
             contentSpec.setId(lookup.valueOf(id, nextInt()));
             contentSpec.setChecksum(lookup.valueOf(checksum, randomAlphanumeric(10)));
-            List<String> preProcessedText = contentSpec.getPreProcessedText();
-            preProcessedText.add(randomAlphanumeric(10));
-            contentSpec.setPreProcessedTextForLine(randomAlphanumeric(10), 1);
             Level baseLevel = contentSpec.getBaseLevel();
             List<SpecTopic> specTopics = baseLevel.getSpecTopics();
             specTopics.add(make(a(SpecTopic)));

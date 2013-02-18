@@ -1,23 +1,27 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
+import org.jboss.pressgang.ccms.contentspec.Comment;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
+import org.jboss.pressgang.ccms.contentspec.Level;
+import org.jboss.pressgang.ccms.contentspec.Node;
+import org.jboss.pressgang.ccms.contentspec.SpecNode;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
 import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
 import org.jboss.pressgang.ccms.contentspec.processor.exceptions.ProcessingException;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptions;
-import org.jboss.pressgang.ccms.contentspec.processor.utils.ProcessorUtilities;
+import org.jboss.pressgang.ccms.contentspec.provider.CSNodeProvider;
+import org.jboss.pressgang.ccms.contentspec.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.contentspec.provider.PropertyTagProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.TagProvider;
@@ -27,7 +31,10 @@ import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.TopicPool;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
+import org.jboss.pressgang.ccms.contentspec.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.CategoryInTagWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.ContentSpecWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.PropertyTagInContentSpecWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.PropertyTagInTopicWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TopicSourceURLWrapper;
@@ -35,6 +42,7 @@ import org.jboss.pressgang.ccms.contentspec.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.UserWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.collection.CollectionWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.collection.UpdateableCollectionWrapper;
+import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 
 /**
  * A class to fully process a Content Specification. It first parses the data using a ContentSpecParser,
@@ -48,6 +56,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     private final Logger LOG = Logger.getLogger(ContentSpecProcessor.class.getPackage().getName() + ".CustomContentSpecProcessor");
 
     private final ErrorLogger log;
+    private final DataProviderFactory providerFactory;
     private final TopicProvider topicProvider;
     private final TagProvider tagProvider;
     private final PropertyTagProvider propertyTagProvider;
@@ -69,6 +78,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     public ContentSpecProcessor(final DataProviderFactory factory, final ErrorLoggerManager loggerManager,
             final ProcessingOptions processingOptions) {
 
+        providerFactory = factory;
         topicProvider = factory.getProvider(TopicProvider.class);
         tagProvider = factory.getProvider(TagProvider.class);
         propertyTagProvider = factory.getProvider(PropertyTagProvider.class);
@@ -157,7 +167,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
 
                 LOG.info("Saving the Content Specification to the server...");
-                if (saveContentSpec(contentSpec, editing, user)) {
+                if (saveContentSpec(providerFactory, contentSpec, editing, user)) {
                     log.info(ProcessorConstants.INFO_SUCCESSFUL_SAVE_MSG);
                 } else {
                     return false;
@@ -210,7 +220,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
                 // Create the unique ID for the property
                 final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic();
-                cspProperty.setValue(Integer.toString(specTopic.getLineNumber()));
+                cspProperty.setValue(specTopic.getUniqueId());
                 cspProperty.setId(CSConstants.CSP_PROPERTY_ID);
                 properties.addNewItem(cspProperty);
 
@@ -264,14 +274,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     } else {
                         cspPropertyFound = true;
 
-                        property.setValue(Integer.toString(specTopic.getLineNumber()));
+                        property.setValue(specTopic.getUniqueId());
                         properties.addNewItem(property);
                     }
                 }
 
                 if (!cspPropertyFound) {
                     final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic();
-                    cspProperty.setValue(Integer.toString(specTopic.getLineNumber()));
+                    cspProperty.setValue(specTopic.getUniqueId());
                     cspProperty.setId(CSConstants.CSP_PROPERTY_ID);
                     properties.addNewItem(cspProperty);
                 }
@@ -295,14 +305,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     if (property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
                         cspPropertyFound = true;
 
-                        property.setValue(Integer.toString(specTopic.getLineNumber()));
+                        property.setValue(specTopic.getUniqueId());
                         properties.addUpdateItem(property);
                     }
                 }
 
                 if (!cspPropertyFound) {
                     final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic();
-                    cspProperty.setValue(Integer.toString(specTopic.getLineNumber()));
+                    cspProperty.setValue(specTopic.getUniqueId());
                     cspProperty.setId(CSConstants.CSP_PROPERTY_ID);
                     properties.addNewItem(cspProperty);
                 }
@@ -521,35 +531,17 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     /**
      * Saves the Content Specification and all of the topics in the content specification
      *
-     * @param contentSpec The Content Specification to be saved.
-     * @param edit        Whether the content specification is being edited or created.
-     * @param user        The User who requested the Content Spec be saved.
+     * @param providerFactory
+     * @param contentSpec     The Content Specification to be saved.
+     * @param edit            Whether the content specification is being edited or created.
+     * @param user            The User who requested the Content Spec be saved.
      * @return True if the topic saved successfully otherwise false.
      */
-    public boolean saveContentSpec(final ContentSpec contentSpec, final boolean edit, final UserWrapper user) {
+    public boolean saveContentSpec(final DataProviderFactory providerFactory, final ContentSpec contentSpec, final boolean edit,
+            final UserWrapper user) {
+        final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
+
         try {
-            // Get the full text representation of the processed content spec
-            final StringBuilder fullText = new StringBuilder("");
-            for (final String line : contentSpec.getPreProcessedText()) {
-                fullText.append(line + "\n");
-            }
-
-            // A new content specification
-            if (contentSpec.getId() == null) {
-                contentSpec.setId(createContentSpec(contentSpec.getTitle(), fullText.toString(), contentSpec.getDtd(), user.getUsername()));
-                if (contentSpec.getId() == null) {
-                    log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
-                    throw new Exception("Failed to create the pre content specification.");
-                }
-            }
-            // An existing content specification
-            else {
-                if (!updateContentSpec(contentSpec.getId(), contentSpec.getTitle(), fullText.toString(), contentSpec.getDtd())) {
-                    log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
-                    throw new Exception("Failed to create the pre content specification.");
-                }
-            }
-
             // Create the new topic entities
             final List<SpecTopic> specTopics = contentSpec.getSpecTopics();
             for (final SpecTopic specTopic : specTopics) {
@@ -604,244 +596,400 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             // Sync the Duplicated Topics (ID = X<Number>)
             syncDuplicatedTopics(specTopics);
 
-            // Create the post processed content spec
-            final Map<String, SpecTopic> specTopicMap = new HashMap<String, SpecTopic>();
-            for (final SpecTopic specTopic : specTopics) {
-                specTopicMap.put(specTopic.getId(), specTopic);
-            }
-            final String postCS = ProcessorUtilities.generatePostContentSpec(contentSpec, specTopicMap);
-            if (postCS == null) {
-                throw new ProcessingException("Failed to create the Post Content Specification.");
-            }
-
-            // Validate that the content specification was processed correctly
-            if (!validatePostProcessedSpec(postCS)) {
-                throw new ProcessingException("Failed to create the Post Content Specification.");
-            }
-
-            if (!updatePostContentSpec(contentSpec.getId(), postCS)) {
-                log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
-                throw new Exception("Failed to save the post content Specification");
-            }
+            // TODO save the content spec
+            saveContentSpec(contentSpec, providerFactory, !edit, user);
         } catch (ProcessingException e) {
-            // Clean up the data that was created
-            if (contentSpec.getId() != null && !edit) {
-                try {
-                    topicProvider.deleteTopic(contentSpec.getId());
-                } catch (Exception e1) {
-                    log.error("", e);
+            if (providerFactory.isRollbackSupported()) {
+                providerFactory.rollback();
+            } else {
+                // Clean up the data that was created
+                if (contentSpec.getId() != null && !edit) {
+                    try {
+                        contentSpecProvider.deleteContentSpec(contentSpec.getId());
+                    } catch (Exception e1) {
+                        log.error("Unable to clean up the Content Specification from the database.", e);
+                    }
                 }
+                if (topics.isInitialised()) topics.rollbackPool();
             }
-            if (topics.isInitialised()) topics.rollbackPool();
             log.error(String.format("%s\n%7s%s", ProcessorConstants.ERROR_PROCESSING_ERROR_MSG, "", e.getMessage()));
+            return false;
         } catch (Exception e) {
-            // Clean up the data that was created
-            if (contentSpec.getId() != null && !edit) {
-                try {
-                    topicProvider.deleteTopic(contentSpec.getId());
-                } catch (Exception e1) {
-                    log.error("", e);
+            if (providerFactory.isRollbackSupported()) {
+                providerFactory.rollback();
+            } else {
+                // Clean up the data that was created
+                if (contentSpec.getId() != null && !edit) {
+                    try {
+                        contentSpecProvider.deleteContentSpec(contentSpec.getId());
+                    } catch (Exception e1) {
+                        log.error("Unable to clean up the Content Specification from the database.", e);
+                    }
                 }
+                if (topics.isInitialised()) topics.rollbackPool();
             }
-            if (topics.isInitialised()) topics.rollbackPool();
             log.debug("", e);
             return false;
         }
         return true;
     }
 
-    /**
-     * Checks a post processed content specification to ensure that no new, cloned or duplicated
-     * topics exist in the content specification as they should have been resolved to
-     * existing topics.
-     *
-     * @param postProcessedSpec The post processed content specification.
-     * @return True if no invalid topics were found, otherwise false
-     */
-    private boolean validatePostProcessedSpec(final String postProcessedSpec) {
-        Pattern newTopicPattern = Pattern.compile("(#.*)?\\[[ ]*N[0-9]*[ ]*,.*?\\]");
-        Matcher matcher = newTopicPattern.matcher(postProcessedSpec);
+    protected void saveContentSpec(final ContentSpec contentSpec, final DataProviderFactory providerFactory, boolean create,
+            final UserWrapper user) throws Exception {
+        /*
+         * Note: When creating the entities that are to be saved. A new entity of the same type should be created and then any changes
+         * should be merged in it.
+         *
+         * TODO The above won't work when saving to the database. So think of another method. Possibly in the REST Provider remove all
+         * entities that don't have the parameter set to configured (excluding ids).
+         */
 
-        while (matcher.find()) {
-            final String match = matcher.group();
-            if (!match.contains("#")) return false;
+        // Get the providers
+        final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
+        final PropertyTagProvider propertyTagProvider = providerFactory.getProvider(PropertyTagProvider.class);
+        final CSNodeProvider nodeProvider = providerFactory.getProvider(CSNodeProvider.class);
+
+        // Create the temporary entity to store changes in and load the real entity if it exists.
+        ContentSpecWrapper contentSpecEntity = null;
+        final ContentSpecWrapper tempContentSpecEntity = contentSpecProvider.newContentSpec();
+        if (contentSpec.getId() != null) {
+            contentSpecEntity = contentSpecProvider.getContentSpec(contentSpec.getId());
+        } else if (create) {
+            contentSpecEntity = contentSpecProvider.newContentSpec();
+
+            // Add the added by property tag
+            final UpdateableCollectionWrapper<PropertyTagInContentSpecWrapper> propertyTagCollection = propertyTagProvider
+                    .newPropertyTagInContentSpecCollection();
+
+            // Create the new property tag
+            final PropertyTagInContentSpecWrapper propertyTag = propertyTagProvider.newPropertyTagInContentSpec();
+            propertyTag.setId(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
+            propertyTag.setValue(user.getUsername());
+            propertyTagCollection.addNewItem(propertyTag);
+
+            // Set the updated properties for the content spec
+            tempContentSpecEntity.setProperties(propertyTagCollection);
+        } else {
+            throw new ProcessingException("Unable to find the existing Content Specification");
         }
 
-        Pattern clonedTopicPattern = Pattern.compile("(#.*)?\\[[ ]*C[0-9]+.*?\\]");
-        matcher = clonedTopicPattern.matcher(postProcessedSpec);
-
-        while (matcher.find()) {
-            final String match = matcher.group();
-            if (!match.contains("#")) return false;
+        // Apply any changes to the content spec
+        if (contentSpecEntity.getLocale() == null || !contentSpecEntity.getLocale().equals(contentSpec.getLocale())) {
+            tempContentSpecEntity.setLocale(contentSpec.getLocale());
         }
 
-        Pattern duplicateTopicPattern = Pattern.compile("(#.*)?\\[[ ]*X[0-9]+.*?\\]");
-        matcher = duplicateTopicPattern.matcher(postProcessedSpec);
-
-        while (matcher.find()) {
-            final String match = matcher.group();
-            if (!match.contains("#")) return false;
+        // Save the content spec entity so that we have a valid reference to add nodes to
+        if (create) {
+            contentSpecEntity = contentSpecProvider.createContentSpec(tempContentSpecEntity);
+        } else {
+            contentSpecEntity = contentSpecProvider.updateContentSpec(tempContentSpecEntity);
         }
 
-        Pattern duplicateClonedTopicPattern = Pattern.compile("(#.*)?\\[[ ]*XC[0-9]+.*?\\]");
-        matcher = duplicateClonedTopicPattern.matcher(postProcessedSpec);
-
-        while (matcher.find()) {
-            final String match = matcher.group();
-            if (!match.contains("#")) return false;
+        // Check that the content spec was updated/created successfully.
+        if (contentSpecEntity == null) {
+            // TODO Error Message
+            return;
         }
 
-        return true;
+        // Get the list of transformable child nodes for processing
+        final List<Node> nodes = getTransformableNodes(contentSpec.getNodes());
+        nodes.addAll(getTransformableNodes(contentSpec.getBaseLevel().getChildNodes()));
+
+        // Create an empty content spec entity since only the id is needed.
+        final ContentSpecWrapper emptyContentSpecEntity = contentSpecProvider.newContentSpec();
+        emptyContentSpecEntity.setId(contentSpecEntity.getId());
+
+        // Create the container to hold all the changed nodes
+        final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes = nodeProvider.newCSNodeCollection();
+
+        // Merge the base level and comments
+        mergeChildren(nodes, contentSpecEntity.getChildren(), providerFactory, null, emptyContentSpecEntity, updatedCSNodes);
+
+        // Save the updated content spec nodes
+        if (nodeProvider.updateCSNodes(updatedCSNodes) == null) {
+            // TODO error message
+        }
     }
 
     /**
-     * Writes a ContentSpecs tuple to the database using the data provided.
+     * Merges a Content Specs meta data with a Content Spec Entities meta data
      *
-     * @param title
-     * @param preContentSpec
-     * @param dtd
-     * @param createdBy
-     * @return
+     * @param metaData       The meta data object to be merged into a entity meta data object
+     * @param metaDataEntity The meta data entity to merge with.
      */
-    protected Integer createContentSpec(final String title, final String preContentSpec, final String dtd, final String createdBy) {
-        try {
-            TopicWrapper contentSpec = topicProvider.newTopic();
-            contentSpec.setTitle(title);
-            contentSpec.setXml(preContentSpec);
+    protected CSNodeWrapper mergeMetaData(final KeyValueNode<?> metaData, final CSNodeWrapper metaDataEntity,
+            final CSNodeProvider nodeProvider) {
+        final CSNodeWrapper updatedMetaDataEntity = nodeProvider.newCSNode();
+        updatedMetaDataEntity.setId(metaDataEntity.getId());
 
-            // Create the Added By, Content Spec Type and DTD property tags
-            final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties = propertyTagProvider.newPropertyTagInTopicCollection();
-            final PropertyTagInTopicWrapper addedBy = propertyTagProvider.newPropertyTagInTopic(
-                    propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID));
-            addedBy.setValue(createdBy);
-
-            final PropertyTagInTopicWrapper typePropertyTag = propertyTagProvider.newPropertyTagInTopic(
-                    propertyTagProvider.getPropertyTag(CSConstants.CSP_TYPE_PROPERTY_TAG_ID));
-            typePropertyTag.setValue(CSConstants.CSP_PRE_PROCESSED_STRING);
-
-            final PropertyTagInTopicWrapper dtdPropertyTag = propertyTagProvider.newPropertyTagInTopic(
-                    propertyTagProvider.getPropertyTag(CSConstants.DTD_PROPERTY_TAG_ID, null));
-            dtdPropertyTag.setValue(dtd);
-
-            properties.addNewItem(addedBy);
-            properties.addNewItem(dtdPropertyTag);
-            properties.addNewItem(typePropertyTag);
-
-            contentSpec.setProperties(properties);
-
-            // Add the Content Specification Type Tag
-            final CollectionWrapper<TagWrapper> tags = tagProvider.newTagCollection();
-            final TagWrapper typeTag = tagProvider.getTag(CSConstants.CONTENT_SPEC_TAG_ID);
-            tags.addNewItem(typeTag);
-
-            contentSpec.setTags(tags);
-
-            contentSpec = topicProvider.createTopic(contentSpec);
-            if (contentSpec != null) return contentSpec.getId();
-        } catch (Exception e) {
-            log.error("", e);
+        if (metaDataEntity.getTitle() == null || !metaDataEntity.getTitle().equals(metaData.getKey())) {
+            updatedMetaDataEntity.setTitle(metaData.getKey());
         }
-        return null;
+
+        if (metaDataEntity.getAdditionalText() == null || !metaDataEntity.getAdditionalText().equals(metaData.getValue().toString())) {
+            updatedMetaDataEntity.setAdditionalText(metaData.getValue().toString());
+        }
+
+        return updatedMetaDataEntity;
+    }
+
+    // TODO handle previous/next and relationships
+    // TODO handle parents
+    protected void mergeChildren(final List<Node> childrenNodes, final CollectionWrapper<CSNodeWrapper> entityChildrenNodes,
+            final DataProviderFactory providerFactory, final CSNodeWrapper dummyParent, final ContentSpecWrapper dummyContentSpec,
+            final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes) throws Exception {
+        if (entityChildrenNodes == null || entityChildrenNodes.isEmpty()) return;
+
+        final CSNodeProvider nodeProvider = providerFactory.getProvider(CSNodeProvider.class);
+
+        final List<CSNodeWrapper> processedNodes = new ArrayList<CSNodeWrapper>();
+        final List<CSNodeWrapper> newNodes = new ArrayList<CSNodeWrapper>();
+
+        // Update or create all of the children nodes that exist in the content spec
+        CSNodeWrapper prevNode = null;
+        for (final Node childNode : childrenNodes) {
+            if (!(childNode instanceof SpecTopic || childNode instanceof Level || childNode instanceof Comment || childNode instanceof
+                    KeyValueNode))
+                continue;
+
+            CSNodeWrapper foundNodeEntity = null;
+            CSNodeWrapper updatedNodeEntity = null;
+            for (final CSNodeWrapper nodeEntity : entityChildrenNodes.getItems()) {
+                if (childNode instanceof SpecTopic && doesTopicMatch((SpecTopic) childNode, nodeEntity)) {
+                    foundNodeEntity = nodeEntity;
+                    updatedNodeEntity = mergeTopic((SpecTopic) childNode, nodeEntity, nodeProvider);
+                    break;
+                } else if (childNode instanceof Level && doesLevelMatch((Level) childNode, nodeEntity)) {
+                    foundNodeEntity = nodeEntity;
+                    updatedNodeEntity = mergeLevel((Level) childNode, nodeEntity, providerFactory, dummyContentSpec, updatedCSNodes);
+                    break;
+                } else if (childNode instanceof Comment && doesCommentMatch((Comment) childNode, nodeEntity)) {
+                    foundNodeEntity = nodeEntity;
+                    updatedNodeEntity = mergeComment((Comment) childNode, nodeEntity, nodeProvider);
+                    break;
+                } else if (childNode instanceof KeyValueNode) {
+                    foundNodeEntity = nodeEntity;
+                    updatedNodeEntity = mergeMetaData((KeyValueNode<?>) childNode, nodeProvider.newCSNode(), nodeProvider);
+                    break;
+                }
+            }
+
+            // If the node was not found create a new one
+            if (foundNodeEntity == null) {
+                final CSNodeWrapper newCSNodeEntity;
+                if (childNode instanceof SpecTopic) {
+                    newCSNodeEntity = mergeTopic((SpecTopic) childNode, nodeProvider.newCSNode(), nodeProvider);
+                    newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_TOPIC);
+                } else if (childNode instanceof Level) {
+                    newCSNodeEntity = mergeLevel((Level) childNode, nodeProvider.newCSNode(), providerFactory, dummyContentSpec,
+                            updatedCSNodes);
+                    newCSNodeEntity.setNodeType(((Level) childNode).getType().getId());
+                } else if (childNode instanceof Comment) {
+                    newCSNodeEntity = mergeComment((Comment) childNode, nodeProvider.newCSNode(), nodeProvider);
+                    newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_COMMENT);
+                } else if (childNode instanceof KeyValueNode) {
+                    newCSNodeEntity = mergeMetaData((KeyValueNode<?>) childNode, nodeProvider.newCSNode(), nodeProvider);
+                    newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_META_DATA);
+                } else {
+                    continue;
+                }
+
+                // Save the basics of the node to get an id
+                foundNodeEntity = nodeProvider.createCSNode(newCSNodeEntity);
+                newNodes.add(foundNodeEntity);
+
+                // create a new entity for further updates since all other changes should be saved already
+                updatedNodeEntity = nodeProvider.newCSNode();
+                updatedNodeEntity.setId(foundNodeEntity.getId());
+            } else {
+                processedNodes.add(foundNodeEntity);
+            }
+
+            // Set up the next/previous relationships as well
+            final Integer previousNodeId = prevNode == null ? null : prevNode.getId();
+            if (foundNodeEntity.getPreviousNodeId() != previousNodeId) {
+                updatedNodeEntity.setPreviousNodeId(previousNodeId);
+            }
+            if (prevNode != null && prevNode.getNextNodeId() != foundNodeEntity.getId()) {
+                prevNode.setNextNodeId(foundNodeEntity.getId());
+            }
+
+            // setup the parent for the entity
+            if ((dummyParent == null && foundNodeEntity.getParent() != null) || (dummyParent != null && foundNodeEntity.getParent() ==
+                    null) ||
+                    (foundNodeEntity.getParent().getId() != dummyParent.getId())) {
+                updatedNodeEntity.setParent(dummyParent);
+            }
+
+            // setup the contentSpec for the entity
+            if ((foundNodeEntity.getContentSpec() == null) || (foundNodeEntity.getContentSpec().getId() != dummyContentSpec.getId())) {
+                updatedNodeEntity.setContentSpec(dummyContentSpec);
+            }
+
+            updatedCSNodes.addUpdateItem(updatedNodeEntity);
+
+            prevNode = foundNodeEntity;
+        }
+
+        // Loop over the entities current nodes and remove any that no longer exist
+        for (final CSNodeWrapper csNode : entityChildrenNodes.getItems()) {
+            // if the node wasn't processed then it no longer exists, so set it for removal
+            if (!processedNodes.contains(csNode)) {
+                updatedCSNodes.addRemoveItem(csNode);
+            }
+        }
+    }
+
+    protected CSNodeWrapper mergeLevel(final Level level, final CSNodeWrapper levelEntity, final DataProviderFactory providerFactory,
+            final ContentSpecWrapper contentSpec, final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes) throws Exception {
+        final CSNodeProvider nodeProvider = providerFactory.getProvider(CSNodeProvider.class);
+        final CSNodeWrapper newLevelEntity = nodeProvider.newCSNode();
+        newLevelEntity.setId(levelEntity.getId());
+
+        // TITLE
+        if (level.getTitle() != null && level.getTitle().equals(levelEntity.getTitle())) {
+            newLevelEntity.setTitle(level.getTitle());
+        }
+
+        // TARGET ID
+        if (level.getTargetId() != null && level.getTargetId().equals(levelEntity.getTargetId())) {
+            newLevelEntity.setTargetId(level.getTargetId());
+        }
+
+        // CONDITION
+        if (level.getConditionStatement() != null && !level.getConditionStatement().equals(levelEntity.getCondition())) {
+            newLevelEntity.setCondition(level.getConditionStatement());
+        }
+
+        // Merge the child levels
+        mergeChildren(getTransformableNodes(level.getChildNodes()), levelEntity.getChildren(), providerFactory, newLevelEntity, contentSpec,
+                updatedCSNodes);
+
+        return newLevelEntity;
+    }
+
+    // TODO Relationships
+    protected CSNodeWrapper mergeTopic(final SpecTopic specTopic, final CSNodeWrapper topicEntity, final CSNodeProvider nodeProvider) {
+        final CSNodeWrapper updatedTopicEntity = nodeProvider.newCSNode();
+        updatedTopicEntity.setId(topicEntity.getId());
+
+        // TITLE
+        if (specTopic.getTitle() != null && specTopic.getTitle().equals(topicEntity.getTitle())) {
+            updatedTopicEntity.setTitle(specTopic.getTitle());
+        }
+
+        // TARGET ID
+        if (specTopic.getTargetId() != null && specTopic.getTargetId().equals(topicEntity.getTargetId())) {
+            updatedTopicEntity.setTargetId(specTopic.getTargetId());
+        }
+
+        // CONDITION
+        if (specTopic.getConditionStatement() != null && !specTopic.getConditionStatement().equals(topicEntity.getCondition())) {
+            updatedTopicEntity.setCondition(specTopic.getConditionStatement());
+        }
+
+        // TOPIC ID
+        if (specTopic.getDBId() != topicEntity.getEntityId()) {
+            updatedTopicEntity.setEntityId(specTopic.getDBId());
+        }
+
+        // TOPIC REVISION
+        if (specTopic.getRevision() != topicEntity.getRevision()) {
+            updatedTopicEntity.setEntityRevision(specTopic.getRevision());
+        }
+
+        return updatedTopicEntity;
+    }
+
+    protected CSNodeWrapper mergeComment(final Comment comment, final CSNodeWrapper commentEntity, final CSNodeProvider nodeProvider) {
+        final CSNodeWrapper updatedTopicEntity = nodeProvider.newCSNode();
+        updatedTopicEntity.setId(commentEntity.getId());
+
+        updatedTopicEntity.setAdditionalText(comment.getText());
+
+        return updatedTopicEntity;
+    }
+
+    protected void mergeTopicRelationships(final SpecTopic specTopic, final CSNodeWrapper topicEntity,
+            final DataProviderFactory providerFactory) {
+
     }
 
     /**
-     * Updates a ContentSpecs tuple from the database using the data provided.
+     * Gets a list of child nodes that can be transformed.
+     *
+     * @param childNodes The list of nodes to filter for translatable nodes.
+     * @return A list of transformable nodes.
      */
-    public boolean updateContentSpec(final Integer id, final String title, final String preContentSpec, final String dtd) {
-        try {
-            TopicWrapper contentSpec = topicProvider.getTopic(id);
-
-            if (contentSpec == null) return false;
-
-            // Change the title if it's different
-            if (!contentSpec.getTitle().equals(title)) {
-                contentSpec.setTitle(title);
+    protected List<Node> getTransformableNodes(final List<Node> childNodes) {
+        final List<Node> nodes = new LinkedList<Node>();
+        for (final Node childNode : childNodes) {
+            if (childNode instanceof SpecNode || childNode instanceof Comment || childNode instanceof KeyValueNode || childNode
+                    instanceof Level) {
+                nodes.add(childNode);
             }
+        }
 
-            contentSpec.setXml(preContentSpec);
+        return nodes;
+    }
 
-            // Update the Content Spec Type and DTD property tags
-            final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties = contentSpec.getProperties();
-            UpdateableCollectionWrapper<PropertyTagInTopicWrapper> fixedProperties = propertyTagProvider.newPropertyTagInTopicCollection();
-            if (properties.getItems() != null && !properties.getItems().isEmpty()) {
-                boolean foundCSPType = false;
+    /**
+     * Checks to see if a ContentSpec level matches a Content Spec Entity level.
+     *
+     * @param level The ContentSpec level object.
+     * @param node  The Content Spec Entity level.
+     * @return True if the level is determined to match otherwise false.
+     */
+    protected boolean doesLevelMatch(final Level level, final CSNodeWrapper node) {
+        if (node.getNodeType() == CommonConstants.CS_NODE_COMMENT || node.getNodeType() == CommonConstants.CS_NODE_TOPIC) return false;
 
-                // Loop through and remove any Type or DTD tags if they don't
-                // match
-                for (final PropertyTagInTopicWrapper property : properties.getItems()) {
-                    if (property.getId().equals(CSConstants.CSP_TYPE_PROPERTY_TAG_ID)) {
-                        property.setValue(CSConstants.CSP_PRE_PROCESSED_STRING);
-                        fixedProperties.addUpdateItem(property);
-                        foundCSPType = true;
-                    } else if (property.getId().equals(CSConstants.DTD_PROPERTY_TAG_ID)) {
-                        if (!property.getValue().equals(dtd)) {
-                            property.setValue(dtd);
-                            fixedProperties.addUpdateItem(property);
-                        } else {
-                            fixedProperties.addItem(property);
-                        }
-                    } else {
-                        fixedProperties.addItem(property);
-                    }
-                }
+        // If the unique id is not from the parser, than use the unique id to compare
+        if (level.getUniqueId() != null) {
+            return level.getUniqueId().equals(node.getId());
+        } else {
+            // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the topics match
 
-                if (!foundCSPType) {
-                    // The property tag should never match a pre tag
-                    final PropertyTagInTopicWrapper typePropertyTag = propertyTagProvider.newPropertyTagInTopic(
-                            propertyTagProvider.getPropertyTag(CSConstants.CSP_TYPE_PROPERTY_TAG_ID));
-                    typePropertyTag.setValue(CSConstants.CSP_PRE_PROCESSED_STRING);
-
-                    fixedProperties.addNewItem(typePropertyTag);
-                }
-            }
-
-            contentSpec.setProperties(fixedProperties);
-
-            contentSpec = topicProvider.updateTopic(contentSpec);
-            if (contentSpec != null) {
+            // If the target ids match then the level should be the same
+            if (level.getTargetId() != null && level.getTargetId() == node.getTargetId()) {
                 return true;
             }
-        } catch (Exception e) {
-            log.error("", e);
+
+            return level.getTitle().equals(node.getTitle());
         }
-        return false;
     }
 
     /**
-     * Writes a ContentSpecs tuple to the database using the data provided.
+     * Checks to see if a ContentSpec topic matches a Content Spec Entity topic.
+     *
+     * @param specTopic The ContentSpec topic object.
+     * @param node      The Content Spec Entity topic.
+     * @return True if the topic is determined to match otherwise false.
      */
-    public boolean updatePostContentSpec(final Integer id, final String postContentSpec) {
-        try {
-            TopicWrapper contentSpec = topicProvider.getTopic(id);
-            if (contentSpec == null) return false;
+    protected boolean doesTopicMatch(final SpecTopic specTopic, final CSNodeWrapper node) {
+        if (node.getNodeType() != CommonConstants.CS_NODE_TOPIC) return false;
 
-            contentSpec.setXml(postContentSpec);
-
-            // Update Content Spec Type
-            final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties = contentSpec.getProperties();
-            UpdateableCollectionWrapper<PropertyTagInTopicWrapper> fixedProperties = propertyTagProvider.newPropertyTagInTopicCollection();
-            if (properties.getItems() != null && !properties.getItems().isEmpty()) {
-                // Loop through and remove the type
-                for (final PropertyTagInTopicWrapper property : properties.getItems()) {
-                    if (property.getId().equals(CSConstants.CSP_TYPE_PROPERTY_TAG_ID)) {
-                        property.setValue(CSConstants.CSP_POST_PROCESSED_STRING);
-                        fixedProperties.addUpdateItem(property);
-                    } else {
-                        fixedProperties.addItem(property);
-                    }
-                }
-
-                contentSpec.setProperties(fixedProperties);
+        // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
+        if (specTopic.getUniqueId() != null && specTopic.getUniqueId().matches("^\\d.*")) {
+            return specTopic.getUniqueId().equals(node.getId());
+        } else {
+            // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the topics match
+            if (specTopic.getRevision() != null && specTopic.getRevision() != node.getRevision()) {
+                return false;
             }
 
-            contentSpec = topicProvider.updateTopic(contentSpec);
-            if (contentSpec != null) {
-                return true;
-            }
-        } catch (Exception e) {
-            log.error("", e);
+            return specTopic.getDBId() == node.getEntityId();
         }
-        return false;
+    }
+
+    /**
+     * Checks to see if a ContentSpec comment matches a Content Spec Entity comment.
+     *
+     * @param comment The ContentSpec comment object.
+     * @param node    The Content Spec Entity comment.
+     * @return True if the comment is determined to match otherwise false.
+     */
+    protected boolean doesCommentMatch(final Comment comment, final CSNodeWrapper node) {
+        return node.getNodeType() == CommonConstants.CS_NODE_COMMENT;
     }
 
     @Override
