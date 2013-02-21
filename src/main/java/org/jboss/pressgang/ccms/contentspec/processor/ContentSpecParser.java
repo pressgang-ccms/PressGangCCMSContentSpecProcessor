@@ -795,7 +795,7 @@ public class ContentSpecParser {
                     throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber,
                             key + " = " + finalCfg.replaceAll("\n", "\n          ")));
                 } else {
-                    contentSpec.setPublicanCfg(StringUtilities.replaceEscapeChars(finalCfg).substring(1, cfg.length() - 2));
+                    contentSpec.setPublicanCfg(StringUtilities.replaceEscapeChars(finalCfg).substring(1, cfg.length() - 1));
                 }
             } else {
                 throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber, line));
