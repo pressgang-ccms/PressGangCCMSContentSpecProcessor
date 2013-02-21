@@ -15,6 +15,7 @@ public class LevelStringMaker {
     public static final Property<String, Boolean> missingClosingBracket = newProperty();
     public static final Property<String, String> url = newProperty();
     public static final Property<String, String> description = newProperty();
+    public static final Property<String, String> targetId = newProperty();
 
     public static final Instantiator<String> TopicString = new Instantiator<String>() {
         @Override
@@ -58,6 +59,12 @@ public class LevelStringMaker {
             // add the closing bracket
             if (!lookup.valueOf(missingClosingBracket, false)) {
                 retValue.append("]");
+            }
+
+            // add the target id
+            String targetId = lookup.valueOf(LevelStringMaker.targetId, nullString);
+            if (targetId != null) {
+                retValue.append(targetId);
             }
 
             return retValue.toString();

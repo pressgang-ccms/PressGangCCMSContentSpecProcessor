@@ -16,6 +16,8 @@ public class TopicStringMaker {
     public static final Property<String, Boolean> missingVariable = newProperty();
     public static final Property<String, String> url = newProperty();
     public static final Property<String, String> description = newProperty();
+    public static final Property<String, String> targetId = newProperty();
+    public static final Property<String, String> relationship = newProperty();
 
     public static final Instantiator<String> TopicString = new Instantiator<String>() {
         @Override
@@ -72,6 +74,18 @@ public class TopicStringMaker {
             // add the closing bracket
             if (!lookup.valueOf(missingClosingBracket, false)) {
                 retValue.append("]");
+            }
+
+            // add the relationship
+            String relationship = lookup.valueOf(TopicStringMaker.relationship, nullString);
+            if (relationship != null) {
+                retValue.append(relationship);
+            }
+
+            // add the target id
+            String targetId = lookup.valueOf(TopicStringMaker.targetId, nullString);
+            if (targetId != null) {
+                retValue.append(targetId);
             }
 
             return retValue.toString();

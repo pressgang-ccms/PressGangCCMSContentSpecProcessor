@@ -22,7 +22,6 @@ public class ProcessorConstants {
     public static final String PREV_REGEX = "^PREV[ ]*:(.|(\r?\n))*$";
     public static final String TARGET_BASE_REGEX = "T(([0-9]+)|(\\-[A-Za-z0-9\\-_]+))";
     public static final String TARGET_REGEX = "^" + TARGET_BASE_REGEX + "$";
-    public static final String BRANCH_REGEX = "^B[ ]*:(.|(\r?\n))*$";
     public static final String EXTERNAL_TARGET_REGEX = "^ET[0-9]+$";
     public static final String EXTERNAL_CSP_REGEX = "^CS[0-9]+[ ]*(:[ ]*[0-9]+)?$";
 
@@ -126,6 +125,7 @@ public class ProcessorConstants {
             CSLINE_MSG;
 
     public static final String ERROR_NO_ENDING_BRACKET_MSG = LINE + INVALID_CS + " Missing ending bracket (%c) detected.";
+    public static final String ERROR_NO_OPENING_BRACKET_MSG = LINE + INVALID_CS + " Missing opening bracket (%c) detected.";
     public static final String ERROR_MISSING_SEPARATOR_MSG = LINE + INVALID_CS + " Missing separator(%c) detected.";
     public static final String ERROR_INCORRECT_INDENTATION_MSG = LINE + INVALID_CS + " Indentation is invalid." + CSLINE_MSG;
     public static final String ERROR_RELATIONSHIP_BASE_LEVEL_MSG = LINE + INVALID_CS + " Relationships can't be at the base level." +

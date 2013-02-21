@@ -515,21 +515,7 @@ public class ContentSpecParser {
         // relationships and targets are created
         if (processProcesses) {
             for (final Process process : getProcesses()) {
-                if (process.processTopics(getSpecTopics(), getTargetTopics(), topicProvider)) {
-                    // Add all of the process topic targets
-                    for (final String targetId : process.getProcessTargets().keySet()) {
-                        getTargetTopics().put(targetId, process.getProcessTargets().get(targetId));
-                    }
-
-                    // Add all of the relationships in the process to the list of content spec relationships
-                    for (String uniqueTopicId : process.getProcessRelationships().keySet()) {
-                        if (getRelationships().containsKey(uniqueTopicId)) {
-                            getRelationships().get(uniqueTopicId).addAll(process.getProcessRelationships().get(uniqueTopicId));
-                        } else {
-                            getRelationships().put(uniqueTopicId, process.getProcessRelationships().get(uniqueTopicId));
-                        }
-                    }
-                }
+                process.processTopics(getSpecTopics(), getTargetTopics(), topicProvider);
             }
         }
 
@@ -1101,19 +1087,6 @@ public class ContentSpecParser {
             throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_NEXT_PREV_MSG, lineNumber, input));
         }
 
-        /* 
-         * Branches should only exist within a process. So make sure that
-         * the current level is a process otherwise throw an error.
-         */
-        if (variableMap.containsKey(RelationshipType.BRANCH)) {
-            if (getCurrentLevel() instanceof Process) {
-                final String[] branches = variableMap.get(RelationshipType.BRANCH);
-                ((Process) getCurrentLevel()).addBranches(uniqueId, Arrays.asList(branches));
-            } else {
-                throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_BRANCH_OUTSIDE_PROCESS, lineNumber, input));
-            }
-        }
-
         // Add the relationships to the global list if any exist
         if (!topicRelationships.isEmpty()) {
             getRelationships().put(uniqueId, topicRelationships);
@@ -1250,7 +1223,7 @@ public class ContentSpecParser {
     }
 
     /**
-     * Gets the variables from a string. The variables are inside of the starting and ending delimiter and are
+     * Gets the variables from a string. The variables are at the end of a line and are inside of the starting and ending delimiter and are
      * separated by the separator.
      *
      * @param line        The line of input to get the variables for.
@@ -1268,7 +1241,7 @@ public class ContentSpecParser {
     }
 
     /**
-     * Gets the variables from a string. The variables are inside of the starting and ending delimiter and are
+     * Gets the variables from a string. The variables are at the end of a line and are inside of the starting and ending delimiter and are
      * separated by the separator.
      *
      * @param line        The line of input to get the variables for.
@@ -1289,14 +1262,14 @@ public class ContentSpecParser {
         final int lastEndDelimPos = StringUtilities.lastIndexOf(line, endDelim);
 
         // Check that we have variables to process
-        if (lastStartDelimPos == -1) return output;
+        if (lastStartDelimPos == -1 && lastEndDelimPos == -1) return output;
 
         final String nextLine = getLines().peek();
 
         /*
-           * Check to see if the line doesn't match the regex even once. Also check to see if the next
-           * line is a continuation of the current line. If so then attempt to read the next line.
-           */
+         * Check to see if the line doesn't match the regex even once. Also check to see if the next
+         * line is a continuation of the current line. If so then attempt to read the next line.
+         */
         if (lastEndDelimPos < lastStartDelimPos || (nextLine != null && nextLine.trim().toUpperCase(Locale.ENGLISH).matches("^\\" +
                 startDelim + "[ ]*(R|L|P|T|B).*")) || line.trim().matches("(.|\n|\r\n)*(?<!\\\\)" + separator + "$")) {
             // Read in a new line and increment relevant counters
@@ -1311,20 +1284,25 @@ public class ContentSpecParser {
         /* Get the variables from the line */
         final List<VariableSet> varSets = findVariableSets(line, startDelim, endDelim);
 
-        /* Process the variables that were found */
+        // Process the variables that were found
         for (final VariableSet set : varSets) {
-            final ArrayList<String> variables = new ArrayList<String>();
-            final String variableSet = set.getContents().substring(1, set.getContents().length() - 1);
+            // Check that a opening bracket wasn't missed
+            if (set.getStartPos() == null) {
+                throw new ParsingException(format(ProcessorConstants.ERROR_NO_OPENING_BRACKET_MSG, lineNumber, startDelim));
+            }
 
             // Check that a closing bracket wasn't missed
             if (set.getEndPos() == null) {
                 throw new ParsingException(format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG, lineNumber, endDelim));
             }
 
+            final ArrayList<String> variables = new ArrayList<String>();
+            final String variableSet = set.getContents().substring(1, set.getContents().length() - 1);
+
             // Split the variables set into individual variables
             final RelationshipType type = getRelationshipType(variableSet);
             if (!ignoreTypes && (type == RelationshipType.REFER_TO || type == RelationshipType.PREREQUISITE || type == RelationshipType
-                    .NEXT || type == RelationshipType.PREVIOUS || type == RelationshipType.BRANCH || type == RelationshipType.LINKLIST)) {
+                    .NEXT || type == RelationshipType.PREVIOUS || type == RelationshipType.LINKLIST)) {
                 // Remove the type specifier from the start of the variable set
                 String splitString[] = StringUtilities.split(variableSet.trim(), ':', 2);
                 // Check that there are actually variables set
@@ -1336,6 +1314,8 @@ public class ContentSpecParser {
                         if (StringUtilities.lastIndexOf(var, startDelim) != StringUtilities.indexOf(var, startDelim) || var.indexOf(
                                 '\n') != -1) {
                             throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineNumber, separator));
+                        } else if (s.trim().isEmpty()) {
+                            throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_ATTRIB_FORMAT_MSG, lineNumber, line));
                         } else {
                             variables.add(var.trim());
                         }
@@ -1398,8 +1378,6 @@ public class ContentSpecParser {
             return RelationshipType.PREVIOUS;
         } else if (uppercaseVarSet.matches(ProcessorConstants.TARGET_REGEX)) {
             return RelationshipType.TARGET;
-        } else if (uppercaseVarSet.matches(ProcessorConstants.BRANCH_REGEX)) {
-            return RelationshipType.BRANCH;
         } else if (uppercaseVarSet.matches(ProcessorConstants.EXTERNAL_TARGET_REGEX)) {
             return RelationshipType.EXTERNAL_TARGET;
         } else if (uppercaseVarSet.matches(ProcessorConstants.EXTERNAL_CSP_REGEX)) {
@@ -1721,28 +1699,30 @@ public class ContentSpecParser {
     protected List<VariableSet> findVariableSets(final String input, final char startDelim, final char endDelim) {
         final StringBuilder varLine = new StringBuilder(input);
         final List<VariableSet> retValue = new ArrayList<VariableSet>();
-        VariableSet set = ProcessorUtilities.findVariableSet(input, startDelim, endDelim, 0);
+        int startPos = 0;
+        VariableSet set = ProcessorUtilities.findVariableSet(input, startDelim, endDelim, startPos);
+
         while (set != null && set.getContents() != null) {
             /*
-                * Check if we've found the end of a set. If we have add the set to the
-                * list and try and see if another set exists. If not then get the next line
-                * in the content spec and keep processing the set until the end of the set
-                * is found or the end of the content spec.
-                */
+             * Check if we've found the end of a set. If we have add the set to the
+             * list and try and see if another set exists. If not then get the next line
+             * in the content spec and keep processing the set until the end of the set
+             * is found or the end of the content spec.
+             */
             if (set.getEndPos() != null) {
                 retValue.add(set);
 
                 final String nextLine = getLines().peek();
-                final int nextStart = set.getEndPos() + 1;
-                set = ProcessorUtilities.findVariableSet(varLine.toString(), startDelim, endDelim, nextStart);
+                startPos = set.getEndPos() + 1;
+                set = ProcessorUtilities.findVariableSet(varLine.toString(), startDelim, endDelim, startPos);
 
                 /*
-                     * If the next set and/or its contents are empty then it means we found all the sets
-                     * for the input line. However the next line in the content spec maybe a continuation
-                     * but we couldn't find it originally because of a missing separator. So peek at the next
-                     * line and see if it's a continuation (ie another relationship) and if it is then add the
-                     * line and continue to find sets.
-                     */
+                 * If the next set and/or its contents are empty then it means we found all the sets
+                 * for the input line. However the next line in the content spec maybe a continuation
+                 * but we couldn't find it originally because of a missing separator. So peek at the next
+                 * line and see if it's a continuation (ie another relationship) and if it is then add the
+                 * line and continue to find sets.
+                 */
                 if ((set == null || set.getContents() == null) && (nextLine != null && nextLine.trim().toUpperCase(Locale.ENGLISH).matches(
                         "^\\" + startDelim + "[ ]*(R|L|P|T|B).*"))) {
                     final String line = getLines().poll();
@@ -1751,7 +1731,7 @@ public class ContentSpecParser {
                     if (line != null) {
                         varLine.append("\n").append(line);
 
-                        set = ProcessorUtilities.findVariableSet(varLine.toString(), startDelim, endDelim, nextStart);
+                        set = ProcessorUtilities.findVariableSet(varLine.toString(), startDelim, endDelim, startPos);
                     }
                 }
             } else {
@@ -1761,7 +1741,7 @@ public class ContentSpecParser {
                 if (line != null) {
                     varLine.append("\n").append(line);
 
-                    set = ProcessorUtilities.findVariableSet(varLine.toString(), startDelim, endDelim, set.getStartPos());
+                    set = ProcessorUtilities.findVariableSet(varLine.toString(), startDelim, endDelim, startPos);
                 } else {
                     retValue.add(set);
                     break;
