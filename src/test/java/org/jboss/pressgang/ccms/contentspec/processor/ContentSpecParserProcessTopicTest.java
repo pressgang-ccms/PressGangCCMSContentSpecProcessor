@@ -17,6 +17,7 @@ import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
 import org.jboss.pressgang.ccms.contentspec.test.makers.parser.TopicRelationshipStringMaker;
 import org.jboss.pressgang.ccms.contentspec.test.makers.parser.TopicStringMaker;
@@ -25,10 +26,11 @@ import org.junit.Test;
 public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
     @Arbitrary Integer id;
     @Arbitrary Integer randomNumber;
+    @ArbitraryString(type = StringType.ALPHANUMERIC) String randomString;
     @ArbitraryString(type = StringType.ALPHANUMERIC) String title;
 
     @Test
-    public void shouldReturnTopicWithTitleAndId() {
+    public void shouldReturnTopicWithTitleAndExistingId() {
         // Given a string that represents a topic with a title and id
         String topicString = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
@@ -48,6 +50,202 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         assertThat(topic.getId(), is(id.toString()));
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is("L" + randomNumber + "-" + id));
+    }
+
+    @Test
+    public void shouldReturnTopicWithTitleExistingIdAndRevision() {
+        // Given a string that represents a topic with a title, id and revision
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
+                        with(TopicStringMaker.revision, randomNumber.toString())));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        assertNotNull(topic);
+        assertThat(topic.getId(), is(id.toString()));
+        assertThat(topic.getRevision(), is(randomNumber));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is("L" + randomNumber + "-" + id));
+    }
+
+    @Test
+    public void shouldThrowExceptionWithTitleExistingIdAndInvalidRevision() {
+        // Given a string that represents a topic with a title, id and invalid revision
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
+                        with(TopicStringMaker.revision, randomString.toString())));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+            fail("Parsing the topic should have thrown an exception.");
+        } catch (ParsingException e) {
+            assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Revision attribute must be a valid number" +
+                    "."));
+        }
+    }
+
+    @Test
+    public void shouldReturnTopicWithTitleAndNewIdWithType() {
+        // Given a string that represents a topic with a title, new id and a type
+        String topicString = make(a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, "N"),
+                with(TopicStringMaker.topicType, "Concept")));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        assertNotNull(topic);
+        assertThat(topic.getId(), is("N"));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is("L" + randomNumber + "-N"));
+    }
+
+    @Test
+    public void shouldReturnTopicWithTitleAndUniqueNewIdWithType() {
+        String type = "Concept";
+        // Given a string that represents a topic with a title, new id and a type
+        String topicString = make(a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, "N1"),
+                with(TopicStringMaker.topicType, type)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        assertNotNull(topic);
+        assertThat(topic.getId(), is("N1"));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is("N1"));
+        assertThat(topic.getType(), is(type));
+    }
+
+    @Test
+    public void shouldThrowExceptionWithTitleAndDuplicatedUniqueNewIdWithType() {
+        // Given a string that represents a topic with a title, new id and a type
+        String topicString = make(a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, "N1"),
+                with(TopicStringMaker.topicType, "Concept")));
+        // and a topic already exists with that unique id
+        parser.getSpecTopics().put("N1", new SpecTopic(0, "N1"));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+            fail("Parsing the topic should have thrown an exception.");
+        } catch (ParsingException e) {
+            assertThat(e.getMessage(),
+                    containsString("Line " + lineNumber + ": Invalid Content Specification! Duplicate topic ID ( N1 )."));
+        }
+    }
+
+    @Test
+    public void shouldThrowExceptionWithTitleAndNewIdWithoutType() {
+        // Given a string that represents a topic with a title and a new id
+        String topicString = make(a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, "N")));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+            fail("Parsing the topic should have thrown an exception.");
+        } catch (ParsingException e) {
+            assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Title, Type and ID must be specified."));
+        }
+    }
+
+
+    @Test
+    public void shouldReturnTopicWithTitleAndCloneId() {
+        // Given a string that represents a topic with a title, new id and a type
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, "C" + id)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        assertNotNull(topic);
+        assertThat(topic.getId(), is("C" + id));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is("L" + randomNumber + "-C" + id));
+    }
+
+    @Test
+    public void shouldReturnTopicWithTitleAndAlternateCloneId() {
+        // Given a string that represents a topic with a title, new id and a type
+        String topicString = make(a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, "N"),
+                with(TopicStringMaker.topicType, "C: " + id)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        assertNotNull(topic);
+        assertThat(topic.getId(), is("C" + id));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is("L" + randomNumber + "-C" + id));
+    }
+
+    @Test
+    public void shouldThrowExceptionWithTitleAndInvalidId() {
+        // Given a string that represents a topic with a title and a new id
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, randomString)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+            fail("Parsing the topic should have thrown an exception.");
+        } catch (ParsingException e) {
+            assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Title and ID must be specified."));
+        }
     }
 
     @Test
@@ -223,13 +421,13 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
     }
 
     @Test
-    public void shouldParseTopicWithShortRefersToRelationship() {
+    public void shouldParseTopicWithShortReferToRelationship() {
         // Given a valid refers to relationship
         List<String> topics = Arrays.asList(id.toString(), "T0");
         String refersToRelationship = make(
                 a(TopicRelationshipStringMaker.TopicRelationshipString, with(TopicRelationshipStringMaker.relationshipType, "R"),
                         with(TopicRelationshipStringMaker.relationships, topics)));
-        // and a string that represents a topic title, id and a missing variable
+        // and a string that represents a topic title and id
         String topicString = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
                         with(TopicStringMaker.relationship, refersToRelationship)));
@@ -256,10 +454,264 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // and the relationships have the right main topic id
         assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
         assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        // and the relationship type is correct
+        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
     }
 
     @Test
-    public void shouldThrowExceptionWithShortRelationshipWithMissingSeparator() {
+    public void shouldParseTopicWithLongReferToRelationship() {
+        // Given a valid refers to relationship
+        List<String> topics = Arrays.asList("Test [" + id + "]", "T0");
+        String refersToRelationship = make(
+                a(TopicRelationshipStringMaker.TopicRelationshipString, with(TopicRelationshipStringMaker.relationshipType, "Refer-To"),
+                        with(TopicRelationshipStringMaker.longRelationship, true),
+                        with(TopicRelationshipStringMaker.relationships, topics)));
+        // and the relationship is setup in the lines
+        parser.getLines().addAll(Arrays.asList(refersToRelationship.split("\n")));
+        // and a string that represents a topic title and id
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        String uniqueId = "L" + randomNumber + "-" + id;
+        assertNotNull(topic);
+        assertThat(topic.getId(), is(id.toString()));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is(uniqueId));
+        // and the right number of relationships exist
+        assertThat(parser.getRelationships().size(), is(1));
+        assertThat(parser.getRelationships().get(uniqueId).size(), is(2));
+        // and the relationships have the right main topic id
+        assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        // and the relationship type is correct
+        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
+    }
+
+    @Test
+    public void shouldParseTopicWithShortPrerequisiteRelationship() {
+        // Given a valid relationship
+        List<String> topics = Arrays.asList(id.toString(), "T0");
+        String prerequisiteRelationship = make(
+                a(TopicRelationshipStringMaker.TopicRelationshipString, with(TopicRelationshipStringMaker.relationshipType, "P"),
+                        with(TopicRelationshipStringMaker.relationships, topics)));
+        // and a string that represents a topic title and id
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
+                        with(TopicStringMaker.relationship, prerequisiteRelationship)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        String uniqueId = "L" + randomNumber + "-" + id;
+        assertNotNull(topic);
+        assertThat(topic.getId(), is(id.toString()));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is(uniqueId));
+        // and the right number of relationships exist
+        assertThat(parser.getRelationships().size(), is(1));
+        assertThat(parser.getRelationships().get(uniqueId).size(), is(2));
+        // and the relationships have the right main topic id
+        assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        // and the relationship type is correct
+        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.PREREQUISITE));
+        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.PREREQUISITE));
+    }
+
+    @Test
+    public void shouldParseTopicWithLongPrerequisiteRelationship() {
+        // Given a valid relationship
+        List<String> topics = Arrays.asList("Test [" + id + "]", "T0");
+        String prerequisiteRelationship = make(
+                a(TopicRelationshipStringMaker.TopicRelationshipString, with(TopicRelationshipStringMaker.relationshipType, "Prerequisite"),
+                        with(TopicRelationshipStringMaker.longRelationship, true),
+                        with(TopicRelationshipStringMaker.relationships, topics)));
+        // and the relationship is setup in the lines
+        parser.getLines().addAll(Arrays.asList(prerequisiteRelationship.split("\n")));
+        // and a string that represents a topic title and id
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        String uniqueId = "L" + randomNumber + "-" + id;
+        assertNotNull(topic);
+        assertThat(topic.getId(), is(id.toString()));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is(uniqueId));
+        // and the right number of relationships exist
+        assertThat(parser.getRelationships().size(), is(1));
+        assertThat(parser.getRelationships().get(uniqueId).size(), is(2));
+        // and the relationships have the right main topic id
+        assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        // and the relationship type is correct
+        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.PREREQUISITE));
+        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.PREREQUISITE));
+    }
+
+    @Test
+    public void shouldParseTopicWithShortLinkListRelationship() {
+        // Given a valid relationship
+        List<String> topics = Arrays.asList(id.toString(), "T0");
+        String linkListRelationship = make(
+                a(TopicRelationshipStringMaker.TopicRelationshipString, with(TopicRelationshipStringMaker.relationshipType, "L"),
+                        with(TopicRelationshipStringMaker.relationships, topics)));
+        // and a string that represents a topic title and id
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
+                        with(TopicStringMaker.relationship, linkListRelationship)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        String uniqueId = "L" + randomNumber + "-" + id;
+        assertNotNull(topic);
+        assertThat(topic.getId(), is(id.toString()));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is(uniqueId));
+        // and the right number of relationships exist
+        assertThat(parser.getRelationships().size(), is(1));
+        assertThat(parser.getRelationships().get(uniqueId).size(), is(2));
+        // and the relationships have the right main topic id
+        assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        // and the relationship type is correct
+        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.LINKLIST));
+    }
+
+    @Test
+    public void shouldParseTopicWithLongLinkListRelationship() {
+        // Given a valid relationship
+        List<String> topics = Arrays.asList("Test [" + id + "]", "T0");
+        String linkListRelationship = make(
+                a(TopicRelationshipStringMaker.TopicRelationshipString, with(TopicRelationshipStringMaker.relationshipType, "Link-List"),
+                        with(TopicRelationshipStringMaker.longRelationship, true),
+                        with(TopicRelationshipStringMaker.relationships, topics)));
+        // and the relationship is setup in the lines
+        parser.getLines().addAll(Arrays.asList(linkListRelationship.split("\n")));
+        // and a string that represents a topic title and id
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        String uniqueId = "L" + randomNumber + "-" + id;
+        assertNotNull(topic);
+        assertThat(topic.getId(), is(id.toString()));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is(uniqueId));
+        // and the right number of relationships exist
+        assertThat(parser.getRelationships().size(), is(1));
+        assertThat(parser.getRelationships().get(uniqueId).size(), is(2));
+        // and the relationships have the right main topic id
+        assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        // and the relationship type is correct
+        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.LINKLIST));
+    }
+
+    @Test
+    public void shouldParseTopicWithMultipleLongRelationships() {
+        // Given two long relationships
+        List<String> topics = Arrays.asList("Test [" + id + "]", "T0");
+        List<String> topics2 = Arrays.asList(id.toString(), "Test [T0]");
+        String refersToRelationship = make(
+                a(TopicRelationshipStringMaker.TopicRelationshipString, with(TopicRelationshipStringMaker.relationshipType, "Refer-To"),
+                        with(TopicRelationshipStringMaker.longRelationship, true),
+                        with(TopicRelationshipStringMaker.relationships, topics)));
+        String linkListRelationship = make(
+                a(TopicRelationshipStringMaker.TopicRelationshipString, with(TopicRelationshipStringMaker.relationshipType, "Link-List"),
+                        with(TopicRelationshipStringMaker.longRelationship, true),
+                        with(TopicRelationshipStringMaker.relationships, topics2)));
+        // and the relationship is setup in the lines
+        parser.getLines().addAll(Arrays.asList((refersToRelationship + linkListRelationship).split("\n")));
+        // and a string that represents a topic title and id
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        String uniqueId = "L" + randomNumber + "-" + id;
+        assertNotNull(topic);
+        assertThat(topic.getId(), is(id.toString()));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is(uniqueId));
+        // and the right number of relationships exist
+        assertThat(parser.getRelationships().size(), is(1));
+        assertThat(parser.getRelationships().get(uniqueId).size(), is(4));
+        // and the relationships have the right main topic id
+        assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parser.getRelationships().get(uniqueId).get(2).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parser.getRelationships().get(uniqueId).get(3).getMainRelationshipTopicId(), is(uniqueId));
+        // and the relationship type is correct
+        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parser.getRelationships().get(uniqueId).get(2).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parser.getRelationships().get(uniqueId).get(3).getType(), is(RelationshipType.LINKLIST));
+    }
+
+    @Test
+    public void shouldThrowExceptionWithShortRelationshipWithMissingVariable() {
         // Given an invalid refers to relationship
         List<String> topics = Arrays.asList(id.toString(), randomNumber.toString());
         String refersToRelationship = make(
@@ -281,6 +733,32 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
                     containsString("Line " + lineNumber + ": Invalid Content Specification! Missing attribute detected."));
+        }
+    }
+
+    @Test
+    public void shouldThrowExceptionWithShortRelationshipWithMissingSeparator() {
+        // Given an invalid refers to relationship
+        List<String> topics = Arrays.asList(id.toString(), randomNumber.toString());
+        String refersToRelationship = make(
+                a(TopicRelationshipStringMaker.TopicRelationshipString, with(TopicRelationshipStringMaker.relationshipType, "R"),
+                        with(TopicRelationshipStringMaker.missingSeparator, true),
+                        with(TopicRelationshipStringMaker.relationships, topics)));
+        // and a string that represents a topic title, id and a missing variable
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
+                        with(TopicStringMaker.relationship, refersToRelationship)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+            fail("Parsing the topic should have thrown an exception.");
+        } catch (ParsingException e) {
+            assertThat(e.getMessage(),
+                    containsString("Line " + lineNumber + ": Invalid Content Specification! Missing separator(,) detected."));
         }
     }
 
@@ -337,7 +815,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
     }
 
     @Test
-    public void shouldThrowExceptionWithLongRelationshipWithMissingSeparator() {
+    public void shouldThrowExceptionWithLongRelationshipWithMissingVariable() {
         // Given an invalid refers to relationship
         List<String> topics = Arrays.asList(id.toString(), randomNumber.toString());
         String refersToRelationship = make(
@@ -364,6 +842,34 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
     }
 
     @Test
+    public void shouldThrowExceptionWithLongRelationshipWithMissingSeparator() {
+        // Given an invalid refers to relationship
+        List<String> topics = Arrays.asList(id.toString(), randomNumber.toString());
+        String refersToRelationship = make(
+                a(TopicRelationshipStringMaker.TopicRelationshipString, with(TopicRelationshipStringMaker.relationshipType, "R"),
+                        with(TopicRelationshipStringMaker.longRelationship, true),
+                        with(TopicRelationshipStringMaker.missingSeparator, true),
+                        with(TopicRelationshipStringMaker.relationships, topics)));
+        // and the relationship is setup in the lines
+        parser.getLines().addAll(Arrays.asList(refersToRelationship.split("\n")));
+        // and a string that represents a topic title, id and a missing variable
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+            fail("Parsing the topic should have thrown an exception.");
+        } catch (ParsingException e) {
+            assertThat(e.getMessage(),
+                    containsString("Line " + lineNumber + ": Invalid Content Specification! Missing separator(,) detected."));
+        }
+    }
+
+    @Test
     public void shouldThrowExceptionWithLongRelationshipWithMissingOpeningBracket() {
         // Given an invalid refers to relationship
         List<String> topics = Arrays.asList(id.toString(), randomNumber.toString());
@@ -374,11 +880,11 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
                         with(TopicRelationshipStringMaker.relationships, topics)));
         // and the relationship is setup in the lines
         String[] lines = refersToRelationship.split("\n");
-        //parser.getLines().addAll(Arrays.asList(lines).subList(1, lines.length));
+        parser.getLines().addAll(Arrays.asList(lines).subList(1, lines.length));
         // and a string that represents a topic title, id and a missing variable
         String topicString = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
-                        with(TopicStringMaker.relationship, "[R: 6] P: 6 [T1]")));
+                        with(TopicStringMaker.relationship, lines[0])));
         // and a line number
         int lineNumber = randomNumber;
 

@@ -10,6 +10,7 @@ public class TopicStringMaker {
     public static final Property<String, Integer> indentation = newProperty();
     public static final Property<String, String> title = newProperty();
     public static final Property<String, String> id = newProperty();
+    public static final Property<String, String> topicType = newProperty();
     public static final Property<String, String> revision = newProperty();
     public static final Property<String, Boolean> missingOpeningBracket = newProperty();
     public static final Property<String, Boolean> missingClosingBracket = newProperty();
@@ -46,6 +47,12 @@ public class TopicStringMaker {
             String id = lookup.valueOf(TopicStringMaker.id, nullString);
             if (id != null) {
                 retValue.append(id);
+            }
+
+            // add the topics type
+            String type = lookup.valueOf(TopicStringMaker.topicType, nullString);
+            if (type != null) {
+                retValue.append(", ").append(type);
             }
 
             // add the topics revision

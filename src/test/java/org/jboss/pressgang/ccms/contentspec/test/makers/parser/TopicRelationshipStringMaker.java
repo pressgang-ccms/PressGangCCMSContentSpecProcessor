@@ -16,20 +16,25 @@ public class TopicRelationshipStringMaker {
     public static final Property<String, Boolean> missingOpeningBracket = newProperty();
     public static final Property<String, Boolean> missingClosingBracket = newProperty();
     public static final Property<String, Boolean> missingVariable = newProperty();
+    public static final Property<String, Boolean> missingSeparator = newProperty();
     public static final Property<String, Boolean> missingColon = newProperty();
     public static final Property<String, List<String>> relationships = newProperty();
 
     public static Instantiator<String> TopicRelationshipString = new Instantiator<String>() {
         @Override
         public String instantiate(PropertyLookup<String> lookup) {
+            final Boolean longRelationship = lookup.valueOf(TopicRelationshipStringMaker.longRelationship, false);
             final StringBuilder retValue = new StringBuilder();
             final String nullString = null;
 
             // add the indentation
             final Integer indentationLevel = lookup.valueOf(indentation, 0);
+            // add the indentation
+            StringBuilder indentation = new StringBuilder();
             for (int i = 0; i < indentationLevel; i++) {
-                retValue.append("  ");
+                indentation.append("  ");
             }
+            retValue.append(indentation.toString());
 
             // add the opening bracket
             if (!lookup.valueOf(missingOpeningBracket, false)) {
@@ -48,9 +53,17 @@ public class TopicRelationshipStringMaker {
             }
 
             // Add the topic relationships
-            retValue.append(
-                    generateTopicListString(lookup.valueOf(relationships, new ArrayList<String>()), lookup.valueOf(longRelationship, false),
-                            indentationLevel));
+            retValue.append(generateTopicListString(lookup.valueOf(relationships, new ArrayList<String>()), longRelationship,
+                    indentation.toString()));
+
+            // add the missing separator
+            if (lookup.valueOf(missingSeparator, false)) {
+                if (longRelationship) {
+                    retValue.append("\n").append(indentation.toString()).append("  ").append("5");
+                } else {
+                    retValue.append(" 5");
+                }
+            }
 
             // add the missing variable
             if (lookup.valueOf(missingVariable, false)) {
@@ -65,18 +78,12 @@ public class TopicRelationshipStringMaker {
             return retValue.toString();
         }
 
-        protected String generateTopicListString(List<String> topicList, boolean longRelationship, int indentationLevel) {
+        protected String generateTopicListString(List<String> topicList, boolean longRelationship, String indentation) {
             final StringBuilder retValue = new StringBuilder();
-
-            // add the indentation
-            StringBuilder indentation = new StringBuilder();
-            for (int i = 0; i < indentationLevel; i++) {
-                indentation.append("  ");
-            }
 
             for (final String topic : topicList) {
                 if (longRelationship) {
-                    retValue.append("\n").append(indentation.toString()).append("  ");
+                    retValue.append("\n").append(indentation).append("  ");
                 } else {
                     retValue.append(" ");
                 }

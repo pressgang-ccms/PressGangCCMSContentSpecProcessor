@@ -208,7 +208,8 @@ public class ProcessorConstants {
             "for translated topics." + CSLINE_MSG;
     public static final String ERROR_TOPIC_NO_TAGS_TRANSLATION_TOPIC = LINE + INVALID_TOPIC + " Tags aren't allowed to be added to " +
             "translated topics." + CSLINE_MSG;
-    public static final String ERROR_TOPIC_INVALID_REVISION_FORMAT = LINE + INVALID_TOPIC + " " + CSLINE_MSG;
+    public static final String ERROR_TOPIC_INVALID_REVISION_FORMAT = LINE + INVALID_TOPIC + " Revision attribute must be a valid number." +
+            CSLINE_MSG;
     public static final String ERROR_TOPIC_NOT_IN_PART_INTRO_MSG = LINE + INVALID_TOPIC + " A topic must be before any chapters inside of" +
             " a part." + CSLINE_MSG;
 
