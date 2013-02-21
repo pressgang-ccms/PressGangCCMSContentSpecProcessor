@@ -9,7 +9,9 @@ import org.jboss.pressgang.ccms.contentspec.processor.utils.ProcessorUtilities;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
@@ -18,6 +20,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 /**
@@ -30,6 +33,7 @@ public class ContentSpecParserProcessMetaDataTest extends ContentSpecParserTest 
 
     @Arbitrary Integer lineNumber;
     @ArbitraryString(type = StringType.ALPHANUMERIC) String line;
+    @ArbitraryString(type = StringType.ALPHANUMERIC) String line2;
     @Mock ContentSpec contentSpec;
 
     protected Pair<String, String> keyValuePair = Pair.newPair(null, null);
@@ -152,5 +156,44 @@ public class ContentSpecParserProcessMetaDataTest extends ContentSpecParserTest 
             // And the error message contains the line number
             assertThat(e.getMessage(), containsString(lineNumber.toString()));
         }
+    }
+
+    @Test
+    public void shouldSetPublicanConfig() throws Exception {
+        // Given a line produces a key-value pair with a publican.cfg key
+        keyValuePair.setFirst("publican.cfg");
+        // And a value containing both an opening and closing bracket
+        keyValuePair.setSecond("[" + line + "]");
+
+        // When the metadata line is processed
+        parser.processMetaDataLine(contentSpec, line, lineNumber);
+
+        // Then the publican config should be set
+        ArgumentCaptor<String> publicanConfig = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(contentSpec, times(1)).setPublicanCfg(publicanConfig.capture());
+        assertThat(publicanConfig.getValue(), containsString(line));
+    }
+
+    @Test
+    public void shouldSearchSubsequentLinesForRemainingPublicanConfig() throws Exception {
+        // Given a line produces a key-value pair with a publican.cfg key
+        keyValuePair.setFirst("publican.cfg");
+        // And a value containing only an opening bracket
+        keyValuePair.setSecond("[" + line);
+        // And the next line contains the closing bracket
+        parser.getLines().push(line2 + "]");
+        // And the current line count
+        int originalLineCount = parser.getLineCount();
+
+        // When the metadata line is processed
+        parser.processMetaDataLine(contentSpec, line, lineNumber);
+
+        // Then the line count should be incremented
+        assertThat(parser.getLineCount(), is(originalLineCount+1));
+        // And the publican config should be set
+        ArgumentCaptor<String> publicanConfig = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(contentSpec, times(1)).setPublicanCfg(publicanConfig.capture());
+        assertThat(publicanConfig.getValue(), containsString(line));
+        assertThat(publicanConfig.getValue(), containsString(line2));
     }
 }
