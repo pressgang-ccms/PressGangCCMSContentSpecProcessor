@@ -741,8 +741,6 @@ public class ContentSpecParser {
             keyValue = ProcessorUtilities.getAndValidateKeyValuePair(line);
         } catch (InvalidKeyValueException e) {
             throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineNumber, line));
-        } catch (NumberFormatException e) {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineNumber, line));
         }
 
         final String key = keyValue.getFirst();
