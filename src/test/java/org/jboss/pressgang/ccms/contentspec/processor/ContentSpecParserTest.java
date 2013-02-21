@@ -1,7 +1,5 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
-import static org.mockito.Mockito.when;
-
 import org.jboss.pressgang.ccms.contentspec.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
@@ -10,6 +8,8 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.mockito.Mock;
 import org.powermock.modules.junit4.rule.PowerMockRule;
+
+import static org.mockito.Mockito.when;
 
 @Ignore
 public class ContentSpecParserTest extends BaseUnitTest {
@@ -22,7 +22,7 @@ public class ContentSpecParserTest extends BaseUnitTest {
     protected ContentSpecParser parser;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         this.logger = new ErrorLogger("testLogger");
         when(loggerManager.getLogger(ContentSpecParser.class)).thenReturn(logger);
         this.parser = new ContentSpecParser(dataProviderFactory, loggerManager);
