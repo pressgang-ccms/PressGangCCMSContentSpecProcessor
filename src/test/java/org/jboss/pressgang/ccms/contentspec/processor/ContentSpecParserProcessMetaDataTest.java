@@ -2,8 +2,10 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 
 import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
-import net.sf.ipsedixit.core.StringType;
+import org.hamcrest.Matchers;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
+import org.jboss.pressgang.ccms.contentspec.entities.InjectionOptions;
 import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
 import org.jboss.pressgang.ccms.contentspec.processor.utils.ProcessorUtilities;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
@@ -15,6 +17,7 @@ import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
+import static net.sf.ipsedixit.core.StringType.ALPHANUMERIC;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertThat;
@@ -32,10 +35,12 @@ public class ContentSpecParserProcessMetaDataTest extends ContentSpecParserTest 
     private final String MISSING_PARSING_EXCEPTION = "ParsingException not thrown";
 
     @Arbitrary Integer lineNumber;
-    @ArbitraryString(type = StringType.ALPHANUMERIC) String line;
-    @ArbitraryString(type = StringType.ALPHANUMERIC) String line2;
-    @Mock ContentSpec contentSpec;
+    @ArbitraryString(type = ALPHANUMERIC) String line;
+    @ArbitraryString(type = ALPHANUMERIC) String line2;
+    @ArbitraryString(type = ALPHANUMERIC) String type;
+    @ArbitraryString(type = ALPHANUMERIC) String type2;
 
+    @Mock ContentSpec contentSpec;
     protected Pair<String, String> keyValuePair = Pair.newPair(null, null);
 
     @Before
@@ -189,11 +194,176 @@ public class ContentSpecParserProcessMetaDataTest extends ContentSpecParserTest 
         parser.processMetaDataLine(contentSpec, line, lineNumber);
 
         // Then the line count should be incremented
-        assertThat(parser.getLineCount(), is(originalLineCount+1));
+        assertThat(parser.getLineCount(), is(originalLineCount + 1));
         // And the publican config should be set
         ArgumentCaptor<String> publicanConfig = ArgumentCaptor.forClass(String.class);
         Mockito.verify(contentSpec, times(1)).setPublicanCfg(publicanConfig.capture());
         assertThat(publicanConfig.getValue(), containsString(line));
         assertThat(publicanConfig.getValue(), containsString(line2));
+    }
+
+    @Test
+    public void shouldThrowExceptionIfPublicanConfigEndNotFound() throws Exception {
+        // Given a line produces a key-value pair with a publican.cfg key
+        keyValuePair.setFirst("publican.cfg");
+        // And a value containing only an opening bracket
+        keyValuePair.setSecond("[" + line);
+
+        // When the metadata line is processed
+        try {
+            parser.processMetaDataLine(contentSpec, line, lineNumber);
+
+            // Then an exception is thrown
+            fail(MISSING_PARSING_EXCEPTION);
+        } catch (ParsingException e) {
+            // And it contains an error about the config
+            assertThat(e.getMessage(), containsString("Invalid Content Specification! Incorrect publican.cfg input."));
+            // And the error message contains the line number
+            assertThat(e.getMessage(), containsString(lineNumber.toString()));
+        }
+    }
+
+    @Test
+    public void shouldThrowExceptionIfPublicanDelimitersDoNotMatch() throws Exception {
+        // Given a line produces a key-value pair with a publican.cfg key
+        keyValuePair.setFirst("publican.cfg");
+        // And a value containing mismatched brackets
+        keyValuePair.setSecond("[" + line + "[" + line + "]");
+
+        // When the metadata line is processed
+        try {
+            parser.processMetaDataLine(contentSpec, line, lineNumber);
+
+            // Then an exception is thrown
+            fail(MISSING_PARSING_EXCEPTION);
+        } catch (ParsingException e) {
+            // And it contains an error about the config
+            assertThat(e.getMessage(), containsString("Invalid Content Specification! Incorrect publican.cfg input."));
+            // And the error message contains the line number
+            assertThat(e.getMessage(), containsString(lineNumber.toString()));
+        }
+    }
+
+    @Test
+    public void shouldThrowExceptionIfInjectionOptionDelimitersMismatched() throws Exception {
+        // Given a line produces a key-value pair with an inline injection key
+        keyValuePair.setFirst("inline injection");
+        // And a value containing an opening bracket but no closing bracket
+        keyValuePair.setSecond("[" + type);
+
+        try {
+            parser.processMetaDataLine(contentSpec, line, lineNumber);
+
+            // Then an exception is thrown
+            fail(MISSING_PARSING_EXCEPTION);
+        } catch (ParsingException e) {
+            // And it contains an error about the bracket
+            assertThat(e.getMessage(), containsString("Invalid Content Specification! Missing ending bracket (]) detected."));
+            // And the error message contains the line number
+            assertThat(e.getMessage(), containsString(lineNumber.toString()));
+        }
+    }
+
+    @Test
+    public void shouldThrowExceptionIfNoInlineInjectionFlag() throws Exception {
+        // Given a line produces a key-value pair for an inline injection key
+        keyValuePair.setFirst("inline injection");
+        // And a type with matching brackets
+        keyValuePair.setSecond("[" + type + "]");
+
+        try {
+            parser.processMetaDataLine(contentSpec, line, lineNumber);
+
+            // Then an exception is thrown
+            fail(MISSING_PARSING_EXCEPTION);
+        } catch (ParsingException e) {
+            // And it contains an error about the bracket
+            assertThat(e.getMessage(), containsString("Invalid Content Specification! The setting for inline injection must be On or Off."));
+            // And the error message contains the line number
+            assertThat(e.getMessage(), containsString(lineNumber.toString()));
+        }
+    }
+
+    @Test
+    public void shouldSetInjectionOptionsContentSpecTypeToOff() throws Exception {
+        // Given a line produces a key-value pair with an inline injection key
+        keyValuePair.setFirst("inline injection");
+        // And a value with matching brackets that contains the off flag
+        keyValuePair.setSecond("off[" + type + "]");
+
+        // When the metadata line is processed
+        parser.processMetaDataLine(contentSpec, line, lineNumber);
+
+        // Then the injection options content spec type is set to off
+        ArgumentCaptor<InjectionOptions> injectionOptions = ArgumentCaptor.forClass(InjectionOptions.class);
+        Mockito.verify(contentSpec, times(1)).setInjectionOptions(injectionOptions.capture());
+        assertThat(injectionOptions.getValue().getContentSpecType(), is(InjectionOptions.UserType.OFF));
+    }
+
+    @Test
+    public void shouldSetInjectionOptionsContentSpecTypeToOnWhenNoTypes() throws Exception {
+        // Given a line produces a key-value pair with an inline injection key
+        keyValuePair.setFirst("inline injection");
+        // And a value that only contains on
+        keyValuePair.setSecond("on");
+
+        // When the metadata line is processed
+        parser.processMetaDataLine(contentSpec, line, lineNumber);
+
+        // Then the injection options content spec type is set to on
+        ArgumentCaptor<InjectionOptions> injectionOptions = ArgumentCaptor.forClass(InjectionOptions.class);
+        Mockito.verify(contentSpec, times(1)).setInjectionOptions(injectionOptions.capture());
+        assertThat(injectionOptions.getValue().getContentSpecType(), is(InjectionOptions.UserType.ON));
+    }
+
+    @Test
+    public void shouldSetInjectionOptionsContentSpecTypeToStrictWhenOnWithTypes() throws Exception {
+        // Given a line produces a key-value pair with an inline injection key
+        keyValuePair.setFirst("inline injection");
+        // And a value that contains the on flag and a type
+        keyValuePair.setSecond("on[" + type + "]");
+
+        // When the metadata line is processed
+        parser.processMetaDataLine(contentSpec, line, lineNumber);
+
+        // Then the injection options content spec type is set to strict
+        ArgumentCaptor<InjectionOptions> injectionOptions = ArgumentCaptor.forClass(InjectionOptions.class);
+        Mockito.verify(contentSpec, times(1)).setInjectionOptions(injectionOptions.capture());
+        assertThat(injectionOptions.getValue().getContentSpecType(), is(InjectionOptions.UserType.STRICT));
+    }
+
+    @Test
+    public void shouldSetInjectionOptionsWithTopicTypes() throws Exception {
+        // Given a line produces a key-value pair with an inline injection key
+        keyValuePair.setFirst("inline injection");
+        // And a value with an injection flag and some valid topic types
+        keyValuePair.setSecond("off[" + type + "," + type2 + "]");
+
+        // When the metadata line is processed
+        parser.processMetaDataLine(contentSpec, line, lineNumber);
+
+        // Then the injection option topic types should be set
+        ArgumentCaptor<InjectionOptions> injectionOptions = ArgumentCaptor.forClass(InjectionOptions.class);
+        Mockito.verify(contentSpec, times(1)).setInjectionOptions(injectionOptions.capture());
+        assertThat(injectionOptions.getValue().getStrictTopicTypes(), Matchers.contains(type, type2));
+        // And the injection options content spec type is set to off
+        assertThat(injectionOptions.getValue().getContentSpecType(), is(InjectionOptions.UserType.OFF));
+    }
+
+    @Test
+    public void shouldAddOtherKeyValueNode() throws Exception {
+        // Given a line produces a key-value pair that doesn't have a known key
+        keyValuePair.setFirst(type);
+        // And some value
+        keyValuePair.setSecond(line);
+
+        // When the metadata line is processed
+        parser.processMetaDataLine(contentSpec, line, lineNumber);
+
+        // Then this pair should be added to the spec
+        ArgumentCaptor<KeyValueNode> keyValueNode = ArgumentCaptor.forClass(KeyValueNode.class);
+        Mockito.verify(contentSpec, times(1)).appendKeyValueNode(keyValueNode.capture());
+        assertThat(keyValueNode.getValue().getKey(), is(type));
+        assertThat(keyValueNode.getValue().getValue().toString(), is(line));
     }
 }
