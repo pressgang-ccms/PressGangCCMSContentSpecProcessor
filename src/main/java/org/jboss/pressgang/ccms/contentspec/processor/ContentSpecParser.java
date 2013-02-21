@@ -771,7 +771,6 @@ public class ContentSpecParser {
             int startingPos = StringUtilities.indexOf(value, '[');
             if (startingPos != -1) {
                 final StringBuilder cfg = new StringBuilder(value);
-                int startLineCount = lineNumber;
                 // If the ']' character isn't on this line try the next line
                 if (StringUtilities.indexOf(cfg.toString(), ']') == -1) {
                     cfg.append("\n");
@@ -793,7 +792,7 @@ public class ContentSpecParser {
                 // Check that the ']' character was found and that it was found before another '[' character
                 final String finalCfg = cfg.toString();
                 if (StringUtilities.lastIndexOf(finalCfg, ']') == -1 || StringUtilities.lastIndexOf(finalCfg, '[') != startingPos) {
-                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, startLineCount,
+                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber,
                             key + " = " + finalCfg.replaceAll("\n", "\n          ")));
                 } else {
                     contentSpec.setPublicanCfg(StringUtilities.replaceEscapeChars(finalCfg).substring(1, cfg.length() - 2));
