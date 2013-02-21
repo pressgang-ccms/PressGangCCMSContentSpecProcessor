@@ -9,6 +9,8 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.util.Arrays;
 import java.util.List;
@@ -16,12 +18,15 @@ import java.util.List;
 import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
+import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
 import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
 import org.jboss.pressgang.ccms.contentspec.test.makers.parser.TopicRelationshipStringMaker;
 import org.jboss.pressgang.ccms.contentspec.test.makers.parser.TopicStringMaker;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
     @Arbitrary Integer id;
@@ -231,6 +236,106 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
     }
 
     @Test
+    public void shouldReturnTopicWithTitleAndDuplicateId() {
+        // Given a string that represents a topic with a title, new id and a type
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, "X" + id)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        assertNotNull(topic);
+        assertThat(topic.getId(), is("X" + id));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is("L" + randomNumber + "-X" + id));
+    }
+
+    @Test
+    public void shouldReturnTopicWithTitleAndClonedDuplicateId() {
+        // Given a string that represents a topic with a title, new id and a type
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, "XC" + id)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        assertNotNull(topic);
+        assertThat(topic.getId(), is("XC" + id));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is("L" + randomNumber + "-XC" + id));
+    }
+
+    @Test
+    public void shouldPrintWarningWithTitleAndDuplicateIdAndOptions() {
+        // Given a string that represents a topic with a title, new id and a type
+        String topicString = make(a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, "X" + id),
+                with(TopicStringMaker.url, randomString)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        ArgumentCaptor<String> warningMessage = ArgumentCaptor.forClass(String.class);
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        verify(logger, times(1)).warn(warningMessage.capture());
+        assertNotNull(topic);
+        assertThat(topic.getId(), is("X" + id));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is("L" + randomNumber + "-X" + id));
+        assertThat(warningMessage.getValue(), containsString("Line " + lineNumber + ": All types, descriptions, " +
+                "source urls and writers will be ignored for duplicate Topics."));
+    }
+
+    @Test
+    public void shouldPrintWarningWithTitleAndClonedDuplicateIdAndOptions() {
+        // Given a string that represents a topic with a title, new id and a type
+        String topicString = make(a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, "XC" + id),
+                with(TopicStringMaker.url, randomString)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        ArgumentCaptor<String> warningMessage = ArgumentCaptor.forClass(String.class);
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        verify(logger, times(1)).warn(warningMessage.capture());
+        assertNotNull(topic);
+        assertThat(topic.getId(), is("XC" + id));
+        assertThat(topic.getTitle(), is(title));
+        assertThat(topic.getUniqueId(), is("L" + randomNumber + "-XC" + id));
+        assertThat(warningMessage.getValue(), containsString("Line " + lineNumber + ": All types, descriptions, " +
+                "source urls and writers will be ignored for duplicate Topics."));
+    }
+
+    @Test
     public void shouldThrowExceptionWithTitleAndInvalidId() {
         // Given a string that represents a topic with a title and a new id
         String topicString = make(
@@ -272,6 +377,25 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is("L" + randomNumber + "-" + id));
         assertThat(topic.getSourceUrls(), contains(url));
+    }
+
+    @Test
+    public void shouldThrowExceptionWithOnlyTitle() {
+        // Given a string that represents a topic with a title and missing brackets
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.missingClosingBracket, true),
+                        with(TopicStringMaker.missingOpeningBracket, true)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+            fail("Parsing the topic should have thrown an exception.");
+        } catch (ParsingException e) {
+            assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Incorrect topic format."));
+        }
     }
 
     @Test
@@ -417,6 +541,48 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Duplicated bracket types found."));
+        }
+    }
+
+    @Test
+    public void shouldThrowExceptionWithTargetThatAlreadyExistsAsTopic() {
+        // Given a string that represents a topic title, id and a missing variable
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
+                        with(TopicStringMaker.targetId, "[T1]")));
+        // and the target already exists
+        parser.getTargetTopics().put("T1", new SpecTopic(0, title));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+            fail("Parsing the topic should have thrown an exception.");
+        } catch (ParsingException e) {
+            assertThat(e.getMessage(), containsString("Target ID is duplicated. Target ID's must be unique."));
+        }
+    }
+
+    @Test
+    public void shouldThrowExceptionWithTargetThatAlreadyExistsAsLevel() {
+        // Given a string that represents a topic title, id and a missing variable
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
+                        with(TopicStringMaker.targetId, "[T1]")));
+        // and the target already exists
+        parser.getTargetLevels().put("T1", new Level(title, LevelType.CHAPTER));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+            fail("Parsing the topic should have thrown an exception.");
+        } catch (ParsingException e) {
+            assertThat(e.getMessage(), containsString("Target ID is duplicated. Target ID's must be unique."));
         }
     }
 
@@ -924,6 +1090,58 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Content Specification! Missing ending bracket (])" +
                     " detected."));
+        }
+    }
+
+    @Test
+    public void shouldThrowExceptionWithNextRelationship() {
+        // Given an invalid refers to relationship
+        List<String> topics = Arrays.asList(id.toString());
+        String nextRelationship = make(
+                a(TopicRelationshipStringMaker.TopicRelationshipString, with(TopicRelationshipStringMaker.relationshipType, "Next:"),
+                        with(TopicRelationshipStringMaker.relationships, topics)));
+        // and a string that represents a topic title, id and a missing variable
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
+                        with(TopicStringMaker.relationship, nextRelationship)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+            fail("Parsing the topic should have thrown an exception.");
+        } catch (ParsingException e) {
+            assertThat(e.getMessage(), containsString(
+                    "Line " + lineNumber + ": Invalid Topic! Next and Previous relationships can't be used directly. If you wish to use " +
+                            "next/previous then please use a Process."));
+        }
+    }
+
+    @Test
+    public void shouldThrowExceptionWithPreviousRelationship() {
+        // Given an invalid refers to relationship
+        List<String> topics = Arrays.asList(id.toString());
+        String nextRelationship = make(
+                a(TopicRelationshipStringMaker.TopicRelationshipString, with(TopicRelationshipStringMaker.relationshipType, "Prev:"),
+                        with(TopicRelationshipStringMaker.relationships, topics)));
+        // and a string that represents a topic title, id and a missing variable
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
+                        with(TopicStringMaker.relationship, nextRelationship)));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.processTopic(topicString, lineNumber);
+            fail("Parsing the topic should have thrown an exception.");
+        } catch (ParsingException e) {
+            assertThat(e.getMessage(), containsString(
+                    "Line " + lineNumber + ": Invalid Topic! Next and Previous relationships can't be used directly. If you wish to use " +
+                            "next/previous then please use a Process."));
         }
     }
 }

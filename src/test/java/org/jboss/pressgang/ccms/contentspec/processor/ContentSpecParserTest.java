@@ -17,13 +17,12 @@ public class ContentSpecParserTest extends BaseUnitTest {
 
     @Mock DataProviderFactory dataProviderFactory;
     @Mock ErrorLoggerManager loggerManager;
+    @Mock ErrorLogger logger;
 
-    protected ErrorLogger logger;
     protected ContentSpecParser parser;
 
     @Before
     public void setUp() {
-        this.logger = new ErrorLogger("testLogger");
         when(loggerManager.getLogger(ContentSpecParser.class)).thenReturn(logger);
         this.parser = new ContentSpecParser(dataProviderFactory, loggerManager);
     }
