@@ -9,8 +9,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import java.util.Arrays;
 import java.util.List;
@@ -299,12 +297,11 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         }
 
         // Then check that the topic has the right data set
-        verify(logger, times(1)).warn(warningMessage.capture());
         assertNotNull(topic);
         assertThat(topic.getId(), is("X" + id));
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is("L" + randomNumber + "-X" + id));
-        assertThat(warningMessage.getValue(), containsString("Line " + lineNumber + ": All types, descriptions, " +
+        assertThat(logger.getLogMessages().get(0).toString(), containsString("Line " + lineNumber + ": All types, descriptions, " +
                 "source urls and writers will be ignored for duplicate Topics."));
     }
 
@@ -317,7 +314,6 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         int lineNumber = randomNumber;
 
         // When parsing the topic string
-        ArgumentCaptor<String> warningMessage = ArgumentCaptor.forClass(String.class);
         SpecTopic topic = null;
         try {
             topic = parser.processTopic(topicString, lineNumber);
@@ -326,12 +322,11 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         }
 
         // Then check that the topic has the right data set
-        verify(logger, times(1)).warn(warningMessage.capture());
         assertNotNull(topic);
         assertThat(topic.getId(), is("XC" + id));
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is("L" + randomNumber + "-XC" + id));
-        assertThat(warningMessage.getValue(), containsString("Line " + lineNumber + ": All types, descriptions, " +
+        assertThat(logger.getLogMessages().get(0).toString(), containsString("Line " + lineNumber + ": All types, descriptions, " +
                 "source urls and writers will be ignored for duplicate Topics."));
     }
 
