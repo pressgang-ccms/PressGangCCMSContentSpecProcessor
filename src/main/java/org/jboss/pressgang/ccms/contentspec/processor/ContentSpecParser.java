@@ -892,7 +892,7 @@ public class ContentSpecParser {
         // Process a new topic
         String[] variables;
         // Read in the variables inside of the brackets
-        HashMap<RelationshipType, String[]> variableMap = getLineVariables(line, lineNumber, '[', ']', ',', false);
+        final HashMap<RelationshipType, String[]> variableMap = getLineVariables(line, lineNumber, '[', ']', ',', false);
         if (!variableMap.containsKey(RelationshipType.NONE)) {
             throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TOPIC_FORMAT_MSG, lineNumber, line));
         }
@@ -912,7 +912,7 @@ public class ContentSpecParser {
             // If we have two variables for a existing topic then check to see if the second variable is the revision
             else if (variables[0].matches(CSConstants.EXISTING_TOPIC_ID_REGEX)) {
                 // Check if the existing topic has a revision specified. If so parse it otherwise the var is a normal option
-                if (variables[1].toLowerCase(Locale.ENGLISH).startsWith("rev")) {
+                if (variables[1].toLowerCase(Locale.ENGLISH).matches("^rev[ ]*:.*")) {
                     String[] vars = variables[1].split(":");
                     vars = CollectionUtilities.trimStringArray(vars);
 
@@ -963,8 +963,6 @@ public class ContentSpecParser {
             getSpecTopics().put(uniqueId, tempTopic);
         } else if (variables[0].startsWith("N")) {
             throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_ID_MSG, lineNumber, variables[0], line));
-        } else {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TOPIC_ID_MSG, lineNumber, line));
         }
         tempTopic.setUniqueId(uniqueId);
 
@@ -1027,7 +1025,7 @@ public class ContentSpecParser {
                 throw new ParsingException(
                         format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetTopics().get(targetId).getLineNumber(),
                                 getTargetTopics().get(targetId).getText(), lineNumber, input));
-            } else if (getTargetTopics().containsKey(targetId)) {
+            } else if (getTargetLevels().containsKey(targetId)) {
                 throw new ParsingException(
                         format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetLevels().get(targetId).getLineNumber(),
                                 getTargetLevels().get(targetId).getText(), lineNumber, input));
