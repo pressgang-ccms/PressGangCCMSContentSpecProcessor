@@ -914,20 +914,15 @@ public class ContentSpecParser {
             }
             // If we have two variables for a existing topic then check to see if the second variable is the revision
             else if (variables[0].matches(CSConstants.EXISTING_TOPIC_ID_REGEX)) {
+                // Check if the existing topic has a revision specified. If so parse it otherwise the var is a normal option
                 if (variables[1].toLowerCase(Locale.ENGLISH).startsWith("rev")) {
-                    // Ensure that the attribute syntax is correct
-                    if (variables[1].toLowerCase(Locale.ENGLISH).matches("rev[ ]*:[ ]*\\d+")) {
-                        String[] vars = variables[1].split(":");
-                        vars = CollectionUtilities.trimStringArray(vars);
+                    String[] vars = variables[1].split(":");
+                    vars = CollectionUtilities.trimStringArray(vars);
 
-                        try {
-                            tempTopic.setRevision(Integer.parseInt(vars[1]));
-                        } catch (NumberFormatException ex) {
-                            throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_INVALID_REVISION_FORMAT, lineNumber, line));
-                        }
-                    } else {
-                        log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineNumber, line));
-                        throw new ParsingException();
+                    try {
+                        tempTopic.setRevision(Integer.parseInt(vars[1]));
+                    } catch (NumberFormatException ex) {
+                        throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_INVALID_REVISION_FORMAT, lineNumber, line));
                     }
                 } else {
                     varStartPos = 1;
@@ -1000,6 +995,7 @@ public class ContentSpecParser {
      * @param tempTopic   The temporary topic that will be turned into a full topic once fully parsed.
      * @param variableMap The list of variables containing the parsed relationships.
      * @param input       The line representing the topic and it's relationships.
+     * @param lineNumber  The number of the line the relationships are on.
      * @throws ParsingException Thrown if the variables can't be parsed due to incorrect syntax.
      */
     protected void processTopicRelationships(final SpecTopic tempTopic, final HashMap<RelationshipType, String[]> variableMap,
@@ -1007,80 +1003,15 @@ public class ContentSpecParser {
         // Process the relationships
         final String uniqueId = tempTopic.getUniqueId();
         final ArrayList<Relationship> topicRelationships = new ArrayList<Relationship>();
-        if (variableMap.containsKey(RelationshipType.REFER_TO)) {
-            final String[] related = variableMap.get(RelationshipType.REFER_TO);
-            for (final String relatedId : related) {
-                if (relatedId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
-                    topicRelationships.add(new Relationship(uniqueId, relatedId, RelationshipType.REFER_TO));
-                } else if (relatedId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
-                    final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-                    final NamedMatcher matcher = pattern.matcher(relatedId);
 
-                    matcher.find();
-                    final String id = matcher.group("TopicID");
-                    final String relationshipTitle = matcher.group("TopicTitle").trim();
+        // Refer-To relationships
+        processTopicRelationshipList(RelationshipType.REFER_TO, tempTopic, variableMap, topicRelationships, lineNumber);
 
-                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.REFER_TO, relationshipTitle));
-                } else {
-                    if (relatedId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
-                            ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineNumber, ','));
-                    } else {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_REFERS_TO_RELATIONSHIP, lineNumber));
-                    }
-                }
-            }
-        }
+        // Prerequisite relationships
+        processTopicRelationshipList(RelationshipType.PREREQUISITE, tempTopic, variableMap, topicRelationships, lineNumber);
 
-        if (variableMap.containsKey(RelationshipType.PREREQUISITE)) {
-            final String[] prerequisites = variableMap.get(RelationshipType.PREREQUISITE);
-            for (final String prerequisiteId : prerequisites) {
-                if (prerequisiteId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
-                    topicRelationships.add(new Relationship(uniqueId, prerequisiteId, RelationshipType.PREREQUISITE));
-                } else if (prerequisiteId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
-                    final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-                    final NamedMatcher matcher = pattern.matcher(prerequisiteId);
-
-                    matcher.find();
-                    final String id = matcher.group("TopicID");
-                    final String relationshipTitle = matcher.group("TopicTitle");
-
-                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.PREREQUISITE, relationshipTitle.trim()));
-                } else {
-                    if (prerequisiteId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
-                            ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineNumber, ','));
-                    } else {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PREREQUISITE_RELATIONSHIP, lineNumber));
-                    }
-                }
-            }
-        }
-
-        if (variableMap.containsKey(RelationshipType.LINKLIST)) {
-            final String[] linkLists = variableMap.get(RelationshipType.LINKLIST);
-            for (final String linkListId : linkLists) {
-                if (linkListId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
-                    topicRelationships.add(new Relationship(uniqueId, linkListId, RelationshipType.LINKLIST));
-                } else if (linkListId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
-                    final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-                    final NamedMatcher matcher = pattern.matcher(linkListId);
-
-                    matcher.find();
-                    final String id = matcher.group("TopicID");
-                    final String relationshipTitle = matcher.group("TopicTitle");
-
-                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.LINKLIST, relationshipTitle.trim()));
-                } else {
-                    if (linkListId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
-                            ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineNumber, ','));
-                    } else {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_LINK_LIST_RELATIONSHIP, lineNumber));
-                    }
-                }
-            }
-        }
+        // Link-List relationships
+        processTopicRelationshipList(RelationshipType.LINKLIST, tempTopic, variableMap, topicRelationships, lineNumber);
 
         // Next and Previous relationships should only be created internally and shouldn't be specified by the user
         if (variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType.PREVIOUS)) {
@@ -1119,6 +1050,62 @@ public class ContentSpecParser {
         if (variableMap.containsKey(RelationshipType.EXTERNAL_CONTENT_SPEC)) {
             // TODO Log an error properly using a constant
             throw new ParsingException("Unable to use external content specs as topics.");
+        }
+    }
+
+    /**
+     * Processes a list of relationships for a specific relationship type from some line processed variables.
+     *
+     * @param relationshipType   The relationship type to be processed.
+     * @param tempTopic          The temporary topic that will be turned into a full topic once fully parsed.
+     * @param variableMap        The list of variables containing the parsed relationships.
+     * @param lineNumber         The number of the line the relationships are on.
+     * @param topicRelationships The list of topic relationships.
+     * @throws ParsingException Thrown if the variables can't be parsed due to incorrect syntax.
+     */
+    private void processTopicRelationshipList(final RelationshipType relationshipType, final SpecTopic tempTopic,
+            final HashMap<RelationshipType, String[]> variableMap, final List<Relationship> topicRelationships,
+            int lineNumber) throws ParsingException {
+        final String uniqueId = tempTopic.getUniqueId();
+
+        String errorMessageFormat = null;
+        switch (relationshipType) {
+            case REFER_TO:
+                errorMessageFormat = ProcessorConstants.ERROR_INVALID_REFERS_TO_RELATIONSHIP;
+                break;
+            case LINKLIST:
+                errorMessageFormat = ProcessorConstants.ERROR_INVALID_LINK_LIST_RELATIONSHIP;
+                break;
+            case PREREQUISITE:
+                errorMessageFormat = ProcessorConstants.ERROR_INVALID_PREREQUISITE_RELATIONSHIP;
+                break;
+            default:
+                return;
+        }
+
+        if (variableMap.containsKey(relationshipType)) {
+            final String[] relationshipList = variableMap.get(relationshipType);
+            for (final String relationshipId : relationshipList) {
+                if (relationshipId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
+                    topicRelationships.add(new Relationship(uniqueId, relationshipId, relationshipType));
+                } else if (relationshipId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
+                    final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
+                    final NamedMatcher matcher = pattern.matcher(relationshipId);
+
+                    matcher.find();
+                    final String id = matcher.group("TopicID");
+                    final String relationshipTitle = matcher.group("TopicTitle");
+
+                    topicRelationships.add(new Relationship(uniqueId, id, relationshipType, relationshipTitle.trim()));
+                } else {
+                    if (relationshipId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
+                            ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
+                        throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_SEPARATOR_MSG, lineNumber, ','));
+                    } else {
+                        throw new ParsingException(format(errorMessageFormat, lineNumber));
+                    }
+                }
+            }
         }
     }
 
