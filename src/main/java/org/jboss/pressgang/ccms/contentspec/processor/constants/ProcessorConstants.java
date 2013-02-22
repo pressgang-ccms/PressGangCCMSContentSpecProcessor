@@ -77,8 +77,7 @@ public class ProcessorConstants {
     public static final String ERROR_MISSING_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Missing attribute detected." + CSLINE_MSG;
     public static final String ERROR_TAG_DUPLICATED_MSG = LINE + INVALID_CS + " Tag is duplicated." + CSLINE_MSG;
     public static final String ERROR_TAG_NONEXIST_MSG = LINE + INVALID_CS + " Tag \"%s\" doesn't exist." + CSLINE_MSG;
-    public static final String ERROR_MULTI_TAG_DUPLICATED_MSG = LINE + INVALID_CS + " One or more tags don't exist or are duplicated." +
-            CSLINE_MSG;
+    public static final String ERROR_MULTI_TAG_DUPLICATED_MSG = LINE + INVALID_CS + " One or more tags are duplicated." + CSLINE_MSG;
     public static final String ERROR_CS_EMPTY_MSG = LINE + INVALID_CS + " The content specification can't be empty.";
     public static final String ERROR_CS_SECTION_NO_CHAPTER_MSG = LINE + INVALID_CS + " A Section can't be outside of a Chapter, " +
             "Article or Appendix." + CSLINE_MSG;
