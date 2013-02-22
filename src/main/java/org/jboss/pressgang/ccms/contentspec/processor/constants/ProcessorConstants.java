@@ -22,7 +22,7 @@ public class ProcessorConstants {
     public static final String PREV_REGEX = "^PREV[ ]*:(.|(\r?\n))*$";
     public static final String TARGET_BASE_REGEX = "T(([0-9]+)|(\\-[A-Za-z0-9\\-_]+))";
     public static final String TARGET_REGEX = "^" + TARGET_BASE_REGEX + "$";
-    public static final String EXTERNAL_TARGET_REGEX = "^ET[0-9]+$";
+    public static final String EXTERNAL_TARGET_REGEX = "^E" + TARGET_BASE_REGEX + "$";
     public static final String EXTERNAL_CSP_REGEX = "^CS[0-9]+[ ]*(:[ ]*[0-9]+)?$";
 
     public static final String CSP_TITLE_REGEX = "^[0-9a-zA-Z_\\-\\.\\+\\s]+$";
@@ -104,8 +104,8 @@ public class ProcessorConstants {
             "contain chapters or parts.";
     public static final String ERROR_CS_APPENDIX_STRUCTURE_MSG = LINE + INVALID_CS + " An Appendix must be at the end of the content " +
             "specification." + CSLINE_MSG;
-    public static final String ERROR_INVALID_OPTION_MSG = LINE + INVALID_CS + " Unknown metadata tag found. \"Description\", " +
-            "\"URL\" and \"Writer\" are currently the only supported metadata." + CSLINE_MSG;
+    public static final String ERROR_INVALID_OPTION_MSG = LINE + INVALID_CS + " Unknown metadata tag found. \"condition\", " +
+            "\"Description\", \"URL\" and \"Writer\" are currently the only supported metadata." + CSLINE_MSG;
     public static final String ERROR_INVALID_CONDITION_MSG = LINE + INVALID_CS + " The condition statement must be a valid regular " +
             "expression string." + CSLINE_MSG;
     public static final String ERROR_TOPIC_WITH_DIFFERENT_REVS_MSG = INVALID_CS + " Topic %d has two or more different revisions included" +

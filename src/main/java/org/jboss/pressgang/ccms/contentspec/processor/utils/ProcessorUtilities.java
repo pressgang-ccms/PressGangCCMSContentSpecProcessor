@@ -2,7 +2,6 @@ package org.jboss.pressgang.ccms.contentspec.processor.utils;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.processor.exceptions.InvalidKeyValueException;
@@ -22,8 +21,6 @@ import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
 
 public class ProcessorUtilities {
-    private static final Logger log = Logger.getLogger(ProcessorUtilities.class);
-
     /**
      * Finds a set of variables that are grouped by delimiters. It also skips nested
      * groups and returns them as part of the set so they can be processed separately.
