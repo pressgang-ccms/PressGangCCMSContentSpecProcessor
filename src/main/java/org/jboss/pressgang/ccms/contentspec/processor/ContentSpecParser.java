@@ -1165,7 +1165,7 @@ public class ContentSpecParser {
                     throw new ParsingException(
                             format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetTopics().get(targetId).getLineNumber(),
                                     getTargetTopics().get(targetId).getText(), lineNumber, line));
-                } else if (getTargetLevels().containsKey(variableMap.get(RelationshipType.TARGET)[0])) {
+                } else if (getTargetLevels().containsKey(targetId)) {
                     throw new ParsingException(
                             format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetLevels().get(targetId).getLineNumber(),
                                     getTargetLevels().get(targetId).getText(), lineNumber, line));
@@ -1176,11 +1176,11 @@ public class ContentSpecParser {
             }
 
             // Check for external targets
-            if (variableMap.containsKey(RelationshipType.EXTERNAL_TARGET)) {
-                final String externalTargetId = variableMap.get(RelationshipType.EXTERNAL_TARGET)[0];
-                getExternalTargetLevels().put(externalTargetId, newLvl);
-                newLvl.setExternalTargetId(externalTargetId);
-            }
+//            if (variableMap.containsKey(RelationshipType.EXTERNAL_TARGET)) {
+//                final String externalTargetId = variableMap.get(RelationshipType.EXTERNAL_TARGET)[0];
+//                getExternalTargetLevels().put(externalTargetId, newLvl);
+//                newLvl.setExternalTargetId(externalTargetId);
+//            }
 
 //            // Check if the level is injecting data from another content spec
 //            if (variableMap.containsKey(RelationshipType.EXTERNAL_CONTENT_SPEC)) {

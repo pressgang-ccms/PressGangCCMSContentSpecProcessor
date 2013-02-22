@@ -18,6 +18,7 @@ public class ContentSpecParserTest extends BaseUnitTest {
     @Mock DataProviderFactory dataProviderFactory;
     @Mock ErrorLoggerManager loggerManager;
 
+    protected final String MISSING_PARSING_EXCEPTION = "ParsingException not thrown";
     protected ErrorLogger logger;
     protected ContentSpecParser parser;
 

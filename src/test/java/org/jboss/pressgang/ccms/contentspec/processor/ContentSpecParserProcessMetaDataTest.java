@@ -32,8 +32,6 @@ import static org.mockito.Mockito.when;
 @PrepareForTest({ProcessorUtilities.class})
 public class ContentSpecParserProcessMetaDataTest extends ContentSpecParserTest {
 
-    private final String MISSING_PARSING_EXCEPTION = "ParsingException not thrown";
-
     @Arbitrary Integer lineNumber;
     @ArbitraryString(type = ALPHANUMERIC) String line;
     @ArbitraryString(type = ALPHANUMERIC) String line2;
