@@ -1,4 +1,4 @@
-package org.jboss.pressgang.ccms.contentspec.processor;
+package org.jboss.pressgang.ccms.contentspec;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

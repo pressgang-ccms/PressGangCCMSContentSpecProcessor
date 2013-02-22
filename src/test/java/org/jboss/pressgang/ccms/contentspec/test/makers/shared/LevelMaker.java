@@ -1,4 +1,4 @@
-package org.jboss.pressgang.ccms.contentspec.test.makers;
+package org.jboss.pressgang.ccms.contentspec.test.makers.shared;
 
 import com.natpryce.makeiteasy.Instantiator;
 import com.natpryce.makeiteasy.Property;

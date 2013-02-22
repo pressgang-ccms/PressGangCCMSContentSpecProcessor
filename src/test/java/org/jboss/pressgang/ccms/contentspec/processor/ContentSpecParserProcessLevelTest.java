@@ -2,12 +2,10 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 
 import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.math.RandomUtils;
 import org.hamcrest.Matchers;
 import org.jboss.pressgang.ccms.contentspec.Level;
+import org.jboss.pressgang.ccms.contentspec.TestUtil;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
-import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
 import org.junit.Test;
 
@@ -17,11 +15,11 @@ import java.util.List;
 import static com.natpryce.makeiteasy.MakeItEasy.a;
 import static com.natpryce.makeiteasy.MakeItEasy.make;
 import static net.sf.ipsedixit.core.StringType.ALPHANUMERIC;
-import static org.apache.commons.lang.math.RandomUtils.nextInt;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.LevelMaker.Level;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.SpecTopicMaker.SpecTopic;
+import static org.jboss.pressgang.ccms.contentspec.TestUtil.selectRandomListItem;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker.Level;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker.SpecTopic;
 import static org.junit.Assert.*;
 
 /**
@@ -178,7 +176,7 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
     public void shouldThrowExceptionIfAppendixRelationshipSpecified() throws Exception {
         // Given a line number, level type and a line with an appendix relationship specified
         List<String> relationshipTypes = Arrays.asList("R", "P", "NEXT", "PREV");
-        String relationship = relationshipTypes.get(nextInt(relationshipTypes.size()));
+        String relationship = selectRandomListItem(relationshipTypes);
         String line = "Chapter:" + title + "[T" + id + "] [" + relationship + ": " + title
                 + "[" + id + "]]";
 

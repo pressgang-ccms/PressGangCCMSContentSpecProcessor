@@ -5,17 +5,17 @@ import static com.natpryce.makeiteasy.MakeItEasy.make;
 import static com.natpryce.makeiteasy.MakeItEasy.with;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.ContentSpecMaker.ContentSpec;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.ContentSpecMaker.bookType;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.ContentSpecMaker.bookVersion;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.ContentSpecMaker.copyrightHolder;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.ContentSpecMaker.dtd;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.ContentSpecMaker.edition;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.ContentSpecMaker.product;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.ContentSpecMaker.title;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.ContentSpecMaker.version;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.SpecTopicMaker.id;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.SpecTopicMaker.revision;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.ContentSpec;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.bookType;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.bookVersion;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.copyrightHolder;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.dtd;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.edition;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.product;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.title;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.version;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker.id;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker.revision;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
 
@@ -25,7 +25,7 @@ import net.sf.ipsedixit.annotation.Arbitrary;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.enums.BookType;
-import org.jboss.pressgang.ccms.contentspec.test.makers.SpecTopicMaker;
+import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
 import org.junit.Test;
 
 /**

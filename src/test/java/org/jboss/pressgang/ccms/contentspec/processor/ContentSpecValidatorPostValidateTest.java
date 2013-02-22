@@ -21,7 +21,7 @@ import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.entities.InjectionOptions;
 import org.jboss.pressgang.ccms.contentspec.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.TagProvider;
-import org.jboss.pressgang.ccms.contentspec.test.makers.ContentSpecMaker;
+import org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker;
 import org.jboss.pressgang.ccms.contentspec.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.ContentSpecWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.PropertyTagInContentSpecWrapper;
