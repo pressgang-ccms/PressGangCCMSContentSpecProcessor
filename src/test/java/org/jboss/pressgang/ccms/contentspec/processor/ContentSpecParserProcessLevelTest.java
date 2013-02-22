@@ -2,15 +2,22 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 
 import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
+import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.math.RandomUtils;
 import org.hamcrest.Matchers;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
+import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
 import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static com.natpryce.makeiteasy.MakeItEasy.a;
 import static com.natpryce.makeiteasy.MakeItEasy.make;
 import static net.sf.ipsedixit.core.StringType.ALPHANUMERIC;
+import static org.apache.commons.lang.math.RandomUtils.nextInt;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.LevelMaker.Level;
@@ -165,6 +172,27 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
 
         // Then the target id should be set
         assertThat(result.getTargetId(), is("T" + id));
+    }
+
+    @Test
+    public void shouldThrowExceptionIfAppendixRelationshipSpecified() throws Exception {
+        // Given a line number, level type and a line with an appendix relationship specified
+        List<String> relationshipTypes = Arrays.asList("R", "P", "NEXT", "PREV");
+        String relationship = relationshipTypes.get(nextInt(relationshipTypes.size()));
+        String line = "Chapter:" + title + "[T" + id + "] [" + relationship + ": " + title
+                + "[" + id + "]]";
+
+        // When process level is called
+        try {
+            parser.processLevel(lineNumber, levelType, line);
+
+            // Then a parsing exception should be thrown containing an appropriate error
+            fail(MISSING_PARSING_EXCEPTION);
+        } catch (ParsingException e) {
+            assertThat(e.getMessage(), containsString("Invalid Chapter! Relationships can't be used for a Chapter."));
+            // And the line number should be included
+            assertThat(e.getMessage(), containsString(lineNumber.toString()));
+        }
     }
 
 //    @Test
