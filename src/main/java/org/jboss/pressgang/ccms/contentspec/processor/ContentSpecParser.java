@@ -119,6 +119,10 @@ public class ContentSpecParser {
         return indentationLevel;
     }
 
+    protected void setIndentationLevel(int indentationLevel) {
+        this.indentationLevel = indentationLevel;
+    }
+
     protected int getIndentationSize() {
         return spaces;
     }
@@ -612,8 +616,7 @@ public class ContentSpecParser {
                 }
             }
             if (indentationCount % getIndentationSize() != 0) {
-                log.error(format(ProcessorConstants.ERROR_INCORRECT_INDENTATION_MSG, lineNumber, line.trim()));
-                throw new IndentationException();
+                throw new IndentationException(format(ProcessorConstants.ERROR_INCORRECT_INDENTATION_MSG, lineNumber, line.trim()));
             }
         }
 
@@ -1443,8 +1446,8 @@ public class ContentSpecParser {
                         }
 
                         if (tempTags != null && tempTags.length >= 2) {
-                            final String tags[] = new String[tempTags.length - 1];
-                            System.arraycopy(tempTags, 1, tags, 0, tempTags.length - 1);
+                            final String tags[] = new String[tempTags.length];
+                            System.arraycopy(tempTags, 0, tags, 0, tempTags.length);
 
                             if (!node.addTags(Arrays.asList(tags))) {
                                 throw new ParsingException(

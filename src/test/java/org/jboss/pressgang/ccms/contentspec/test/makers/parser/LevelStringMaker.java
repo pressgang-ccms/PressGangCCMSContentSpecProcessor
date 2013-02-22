@@ -17,7 +17,7 @@ public class LevelStringMaker {
     public static final Property<String, String> description = newProperty();
     public static final Property<String, String> targetId = newProperty();
 
-    public static final Instantiator<String> TopicString = new Instantiator<String>() {
+    public static final Instantiator<String> LevelString = new Instantiator<String>() {
         @Override
         public String instantiate(PropertyLookup<String> lookup) {
             final StringBuilder retValue = new StringBuilder();
