@@ -371,7 +371,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         assertThat(topic.getId(), is(id.toString()));
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is("L" + randomNumber + "-" + id));
-        assertThat(topic.getSourceUrls(), contains(url));
+        assertThat(topic.getSourceUrls(true), contains(url));
     }
 
     @Test

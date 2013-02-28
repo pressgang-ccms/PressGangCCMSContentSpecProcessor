@@ -1,8 +1,10 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
@@ -14,13 +16,18 @@ import org.jboss.pressgang.ccms.contentspec.Node;
 import org.jboss.pressgang.ccms.contentspec.SpecNode;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
+import org.jboss.pressgang.ccms.contentspec.entities.ProcessRelationship;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
+import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
+import org.jboss.pressgang.ccms.contentspec.entities.TopicRelationship;
+import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
 import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
 import org.jboss.pressgang.ccms.contentspec.processor.exceptions.ProcessingException;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptions;
 import org.jboss.pressgang.ccms.contentspec.processor.utils.ProcessorUtilities;
 import org.jboss.pressgang.ccms.contentspec.provider.CSNodeProvider;
+import org.jboss.pressgang.ccms.contentspec.provider.CSRelatedNodeProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.contentspec.provider.PropertyTagProvider;
@@ -176,7 +183,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param specTopic       The Content Specification Topic to create the topic entity from.
      * @return The new topic object if any changes where made otherwise null.
      */
-    protected TopicWrapper createTopicEntity(final DataProviderFactory providerFactory, final SpecTopic specTopic) {
+    protected TopicWrapper createTopicEntity(final DataProviderFactory providerFactory,
+            final SpecTopic specTopic) throws ProcessingException {
         // Duplicates reference another new or cloned topic and should not have a different new/updated underlying topic
         if (specTopic.isTopicAClonedDuplicateTopic() || specTopic.isTopicADuplicateTopic()) return null;
 
@@ -189,6 +197,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         boolean changed = specTopic.isTopicAClonedTopic() || specTopic.isTopicANewTopic();
         final TopicWrapper topic = getTopicForSpecTopic(providerFactory, specTopic);
+
+        // Check if the topic is null, if so throw an exception as it shouldn't be at this stage
+        if (topic == null) {
+            throw new ProcessingException("Creating a topic failed.");
+        }
 
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
@@ -277,7 +290,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         // Write the type
         final CollectionWrapper<TagWrapper> tags = tagProvider.getTagsByName(specTopic.getType());
-        if (tags == null && tags.size() != 1) {
+        if (tags == null || tags.size() != 1) {
             log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
             return null;
         }
@@ -322,7 +335,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final List<PropertyTagInTopicWrapper> propertyItems = topic.getProperties().getItems();
         boolean cspPropertyFound = false;
         for (final PropertyTagInTopicWrapper property : propertyItems) {
-            // Remove the CSP Property ID as we will add a new one
+            // Update the CSP Property Tag if it exists, otherwise add a new one
             if (property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
                 cspPropertyFound = true;
 
@@ -334,7 +347,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         if (!cspPropertyFound) {
-            final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic();
+            final PropertyTagWrapper cspPropertyTag = propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID);
+            final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic(cspPropertyTag);
             cspProperty.setValue(specTopic.getUniqueId());
             cspProperty.setId(CSConstants.CSP_PROPERTY_ID);
             properties.addNewItem(cspProperty);
@@ -371,12 +385,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return changed;
         }
 
-        // If the topic is a cloned topic then only save new tags/urls
+        // Process the tags depending on the topic type
         if (specTopic.isTopicAClonedTopic()) {
             if (processClonedTopicTags(tagProvider, specTopic, topic, addTags)) changed = true;
         } else if (specTopic.isTopicAnExistingTopic() && specTopic.getRevision() == null) {
             if (processExistingTopicTags(tagProvider, topic, addTags)) changed = true;
-        } else {
+        } else if (specTopic.isTopicANewTopic()) {
             if (processNewTopicTags(tagProvider, topic, addTags)) changed = true;
         }
 
@@ -392,6 +406,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     private boolean processClonedTopicTags(final TagProvider tagProvider, final SpecTopic specTopic, final TopicWrapper topic,
             final List<TagWrapper> addTags) {
+        // If the topic is a cloned topic then only save new tags
+
         boolean changed = false;
         // Find tags that aren't already in the database and adds them
         final List<TagWrapper> topicTagList = topic.getTags().getItems();
@@ -464,6 +480,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         boolean changed = false;
         // Finds tags that aren't already in the database and adds them
         final List<TagWrapper> topicTagList = topic.getTags() == null ? new ArrayList<TagWrapper>() : topic.getTags().getItems();
+
+        // Copy the current tags into the new tag list
+        final CollectionWrapper<TagWrapper> updatedTagCollection = tagProvider.newTagCollection();
+        for (final TagWrapper topicTag : topicTagList) {
+            updatedTagCollection.addItem(topicTag);
+        }
+
+        // Add the new tags to the updated tag list if they don't already exist
         for (final TagWrapper addTag : addTags) {
             boolean found = false;
             for (final TagWrapper topicTag : topicTagList) {
@@ -473,13 +497,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
             }
             if (!found) {
-                if (topic.getTags() == null) {
-                    topic.setTags(tagProvider.newTagCollection());
-                }
-
-                topic.getTags().addNewItem(addTag);
+                updatedTagCollection.addNewItem(addTag);
                 changed = true;
             }
+        }
+
+        // If something has changed then set the new updated list for the topic
+        if (changed) {
+            topic.setTags(updatedTagCollection);
         }
 
         return changed;
@@ -493,12 +518,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     private boolean processNewTopicTags(final TagProvider tagProvider, final TopicWrapper topic, final List<TagWrapper> addTags) {
         boolean changed = false;
+
+        // See if a new tag collection needs to be created
+        if (addTags.size() > 0 && topic.getTags() == null) {
+            topic.setTags(tagProvider.newTagCollection());
+        }
+
         // Save the tags
         for (final TagWrapper addTag : addTags) {
-            if (topic.getTags() == null) {
-                topic.setTags(tagProvider.newTagCollection());
-            }
-
             topic.getTags().addNewItem(addTag);
             changed = true;
         }
@@ -515,6 +542,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if anything in the topic entity was changed, otherwise false.
      */
     protected void processAssignedWriter(final TagProvider tagProvider, final SpecTopic specTopic, final TopicWrapper topic) {
+        // See if a new tag collection needs to be created
+        if (topic.getTags() == null) {
+            topic.setTags(tagProvider.newTagCollection());
+        }
+
         // Set the assigned writer (Tag Table)
         final List<TagWrapper> assignedWriterTags = tagProvider.getTagsByName(specTopic.getAssignedWriter(true)).getItems();
         final TagWrapper writerTag = assignedWriterTags.get(0);
@@ -534,19 +566,20 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             final TopicWrapper topic) {
         boolean changed = false;
         // Save the new Source Urls
-        final List<String> urls = specTopic.getSourceUrls();
+        final List<String> urls = specTopic.getSourceUrls(true);
 
-        final CollectionWrapper<TopicSourceURLWrapper> sourceUrls = topic.getSourceURLs() == null ? topicSourceURLProvider
-                .newTopicSourceURLCollection(
-                topic) : topic.getSourceURLs();
+        if (urls != null && !urls.isEmpty()) {
+            final CollectionWrapper<TopicSourceURLWrapper> sourceUrls = topic.getSourceURLs() == null ? topicSourceURLProvider
+                    .newTopicSourceURLCollection(
+                    topic) : topic.getSourceURLs();
 
-        for (final String url : urls) {
-            final TopicSourceURLWrapper sourceUrl = topicSourceURLProvider.newTopicSourceURL(topic);
-            sourceUrl.setUrl(url);
-            sourceUrls.addNewItem(sourceUrl);
-        }
+            // Iterate over the spec topic urls and add them
+            for (final String url : urls) {
+                final TopicSourceURLWrapper sourceUrl = topicSourceURLProvider.newTopicSourceURL(topic);
+                sourceUrl.setUrl(url);
+                sourceUrls.addNewItem(sourceUrl);
+            }
 
-        if (sourceUrls.getItems() != null && !sourceUrls.getItems().isEmpty()) {
             topic.setSourceURLs(sourceUrls);
             changed = true;
         }
@@ -614,7 +647,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 // Check if the app should be shutdown
                 if (isShuttingDown.get()) {
                     shutdown.set(true);
-                    throw new Exception("Shutdown Requested");
+                    throw new ProcessingException("Shutdown Requested");
                 }
 
                 // Add topics to the TopicPool that need to be added or updated
@@ -642,7 +675,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             // Check if the app should be shutdown
             if (isShuttingDown.get()) {
                 shutdown.set(true);
-                throw new Exception("Shutdown Requested");
+                throw new ProcessingException("Shutdown Requested");
             }
 
             // From here on the main saving happens so this shouldn't be interrupted
@@ -650,7 +683,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             // Save the new topic entities
             if (!topics.savePool()) {
                 log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
-                throw new Exception("Failed to save the pool of topics.");
+                throw new ProcessingException("Failed to save the pool of topics.");
             }
 
             // Initialise the new and cloned topics using the populated topic pool
@@ -677,7 +710,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
                 if (topics.isInitialised()) topics.rollbackPool();
             }
-            log.error(String.format("%s\n%7s%s", ProcessorConstants.ERROR_PROCESSING_ERROR_MSG, "", e.getMessage()));
+            log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
             return false;
         } catch (Exception e) {
             if (providerFactory.isRollbackSupported()) {
@@ -743,8 +776,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         // Check that the content spec was updated/created successfully.
         if (contentSpecEntity == null) {
-            // TODO Error Message
-            return;
+            throw new ProcessingException("Saving the updated Content Specification failed.");
         }
 
         // Get the list of transformable child nodes for processing
@@ -755,11 +787,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes = nodeProvider.newCSNodeCollection();
 
         // Merge the base level and comments
-        mergeChildren(nodes, contentSpecEntity.getChildren(), providerFactory, null, contentSpecEntity, updatedCSNodes);
+        final Map<SpecNode, CSNodeWrapper> nodeMapping = new HashMap<SpecNode, CSNodeWrapper>();
+        mergeChildren(nodes, contentSpecEntity.getChildren(), providerFactory, null, contentSpecEntity, updatedCSNodes, nodeMapping);
+
+        // Merge the relationships now all spec topics have a mapping to a node
+        mergeTopicRelationships(nodeMapping, providerFactory);
 
         // Save the updated content spec nodes
         if (nodeProvider.updateCSNodes(updatedCSNodes) == null) {
-            // TODO error message
+            throw new ProcessingException("Saving the Content Specification contents failed.");
         }
     }
 
@@ -785,9 +821,29 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         return updatedMetaDataEntity;
     }
 
+    /**
+     * Merges the children nodes of a Content Spec level into the Content Spec Entity level. If any new nodes have to be created,
+     * the base of the node will be created on the server and then the rest after that.
+     *
+     * @param childrenNodes       The child nodes to be merged.
+     * @param entityChildrenNodes The current entity child nodes.
+     * @param providerFactory
+     * @param parentNode          The parent entity node that the nodes should be assigned to.
+     * @param contentSpec         The content spec entity that the nodes belong to.
+     * @param updatedCSNodes      A collection to store nodes that have been removed or updated. These node will be processed
+     *                            later in one call.
+     * @param nodeMapping         TODO
+     * @throws Exception Thrown if an error occurs during saving new nodes.
+     */
+    /*
+     * The reason that new nodes need to be saved is to set the next/previous entities, since they need to have an ID. This has to be
+     * done this way do to the nature of serialising the object to JSON, other wise you get a recursive loop until the JVM runs out of
+     * memory.
+     */
     protected void mergeChildren(final List<Node> childrenNodes, final CollectionWrapper<CSNodeWrapper> entityChildrenNodes,
             final DataProviderFactory providerFactory, final CSNodeWrapper parentNode, final ContentSpecWrapper contentSpec,
-            final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes) throws Exception {
+            final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes,
+            final Map<SpecNode, CSNodeWrapper> nodeMapping) throws Exception {
         if (entityChildrenNodes == null || entityChildrenNodes.isEmpty()) return;
 
         final CSNodeProvider nodeProvider = providerFactory.getProvider(CSNodeProvider.class);
@@ -810,7 +866,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     break;
                 } else if (childNode instanceof Level && doesLevelMatch((Level) childNode, nodeEntity)) {
                     foundNodeEntity = nodeEntity;
-                    mergeLevel((Level) childNode, nodeEntity, providerFactory, contentSpec, updatedCSNodes);
+                    mergeLevel((Level) childNode, nodeEntity, providerFactory, contentSpec, updatedCSNodes, nodeMapping);
                     break;
                 } else if (childNode instanceof Comment && doesCommentMatch((Comment) childNode, nodeEntity)) {
                     foundNodeEntity = nodeEntity;
@@ -830,7 +886,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     mergeTopic((SpecTopic) childNode, newCSNodeEntity);
                     newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_TOPIC);
                 } else if (childNode instanceof Level) {
-                    mergeLevel((Level) childNode, newCSNodeEntity, providerFactory, contentSpec, updatedCSNodes);
+                    mergeLevel((Level) childNode, newCSNodeEntity, providerFactory, contentSpec, updatedCSNodes, nodeMapping);
                     newCSNodeEntity.setNodeType(((Level) childNode).getType().getId());
                 } else if (childNode instanceof Comment) {
                     mergeComment((Comment) childNode, newCSNodeEntity);
@@ -873,7 +929,13 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             // The node has been updated so add it to the list of nodes to be saved
             updatedCSNodes.addUpdateItem(foundNodeEntity);
 
+            // Set the previous node to the current node since processing is done
             prevNode = foundNodeEntity;
+
+            // Add the node to the mapping of nodes to entity nodes
+            if (childNode instanceof SpecNode) {
+                nodeMapping.put((SpecNode) childNode, foundNodeEntity);
+            }
         }
 
         // Loop over the entities current nodes and remove any that no longer exist
@@ -885,8 +947,18 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
     }
 
+    /**
+     * @param level
+     * @param levelEntity
+     * @param providerFactory
+     * @param contentSpec
+     * @param updatedCSNodes
+     * @param nodeMapping
+     * @throws Exception
+     */
     protected void mergeLevel(final Level level, final CSNodeWrapper levelEntity, final DataProviderFactory providerFactory,
-            final ContentSpecWrapper contentSpec, final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes) throws Exception {
+            final ContentSpecWrapper contentSpec, final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes,
+            final Map<SpecNode, CSNodeWrapper> nodeMapping) throws Exception {
 
         // TITLE
         if (level.getTitle() != null && level.getTitle().equals(levelEntity.getTitle())) {
@@ -905,10 +977,13 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         // Merge the child nodes
         mergeChildren(getTransformableNodes(level.getChildNodes()), levelEntity.getChildren(), providerFactory, levelEntity, contentSpec,
-                updatedCSNodes);
+                updatedCSNodes, nodeMapping);
     }
 
-    // TODO Relationships
+    /**
+     * @param specTopic
+     * @param topicEntity
+     */
     protected void mergeTopic(final SpecTopic specTopic, final CSNodeWrapper topicEntity) {
         // TITLE
         if (specTopic.getTitle() != null && specTopic.getTitle().equals(topicEntity.getTitle())) {
@@ -937,25 +1012,89 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
     }
 
+    /**
+     * @param comment
+     * @param commentEntity
+     */
     protected void mergeComment(final Comment comment, final CSNodeWrapper commentEntity) {
         if (commentEntity.getAdditionalText() == null || !commentEntity.getAdditionalText().equals(comment.getText())) {
             commentEntity.setAdditionalText(comment.getText());
         }
     }
 
-    protected void mergeTopicRelationships(final SpecTopic specTopic, final CSNodeWrapper topicEntity,
-            final DataProviderFactory providerFactory) {
-        // Check if anything needs to be processed.
-        if (specTopic.getRelationships() != null && !specTopic.getRelationships().isEmpty()) {
+    /**
+     * @param nodeMapping
+     * @param providerFactory
+     */
+    protected void mergeTopicRelationships(final Map<SpecNode, CSNodeWrapper> nodeMapping, final DataProviderFactory providerFactory) {
+        final CSRelatedNodeProvider relatedNodeProvider = providerFactory.getProvider(CSRelatedNodeProvider.class);
 
-            final CollectionWrapper<CSRelatedNodeWrapper> topicRelatedNodes = topicEntity.getRelatedToNodes();
-            for (final Relationship relationship : specTopic.getRelationships()) {
-                for (final CSRelatedNodeWrapper relatedNode : topicRelatedNodes.getItems()) {
+        final UpdateableCollectionWrapper<CSRelatedNodeWrapper> updatedRelatedToNodes = relatedNodeProvider.newCSRelatedNodeCollection();
+        for (final Map.Entry<SpecNode, CSNodeWrapper> nodes : nodeMapping.entrySet()) {
+            // Only process spec topics
+            if (!(nodes.getKey() instanceof SpecTopic)) continue;
 
+            // Check if anything needs to be processed.
+            final SpecTopic specTopic = (SpecTopic) nodes.getKey();
+            final CSNodeWrapper topicEntity = nodes.getValue();
+            if (specTopic.getRelationships() != null && !specTopic.getRelationships().isEmpty()) {
+                final CollectionWrapper<CSRelatedNodeWrapper> topicRelatedNodes = topicEntity.getRelatedToNodes();
+                for (final Relationship relationship : specTopic.getRelationships()) {
+                    // All process relationships should not be stored
+                    if (relationship instanceof ProcessRelationship) continue;
+
+                    // See if the related node already exists
+                    CSRelatedNodeWrapper foundRelatedNode = null;
+                    for (final CSRelatedNodeWrapper relatedNode : topicRelatedNodes.getItems()) {
+                        if (relationship instanceof TargetRelationship) {
+                            if (doesRelationshipMatch((TargetRelationship) relationship, relatedNode)) {
+                                foundRelatedNode = relatedNode;
+                                break;
+                            }
+                        } else {
+                            if (doesRelationshipMatch((TopicRelationship) relationship, relatedNode)) {
+                                foundRelatedNode = relatedNode;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (foundRelatedNode != null) {
+                        // Found a node so update anything that might have changed
+                        boolean updated = false;
+                        if (foundRelatedNode.getRelationshipType() != RelationshipType.getRelationshipTypeId(relationship.getType())) {
+                            foundRelatedNode.setRelationshipType(RelationshipType.getRelationshipTypeId(relationship.getType()));
+                            updated = true;
+                        }
+
+                        // If the node was updated, set it's state in the collection to updated, otherwise just put it back in normally.
+                        if (updated) {
+                            updatedRelatedToNodes.addUpdateItem(foundRelatedNode);
+                        } else {
+                            updatedRelatedToNodes.addItem(foundRelatedNode);
+                        }
+                    } else {
+                        // No related node was found for the relationship so make a new one.
+                        final CSNodeWrapper relatedNode;
+                        if (relationship instanceof TargetRelationship) {
+                            relatedNode = nodeMapping.get(((TargetRelationship) relationship).getSecondaryRelationship());
+                        } else {
+                            relatedNode = nodeMapping.get(((TopicRelationship) relationship).getSecondaryRelationship());
+                        }
+
+                        foundRelatedNode = relatedNodeProvider.newCSRelatedNode(relatedNode);
+                        foundRelatedNode.setRelationshipType(RelationshipType.getRelationshipTypeId(relationship.getType()));
+
+                        updatedRelatedToNodes.addNewItem(foundRelatedNode);
+                    }
+                }
+            } else if (!topicEntity.getRelatedToNodes().isEmpty()) {
+                // No relationships anymore so remove any that currently exist
+                for (final CSRelatedNodeWrapper relatedNodeWrapper : topicEntity.getRelatedToNodes().getItems()) {
+                    updatedRelatedToNodes.addRemoveItem(relatedNodeWrapper);
                 }
             }
-        } else if (!topicEntity.getRelatedToNodes().isEmpty()) {
-
+            nodes.getValue().setRelatedToNodes(updatedRelatedToNodes);
         }
     }
 
@@ -991,7 +1130,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         if (level.getUniqueId() != null) {
             return level.getUniqueId().equals(node.getId());
         } else {
-            // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the topics match
+            // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the level matches
 
             // If the target ids match then the level should be the same
             if (level.getTargetId() != null && level.getTargetId() == node.getTargetId()) {
@@ -1022,6 +1161,54 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
 
             return specTopic.getDBId() == node.getEntityId();
+        }
+    }
+
+    /**
+     * Checks to see if a ContentSpec topic relationship matches a Content Spec Entity topic.
+     *
+     * @param relationship The ContentSpec topic relationship object.
+     * @param relatedNode  The related Content Spec Entity topic.
+     * @return True if the topic is determined to match otherwise false.
+     */
+    protected boolean doesRelationshipMatch(final TopicRelationship relationship, final CSRelatedNodeWrapper relatedNode) {
+        if (relatedNode.getNodeType() != CommonConstants.CS_NODE_TOPIC) return false;
+
+        // Check if the type matches first
+        if (RelationshipType.getRelationshipTypeId(relationship.getType()) != relatedNode.getRelationshipType()) return false;
+
+        // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
+        if (relationship.getSecondaryRelationship().getUniqueId() != null && relationship.getSecondaryRelationship().getUniqueId().matches(
+                "^\\d.*")) {
+            return relationship.getSecondaryRelationship().getUniqueId().equals(relatedNode.getId());
+        } else {
+            return relationship.getSecondaryRelationship().getDBId() == relatedNode.getEntityId();
+        }
+    }
+
+    /**
+     * Checks to see if a ContentSpec topic relationship matches a Content Spec Entity topic.
+     *
+     * @param relationship The ContentSpec topic relationship object.
+     * @param relatedNode  The related Content Spec Entity topic.
+     * @return True if the topic is determined to match otherwise false.
+     */
+    protected boolean doesRelationshipMatch(final TargetRelationship relationship, final CSRelatedNodeWrapper relatedNode) {
+        if (relatedNode.getNodeType() != CommonConstants.CS_NODE_TOPIC) return false;
+
+        // Check if the type matches first
+        if (RelationshipType.getRelationshipTypeId(relationship.getType()) != relatedNode.getRelationshipType()) return false;
+
+        // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
+        if (relationship.getSecondaryRelationship().getUniqueId() != null && relationship.getSecondaryRelationship().getUniqueId().matches(
+                "^\\d.*")) {
+            return relationship.getSecondaryRelationship().getUniqueId().equals(relatedNode.getId());
+        } else if (relationship.getSecondaryRelationship() instanceof Level) {
+            return ((Level) relationship.getSecondaryRelationship()).getTargetId() == relatedNode.getTargetId();
+        } else if (relationship.getSecondaryRelationship() instanceof SpecTopic) {
+            return ((SpecTopic) relationship.getSecondaryRelationship()).getTargetId() == relatedNode.getTargetId();
+        } else {
+            return false;
         }
     }
 

@@ -425,7 +425,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 final String relatedId = relationship.getSecondaryRelationshipTopicId();
                 // The relationship points to a target so it must be a level or topic
                 if (relationship instanceof TargetRelationship) {
-                    final SpecNode node = ((TargetRelationship) relationship).getSecondaryElement();
+                    final SpecNode node = ((TargetRelationship) relationship).getSecondaryRelationship();
                     if (node instanceof SpecTopic) {
                         if (((SpecTopic) node).getDBId() < 0) {
                             log.error(String.format(ProcessorConstants.ERROR_TARGET_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
@@ -854,9 +854,16 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 valid = false;
             }
 
+            // Check that urls aren't trying to be added
+            if (!specTopic.getSourceUrls(false).isEmpty()) {
+                log.error(String.format(ProcessorConstants.ERROR_TOPIC_EXISTING_TOPIC_CANNOT_ADD_SOURCE_URLS, specTopic.getLineNumber(),
+                        specTopic.getText()));
+                valid = false;
+            }
+
             // Check that the assigned writer, description and source URLS haven't been set
-            if (specTopic.getAssignedWriter(false) != null || specTopic.getDescription(
-                    false) != null || !specTopic.getSourceUrls().isEmpty()) {
+            if (specTopic.getAssignedWriter(false) != null || specTopic.getDescription(false) != null || !specTopic.getSourceUrls(
+                    true).isEmpty()) {
                 log.error(
                         String.format(ProcessorConstants.ERROR_TOPIC_EXISTING_BAD_OPTIONS, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;

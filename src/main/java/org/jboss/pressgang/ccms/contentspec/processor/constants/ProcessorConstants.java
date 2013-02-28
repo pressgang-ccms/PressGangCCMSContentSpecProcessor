@@ -193,6 +193,8 @@ public class ProcessorConstants {
             + CSLINE_MSG;
     public static final String ERROR_TOPIC_EXISTING_TOPIC_CANNOT_REMOVE_TAGS = LINE + INVALID_TOPIC + " An Existing Topic cannot have " +
             "tags removed." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_EXISTING_TOPIC_CANNOT_ADD_SOURCE_URLS = LINE + INVALID_TOPIC + " An Existing Topic cannot have" +
+            " have source urls added." + CSLINE_MSG;
     public static final String ERROR_TOPIC_EXISTING_BAD_OPTIONS = LINE + INVALID_TOPIC + " An Existing topic cannot have a new Writer, " +
             "Description or Source URLs." + CSLINE_MSG;
     public static final String ERROR_TOPIC_INLINE_TOPIC_MUST_BE_FIRST = LINE + INVALID_TOPIC + " An inline topic must be the first topic " +

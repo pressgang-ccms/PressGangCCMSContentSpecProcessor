@@ -1,17 +1,5 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
-import net.sf.ipsedixit.annotation.Arbitrary;
-import net.sf.ipsedixit.annotation.ArbitraryString;
-import org.hamcrest.Matchers;
-import org.jboss.pressgang.ccms.contentspec.Level;
-import org.jboss.pressgang.ccms.contentspec.TestUtil;
-import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
-import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
-import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.List;
-
 import static com.natpryce.makeiteasy.MakeItEasy.a;
 import static com.natpryce.makeiteasy.MakeItEasy.make;
 import static net.sf.ipsedixit.core.StringType.ALPHANUMERIC;
@@ -20,7 +8,20 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.jboss.pressgang.ccms.contentspec.TestUtil.selectRandomListItem;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker.Level;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker.SpecTopic;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+
+import java.util.Arrays;
+import java.util.List;
+
+import net.sf.ipsedixit.annotation.Arbitrary;
+import net.sf.ipsedixit.annotation.ArbitraryString;
+import org.hamcrest.Matchers;
+import org.jboss.pressgang.ccms.contentspec.Level;
+import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
+import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
+import org.junit.Test;
 
 /**
  * @author kamiller@redhat.com (Katie Miller)
@@ -107,7 +108,7 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
 
         // Then the options are set
         assertThat(result.getAssignedWriter(false), is(writer));
-        assertThat(result.getSourceUrls(), Matchers.contains(url));
+        assertThat(result.getSourceUrls(true), Matchers.contains(url));
     }
 
     @Test
@@ -177,8 +178,7 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
         // Given a line number, level type and a line with an appendix relationship specified
         List<String> relationshipTypes = Arrays.asList("R", "P", "NEXT", "PREV");
         String relationship = selectRandomListItem(relationshipTypes);
-        String line = "Chapter:" + title + "[T" + id + "] [" + relationship + ": " + title
-                + "[" + id + "]]";
+        String line = "Chapter:" + title + "[T" + id + "] [" + relationship + ": " + title + "[" + id + "]]";
 
         // When process level is called
         try {
