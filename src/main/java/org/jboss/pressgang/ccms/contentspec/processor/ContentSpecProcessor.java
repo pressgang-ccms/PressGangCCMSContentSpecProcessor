@@ -111,7 +111,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param overrideLocale Override the default locale using this parameter.
      * @return True if everything was processed successfully otherwise false.
      */
-    @SuppressWarnings({"unchecked"})
     public boolean processContentSpec(final ContentSpec contentSpec, final UserWrapper user, final ContentSpecParser.ParsingMode mode,
             final String overrideLocale) {
         boolean editing = false;
@@ -913,22 +912,22 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
             // Set up the next/previous relationships as well
             final Integer previousNodeId = prevNode == null ? null : prevNode.getId();
-            if (foundNodeEntity.getPreviousNodeId() != previousNodeId) {
+            if (!foundNodeEntity.getPreviousNodeId().equals(previousNodeId)) {
                 foundNodeEntity.setPreviousNodeId(previousNodeId);
             }
-            if (prevNode != null && prevNode.getNextNodeId() != foundNodeEntity.getId()) {
+            if (prevNode != null && !prevNode.getNextNodeId().equals(foundNodeEntity.getId())) {
                 prevNode.setNextNodeId(foundNodeEntity.getId());
             }
 
             // setup the parent for the entity
             if ((parentNode == null && foundNodeEntity.getParent() != null) || (parentNode != null && foundNodeEntity.getParent() ==
                     null) ||
-                    (foundNodeEntity.getParent().getId() != parentNode.getId())) {
+                    (!foundNodeEntity.getParent().getId().equals(parentNode.getId()))) {
                 foundNodeEntity.setParent(parentNode);
             }
 
             // setup the contentSpec for the entity
-            if ((foundNodeEntity.getContentSpec() == null) || (foundNodeEntity.getContentSpec().getId() != contentSpec.getId())) {
+            if (foundNodeEntity.getContentSpec() == null || !foundNodeEntity.getContentSpec().getId().equals(contentSpec.getId())) {
                 foundNodeEntity.setContentSpec(contentSpec);
             }
 
@@ -1013,7 +1012,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // TOPIC REVISION
-        if (specTopic.getRevision() != topicEntity.getRevision()) {
+        if (!specTopic.getRevision().equals(topicEntity.getRevision())) {
             topicEntity.setEntityRevision(specTopic.getRevision());
         }
     }
@@ -1068,7 +1067,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     if (foundRelatedNode != null) {
                         // Found a node so update anything that might have changed
                         boolean updated = false;
-                        if (foundRelatedNode.getRelationshipType() != RelationshipType.getRelationshipTypeId(relationship.getType())) {
+                        if (!foundRelatedNode.getRelationshipType().equals(
+                                RelationshipType.getRelationshipTypeId(relationship.getType()))) {
                             foundRelatedNode.setRelationshipType(RelationshipType.getRelationshipTypeId(relationship.getType()));
                             updated = true;
                         }
@@ -1134,7 +1134,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         // If the unique id is not from the parser, than use the unique id to compare
         if (level.getUniqueId() != null) {
-            return level.getUniqueId().equals(node.getId());
+            return level.getUniqueId().equals(Integer.toString(node.getId()));
         } else {
             // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the level matches
 
@@ -1159,10 +1159,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
         if (specTopic.getUniqueId() != null && specTopic.getUniqueId().matches("^\\d.*")) {
-            return specTopic.getUniqueId().equals(node.getId());
+            return specTopic.getUniqueId().equals(Integer.toString(node.getId()));
         } else {
             // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the topics match
-            if (specTopic.getRevision() != null && specTopic.getRevision() != node.getRevision()) {
+            if (specTopic.getRevision() != null && !specTopic.getRevision().equals(node.getRevision())) {
                 return false;
             }
 
@@ -1181,12 +1181,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         if (relatedNode.getNodeType() != CommonConstants.CS_NODE_TOPIC) return false;
 
         // Check if the type matches first
-        if (RelationshipType.getRelationshipTypeId(relationship.getType()) != relatedNode.getRelationshipType()) return false;
+        if (!RelationshipType.getRelationshipTypeId(relationship.getType()).equals(relatedNode.getRelationshipType())) return false;
 
         // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
         if (relationship.getSecondaryRelationship().getUniqueId() != null && relationship.getSecondaryRelationship().getUniqueId().matches(
                 "^\\d.*")) {
-            return relationship.getSecondaryRelationship().getUniqueId().equals(relatedNode.getId());
+            return relationship.getSecondaryRelationship().getUniqueId().equals(Integer.toString(relatedNode.getId()));
         } else {
             return relationship.getSecondaryRelationship().getDBId() == relatedNode.getEntityId();
         }
@@ -1203,12 +1203,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         if (relatedNode.getNodeType() != CommonConstants.CS_NODE_TOPIC) return false;
 
         // Check if the type matches first
-        if (RelationshipType.getRelationshipTypeId(relationship.getType()) != relatedNode.getRelationshipType()) return false;
+        if (!RelationshipType.getRelationshipTypeId(relationship.getType()).equals(relatedNode.getRelationshipType())) return false;
 
         // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
         if (relationship.getSecondaryRelationship().getUniqueId() != null && relationship.getSecondaryRelationship().getUniqueId().matches(
                 "^\\d.*")) {
-            return relationship.getSecondaryRelationship().getUniqueId().equals(relatedNode.getId());
+            return relationship.getSecondaryRelationship().getUniqueId().equals(Integer.toString(relatedNode.getId()));
         } else if (relationship.getSecondaryRelationship() instanceof Level) {
             return ((Level) relationship.getSecondaryRelationship()).getTargetId() == relatedNode.getTargetId();
         } else if (relationship.getSecondaryRelationship() instanceof SpecTopic) {

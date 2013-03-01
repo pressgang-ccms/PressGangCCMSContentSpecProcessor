@@ -545,8 +545,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                              * = true; } }
                              */
                         } else {
-                            log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(),
-                                    specTopic.getText()));
+                            log.error(
+                                    String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
+                                            specTopic.getText()));
                             error = true;
                         }
                     }
