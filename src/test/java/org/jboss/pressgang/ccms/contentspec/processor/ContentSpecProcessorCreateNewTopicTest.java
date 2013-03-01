@@ -10,6 +10,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -110,7 +111,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         verify(tagCollection, times(1)).addNewItem(tag1Wrapper);
         verify(tagCollection, times(1)).addNewItem(tag2Wrapper);
         // and the topic had the tags set
-        verify(topic, times(1)).setTags(eq(tagCollection));
+        verify(topic, atLeastOnce()).setTags(eq(tagCollection));
     }
 
     @Test

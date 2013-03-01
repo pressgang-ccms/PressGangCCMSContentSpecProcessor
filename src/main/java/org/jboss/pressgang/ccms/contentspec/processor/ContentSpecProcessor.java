@@ -408,6 +408,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     private boolean processClonedTopicTags(final TagProvider tagProvider, final SpecTopic specTopic, final TopicWrapper topic,
             final List<TagWrapper> addTags) {
+        // See if a new tag collection needs to be created
+        if (addTags.size() > 0 && topic.getTags() == null) {
+            topic.setTags(tagProvider.newTagCollection());
+        }
+
         // Finds tags that aren't already in the database and adds them
         final List<TagWrapper> topicTagList = topic.getTags() == null ? new ArrayList<TagWrapper>() : topic.getTags().getItems();
 

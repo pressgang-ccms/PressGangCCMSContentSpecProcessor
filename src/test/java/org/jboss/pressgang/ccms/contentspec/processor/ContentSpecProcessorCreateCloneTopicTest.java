@@ -175,6 +175,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         try {
             topic = processor.createTopicEntity(providerFactory, specTopic);
         } catch (Exception e) {
+            e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");
         }
 
