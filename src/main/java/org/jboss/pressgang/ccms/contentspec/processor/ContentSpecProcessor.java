@@ -195,6 +195,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return null;
         }
 
+        // If the spec topic is a clone or new topic then it will have changed no mater what else is done, since it's a new topic
         boolean changed = specTopic.isTopicAClonedTopic() || specTopic.isTopicANewTopic();
         final TopicWrapper topic = getTopicForSpecTopic(providerFactory, specTopic);
 
@@ -208,9 +209,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return null;
         }
 
-        // Process and set the assigned writer for new and cloned topics
-        if (!specTopic.isTopicAnExistingTopic()) {
-            processAssignedWriter(tagProvider, specTopic, topic);
+        // Process the topic and add or remove any tags
+        if (processTopicTags(tagProvider, specTopic, topic)) {
             changed = true;
         }
 
@@ -219,8 +219,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return null;
         }
 
-        // Process the topic and add or remove any tags
-        if (processTopicTags(tagProvider, specTopic, topic)) {
+        // Process and set the assigned writer for new and cloned topics
+        if (!specTopic.isTopicAnExistingTopic()) {
+            processAssignedWriter(tagProvider, specTopic, topic);
             changed = true;
         }
 
@@ -287,6 +288,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         topic.setDescription(specTopic.getDescription(true));
         topic.setXml("");
         topic.setXmlDoctype(CommonConstants.DOCBOOK_45);
+        topic.setLocale(CommonConstants.DEFAULT_LOCALE);
 
         // Write the type
         final CollectionWrapper<TagWrapper> tags = tagProvider.getTagsByName(specTopic.getType());
@@ -406,11 +408,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     private boolean processClonedTopicTags(final TagProvider tagProvider, final SpecTopic specTopic, final TopicWrapper topic,
             final List<TagWrapper> addTags) {
-        // If the topic is a cloned topic then only save new tags
+        // Finds tags that aren't already in the database and adds them
+        final List<TagWrapper> topicTagList = topic.getTags() == null ? new ArrayList<TagWrapper>() : topic.getTags().getItems();
 
         boolean changed = false;
         // Find tags that aren't already in the database and adds them
-        final List<TagWrapper> topicTagList = topic.getTags().getItems();
         for (final TagWrapper addTag : addTags) {
             boolean found = false;
             for (final TagWrapper topicTag : topicTagList) {
@@ -446,23 +448,20 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return changed;
         }
 
-        for (final TagWrapper topicTag : topicTagList) {
+        // Iterate over the current tags and set any that should be removed. If they shouldn't be removed then add them as a normal list
+        for (final TagWrapper removeTag : removeTags) {
             boolean found = false;
-            for (final TagWrapper removeTag : removeTags) {
+            for (final TagWrapper topicTag : topicTagList) {
                 if (topicTag.getId().equals(removeTag.getId())) {
                     found = true;
                 }
             }
 
             if (found) {
+                // Remove any current settings for the tag
+                topic.getTags().remove(removeTag);
                 // Set the tag to be removed from the database
-                topic.getTags().addRemoveItem(topicTag);
-                changed = true;
-            }
-
-            // Remove the old writer tag as it will get replaced
-            if (topicTag.containedInCategory(CSConstants.WRITER_CATEGORY_ID)) {
-                topic.getTags().addRemoveItem(topicTag);
+                topic.getTags().addRemoveItem(removeTag);
                 changed = true;
             }
         }
@@ -552,6 +551,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final TagWrapper writerTag = assignedWriterTags.get(0);
         // Save a new assigned writer
         topic.getTags().addNewItem(writerTag);
+        // Some providers need the collection to be set to set flags for saving
+        topic.setTags(topic.getTags());
     }
 
     /**

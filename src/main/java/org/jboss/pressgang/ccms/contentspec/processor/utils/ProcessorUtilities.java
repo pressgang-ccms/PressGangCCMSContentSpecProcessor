@@ -16,6 +16,8 @@ import org.jboss.pressgang.ccms.contentspec.wrapper.PropertyTagWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TopicSourceURLWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.TopicWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.collection.CollectionWrapper;
+import org.jboss.pressgang.ccms.contentspec.wrapper.collection.UpdateableCollectionWrapper;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
@@ -100,7 +102,7 @@ public class ProcessorUtilities {
     }
 
     /**
-     * Clones a Topic.
+     * Clones a Topic, resets the Added By and CSP ID properties and ignores assigned writers when cloning.
      *
      * @param providerFactory
      * @param specTopic       The SpecTopic object that represents a topic.
@@ -125,55 +127,67 @@ public class ProcessorUtilities {
         cloneTopic.setHtml(originalTopic.getHtml());
         cloneTopic.setXml(originalTopic.getXml());
         cloneTopic.setXmlDoctype(originalTopic.getXmlDoctype());
+        cloneTopic.setLocale(originalTopic.getLocale());
 
         // Go through each collection and add the original topics data
         if (originalTopic.getIncomingRelationships() != null && !originalTopic.getIncomingRelationships().isEmpty()) {
-            cloneTopic.setIncomingRelationships(topicProvider.newTopicCollection());
+            final CollectionWrapper<TopicWrapper> cloneIncomingTopics = topicProvider.newTopicCollection();
             for (final TopicWrapper incomingRelationship : originalTopic.getIncomingRelationships().getItems()) {
-                cloneTopic.getIncomingRelationships().addNewItem(incomingRelationship);
+                cloneIncomingTopics.addNewItem(incomingRelationship);
             }
+            cloneTopic.setIncomingRelationships(cloneIncomingTopics);
         }
 
         if (originalTopic.getOutgoingRelationships() != null && !originalTopic.getOutgoingRelationships().isEmpty()) {
-            cloneTopic.setOutgoingRelationships(topicProvider.newTopicCollection());
+            final CollectionWrapper<TopicWrapper> cloneOutgoingTopics = topicProvider.newTopicCollection();
             for (final TopicWrapper outgoingRelationship : originalTopic.getOutgoingRelationships().getItems()) {
-                cloneTopic.getOutgoingRelationships().addNewItem(outgoingRelationship);
+                cloneOutgoingTopics.addNewItem(outgoingRelationship);
             }
+            cloneTopic.setOutgoingRelationships(cloneOutgoingTopics);
         }
 
         // SOURCE URLS
         if (originalTopic.getSourceURLs() != null && !originalTopic.getSourceURLs().isEmpty()) {
-            cloneTopic.setSourceURLs(topicSourceUrlProvider.newTopicSourceURLCollection(cloneTopic));
+            final CollectionWrapper<TopicSourceURLWrapper> cloneSourceUrls = topicSourceUrlProvider.newTopicSourceURLCollection(cloneTopic);
             for (final TopicSourceURLWrapper sourceUrl : originalTopic.getSourceURLs().getItems()) {
-                sourceUrl.setTitle(sourceUrl.getTitle());
-                sourceUrl.setDescription(sourceUrl.getTitle());
-                sourceUrl.setUrl(sourceUrl.getUrl());
-                cloneTopic.getSourceURLs().addNewItem(sourceUrl);
+                final TopicSourceURLWrapper cloneSourceUrl = cloneTopicSourceUrl(topicSourceUrlProvider, sourceUrl, cloneTopic);
+                cloneSourceUrls.addNewItem(cloneSourceUrl);
             }
+            cloneTopic.setSourceURLs(cloneSourceUrls);
         }
 
         // TAGS
         if (originalTopic.getTags() != null && !originalTopic.getTags().isEmpty()) {
-            cloneTopic.setTags(tagProvider.newTagCollection());
+            final CollectionWrapper<TagWrapper> newTags = tagProvider.newTagCollection();
             final List<TagWrapper> tags = originalTopic.getTags().getItems();
             for (final TagWrapper tag : tags) {
-                cloneTopic.getTags().addNewItem(tag);
+                // Remove the old writer tag as it will get replaced
+                if (!tag.containedInCategory(CSConstants.WRITER_CATEGORY_ID)) {
+                    newTags.addNewItem(tag);
+                }
+            }
+
+            // Set the tags if any tags exist
+            if (!newTags.isEmpty()) {
+                cloneTopic.setTags(newTags);
             }
         }
 
-        cloneTopic.setProperties(propertyTagProvider.newPropertyTagInTopicCollection());
+        final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> newProperties = propertyTagProvider.newPropertyTagInTopicCollection();
         final List<PropertyTagInTopicWrapper> propertyItems = originalTopic.getProperties().getItems();
         boolean cspPropertyFound = false;
         for (final PropertyTagInTopicWrapper property : propertyItems) {
             final PropertyTagInTopicWrapper clonedProperty = cloneTopicProperty(propertyTagProvider, property);
             // Ignore the CSP Property ID as we will add a new one
-            if (!property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
-                cloneTopic.getProperties().addNewItem(clonedProperty);
-            } else {
+            if (property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
                 cspPropertyFound = true;
 
                 clonedProperty.setValue(specTopic.getUniqueId());
-                cloneTopic.getProperties().addNewItem(clonedProperty);
+                newProperties.addNewItem(clonedProperty);
+            } else if (property.getId().equals(CSConstants.ADDED_BY_PROPERTY_TAG_ID)) {
+                // Ignore the added by property as we will add it later
+            } else {
+                newProperties.addNewItem(clonedProperty);
             }
         }
 
@@ -181,7 +195,20 @@ public class ProcessorUtilities {
             final PropertyTagWrapper propertyTag = propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID);
             final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic(propertyTag);
             cspProperty.setValue(specTopic.getUniqueId());
-            cloneTopic.getProperties().addNewItem(cspProperty);
+            newProperties.addNewItem(cspProperty);
+        }
+
+        // Add the added by property tag
+        final String assignedWriter = specTopic.getAssignedWriter(true);
+        if (assignedWriter != null) {
+            final PropertyTagWrapper addedByPropertyTag = propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
+            final PropertyTagInTopicWrapper addedByProperty = propertyTagProvider.newPropertyTagInTopic(addedByPropertyTag);
+            addedByProperty.setValue(assignedWriter);
+            newProperties.addNewItem(addedByProperty);
+        }
+
+        if (!newProperties.isEmpty()) {
+            cloneTopic.setProperties(newProperties);
         }
 
         return cloneTopic;
@@ -203,5 +230,24 @@ public class ProcessorUtilities {
         newPropertyTag.setValue(originalProperty.getValue());
 
         return newPropertyTag;
+    }
+
+    /**
+     * Clones a Topic Source URL
+     *
+     * @param topicSourceUrlProvider The Topic Source URL provider to lookup additional details.
+     * @param originalSourceUrl      The Source URL to be cloned.
+     * @param parent                 The parent to the new topic source url.
+     * @return The cloned topic source url.
+     */
+    public static TopicSourceURLWrapper cloneTopicSourceUrl(final TopicSourceURLProvider topicSourceUrlProvider,
+            final TopicSourceURLWrapper originalSourceUrl, final TopicWrapper parent) {
+        final TopicSourceURLWrapper sourceUrl = topicSourceUrlProvider.newTopicSourceURL(parent);
+
+        sourceUrl.setTitle(originalSourceUrl.getTitle());
+        sourceUrl.setDescription(originalSourceUrl.getDescription());
+        sourceUrl.setUrl(originalSourceUrl.getUrl());
+
+        return sourceUrl;
     }
 }

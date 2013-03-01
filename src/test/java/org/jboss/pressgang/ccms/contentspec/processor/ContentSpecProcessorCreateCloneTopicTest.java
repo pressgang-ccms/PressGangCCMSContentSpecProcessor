@@ -6,7 +6,9 @@ import static com.natpryce.makeiteasy.MakeItEasy.with;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -37,28 +39,38 @@ import org.jboss.pressgang.ccms.contentspec.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.collection.CollectionWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.collection.UpdateableCollectionWrapper;
 import org.jboss.pressgang.ccms.contentspec.wrapper.mocks.CollectionWrapperMock;
+import org.jboss.pressgang.ccms.contentspec.wrapper.mocks.TopicWrapperMock;
 import org.jboss.pressgang.ccms.contentspec.wrapper.mocks.UpdateableCollectionWrapperMock;
+import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 
-public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProcessorTest {
+public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcessorTest {
     @Arbitrary Integer id;
     @Arbitrary Integer revision;
     @Arbitrary String title;
     @Arbitrary String type;
     @Arbitrary String randomString;
+    @Arbitrary String locale;
     @ArbitraryString(type = StringType.ALPHANUMERIC) String username;
 
-    @Mock TopicWrapper topicWrapper;
     @Mock PropertyTagWrapper cspIdPropertyTag;
     @Mock PropertyTagWrapper addedByPropertyTag;
     @Mock PropertyTagInTopicWrapper cspIdPropertyTagInTopic;
     @Mock PropertyTagInTopicWrapper addedByPropertyTagInTopic;
-    @Mock CollectionWrapper<TagWrapper> existingTagCollection;
+    @Mock PropertyTagInTopicWrapper propertyTagInTopic;
+    @Mock TagWrapper writerTag;
+
+    // Existing topic mocks
+    @Mock TopicWrapper topicWrapper;
+    @Mock PropertyTagInTopicWrapper existingCspIdPropertyTagInTopic;
+    @Mock PropertyTagInTopicWrapper existingAddedByPropertyTagInTopic;
     @Mock UpdateableCollectionWrapper<PropertyTagInTopicWrapper> existingTopicProperties;
     @Mock CollectionWrapper<TopicSourceURLWrapper> existingTopicSourceURLCollection;
+    @Mock CollectionWrapper<TagWrapper> existingTagCollection;
 
+    private TopicWrapper newTopicWrapper;
     private CollectionWrapper<TagWrapper> tagCollection;
     private UpdateableCollectionWrapper<PropertyTagInTopicWrapper> propertyTagCollection;
     private CollectionWrapper<TopicSourceURLWrapper> topicSourceURLCollection;
@@ -66,6 +78,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
     @Before
     public void setUpEntities() {
+        newTopicWrapper = new TopicWrapperMock();
         tagCollection = new CollectionWrapperMock<TagWrapper>();
         propertyTagCollection = new UpdateableCollectionWrapperMock<PropertyTagInTopicWrapper>();
         topicSourceURLCollection = new CollectionWrapperMock<TopicSourceURLWrapper>();
@@ -73,50 +86,17 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
     }
 
     @Test
-    public void shouldReturnNullWhenCreateSpecTopicAndUnchanged() {
-        // Given a SpecTopic
-        SpecTopic specTopic = make(
-                a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, id.toString()), with(SpecTopicMaker.uniqueId, "L-" + id),
-                        with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
-                        with(SpecTopicMaker.description, randomString)));
+    public void shouldCreateSpecTopic() {
+        // Given a SpecTopic with just an id and title
+        SpecTopic specTopic = make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, "C1"), with(SpecTopicMaker.uniqueId, "L-C1"),
+                with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
+                with(SpecTopicMaker.description, randomString)));
         // Setup the basic details
         setupBaseTopicMocks();
+        // Setup the existing topic mocks
+        setupExistingTopicMocks();
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
-
-        TopicWrapper topic = null;
-        try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("Creating a topic should not have thrown an exception");
-        }
-
-        // Then the topic should be null
-        assertNull(topic);
-    }
-
-    @Test
-    public void shouldCreateSpecTopicAndUpdatePropertyWhenItAlreadyExists() {
-        final String tagName = randomString;
-        final TagWrapper tag1Wrapper = mock(TagWrapper.class);
-        final CollectionWrapper<TagWrapper> tag1Collection = makeTagCollection(tagName, tag1Wrapper);
-        // Given a SpecTopic and we add a tag just to make a change
-        SpecTopic specTopic = make(
-                a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, id.toString()), with(SpecTopicMaker.uniqueId, "L-" + id),
-                        with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
-                        with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.tags, Arrays.asList(randomString)),
-                        with(SpecTopicMaker.revision, (Integer) null)));
-        // Setup the basic details
-        setupBaseTopicMocks();
-        // and setup the basic valid mocks
-        setupValidBaseTopicMocks();
-        // and the csp id already exists
-        existingProperties.add(cspIdPropertyTagInTopic);
-        when(cspIdPropertyTagInTopic.getId()).thenReturn(CSConstants.CSP_PROPERTY_ID);
-        // and the tag we are adding exist
-        when(tagProvider.getTagsByName(tagName)).thenReturn(tag1Collection);
-        when(tag1Wrapper.getId()).thenReturn(1);
 
         TopicWrapper topic = null;
         try {
@@ -128,9 +108,40 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         // Then the base topic should be valid
         verifyValidBaseTopic(topic);
-        verifyUnchangedBaseTopicCollections();
-        // and the property should have changed
-        verifyValidBaseTopicUpdatedProperties();
+        verifyUnchangedOriginalTopic();
+        // and the property should have added
+        verifyValidBaseTopicNewProperties(topic);
+    }
+
+    @Test
+    public void shouldCreateSpecTopicAndSetNewPropertyWhenItAlreadyExistsInOriginalTopic() {
+        // Given a SpecTopic and we add a tag just to make a change
+        SpecTopic specTopic = make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, "C1"), with(SpecTopicMaker.uniqueId, "L-C1"),
+                with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
+                with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.revision, (Integer) null)));
+        // Setup the basic details
+        setupBaseTopicMocks();
+        // Setup the existing topic mocks
+        setupExistingTopicMocks();
+        // and setup the basic valid mocks
+        setupValidBaseTopicMocks();
+        // and the csp id already exists
+        existingProperties.add(existingCspIdPropertyTagInTopic);
+        when(existingCspIdPropertyTagInTopic.getId()).thenReturn(CSConstants.CSP_PROPERTY_ID);
+
+        TopicWrapper topic = null;
+        try {
+            topic = processor.createTopicEntity(providerFactory, specTopic);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Creating a topic should not have thrown an exception");
+        }
+
+        // Then the base topic should be valid
+        verifyValidBaseTopic(topic);
+        verifyUnchangedOriginalTopic();
+        // and the property should have added
+        verifyValidBaseTopicNewProperties(topic);
     }
 
     @Test
@@ -144,13 +155,14 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
         // Given a list of tags
         final List<String> tags = Arrays.asList(tag1, tag2);
         // and a SpecTopic
-        SpecTopic specTopic = make(
-                a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, id.toString()), with(SpecTopicMaker.uniqueId, "L-" + id),
-                        with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
-                        with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.tags, tags),
-                        with(SpecTopicMaker.revision, (Integer) null)));
+        SpecTopic specTopic = make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, "C1"), with(SpecTopicMaker.uniqueId, "L-C1"),
+                with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
+                with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.tags, tags),
+                with(SpecTopicMaker.revision, (Integer) null)));
         // Setup the basic details
         setupBaseTopicMocks();
+        // Setup the existing topic mocks
+        setupExistingTopicMocks();
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
         // and the tags exist
@@ -168,11 +180,15 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         // Then the base topic should be valid
         verifyValidBaseTopic(topic);
-        verifyValidBaseTopicNewProperties();
-        verifyUnchangedBaseTopicCollections();
+        verifyValidBaseTopicNewProperties(topic);
+        verifyUnchangedOriginalTopic();
         // and the tags were added
         assertTrue(tagCollection.getAddItems().contains(tag1Wrapper));
         assertTrue(tagCollection.getAddItems().contains(tag2Wrapper));
+        // and only new tags were set, as clones shouldn't have existing tags
+        assertThat(tagCollection.getItems().size(), is(3));
+        assertThat(tagCollection.getUnchangedItems().size(), is(0));
+        assertThat(tagCollection.getRemoveItems().size(), is(0));
     }
 
     @Test
@@ -187,13 +203,14 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
         // Given a list of tags
         final List<String> tags = Arrays.asList(tag1, tag2);
         // and a SpecTopic
-        SpecTopic specTopic = make(
-                a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, id.toString()), with(SpecTopicMaker.uniqueId, "L-" + id),
-                        with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
-                        with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.tags, tags),
-                        with(SpecTopicMaker.revision, (Integer) null)));
+        SpecTopic specTopic = make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, "C1"), with(SpecTopicMaker.uniqueId, "L-C1"),
+                with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
+                with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.tags, tags),
+                with(SpecTopicMaker.revision, (Integer) null)));
         // Setup the basic details
         setupBaseTopicMocks();
+        // Setup the existing topic mocks
+        setupExistingTopicMocks();
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
         // and the tags exist
@@ -214,14 +231,17 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         // Then the base topic should be valid
         verifyValidBaseTopic(topic);
-        verifyValidBaseTopicNewProperties();
-        verifyUnchangedBaseTopicCollections();
+        verifyValidBaseTopicNewProperties(topic);
+        verifyUnchangedOriginalTopic();
         // and the tags were added
         assertTrue(tagCollection.getAddItems().contains(tag1Wrapper));
         assertTrue(tagCollection.getAddItems().contains(tag2Wrapper));
-        // and that the original tag exists
-        assertTrue(tagCollection.getItems().contains(existingTagWrapper));
-        assertThat(tagCollection.size(), is(3));
+        // and that the original tag was added as well
+        assertTrue(tagCollection.getAddItems().contains(existingTagWrapper));
+        // and only new tags were set, as clones shouldn't have existing tags
+        assertThat(tagCollection.getItems().size(), is(4));
+        assertThat(tagCollection.getUnchangedItems().size(), is(0));
+        assertThat(tagCollection.getRemoveItems().size(), is(0));
     }
 
     @Test
@@ -235,13 +255,14 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
         // Given a list of tags
         final List<String> tags = Arrays.asList(tag1, tag2);
         // and a SpecTopic
-        SpecTopic specTopic = make(
-                a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, id.toString()), with(SpecTopicMaker.uniqueId, "L-" + id),
-                        with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
-                        with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.tags, tags),
-                        with(SpecTopicMaker.revision, (Integer) null)));
+        SpecTopic specTopic = make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, "C1"), with(SpecTopicMaker.uniqueId, "L-C1"),
+                with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
+                with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.tags, tags),
+                with(SpecTopicMaker.revision, (Integer) null)));
         // Setup the basic details
         setupBaseTopicMocks();
+        // Setup the existing topic mocks
+        setupExistingTopicMocks();
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
         // and the tags exist
@@ -261,19 +282,20 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         // Then the base topic should be valid
         verifyValidBaseTopic(topic);
-        verifyValidBaseTopicNewProperties();
-        verifyUnchangedBaseTopicCollections();
+        verifyValidBaseTopicNewProperties(topic);
+        verifyUnchangedOriginalTopic();
         // and the new tags were added
-        assertFalse(tagCollection.getAddItems().contains(tag1Wrapper));
         assertTrue(tagCollection.getAddItems().contains(tag2Wrapper));
-        // and that the original tag exists
-        assertTrue(tagCollection.getItems().contains(tag1Wrapper));
-        assertThat(tagCollection.size(), is(2));
-
+        // and that the original tag was added as well
+        assertTrue(tagCollection.getAddItems().contains(tag1Wrapper));
+        // and only new tags were set, as clones shouldn't have existing tags
+        assertThat(tagCollection.getItems().size(), is(3));
+        assertThat(tagCollection.getUnchangedItems().size(), is(0));
+        assertThat(tagCollection.getRemoveItems().size(), is(0));
     }
 
     @Test
-    public void shouldReturnNullWhenCreateSpecTopicWithExistingTagsAndAllAddTagsAlreadyExists() {
+    public void shouldCreateSpecTopicWithExistingTagsAndAllAddTagsAlreadyExists() {
         String tag1 = "Test";
         String tag2 = "Test2";
         final TagWrapper tag1Wrapper = mock(TagWrapper.class);
@@ -283,13 +305,14 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
         // Given a list of tags
         final List<String> tags = Arrays.asList(tag1, tag2);
         // and a SpecTopic
-        SpecTopic specTopic = make(
-                a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, id.toString()), with(SpecTopicMaker.uniqueId, "L-" + id),
-                        with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
-                        with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.tags, tags),
-                        with(SpecTopicMaker.revision, (Integer) null)));
+        SpecTopic specTopic = make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, "C1"), with(SpecTopicMaker.uniqueId, "L-C1"),
+                with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
+                with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.tags, tags),
+                with(SpecTopicMaker.revision, (Integer) null)));
         // Setup the basic details
         setupBaseTopicMocks();
+        // Setup the existing topic mocks
+        setupExistingTopicMocks();
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
         // and the tags exist
@@ -307,38 +330,42 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
             fail("Creating a topic should not have thrown an exception");
         }
 
-        // Then the topic should be null
-        assertNull(topic);
-        // and that the original tags weren't altered
-        verify(topicWrapper, times(0)).setTags(any(CollectionWrapper.class));
-        verify(existingTagCollection, times(0)).addItem(any(TagWrapper.class));
-        verify(existingTagCollection, times(0)).addNewItem(any(TagWrapper.class));
-        verify(existingTagCollection, times(0)).addRemoveItem(any(TagWrapper.class));
+        // Then the base topic should be valid
+        verifyValidBaseTopic(topic);
+        verifyValidBaseTopicNewProperties(topic);
+        verifyUnchangedOriginalTopic();
+        // and the tags should be the same as the original
+        assertThat(tagCollection.size(), is(3));
+        // and the tags exist in the new state in the collection
+        assertTrue(tagCollection.getAddItems().contains(tag1Wrapper));
+        assertTrue(tagCollection.getAddItems().contains(tag2Wrapper));
+        // and only new tags were set, as clones shouldn't have existing tags
+        assertThat(tagCollection.getUnchangedItems().size(), is(0));
+        assertThat(tagCollection.getRemoveItems().size(), is(0));
     }
 
     @Test
-    public void shouldReturnNullWhenCreateSpecTopicWithTagsAndRevision() {
-        String tag1 = "Test";
-        String tag2 = "Test2";
-        final TagWrapper tag1Wrapper = mock(TagWrapper.class);
-        final TagWrapper tag2Wrapper = mock(TagWrapper.class);
-        final CollectionWrapper<TagWrapper> tag1Collection = makeTagCollection(tag1, tag1Wrapper);
-        final CollectionWrapper<TagWrapper> tag2Collection = makeTagCollection(tag2, tag2Wrapper);
-        // Given a list of tags
-        final List<String> tags = Arrays.asList(tag1, tag2);
+    public void shouldCreateSpecTopicWithWriterThatAlreadyExists() {
+        String writerName = randomString;
+        final TagWrapper writerTagWrapper = mock(TagWrapper.class);
+
         // and a SpecTopic
-        SpecTopic specTopic = make(
-                a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, id.toString()), with(SpecTopicMaker.uniqueId, "L-" + id),
-                        with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
-                        with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.tags, tags),
-                        with(SpecTopicMaker.revision, revision)));
+        SpecTopic specTopic = make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, "C1"), with(SpecTopicMaker.uniqueId, "L-C1"),
+                with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
+                with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.revision, (Integer) null)));
         // Setup the basic details
         setupBaseTopicMocks();
+        // Setup the existing topic mocks
+        setupExistingTopicMocks();
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
-        // and the tags exist
-        when(tagProvider.getTagsByName(tag1)).thenReturn(tag1Collection);
-        when(tagProvider.getTagsByName(tag2)).thenReturn(tag2Collection);
+        // and a writer tag already exists
+        when(writerTagWrapper.getId()).thenReturn(id);
+        when(writerTag.getId()).thenReturn(id);
+        // and the existing writer tag is in the writer category
+        when(writerTagWrapper.containedInCategory(CSConstants.WRITER_CATEGORY_ID)).thenReturn(true);
+        // and the topic already has the writerTag in it's collection
+        when(existingTagCollection.getItems()).thenReturn(Arrays.asList(writerTagWrapper));
 
         TopicWrapper topic = null;
         try {
@@ -347,66 +374,108 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
             fail("Creating a topic should not have thrown an exception");
         }
 
-        // Then the topic should be unchanged and should be null
-        assertNull(topic);
-        verify(topicWrapper, times(0)).setTags(any(CollectionWrapper.class));
+        // Then the base topic should be valid
+        verifyValidBaseTopic(topic);
+        verifyValidBaseTopicNewProperties(topic);
+        verifyUnchangedOriginalTopic();
+        // and the old writer tag isn't in the collection
+        assertFalse(tagCollection.getItems().contains(writerTagWrapper));
+        // and that the new writer tag was added
+        assertTrue(tagCollection.getAddItems().contains(writerTag));
+        // and only new tags were set, as clones shouldn't have existing tags
+        assertThat(tagCollection.getItems().size(), is(1));
+        assertThat(tagCollection.getUnchangedItems().size(), is(0));
+        assertThat(tagCollection.getRemoveItems().size(), is(0));
     }
 
     @Test
-    public void shouldReturnNullWhenCreateSpecTopicWithAnySourceUrls() {
+    public void shouldCreateSpecTopicWithSourceUrls() {
         String url1 = "http://www.example.com/";
         String url2 = "http://www.domain.com/";
         final TopicSourceURLWrapper urlWrapper = mock(TopicSourceURLWrapper.class);
         // Given a list of urls
         final List<String> urls = Arrays.asList(url1, url2);
         // and a SpecTopic with just an id and title
-        SpecTopic specTopic = make(
-                a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, id.toString()), with(SpecTopicMaker.uniqueId, "L-" + id),
-                        with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
-                        with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.urls, urls)));
+        SpecTopic specTopic = make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, "C1"), with(SpecTopicMaker.uniqueId, "L-C1"),
+                with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
+                with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.urls, urls)));
         // Setup the basic details
         setupBaseTopicMocks();
+        // Setup the existing topic mocks
+        setupExistingTopicMocks();
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
         // and creating a new source url is setup
-        when(topicSourceURLProvider.newTopicSourceURL(eq(topicWrapper))).thenReturn(urlWrapper);
+        when(topicSourceURLProvider.newTopicSourceURL(eq(newTopicWrapper))).thenReturn(urlWrapper);
 
         TopicWrapper topic = null;
         try {
             topic = processor.createTopicEntity(providerFactory, specTopic);
         } catch (Exception e) {
+            e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");
         }
 
-        // Then the topic should be unchanged and should be null
-        assertNull(topic);
-        verify(topicWrapper, times(0)).setSourceURLs(any(CollectionWrapper.class));
+        // Then the base topic should be valid
+        verifyValidBaseTopic(topic);
+        verifyValidBaseTopicNewProperties(topic);
+        verifyUnchangedOriginalTopic();
+        // and the source url collection will have one object. It should have two url's but since it holds a set and we only can mock one
+        // url than the collection will only have the one object.
+        assertThat(topicSourceURLCollection.size(), is(1));
+        // and the tags exist in the new state in the collection
+        assertTrue(topicSourceURLCollection.getAddItems().contains(urlWrapper));
+        // and only new source urls were set, as clones shouldn't have existing tags
+        assertThat(topicSourceURLCollection.getRemoveItems().size(), is(0));
+        assertThat(topicSourceURLCollection.getUnchangedItems().size(), is(0));
     }
 
-    protected void setupBaseTopicMocks() {
+    protected void setupExistingTopicMocks() {
+        // and the topic has an id
+        when(topicWrapper.getId()).thenReturn(id);
+        // and the topic has a title
+        when(topicWrapper.getTitle()).thenReturn(title);
+        // and the topic has xml
+        when(topicWrapper.getXml()).thenReturn(randomString);
+        // and the topic has a doctype
+        when(topicWrapper.getXmlDoctype()).thenReturn(CommonConstants.DOCBOOK_45);
+        // and the topic has a locale
+        when(topicWrapper.getLocale()).thenReturn(locale);
         // and the topic provider will return an existing
         when(topicProvider.getTopic(anyInt(), anyInt())).thenReturn(topicWrapper);
         // and the tag provider will return a new tag collection
-        when(tagProvider.newTagCollection()).thenReturn(tagCollection);
         when(topicWrapper.getTags()).thenReturn(existingTagCollection);
         // and the property tag provider will return a new property tag collection
-        when(propertyTagProvider.newPropertyTagInTopicCollection()).thenReturn(propertyTagCollection);
         when(topicWrapper.getProperties()).thenReturn(existingTopicProperties);
-        // and the property tag provider will return a property tag
-        when(propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID)).thenReturn(cspIdPropertyTag);
         // and the topic source url provider will return a new topic source url collection
-        when(topicSourceURLProvider.newTopicSourceURLCollection(eq(topicWrapper))).thenReturn(topicSourceURLCollection);
         when(topicWrapper.getSourceURLs()).thenReturn(existingTopicSourceURLCollection);
         // and the property tag collection already has the added by tag
-        existingProperties.add(addedByPropertyTagInTopic);
+        existingProperties.add(existingAddedByPropertyTagInTopic);
         when(existingTopicProperties.getItems()).thenReturn(existingProperties);
-        when(addedByPropertyTagInTopic.getId()).thenReturn(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
-        when(addedByPropertyTagInTopic.getValue()).thenReturn(username);
+        when(existingAddedByPropertyTagInTopic.getId()).thenReturn(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
+        when(existingAddedByPropertyTagInTopic.getValue()).thenReturn(username);
+    }
+
+    protected void setupBaseTopicMocks() {
+        // and the topic provider will return a new topic
+        when(topicProvider.newTopic()).thenReturn(newTopicWrapper);
+        // and the tag provider will return a new tag collection
+        when(tagProvider.newTagCollection()).thenReturn(tagCollection);
+        newTopicWrapper.setTags(null);
+        // and the property tag provider will return a new property tag collection
+        when(propertyTagProvider.newPropertyTagInTopicCollection()).thenReturn(propertyTagCollection);
+        newTopicWrapper.setProperties(null);
+        // and the property tag provider will return a property tag
+        when(propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID)).thenReturn(cspIdPropertyTag);
+        when(propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID)).thenReturn(addedByPropertyTag);
+        // and the topic source url provider will return a new topic source url collection
+        when(topicSourceURLProvider.newTopicSourceURLCollection(eq(newTopicWrapper))).thenReturn(topicSourceURLCollection);
+        newTopicWrapper.setSourceURLs(null);
     }
 
     protected void setupValidBaseTopicMocks() {
         final CollectionWrapper<TagWrapper> typeCollection = makeTagCollection(type);
-        final CollectionWrapper<TagWrapper> writerCollection = makeTagCollection(username);
+        final CollectionWrapper<TagWrapper> writerCollection = makeTagCollection(username, writerTag);
         // and the tag provider returns a type
         when(tagProvider.getTagsByName(eq(type))).thenReturn(typeCollection);
         // and the tag provider returns an assigned writer
@@ -420,7 +489,34 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
         // Then check the topic isn't null
         assertNotNull(topic);
         // and the topic is the mocked topic
-        assertThat(topic, is(topicWrapper));
+        assertNotSame(topic, is(topicWrapper));
+        // and the id was set to null
+        assertNull(topic.getId());
+        // and the topic title was cloned
+        assertThat(topic.getTitle(), is(title));
+        // and the topic xml was cloned
+        assertThat(topic.getXml(), is(randomString));
+        // and the topic doctype was cloned
+        assertThat(topic.getXmlDoctype(), is(CommonConstants.DOCBOOK_45));
+        // and the locale was cloned
+        assertThat(topic.getLocale(), is(locale));
+        // check that the added by property was not copied across
+        assertFalse(propertyTagCollection.getAddItems().contains(existingAddedByPropertyTagInTopic));
+        // check that the new added by property was set
+        assertTrue(propertyTagCollection.getAddItems().contains(addedByPropertyTagInTopic));
+        // and that the topic has the assigned writer set
+        assertTrue(tagCollection.getAddItems().contains(writerTag));
+    }
+
+    protected void verifyValidBaseTopicNewProperties(final TopicWrapper topic) {
+        // and the topic had the properties set
+        assertSame(topic.getProperties(), propertyTagCollection);
+        // and the topic had the CSP property tag set
+        verify(cspIdPropertyTagInTopic, times(1)).setValue("L-C1");
+        assertTrue(propertyTagCollection.getAddItems().contains(cspIdPropertyTagInTopic));
+    }
+
+    protected void verifyUnchangedOriginalTopic() {
         // and the topic title was not changed
         verify(topicWrapper, times(0)).setTitle(anyString());
         // and the id was not changed
@@ -433,30 +529,10 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
         verify(topicWrapper, times(0)).setXmlDoctype(anyInt());
         // and the locale was not changed
         verify(topicWrapper, times(0)).setLocale(anyString());
-    }
-
-    protected void verifyValidBaseTopicNewProperties() {
-        // and the topic had the properties set
-        verify(topicWrapper, times(1)).setProperties(eq(propertyTagCollection));
-        // and the topic had the CSP property tag set
-        assertTrue(propertyTagCollection.getAddItems().contains(cspIdPropertyTagInTopic));
-        verify(cspIdPropertyTagInTopic, times(1)).setValue("L-" + id);
-    }
-
-    protected void verifyValidBaseTopicUpdatedProperties() {
-        // and the topic had the properties set
-        verify(topicWrapper, times(1)).setProperties(eq(propertyTagCollection));
-        // and the topic had the CSP property tag set
-        assertTrue(propertyTagCollection.getUpdateItems().contains(cspIdPropertyTagInTopic));
-        verify(cspIdPropertyTagInTopic, times(1)).setValue("L-" + id);
-    }
-
-    protected void verifyUnchangedBaseTopicCollections() {
-        assertTrue(propertyTagCollection.getItems().contains(cspIdPropertyTagInTopic));
-        // and the topic still has the AddedBy property tag
-        assertTrue(propertyTagCollection.getUnchangedItems().contains(addedByPropertyTagInTopic));
-        // and the value hasn't changed
-        verify(addedByPropertyTagInTopic, times(0)).setValue(anyString());
+        // and the added by value hasn't changed
+        verify(existingAddedByPropertyTagInTopic, times(0)).setValue(anyString());
+        // and the csp id value hasn't changed
+        verify(existingCspIdPropertyTagInTopic, times(0)).setValue(anyString());
         // and the original property tag collection wasn't touched
         verify(existingTopicProperties, times(0)).addItem(any(PropertyTagInTopicWrapper.class));
         verify(existingTopicProperties, times(0)).addNewItem(any(PropertyTagInTopicWrapper.class));

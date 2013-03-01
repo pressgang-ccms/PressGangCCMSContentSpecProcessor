@@ -50,6 +50,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
     @Mock CollectionWrapper<TagWrapper> tagCollection;
     @Mock UpdateableCollectionWrapper<PropertyTagInTopicWrapper> propertyTagCollection;
     @Mock CollectionWrapper<TopicSourceURLWrapper> topicSourceURLCollection;
+    @Mock TagWrapper writerTag;
 
     @Test
     public void shouldCreateSpecTopic() {
@@ -213,7 +214,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
 
     protected void setupValidBaseTopicMocks() {
         final CollectionWrapper<TagWrapper> typeCollection = makeTagCollection(type);
-        final CollectionWrapper<TagWrapper> writerCollection = makeTagCollection(username);
+        final CollectionWrapper<TagWrapper> writerCollection = makeTagCollection(username, writerTag);
         // and the tag provider returns a type
         when(tagProvider.getTagsByName(eq(type))).thenReturn(typeCollection);
         // and the tag provider returns an assigned writer
@@ -236,6 +237,8 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         verify(topic, times(1)).setDescription(randomString);
         // and the doctype is set
         verify(topic, times(1)).setXmlDoctype(CommonConstants.DOCBOOK_45);
+        // and the locale is set
+        verify(topic, times(1)).setLocale(CommonConstants.DEFAULT_LOCALE);
         // and the topic had the properties set
         verify(topic, times(1)).setProperties(eq(propertyTagCollection));
         // and the topic had the CSP property tag set
@@ -244,5 +247,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         // and the topic had the AddedBy property tag set
         verify(propertyTagCollection, times(1)).addNewItem(addedByPropertyTagInTopic);
         verify(addedByPropertyTagInTopic, times(1)).setValue(username);
+        // and that the topic has the assigned writer set
+        verify(tagCollection, times(1)).addNewItem(writerTag);
     }
 }
