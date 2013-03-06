@@ -12,6 +12,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -231,7 +232,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         // and the topic has the title
         verify(topic, times(1)).setTitle(title);
         // and the id is null
-        verify(topic, times(0)).setId(anyInt());
+        verify(topic, never()).setId(anyInt());
         // and the xml is an empty string
         verify(topic, times(1)).setXml("");
         // and the description was set

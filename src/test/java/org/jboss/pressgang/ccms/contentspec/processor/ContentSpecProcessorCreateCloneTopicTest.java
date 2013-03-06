@@ -17,6 +17,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -346,6 +347,57 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
     }
 
     @Test
+    public void shouldCreateSpecTopicWithTagsRemoved() {
+        String removeTag = "Test";
+        final TagWrapper tag1Wrapper = mock(TagWrapper.class);
+        final CollectionWrapper<TagWrapper> tag1Collection = makeTagCollection(removeTag, tag1Wrapper);
+        final TagWrapper existingTagWrapper = mock(TagWrapper.class);
+        final TagWrapper existingTagWrapper2 = mock(TagWrapper.class);
+        // Given a list of tags to be removed
+        final List<String> tags = Arrays.asList(removeTag);
+        // and a SpecTopic
+        SpecTopic specTopic = make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, "C1"), with(SpecTopicMaker.uniqueId, "L-C1"),
+                with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
+                with(SpecTopicMaker.description, randomString), with(SpecTopicMaker.removeTags, tags),
+                with(SpecTopicMaker.revision, (Integer) null)));
+        // Setup the basic details
+        setupBaseTopicMocks();
+        // Setup the existing topic mocks
+        setupExistingTopicMocks();
+        // and setup the basic valid mocks
+        setupValidBaseTopicMocks();
+        // and the tags exist
+        when(tagProvider.getTagsByName(removeTag)).thenReturn(tag1Collection);
+        when(tag1Wrapper.getId()).thenReturn(1);
+        // and the existing tags have an id
+        when(existingTagWrapper.getId()).thenReturn(1);
+        when(existingTagWrapper2.getId()).thenReturn(2);
+        // and the topic already has the existing wrappers in it's collection
+        when(existingTagCollection.getItems()).thenReturn(Arrays.asList(existingTagWrapper, existingTagWrapper2));
+
+        TopicWrapper topic = null;
+        try {
+            topic = processor.createTopicEntity(providerFactory, specTopic);
+        } catch (Exception e) {
+            fail("Creating a topic should not have thrown an exception");
+        }
+
+        // Then the base topic should be valid
+        verifyValidBaseTopic(topic);
+        verifyValidBaseTopicNewProperties(topic);
+        verifyUnchangedOriginalTopic();
+        // and the tag was removed
+        assertTrue(tagCollection.getRemoveItems().contains(existingTagWrapper));
+        // and that the other tag was added as well
+        assertTrue(tagCollection.getAddItems().contains(existingTagWrapper2));
+        // and a tag was removed and the other two tags were added
+        assertThat(tagCollection.getItems().size(), is(3));
+        assertThat(tagCollection.getUnchangedItems().size(), is(0));
+        assertThat(tagCollection.getAddItems().size(), is(2));
+        assertThat(tagCollection.getRemoveItems().size(), is(1));
+    }
+
+    @Test
     public void shouldCreateSpecTopicWithWriterThatAlreadyExists() {
         String writerName = randomString;
         final TagWrapper writerTagWrapper = mock(TagWrapper.class);
@@ -519,33 +571,33 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
     protected void verifyUnchangedOriginalTopic() {
         // and the topic title was not changed
-        verify(topicWrapper, times(0)).setTitle(anyString());
+        verify(topicWrapper, never()).setTitle(anyString());
         // and the id was not changed
-        verify(topicWrapper, times(0)).setId(anyInt());
+        verify(topicWrapper, never()).setId(anyInt());
         // and the xml was not changed
-        verify(topicWrapper, times(0)).setXml(anyString());
+        verify(topicWrapper, never()).setXml(anyString());
         // and the description was not changed
-        verify(topicWrapper, times(0)).setDescription(anyString());
+        verify(topicWrapper, never()).setDescription(anyString());
         // and the doctype was not changed
-        verify(topicWrapper, times(0)).setXmlDoctype(anyInt());
+        verify(topicWrapper, never()).setXmlDoctype(anyInt());
         // and the locale was not changed
-        verify(topicWrapper, times(0)).setLocale(anyString());
+        verify(topicWrapper, never()).setLocale(anyString());
         // and the added by value hasn't changed
-        verify(existingAddedByPropertyTagInTopic, times(0)).setValue(anyString());
+        verify(existingAddedByPropertyTagInTopic, never()).setValue(anyString());
         // and the csp id value hasn't changed
-        verify(existingCspIdPropertyTagInTopic, times(0)).setValue(anyString());
+        verify(existingCspIdPropertyTagInTopic, never()).setValue(anyString());
         // and the original property tag collection wasn't touched
-        verify(existingTopicProperties, times(0)).addItem(any(PropertyTagInTopicWrapper.class));
-        verify(existingTopicProperties, times(0)).addNewItem(any(PropertyTagInTopicWrapper.class));
-        verify(existingTopicProperties, times(0)).addRemoveItem(any(PropertyTagInTopicWrapper.class));
-        verify(existingTopicProperties, times(0)).addUpdateItem(any(PropertyTagInTopicWrapper.class));
+        verify(existingTopicProperties, never()).addItem(any(PropertyTagInTopicWrapper.class));
+        verify(existingTopicProperties, never()).addNewItem(any(PropertyTagInTopicWrapper.class));
+        verify(existingTopicProperties, never()).addRemoveItem(any(PropertyTagInTopicWrapper.class));
+        verify(existingTopicProperties, never()).addUpdateItem(any(PropertyTagInTopicWrapper.class));
         // and the original tag collection wasn't touched
-        verify(existingTagCollection, times(0)).addItem(any(TagWrapper.class));
-        verify(existingTagCollection, times(0)).addNewItem(any(TagWrapper.class));
-        verify(existingTagCollection, times(0)).addRemoveItem(any(TagWrapper.class));
+        verify(existingTagCollection, never()).addItem(any(TagWrapper.class));
+        verify(existingTagCollection, never()).addNewItem(any(TagWrapper.class));
+        verify(existingTagCollection, never()).addRemoveItem(any(TagWrapper.class));
         // and the original topic source url collection wasn't touched
-        verify(existingTopicSourceURLCollection, times(0)).addItem(any(TopicSourceURLWrapper.class));
-        verify(existingTopicSourceURLCollection, times(0)).addNewItem(any(TopicSourceURLWrapper.class));
-        verify(existingTopicSourceURLCollection, times(0)).addRemoveItem(any(TopicSourceURLWrapper.class));
+        verify(existingTopicSourceURLCollection, never()).addItem(any(TopicSourceURLWrapper.class));
+        verify(existingTopicSourceURLCollection, never()).addNewItem(any(TopicSourceURLWrapper.class));
+        verify(existingTopicSourceURLCollection, never()).addRemoveItem(any(TopicSourceURLWrapper.class));
     }
 }

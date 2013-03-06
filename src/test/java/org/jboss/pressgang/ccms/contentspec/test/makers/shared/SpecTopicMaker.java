@@ -18,6 +18,7 @@ import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 public class SpecTopicMaker {
     public static final Property<SpecTopic, String> id = newProperty();
     public static final Property<SpecTopic, String> uniqueId = newProperty();
+    public static final Property<SpecTopic, String> targetId = newProperty();
     public static final Property<SpecTopic, String> title = newProperty();
     public static final Property<SpecTopic, Integer> lineNumber = newProperty();
     public static final Property<SpecTopic, String> specLine = newProperty();
@@ -25,7 +26,9 @@ public class SpecTopicMaker {
     public static final Property<SpecTopic, String> assignedWriter = newProperty();
     public static final Property<SpecTopic, Integer> revision = newProperty();
     public static final Property<SpecTopic, String> description = newProperty();
+    public static final Property<SpecTopic, String> condition = newProperty();
     public static final Property<SpecTopic, List<String>> tags = newProperty();
+    public static final Property<SpecTopic, List<String>> removeTags = newProperty();
     public static final Property<SpecTopic, List<String>> urls = newProperty();
 
     public static final Instantiator<SpecTopic> SpecTopic = new Instantiator<org.jboss.pressgang.ccms.contentspec.SpecTopic>() {
@@ -39,7 +42,10 @@ public class SpecTopicMaker {
             specTopic.setDescription(lookup.valueOf(description, (String) null));
             specTopic.setUniqueId(lookup.valueOf(uniqueId, (String) null));
             specTopic.setTags(lookup.valueOf(tags, new ArrayList<String>()));
+            specTopic.setRemoveTags(lookup.valueOf(removeTags, new ArrayList<String>()));
             specTopic.setSourceUrls(lookup.valueOf(urls, new ArrayList<String>()));
+            specTopic.setTargetId(lookup.valueOf(targetId, (String) null));
+            specTopic.setConditionStatement(lookup.valueOf(condition, (String) null));
             return specTopic;
         }
     };

@@ -1,7 +1,7 @@
 package org.jboss.pressgang.ccms.contentspec.wrapper.mocks;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,7 +13,7 @@ public class CollectionWrapperMock<T extends EntityWrapper<T>> implements Collec
     private static final Integer ADD_STATE = 1;
     private static final Integer REMOVE_STATE = 2;
 
-    private final Map<T, Integer> items = new HashMap<T, Integer>();
+    private final Map<T, Integer> items = new LinkedHashMap<T, Integer>();
 
     protected Map<T, Integer> getCollection() {
         return items;

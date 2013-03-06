@@ -15,6 +15,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -310,10 +311,10 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
         // Then the topic should be null
         assertNull(topic);
         // and that the original tags weren't altered
-        verify(topicWrapper, times(0)).setTags(any(CollectionWrapper.class));
-        verify(existingTagCollection, times(0)).addItem(any(TagWrapper.class));
-        verify(existingTagCollection, times(0)).addNewItem(any(TagWrapper.class));
-        verify(existingTagCollection, times(0)).addRemoveItem(any(TagWrapper.class));
+        verify(topicWrapper, never()).setTags(any(CollectionWrapper.class));
+        verify(existingTagCollection, never()).addItem(any(TagWrapper.class));
+        verify(existingTagCollection, never()).addNewItem(any(TagWrapper.class));
+        verify(existingTagCollection, never()).addRemoveItem(any(TagWrapper.class));
     }
 
     @Test
@@ -349,7 +350,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         // Then the topic should be unchanged and should be null
         assertNull(topic);
-        verify(topicWrapper, times(0)).setTags(any(CollectionWrapper.class));
+        verify(topicWrapper, never()).setTags(any(CollectionWrapper.class));
     }
 
     @Test
@@ -380,7 +381,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         // Then the topic should be unchanged and should be null
         assertNull(topic);
-        verify(topicWrapper, times(0)).setSourceURLs(any(CollectionWrapper.class));
+        verify(topicWrapper, never()).setSourceURLs(any(CollectionWrapper.class));
     }
 
     protected void setupBaseTopicMocks() {
@@ -422,17 +423,17 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
         // and the topic is the mocked topic
         assertThat(topic, is(topicWrapper));
         // and the topic title was not changed
-        verify(topicWrapper, times(0)).setTitle(anyString());
+        verify(topicWrapper, never()).setTitle(anyString());
         // and the id was not changed
-        verify(topicWrapper, times(0)).setId(anyInt());
+        verify(topicWrapper, never()).setId(anyInt());
         // and the xml was not changed
-        verify(topicWrapper, times(0)).setXml(anyString());
+        verify(topicWrapper, never()).setXml(anyString());
         // and the description was not changed
-        verify(topicWrapper, times(0)).setDescription(anyString());
+        verify(topicWrapper, never()).setDescription(anyString());
         // and the doctype was not changed
-        verify(topicWrapper, times(0)).setXmlDoctype(anyInt());
+        verify(topicWrapper, never()).setXmlDoctype(anyInt());
         // and the locale was not changed
-        verify(topicWrapper, times(0)).setLocale(anyString());
+        verify(topicWrapper, never()).setLocale(anyString());
     }
 
     protected void verifyValidBaseTopicNewProperties() {
@@ -456,19 +457,19 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
         // and the topic still has the AddedBy property tag
         assertTrue(propertyTagCollection.getUnchangedItems().contains(addedByPropertyTagInTopic));
         // and the value hasn't changed
-        verify(addedByPropertyTagInTopic, times(0)).setValue(anyString());
+        verify(addedByPropertyTagInTopic, never()).setValue(anyString());
         // and the original property tag collection wasn't touched
-        verify(existingTopicProperties, times(0)).addItem(any(PropertyTagInTopicWrapper.class));
-        verify(existingTopicProperties, times(0)).addNewItem(any(PropertyTagInTopicWrapper.class));
-        verify(existingTopicProperties, times(0)).addRemoveItem(any(PropertyTagInTopicWrapper.class));
-        verify(existingTopicProperties, times(0)).addUpdateItem(any(PropertyTagInTopicWrapper.class));
+        verify(existingTopicProperties, never()).addItem(any(PropertyTagInTopicWrapper.class));
+        verify(existingTopicProperties, never()).addNewItem(any(PropertyTagInTopicWrapper.class));
+        verify(existingTopicProperties, never()).addRemoveItem(any(PropertyTagInTopicWrapper.class));
+        verify(existingTopicProperties, never()).addUpdateItem(any(PropertyTagInTopicWrapper.class));
         // and the original tag collection wasn't touched
-        verify(existingTagCollection, times(0)).addItem(any(TagWrapper.class));
-        verify(existingTagCollection, times(0)).addNewItem(any(TagWrapper.class));
-        verify(existingTagCollection, times(0)).addRemoveItem(any(TagWrapper.class));
+        verify(existingTagCollection, never()).addItem(any(TagWrapper.class));
+        verify(existingTagCollection, never()).addNewItem(any(TagWrapper.class));
+        verify(existingTagCollection, never()).addRemoveItem(any(TagWrapper.class));
         // and the original topic source url collection wasn't touched
-        verify(existingTopicSourceURLCollection, times(0)).addItem(any(TopicSourceURLWrapper.class));
-        verify(existingTopicSourceURLCollection, times(0)).addNewItem(any(TopicSourceURLWrapper.class));
-        verify(existingTopicSourceURLCollection, times(0)).addRemoveItem(any(TopicSourceURLWrapper.class));
+        verify(existingTopicSourceURLCollection, never()).addItem(any(TopicSourceURLWrapper.class));
+        verify(existingTopicSourceURLCollection, never()).addNewItem(any(TopicSourceURLWrapper.class));
+        verify(existingTopicSourceURLCollection, never()).addRemoveItem(any(TopicSourceURLWrapper.class));
     }
 }

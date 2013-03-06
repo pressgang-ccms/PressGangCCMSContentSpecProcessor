@@ -233,7 +233,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
             for (final SpecTopic specTopic2 : allSpecTopics) {
                 // If the Topic isn't an existing topic and doesn't match the first spec topic's id, then continue
-                if (specTopic1 == specTopic2 || !specTopic2.isTopicAnExistingTopic() || specTopic1.getDBId() != specTopic2.getDBId())
+                if (specTopic1 == specTopic2 || !specTopic2.isTopicAnExistingTopic() || !specTopic1.getDBId().equals(specTopic2.getDBId()))
                     continue;
 
                 // Check if the revisions between the two topics are the same
@@ -427,7 +427,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 if (relationship instanceof TargetRelationship) {
                     final SpecNode node = ((TargetRelationship) relationship).getSecondaryRelationship();
                     if (node instanceof SpecTopic) {
-                        if (((SpecTopic) node).getDBId() < 0) {
+                        if (((SpecTopic) node).getDBId() != null && ((SpecTopic) node).getDBId() < 0) {
                             log.error(String.format(ProcessorConstants.ERROR_TARGET_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
                                     specTopic.getText()));
                             error = true;

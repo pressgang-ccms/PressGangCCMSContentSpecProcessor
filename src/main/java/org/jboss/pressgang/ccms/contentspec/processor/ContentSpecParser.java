@@ -277,7 +277,7 @@ public class ContentSpecParser {
         final Set<Integer> ids = new HashSet<Integer>();
         for (final Map.Entry<String, SpecTopic> entry : getSpecTopics().entrySet()) {
             final SpecTopic specTopic = entry.getValue();
-            if (specTopic.getDBId() != 0) {
+            if (specTopic.getDBId() != null) {
                 ids.add(specTopic.getDBId());
             }
         }
@@ -296,7 +296,7 @@ public class ContentSpecParser {
         final Set<Integer> ids = new HashSet<Integer>();
         for (final Map.Entry<String, SpecTopic> entry : getSpecTopics().entrySet()) {
             final SpecTopic specTopic = entry.getValue();
-            if (specTopic.getDBId() != 0 && specTopic.getRevision() == null) {
+            if (specTopic.getDBId() != null && specTopic.getRevision() == null) {
                 ids.add(specTopic.getDBId());
             }
         }
@@ -315,7 +315,7 @@ public class ContentSpecParser {
         final Set<Pair<Integer, Integer>> ids = new HashSet<Pair<Integer, Integer>>();
         for (final Map.Entry<String, SpecTopic> entry : getSpecTopics().entrySet()) {
             final SpecTopic specTopic = entry.getValue();
-            if (specTopic.getDBId() != 0 && specTopic.getRevision() != null) {
+            if (specTopic.getDBId() != null && specTopic.getRevision() != null) {
                 ids.add(new Pair<Integer, Integer>(specTopic.getDBId(), specTopic.getRevision()));
             }
         }
@@ -1191,10 +1191,9 @@ public class ContentSpecParser {
 //            }
 
             // Check that no relationships were specified for the appendix
-            if (variableMap.containsKey(RelationshipType.REFER_TO)
-                    || variableMap.containsKey(RelationshipType.PREREQUISITE)
-                    || variableMap.containsKey(RelationshipType.NEXT)
-                    || variableMap.containsKey(RelationshipType.PREVIOUS)) {
+            if (variableMap.containsKey(RelationshipType.REFER_TO) || variableMap.containsKey(
+                    RelationshipType.PREREQUISITE) || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(
+                    RelationshipType.PREVIOUS)) {
                 throw new ParsingException(
                         format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineNumber, CSConstants.CHAPTER, CSConstants.CHAPTER,
                                 line));

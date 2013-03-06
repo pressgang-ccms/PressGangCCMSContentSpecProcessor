@@ -27,7 +27,6 @@ import org.jboss.pressgang.ccms.contentspec.processor.exceptions.ProcessingExcep
 import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptions;
 import org.jboss.pressgang.ccms.contentspec.processor.utils.ProcessorUtilities;
 import org.jboss.pressgang.ccms.contentspec.provider.CSNodeProvider;
-import org.jboss.pressgang.ccms.contentspec.provider.CSRelatedNodeProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.contentspec.provider.PropertyTagProvider;
@@ -181,6 +180,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param providerFactory
      * @param specTopic       The Content Specification Topic to create the topic entity from.
      * @return The new topic object if any changes where made otherwise null.
+     * @throws ProcessingException
      */
     protected TopicWrapper createTopicEntity(final DataProviderFactory providerFactory,
             final SpecTopic specTopic) throws ProcessingException {
@@ -453,9 +453,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // Iterate over the current tags and set any that should be removed. If they shouldn't be removed then add them as a normal list
-        for (final TagWrapper removeTag : removeTags) {
+        for (final TagWrapper topicTag : topicTagList) {
             boolean found = false;
-            for (final TagWrapper topicTag : topicTagList) {
+            for (final TagWrapper removeTag : removeTags) {
                 if (topicTag.getId().equals(removeTag.getId())) {
                     found = true;
                 }
@@ -463,9 +463,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
             if (found) {
                 // Remove any current settings for the tag
-                topic.getTags().remove(removeTag);
+                topic.getTags().remove(topicTag);
                 // Set the tag to be removed from the database
-                topic.getTags().addRemoveItem(removeTag);
+                topic.getTags().addRemoveItem(topicTag);
                 changed = true;
             }
         }
@@ -640,7 +640,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param user            The User who requested the Content Spec be saved.
      * @return True if the topic saved successfully otherwise false.
      */
-    public boolean saveContentSpec(final DataProviderFactory providerFactory, final ContentSpec contentSpec, final boolean edit,
+    protected boolean saveContentSpec(final DataProviderFactory providerFactory, final ContentSpec contentSpec, final boolean edit,
             final UserWrapper user) {
         final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
 
@@ -700,7 +700,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             syncDuplicatedTopics(specTopics);
 
             // Save the content spec
-            saveContentSpec(contentSpec, providerFactory, !edit, user);
+            mergeAndSaveContentSpec(contentSpec, providerFactory, !edit, user);
         } catch (ProcessingException e) {
             if (providerFactory.isRollbackSupported()) {
                 providerFactory.rollback();
@@ -737,7 +737,17 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         return true;
     }
 
-    protected void saveContentSpec(final ContentSpec contentSpec, final DataProviderFactory providerFactory, boolean create,
+    /**
+     * Merges a Content Spec object with it's Database counterpart if one exists, otherwise it will create a new Database Entity if
+     * create is set to true.
+     *
+     * @param contentSpec     The ContentSpec object to merge with the database entity.
+     * @param providerFactory
+     * @param create          If a new Content Spec Entity should be created if one doesn't exist.
+     * @param user            The user who requested the save.
+     * @throws Exception Thrown if a problem occurs saving to the database.
+     */
+    protected void mergeAndSaveContentSpec(final ContentSpec contentSpec, final DataProviderFactory providerFactory, boolean create,
             final UserWrapper user) throws Exception {
         // Get the providers
         final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
@@ -796,34 +806,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         mergeChildren(nodes, contentSpecEntity.getChildren(), providerFactory, null, contentSpecEntity, updatedCSNodes, nodeMapping);
 
         // Merge the relationships now all spec topics have a mapping to a node
-        mergeTopicRelationships(nodeMapping, providerFactory);
+        mergeTopicRelationships(nodeMapping, providerFactory, updatedCSNodes);
 
         // Save the updated content spec nodes
         if (nodeProvider.updateCSNodes(updatedCSNodes) == null) {
             throw new ProcessingException("Saving the Content Specification contents failed.");
         }
-    }
-
-    /**
-     * Merges a Content Specs meta data with a Content Spec Entities meta data
-     *
-     * @param metaData       The meta data object to be merged into a entity meta data object
-     * @param metaDataEntity The meta data entity to merge with.
-     */
-    protected CSNodeWrapper mergeMetaData(final KeyValueNode<?> metaData, final CSNodeWrapper metaDataEntity,
-            final CSNodeProvider nodeProvider) {
-        final CSNodeWrapper updatedMetaDataEntity = nodeProvider.newCSNode();
-        updatedMetaDataEntity.setId(metaDataEntity.getId());
-
-        if (metaDataEntity.getTitle() == null || !metaDataEntity.getTitle().equals(metaData.getKey())) {
-            updatedMetaDataEntity.setTitle(metaData.getKey());
-        }
-
-        if (metaDataEntity.getAdditionalText() == null || !metaDataEntity.getAdditionalText().equals(metaData.getValue().toString())) {
-            updatedMetaDataEntity.setAdditionalText(metaData.getValue().toString());
-        }
-
-        return updatedMetaDataEntity;
     }
 
     /**
@@ -842,15 +830,13 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     /*
      * The reason that new nodes need to be saved is to set the next/previous entities, since they need to have an ID. This has to be
-     * done this way do to the nature of serialising the object to JSON, other wise you get a recursive loop until the JVM runs out of
+     * done this way due to the nature of serialising the object to JSON, otherwise you get a recursive loop until the JVM runs out of
      * memory.
      */
     protected void mergeChildren(final List<Node> childrenNodes, final CollectionWrapper<CSNodeWrapper> entityChildrenNodes,
             final DataProviderFactory providerFactory, final CSNodeWrapper parentNode, final ContentSpecWrapper contentSpec,
             final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes,
             final Map<SpecNode, CSNodeWrapper> nodeMapping) throws Exception {
-        if (entityChildrenNodes == null || entityChildrenNodes.isEmpty()) return;
-
         final CSNodeProvider nodeProvider = providerFactory.getProvider(CSNodeProvider.class);
 
         final List<CSNodeWrapper> processedNodes = new ArrayList<CSNodeWrapper>();
@@ -859,32 +845,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Update or create all of the children nodes that exist in the content spec
         CSNodeWrapper prevNode = null;
         for (final Node childNode : childrenNodes) {
-            if (!(childNode instanceof SpecTopic || childNode instanceof Level || childNode instanceof Comment || childNode instanceof
-                    KeyValueNode))
+            if (!isTransformableNode(childNode)) {
                 continue;
-
-            CSNodeWrapper foundNodeEntity = null;
-            for (final CSNodeWrapper nodeEntity : entityChildrenNodes.getItems()) {
-                if (childNode instanceof SpecTopic && doesTopicMatch((SpecTopic) childNode, nodeEntity)) {
-                    foundNodeEntity = nodeEntity;
-                    mergeTopic((SpecTopic) childNode, nodeEntity);
-                    break;
-                } else if (childNode instanceof Level && doesLevelMatch((Level) childNode, nodeEntity)) {
-                    foundNodeEntity = nodeEntity;
-                    mergeLevel((Level) childNode, nodeEntity, providerFactory, contentSpec, updatedCSNodes, nodeMapping);
-                    break;
-                } else if (childNode instanceof Comment && doesCommentMatch((Comment) childNode, nodeEntity)) {
-                    foundNodeEntity = nodeEntity;
-                    mergeComment((Comment) childNode, nodeEntity);
-                    break;
-                } else if (childNode instanceof KeyValueNode) {
-                    foundNodeEntity = nodeEntity;
-                    mergeMetaData((KeyValueNode<?>) childNode, nodeProvider.newCSNode(), nodeProvider);
-                    break;
-                }
             }
 
+            // Find the Entity Node that matches the Content Spec node, if one exists
+            CSNodeWrapper foundNodeEntity = findExistingNode(childNode, entityChildrenNodes, processedNodes);
+
             // If the node was not found create a new one
+            boolean changed = false;
             if (foundNodeEntity == null) {
                 final CSNodeWrapper newCSNodeEntity = nodeProvider.newCSNode();
                 if (childNode instanceof SpecTopic) {
@@ -896,60 +865,166 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 } else if (childNode instanceof Comment) {
                     mergeComment((Comment) childNode, newCSNodeEntity);
                     newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_COMMENT);
-                } else if (childNode instanceof KeyValueNode) {
-                    mergeMetaData((KeyValueNode<?>) childNode, newCSNodeEntity, nodeProvider);
-                    newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_META_DATA);
                 } else {
-                    continue;
+                    mergeMetaData((KeyValueNode<?>) childNode, newCSNodeEntity);
+                    newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_META_DATA);
                 }
+
+                // set the content spec for the new entity
+                newCSNodeEntity.setContentSpec(contentSpec);
 
                 // Save the basics of the node to get an id
                 foundNodeEntity = nodeProvider.createCSNode(newCSNodeEntity);
                 newNodes.add(foundNodeEntity);
             } else {
+                if (childNode instanceof SpecTopic) {
+                    if (mergeTopic((SpecTopic) childNode, foundNodeEntity)) {
+                        changed = true;
+                    }
+                } else if (childNode instanceof Level) {
+                    if (mergeLevel((Level) childNode, foundNodeEntity, providerFactory, contentSpec, updatedCSNodes, nodeMapping)) {
+                        changed = true;
+                    }
+                } else if (childNode instanceof Comment) {
+                    if (mergeComment((Comment) childNode, foundNodeEntity)) {
+                        changed = true;
+                    }
+                } else {
+                    if (mergeMetaData((KeyValueNode<?>) childNode, foundNodeEntity)) {
+                        changed = true;
+                    }
+                }
+
                 processedNodes.add(foundNodeEntity);
+
+                // setup the contentSpec for the entity
+                if (foundNodeEntity.getContentSpec() == null || !foundNodeEntity.getContentSpec().getId().equals(contentSpec.getId())) {
+                    foundNodeEntity.setContentSpec(contentSpec);
+                    changed = true;
+                }
             }
 
-            // Set up the next/previous relationships as well
+            // Set up the previous node relationship
             final Integer previousNodeId = prevNode == null ? null : prevNode.getId();
-            if (!foundNodeEntity.getPreviousNodeId().equals(previousNodeId)) {
+            if (foundNodeEntity.getPreviousNodeId() != null && !foundNodeEntity.getPreviousNodeId().equals(previousNodeId)) {
                 foundNodeEntity.setPreviousNodeId(previousNodeId);
+                changed = true;
+            } else if (foundNodeEntity.getPreviousNodeId() == null && previousNodeId != null) {
+                foundNodeEntity.setPreviousNodeId(previousNodeId);
+                changed = true;
             }
-            if (prevNode != null && !prevNode.getNextNodeId().equals(foundNodeEntity.getId())) {
+
+            // Set up the next node relationship for the previous node
+            if (prevNode != null && (prevNode.getNextNodeId() == null || (prevNode.getNextNodeId() != null && !prevNode.getNextNodeId()
+                    .equals(
+                    foundNodeEntity.getId())))) {
                 prevNode.setNextNodeId(foundNodeEntity.getId());
+                changed = true;
+
+                // Add the previous node to the updated collection if it's not already there
+                if (!updatedCSNodes.getItems().contains(prevNode)) {
+                    updatedCSNodes.addUpdateItem(prevNode);
+                }
             }
 
             // setup the parent for the entity
-            if ((parentNode == null && foundNodeEntity.getParent() != null) || (parentNode != null && foundNodeEntity.getParent() ==
-                    null) ||
-                    (!foundNodeEntity.getParent().getId().equals(parentNode.getId()))) {
+            if (parentNode == null && foundNodeEntity.getParent() != null) {
+                foundNodeEntity.setParent(null);
+                changed = true;
+            } else if (parentNode != null && (foundNodeEntity.getParent() == null || !foundNodeEntity.getParent().getId().equals(
+                    parentNode.getId()))) {
                 foundNodeEntity.setParent(parentNode);
-            }
-
-            // setup the contentSpec for the entity
-            if (foundNodeEntity.getContentSpec() == null || !foundNodeEntity.getContentSpec().getId().equals(contentSpec.getId())) {
-                foundNodeEntity.setContentSpec(contentSpec);
+                changed = true;
             }
 
             // The node has been updated so add it to the list of nodes to be saved
-            updatedCSNodes.addUpdateItem(foundNodeEntity);
-
-            // Set the previous node to the current node since processing is done
-            prevNode = foundNodeEntity;
+            if (changed) {
+                updatedCSNodes.addUpdateItem(foundNodeEntity);
+            }
 
             // Add the node to the mapping of nodes to entity nodes
             if (childNode instanceof SpecNode) {
                 nodeMapping.put((SpecNode) childNode, foundNodeEntity);
             }
+
+            // Set the previous node to the current node since processing is done
+            prevNode = foundNodeEntity;
+        }
+
+        // If there is a previous node then make sure it's next node id is null as it's the last in the linked list
+        if (prevNode != null && prevNode.getNextNodeId() != null) {
+            prevNode.setNextNodeId(null);
         }
 
         // Loop over the entities current nodes and remove any that no longer exist
-        for (final CSNodeWrapper csNode : entityChildrenNodes.getItems()) {
-            // if the node wasn't processed then it no longer exists, so set it for removal
-            if (!processedNodes.contains(csNode)) {
-                updatedCSNodes.addRemoveItem(csNode);
+        if (entityChildrenNodes != null && !entityChildrenNodes.isEmpty()) {
+            for (final CSNodeWrapper csNode : entityChildrenNodes.getItems()) {
+                // if the node wasn't processed then it no longer exists, so set it for removal
+                if (!processedNodes.contains(csNode)) {
+                    updatedCSNodes.addRemoveItem(csNode);
+                }
             }
         }
+    }
+
+    /**
+     * Finds the existing Entity Node that matches a ContentSpec node.
+     *
+     * @param childNode           The ContentSpec node to find a matching Entity node for.
+     * @param entityChildrenNodes The entity child nodes to match from.
+     * @param processedNodes      Any nodes that have already been processed, and should be excluded.
+     * @return The matching entity if one exists, otherwise null.
+     */
+    protected CSNodeWrapper findExistingNode(final Node childNode, final CollectionWrapper<CSNodeWrapper> entityChildrenNodes,
+            final List<CSNodeWrapper> processedNodes) {
+        CSNodeWrapper foundNodeEntity = null;
+        if (entityChildrenNodes != null && !entityChildrenNodes.isEmpty()) {
+            for (final CSNodeWrapper nodeEntity : entityChildrenNodes.getItems()) {
+                // Check if the node has already been processed, if so then ignore it
+                if (processedNodes.contains(nodeEntity)) continue;
+
+                if (childNode instanceof SpecTopic && doesTopicMatch((SpecTopic) childNode, nodeEntity)) {
+                    foundNodeEntity = nodeEntity;
+                    break;
+                } else if (childNode instanceof Level && doesLevelMatch((Level) childNode, nodeEntity)) {
+                    foundNodeEntity = nodeEntity;
+                    break;
+                } else if (childNode instanceof Comment && doesCommentMatch((Comment) childNode, nodeEntity)) {
+                    foundNodeEntity = nodeEntity;
+                    break;
+                } else if (childNode instanceof KeyValueNode && doesMetaDataMatch((KeyValueNode<?>) childNode, nodeEntity)) {
+                    foundNodeEntity = nodeEntity;
+                    break;
+                }
+            }
+        }
+
+        return foundNodeEntity;
+    }
+
+    /**
+     * Merges a Content Specs meta data with a Content Spec Entities meta data
+     *
+     * @param metaData       The meta data object to be merged into a entity meta data object
+     * @param metaDataEntity The meta data entity to merge with.
+     * @return True if some value was changed, otherwise false.
+     */
+    protected boolean mergeMetaData(final KeyValueNode<?> metaData, final CSNodeWrapper metaDataEntity) {
+        boolean changed = false;
+
+        // Meta Data Title
+        if (metaDataEntity.getTitle() == null || !metaDataEntity.getTitle().equals(metaData.getKey())) {
+            metaDataEntity.setTitle(metaData.getKey());
+            changed = true;
+        }
+
+        // Meta Data Value
+        if (metaDataEntity.getAdditionalText() == null || !metaDataEntity.getAdditionalText().equals(metaData.getValue().toString())) {
+            metaDataEntity.setAdditionalText(metaData.getValue().toString());
+            changed = true;
+        }
+
+        return changed;
     }
 
     /**
@@ -959,149 +1034,261 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param contentSpec
      * @param updatedCSNodes
      * @param nodeMapping
+     * @return True if some value was changed, otherwise false.
      * @throws Exception
      */
-    protected void mergeLevel(final Level level, final CSNodeWrapper levelEntity, final DataProviderFactory providerFactory,
+    protected boolean mergeLevel(final Level level, final CSNodeWrapper levelEntity, final DataProviderFactory providerFactory,
             final ContentSpecWrapper contentSpec, final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes,
             final Map<SpecNode, CSNodeWrapper> nodeMapping) throws Exception {
+        boolean changed = false;
 
         // TITLE
-        if (level.getTitle() != null && level.getTitle().equals(levelEntity.getTitle())) {
+        if (level.getTitle() != null && !level.getTitle().equals(levelEntity.getTitle())) {
             levelEntity.setTitle(level.getTitle());
+            changed = true;
         }
 
         // TARGET ID
-        if (level.getTargetId() != null && level.getTargetId().equals(levelEntity.getTargetId())) {
+        if (level.getTargetId() != null && !level.getTargetId().equals(levelEntity.getTargetId())) {
             levelEntity.setTargetId(level.getTargetId());
+            changed = true;
+        } else if (level.getTargetId() == null && levelEntity.getTargetId() != null) {
+            levelEntity.setTargetId(null);
+            changed = true;
         }
 
         // CONDITION
         if (level.getConditionStatement() != null && !level.getConditionStatement().equals(levelEntity.getCondition())) {
             levelEntity.setCondition(level.getConditionStatement());
+            changed = true;
+        } else if (level.getConditionStatement() == null && levelEntity.getCondition() != null) {
+            levelEntity.setCondition(null);
+            changed = true;
         }
 
         // Merge the child nodes
         mergeChildren(getTransformableNodes(level.getChildNodes()), levelEntity.getChildren(), providerFactory, levelEntity, contentSpec,
                 updatedCSNodes, nodeMapping);
+
+        return changed;
     }
 
     /**
      * @param specTopic
      * @param topicEntity
+     * @return True if a some value was changed, otherwise false.
      */
-    protected void mergeTopic(final SpecTopic specTopic, final CSNodeWrapper topicEntity) {
+    protected boolean mergeTopic(final SpecTopic specTopic, final CSNodeWrapper topicEntity) {
+        boolean changed = false;
+
         // TITLE
-        if (specTopic.getTitle() != null && specTopic.getTitle().equals(topicEntity.getTitle())) {
+        // No need to check if the topic title should be set to null, as it is a mandatory field
+        if (specTopic.getTitle() != null && !specTopic.getTitle().equals(topicEntity.getTitle())) {
             topicEntity.setTitle(specTopic.getTitle());
+            changed = true;
         }
 
         // TARGET ID
-        if (specTopic.getTargetId() != null && specTopic.getTargetId().equals(
-                topicEntity.getTargetId()) && !specTopic.isTargetIdAnInternalId()) {
-            topicEntity.setTargetId(specTopic.getTargetId());
+        if (!specTopic.isTargetIdAnInternalId()) {
+            if (specTopic.getTargetId() != null && !specTopic.getTargetId().equals(topicEntity.getTargetId())) {
+                topicEntity.setTargetId(specTopic.getTargetId());
+                changed = true;
+            } else if (specTopic.getTargetId() == null && topicEntity.getTargetId() != null) {
+                topicEntity.setTargetId(null);
+                changed = true;
+            }
         }
 
         // CONDITION
         if (specTopic.getConditionStatement() != null && !specTopic.getConditionStatement().equals(topicEntity.getCondition())) {
             topicEntity.setCondition(specTopic.getConditionStatement());
+            changed = true;
+        } else if (specTopic.getConditionStatement() == null && topicEntity.getCondition() != null) {
+            topicEntity.setCondition(null);
+            changed = true;
         }
 
         // TOPIC ID
-        if (specTopic.getDBId() != topicEntity.getEntityId()) {
+        // No need to check if the topic id should be set to null, as it is a mandatory field
+        if (specTopic.getDBId() != null && !specTopic.getDBId().equals(topicEntity.getEntityId())) {
             topicEntity.setEntityId(specTopic.getDBId());
+            changed = true;
         }
 
         // TOPIC REVISION
-        if (!specTopic.getRevision().equals(topicEntity.getRevision())) {
+        if (specTopic.getRevision() != null && !specTopic.getRevision().equals(topicEntity.getEntityRevision())) {
             topicEntity.setEntityRevision(specTopic.getRevision());
+            changed = true;
+        } else if (specTopic.getRevision() == null && topicEntity.getEntityRevision() != null) {
+            topicEntity.setEntityRevision(null);
+            changed = true;
         }
+
+        return changed;
     }
 
     /**
      * @param comment
      * @param commentEntity
+     * @return
      */
-    protected void mergeComment(final Comment comment, final CSNodeWrapper commentEntity) {
+    protected boolean mergeComment(final Comment comment, final CSNodeWrapper commentEntity) {
         if (commentEntity.getAdditionalText() == null || !commentEntity.getAdditionalText().equals(comment.getText())) {
             commentEntity.setAdditionalText(comment.getText());
+            return true;
         }
+
+        return false;
     }
 
     /**
-     * @param nodeMapping
+     * Merges the relationships for all Spec Topics into their counterpart Entity nodes.
+     *
+     * @param nodeMapping     The mapping of Spec Nodes to Entity nodes.
      * @param providerFactory
+     * @param updatedCSNodes  The list of nodes that have been flagged as needing updated, so any that need relationships updated can be
+     *                        added.
      */
-    protected void mergeTopicRelationships(final Map<SpecNode, CSNodeWrapper> nodeMapping, final DataProviderFactory providerFactory) {
-        final CSRelatedNodeProvider relatedNodeProvider = providerFactory.getProvider(CSRelatedNodeProvider.class);
+    protected void mergeTopicRelationships(final Map<SpecNode, CSNodeWrapper> nodeMapping, final DataProviderFactory providerFactory,
+            final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes) {
+        final CSNodeProvider nodeProvider = providerFactory.getProvider(CSNodeProvider.class);
 
-        final UpdateableCollectionWrapper<CSRelatedNodeWrapper> updatedRelatedToNodes = relatedNodeProvider.newCSRelatedNodeCollection();
         for (final Map.Entry<SpecNode, CSNodeWrapper> nodes : nodeMapping.entrySet()) {
             // Only process spec topics
             if (!(nodes.getKey() instanceof SpecTopic)) continue;
 
-            // Check if anything needs to be processed.
+            // Get the matching spec topic and entity
             final SpecTopic specTopic = (SpecTopic) nodes.getKey();
             final CSNodeWrapper topicEntity = nodes.getValue();
-            if (specTopic.getRelationships() != null && !specTopic.getRelationships().isEmpty()) {
-                final CollectionWrapper<CSRelatedNodeWrapper> topicRelatedNodes = topicEntity.getRelatedToNodes();
-                for (final Relationship relationship : specTopic.getRelationships()) {
-                    // All process relationships should not be stored
-                    if (relationship instanceof ProcessRelationship) continue;
 
-                    // See if the related node already exists
-                    CSRelatedNodeWrapper foundRelatedNode = null;
-                    for (final CSRelatedNodeWrapper relatedNode : topicRelatedNodes.getItems()) {
-                        if (relationship instanceof TargetRelationship) {
-                            if (doesRelationshipMatch((TargetRelationship) relationship, relatedNode)) {
-                                foundRelatedNode = relatedNode;
-                                break;
-                            }
-                        } else {
-                            if (doesRelationshipMatch((TopicRelationship) relationship, relatedNode)) {
-                                foundRelatedNode = relatedNode;
-                                break;
-                            }
-                        }
+            // Check if the node or entity have any relationships, if not then the node doesn't need to be merged
+            if (!specTopic.getRelationships().isEmpty() || topicEntity.getRelatedToNodes() != null && !topicEntity.getRelatedToNodes()
+                    .isEmpty()) {
+                // merge the relationships from the spec topic to the entity
+                mergeTopicRelationship(nodeMapping, specTopic, topicEntity, nodeProvider, updatedCSNodes);
+            }
+        }
+    }
+
+    /**
+     * Merges the relationships from a Spec Topic into a Topic Node Entity.
+     *
+     * @param nodeMapping    The mapping of Spec Nodes to Entity nodes.
+     * @param specTopic      The Spec Topic to get the relationships from.
+     * @param topicEntity    The Entity to merge the relationships into.
+     * @param nodeProvider   The provider factory for getting new or existing nodes.
+     * @param updatedCSNodes The list of nodes that have been flagged as needing updated, so any that need relationships updated can be
+     *                       added.
+     */
+    protected void mergeTopicRelationship(final Map<SpecNode, CSNodeWrapper> nodeMapping, final SpecTopic specTopic,
+            final CSNodeWrapper topicEntity, final CSNodeProvider nodeProvider,
+            final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes) {
+        final UpdateableCollectionWrapper<CSRelatedNodeWrapper> updatedRelatedToNodes = nodeProvider.newCSRelatedNodeCollection();
+        final List<CSRelatedNodeWrapper> processedRelationships = new ArrayList<CSRelatedNodeWrapper>();
+
+        // Check to make sure that the spec topic has any relationships
+        if (!specTopic.getRelationships().isEmpty()) {
+            int relationshipSortCount = 1;
+
+            for (final Relationship relationship : specTopic.getRelationships()) {
+                // All process relationships should not be stored
+                if (relationship instanceof ProcessRelationship) continue;
+
+                // See if the related node already exists
+                CSRelatedNodeWrapper foundRelatedNode = findExistingRelatedNode(relationship, topicEntity);
+
+                if (foundRelatedNode != null) {
+                    // Found a node so update anything that might have changed
+                    boolean updated = false;
+                    if (foundRelatedNode.getRelationshipSort() != relationshipSortCount) {
+                        foundRelatedNode.setRelationshipSort(relationshipSortCount);
+                        updated = true;
                     }
 
-                    if (foundRelatedNode != null) {
-                        // Found a node so update anything that might have changed
-                        boolean updated = false;
-                        if (!foundRelatedNode.getRelationshipType().equals(
-                                RelationshipType.getRelationshipTypeId(relationship.getType()))) {
-                            foundRelatedNode.setRelationshipType(RelationshipType.getRelationshipTypeId(relationship.getType()));
-                            updated = true;
-                        }
-
-                        // If the node was updated, set it's state in the collection to updated, otherwise just put it back in normally.
-                        if (updated) {
-                            updatedRelatedToNodes.addUpdateItem(foundRelatedNode);
-                        } else {
-                            updatedRelatedToNodes.addItem(foundRelatedNode);
-                        }
+                    // If the node was updated, set it's state in the collection to updated, otherwise just put it back in normally.
+                    if (updated) {
+                        updatedRelatedToNodes.addUpdateItem(foundRelatedNode);
                     } else {
-                        // No related node was found for the relationship so make a new one.
-                        final CSNodeWrapper relatedNode;
-                        if (relationship instanceof TargetRelationship) {
-                            relatedNode = nodeMapping.get(((TargetRelationship) relationship).getSecondaryRelationship());
-                        } else {
-                            relatedNode = nodeMapping.get(((TopicRelationship) relationship).getSecondaryRelationship());
-                        }
-
-                        foundRelatedNode = relatedNodeProvider.newCSRelatedNode(relatedNode);
-                        foundRelatedNode.setRelationshipType(RelationshipType.getRelationshipTypeId(relationship.getType()));
-
-                        updatedRelatedToNodes.addNewItem(foundRelatedNode);
+                        updatedRelatedToNodes.addItem(foundRelatedNode);
                     }
+
+                    // Add the related node to the list of processed nodes
+                    processedRelationships.add(foundRelatedNode);
+                } else {
+                    // No related node was found for the relationship so make a new one.
+                    final CSNodeWrapper relatedNode;
+                    if (relationship instanceof TargetRelationship) {
+                        relatedNode = nodeMapping.get(((TargetRelationship) relationship).getSecondaryRelationship());
+                    } else {
+                        relatedNode = nodeMapping.get(((TopicRelationship) relationship).getSecondaryRelationship());
+                    }
+
+                    foundRelatedNode = nodeProvider.newCSRelatedNode(relatedNode);
+                    foundRelatedNode.setRelationshipType(RelationshipType.getRelationshipTypeId(relationship.getType()));
+                    foundRelatedNode.setRelationshipSort(relationshipSortCount);
+
+                    updatedRelatedToNodes.addNewItem(foundRelatedNode);
                 }
-            } else if (!topicEntity.getRelatedToNodes().isEmpty()) {
-                // No relationships anymore so remove any that currently exist
-                for (final CSRelatedNodeWrapper relatedNodeWrapper : topicEntity.getRelatedToNodes().getItems()) {
-                    updatedRelatedToNodes.addRemoveItem(relatedNodeWrapper);
+
+                // increment the sort counter
+                relationshipSortCount++;
+            }
+        }
+
+        // Remove any existing relationships that are no longer valid
+        final CollectionWrapper<CSRelatedNodeWrapper> topicRelatedNodes = topicEntity.getRelatedToNodes();
+        if (topicRelatedNodes != null) {
+            for (final CSRelatedNodeWrapper relatedNode : topicRelatedNodes.getItems()) {
+                // If the node was processed then ignore it, otherwise remove it
+                if (processedRelationships.contains(relatedNode)) {
+                    continue;
+                } else {
+                    updatedRelatedToNodes.addRemoveItem(relatedNode);
                 }
             }
-            nodes.getValue().setRelatedToNodes(updatedRelatedToNodes);
         }
+
+        // Check if anything was changed, if so then set the changes
+        if (!updatedRelatedToNodes.getAddItems().isEmpty() || !updatedRelatedToNodes.getUpdateItems().isEmpty() || !updatedRelatedToNodes
+                .getRemoveItems().isEmpty()) {
+            topicEntity.setRelatedToNodes(updatedRelatedToNodes);
+
+            // Make sure the node is in the updated nodes collection
+            if (!updatedCSNodes.getItems().contains(topicEntity)) {
+                updatedCSNodes.addUpdateItem(topicEntity);
+            }
+        }
+    }
+
+    /**
+     * Finds an existing relationship for a topic.
+     *
+     * @param relationship The relationship to be found.
+     * @param topicEntity  The topic to find the relationship from.
+     * @return The related Entity, otherwise null if one can't be found.
+     */
+    protected CSRelatedNodeWrapper findExistingRelatedNode(final Relationship relationship, final CSNodeWrapper topicEntity) {
+        final CollectionWrapper<CSRelatedNodeWrapper> topicRelatedNodes = topicEntity.getRelatedToNodes();
+
+        CSRelatedNodeWrapper foundRelatedNode = null;
+        if (topicRelatedNodes != null) {
+            // Loop over the current nodes and see if any match
+            for (final CSRelatedNodeWrapper relatedNode : topicRelatedNodes.getItems()) {
+                if (relationship instanceof TargetRelationship) {
+                    if (doesRelationshipMatch((TargetRelationship) relationship, relatedNode)) {
+                        foundRelatedNode = relatedNode;
+                        break;
+                    }
+                } else {
+                    if (doesRelationshipMatch((TopicRelationship) relationship, relatedNode)) {
+                        foundRelatedNode = relatedNode;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return foundRelatedNode;
     }
 
     /**
@@ -1113,13 +1300,37 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     protected List<Node> getTransformableNodes(final List<Node> childNodes) {
         final List<Node> nodes = new LinkedList<Node>();
         for (final Node childNode : childNodes) {
-            if (childNode instanceof SpecNode || childNode instanceof Comment || childNode instanceof KeyValueNode || childNode
-                    instanceof Level) {
+            if (isTransformableNode(childNode)) {
                 nodes.add(childNode);
             }
         }
 
         return nodes;
+    }
+
+    /**
+     * Checks to see if a node is a node that can be transformed and saved,
+     *
+     * @param childNode The node to be checked.
+     * @return True if the node can be transformed, otherwise false.
+     */
+    protected boolean isTransformableNode(final Node childNode) {
+        return childNode instanceof SpecNode || childNode instanceof Comment || childNode instanceof KeyValueNode || childNode instanceof
+                Level;
+    }
+
+    /**
+     * Checks to see if a ContentSpec meta data matches a Content Spec Entity meta data.
+     *
+     * @param metaData The ContentSpec meta data object.
+     * @param node     The Content Spec Entity topic.
+     * @return True if the meta data is determined to match otherwise false.
+     */
+    protected boolean doesMetaDataMatch(final KeyValueNode<?> metaData, final CSNodeWrapper node) {
+        if (!node.getNodeType().equals(CommonConstants.CS_NODE_META_DATA)) return false;
+
+        // Check if the key matches, if it does than the nodes match.
+        return metaData.getKey().equals(node.getTitle());
     }
 
     /**
@@ -1130,13 +1341,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the level is determined to match otherwise false.
      */
     protected boolean doesLevelMatch(final Level level, final CSNodeWrapper node) {
-        if (node.getNodeType() == CommonConstants.CS_NODE_COMMENT || node.getNodeType() == CommonConstants.CS_NODE_TOPIC) return false;
+        if (node.getNodeType().equals(CommonConstants.CS_NODE_COMMENT) || node.getNodeType().equals(CommonConstants.CS_NODE_TOPIC))
+            return false;
 
         // If the unique id is not from the parser, than use the unique id to compare
-        if (level.getUniqueId() != null) {
+        if (level.getUniqueId() != null && level.getUniqueId().matches("^\\d.*")) {
             return level.getUniqueId().equals(Integer.toString(node.getId()));
         } else {
             // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the level matches
+            if (node.getNodeType() != level.getType().getId()) return false;
 
             // If the target ids match then the level should be the same
             if (level.getTargetId() != null && level.getTargetId() == node.getTargetId()) {
@@ -1155,18 +1368,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the topic is determined to match otherwise false.
      */
     protected boolean doesTopicMatch(final SpecTopic specTopic, final CSNodeWrapper node) {
-        if (node.getNodeType() != CommonConstants.CS_NODE_TOPIC) return false;
+        if (!node.getNodeType().equals(CommonConstants.CS_NODE_TOPIC)) return false;
 
         // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
         if (specTopic.getUniqueId() != null && specTopic.getUniqueId().matches("^\\d.*")) {
             return specTopic.getUniqueId().equals(Integer.toString(node.getId()));
         } else {
             // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the topics match
-            if (specTopic.getRevision() != null && !specTopic.getRevision().equals(node.getRevision())) {
-                return false;
-            }
-
-            return specTopic.getDBId() == node.getEntityId();
+            return specTopic.getDBId().equals(node.getEntityId());
         }
     }
 
@@ -1178,7 +1387,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the topic is determined to match otherwise false.
      */
     protected boolean doesRelationshipMatch(final TopicRelationship relationship, final CSRelatedNodeWrapper relatedNode) {
-        if (relatedNode.getNodeType() != CommonConstants.CS_NODE_TOPIC) return false;
+        // If the relations ship is a TopicRelationship, then the related node must be a topic or its not a match
+        if (!relatedNode.getNodeType().equals(CommonConstants.CS_NODE_TOPIC)) return false;
 
         // Check if the type matches first
         if (!RelationshipType.getRelationshipTypeId(relationship.getType()).equals(relatedNode.getRelationshipType())) return false;
@@ -1188,7 +1398,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 "^\\d.*")) {
             return relationship.getSecondaryRelationship().getUniqueId().equals(Integer.toString(relatedNode.getId()));
         } else {
-            return relationship.getSecondaryRelationship().getDBId() == relatedNode.getEntityId();
+            return relationship.getSecondaryRelationship().getDBId().equals(relatedNode.getEntityId());
         }
     }
 
@@ -1200,7 +1410,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the topic is determined to match otherwise false.
      */
     protected boolean doesRelationshipMatch(final TargetRelationship relationship, final CSRelatedNodeWrapper relatedNode) {
-        if (relatedNode.getNodeType() != CommonConstants.CS_NODE_TOPIC) return false;
+        // If the relationship node is a node that can't be related to (ie a comment or meta data), than the relationship cannot match
+        if (relatedNode.getNodeType().equals(CommonConstants.CS_NODE_COMMENT) || relatedNode.getNodeType().equals(
+                CommonConstants.CS_NODE_META_DATA)) {
+            return false;
+        }
 
         // Check if the type matches first
         if (!RelationshipType.getRelationshipTypeId(relationship.getType()).equals(relatedNode.getRelationshipType())) return false;
@@ -1210,9 +1424,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 "^\\d.*")) {
             return relationship.getSecondaryRelationship().getUniqueId().equals(Integer.toString(relatedNode.getId()));
         } else if (relationship.getSecondaryRelationship() instanceof Level) {
-            return ((Level) relationship.getSecondaryRelationship()).getTargetId() == relatedNode.getTargetId();
+            return ((Level) relationship.getSecondaryRelationship()).getTargetId().equals(relatedNode.getTargetId());
         } else if (relationship.getSecondaryRelationship() instanceof SpecTopic) {
-            return ((SpecTopic) relationship.getSecondaryRelationship()).getTargetId() == relatedNode.getTargetId();
+            return ((SpecTopic) relationship.getSecondaryRelationship()).getTargetId().equals(relatedNode.getTargetId());
         } else {
             return false;
         }

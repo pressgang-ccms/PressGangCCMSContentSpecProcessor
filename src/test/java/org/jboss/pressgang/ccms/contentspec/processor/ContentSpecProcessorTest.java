@@ -8,6 +8,8 @@ import java.util.List;
 
 import org.jboss.pressgang.ccms.contentspec.BaseUnitTest;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptions;
+import org.jboss.pressgang.ccms.contentspec.provider.CSNodeProvider;
+import org.jboss.pressgang.ccms.contentspec.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.contentspec.provider.PropertyTagProvider;
 import org.jboss.pressgang.ccms.contentspec.provider.TagProvider;
@@ -34,6 +36,8 @@ public class ContentSpecProcessorTest extends BaseUnitTest {
     @Mock TopicSourceURLProvider topicSourceURLProvider;
     @Mock PropertyTagProvider propertyTagProvider;
     @Mock TagProvider tagProvider;
+    @Mock ContentSpecProvider contentSpecProvider;
+    @Mock CSNodeProvider contentSpecNodeProvider;
 
     protected ErrorLogger logger;
     protected ContentSpecProcessor processor;
@@ -47,6 +51,8 @@ public class ContentSpecProcessorTest extends BaseUnitTest {
         when(providerFactory.getProvider(TopicSourceURLProvider.class)).thenReturn(topicSourceURLProvider);
         when(providerFactory.getProvider(PropertyTagProvider.class)).thenReturn(propertyTagProvider);
         when(providerFactory.getProvider(TagProvider.class)).thenReturn(tagProvider);
+        when(providerFactory.getProvider(ContentSpecProvider.class)).thenReturn(contentSpecProvider);
+        when(providerFactory.getProvider(CSNodeProvider.class)).thenReturn(contentSpecNodeProvider);
 
         this.processor = new ContentSpecProcessor(providerFactory, loggerManager, processingOptions);
     }
