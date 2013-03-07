@@ -771,8 +771,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     .newPropertyTagInContentSpecCollection();
 
             // Create the new property tag
-            final PropertyTagInContentSpecWrapper propertyTag = propertyTagProvider.newPropertyTagInContentSpec();
-            propertyTag.setId(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
+            final PropertyTagWrapper addedByProperty = propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
+            final PropertyTagInContentSpecWrapper propertyTag = propertyTagProvider.newPropertyTagInContentSpec(addedByProperty);
             propertyTag.setValue(user.getUsername());
             propertyTagCollection.addNewItem(propertyTag);
 
