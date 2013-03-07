@@ -798,6 +798,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         if (contentSpecEntity == null) {
             throw new ProcessingException("Saving the updated Content Specification failed.");
         }
+        contentSpec.setId(contentSpecEntity.getId());
 
         // Get the list of transformable child nodes for processing
         final List<Node> nodes = getTransformableNodes(contentSpec.getNodes());
