@@ -20,6 +20,7 @@ import org.jboss.pressgang.ccms.contentspec.entities.ProcessRelationship;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TopicRelationship;
+import org.jboss.pressgang.ccms.contentspec.enums.BookType;
 import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
 import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
@@ -760,6 +761,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             contentSpecEntity = contentSpecProvider.getContentSpec(contentSpec.getId());
         } else if (create) {
             contentSpecEntity = contentSpecProvider.newContentSpec();
+
+            // setup the basic values
+            contentSpecEntity.setLocale(CommonConstants.DEFAULT_LOCALE);
+            contentSpecEntity.setType(BookType.getBookTypeId(contentSpec.getBookType()));
 
             // Add the added by property tag
             final UpdateableCollectionWrapper<PropertyTagInContentSpecWrapper> propertyTagCollection = propertyTagProvider
