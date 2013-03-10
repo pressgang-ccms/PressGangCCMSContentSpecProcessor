@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -35,6 +36,7 @@ import org.jboss.pressgang.ccms.contentspec.wrapper.collection.CollectionWrapper
 import org.jboss.pressgang.ccms.contentspec.wrapper.collection.UpdateableCollectionWrapper;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.junit.Test;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 
 public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessorTest {
@@ -204,7 +206,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         when(tagProvider.newTagCollection()).thenReturn(tagCollection);
         when(topicWrapper.getTags()).thenReturn(tagCollection);
         // and the property tag provider will return a new property tag collection
-        when(propertyTagProvider.newPropertyTagInTopicCollection()).thenReturn(propertyTagCollection);
+        when(propertyTagProvider.newPropertyTagInTopicCollection(Matchers.any(TopicWrapper.class))).thenReturn(propertyTagCollection);
         when(topicWrapper.getProperties()).thenReturn(propertyTagCollection);
         // and the property tag provider will return a property tag
         when(propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID)).thenReturn(cspIdPropertyTag);
@@ -222,8 +224,9 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         // and the tag provider returns an assigned writer
         when(tagProvider.getTagsByName(eq(username))).thenReturn(writerCollection);
         // and the property tag provider creates a new property tag
-        when(propertyTagProvider.newPropertyTagInTopic(eq(cspIdPropertyTag))).thenReturn(cspIdPropertyTagInTopic);
-        when(propertyTagProvider.newPropertyTagInTopic(eq(addedByPropertyTag))).thenReturn(addedByPropertyTagInTopic);
+        when(propertyTagProvider.newPropertyTagInTopic(eq(cspIdPropertyTag), any(TopicWrapper.class))).thenReturn(cspIdPropertyTagInTopic);
+        when(propertyTagProvider.newPropertyTagInTopic(eq(addedByPropertyTag), any(TopicWrapper.class))).thenReturn(
+                addedByPropertyTagInTopic);
     }
 
     protected void verifyValidBaseTopic(final TopicWrapper topic) {

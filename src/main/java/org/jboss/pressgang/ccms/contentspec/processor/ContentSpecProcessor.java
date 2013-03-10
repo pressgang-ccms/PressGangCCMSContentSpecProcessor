@@ -1,6 +1,7 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -61,6 +62,8 @@ import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 @SuppressWarnings("rawtypes")
 public class ContentSpecProcessor implements ShutdownAbleApp {
     private final Logger LOG = Logger.getLogger(ContentSpecProcessor.class.getPackage().getName() + ".CustomContentSpecProcessor");
+
+    private static List<String> IGNORE_META_DATA = Arrays.asList(CSConstants.CHECKSUM_TITLE, CSConstants.ID_TITLE);
 
     private final ErrorLogger log;
     private final DataProviderFactory providerFactory;
@@ -168,6 +171,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 if (saveContentSpec(providerFactory, contentSpec, editing, user)) {
                     log.info(ProcessorConstants.INFO_SUCCESSFUL_SAVE_MSG);
                 } else {
+                    log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
                     return false;
                 }
             }
@@ -302,9 +306,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         topic.getTags().addNewItem(tags.getItems().get(0));
 
         // Create the unique ID for the property
-        topic.setProperties(propertyTagProvider.newPropertyTagInTopicCollection());
+        topic.setProperties(propertyTagProvider.newPropertyTagInTopicCollection(topic));
         final PropertyTagWrapper propertyTag = propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID);
-        final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic(propertyTag);
+        final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic(propertyTag, topic);
         cspProperty.setValue(specTopic.getUniqueId());
         topic.getProperties().addNewItem(cspProperty);
 
@@ -312,7 +316,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final String assignedWriter = specTopic.getAssignedWriter(true);
         if (assignedWriter != null) {
             final PropertyTagWrapper addedByPropertyTag = propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
-            final PropertyTagInTopicWrapper addedByProperty = propertyTagProvider.newPropertyTagInTopic(addedByPropertyTag);
+            final PropertyTagInTopicWrapper addedByProperty = propertyTagProvider.newPropertyTagInTopic(addedByPropertyTag, topic);
             addedByProperty.setValue(assignedWriter);
             topic.getProperties().addNewItem(addedByProperty);
         }
@@ -333,7 +337,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final TopicWrapper topic = topicProvider.getTopic(specTopic.getDBId(), null);
 
         // Update the CSP Property tag
-        final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties = propertyTagProvider.newPropertyTagInTopicCollection();
+        final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties = propertyTagProvider.newPropertyTagInTopicCollection(
+                topic);
         final List<PropertyTagInTopicWrapper> propertyItems = topic.getProperties().getItems();
         boolean cspPropertyFound = false;
         for (final PropertyTagInTopicWrapper property : propertyItems) {
@@ -350,7 +355,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         if (!cspPropertyFound) {
             final PropertyTagWrapper cspPropertyTag = propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID);
-            final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic(cspPropertyTag);
+            final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic(cspPropertyTag, topic);
             cspProperty.setValue(specTopic.getUniqueId());
             cspProperty.setId(CSConstants.CSP_PROPERTY_ID);
             properties.addNewItem(cspProperty);
@@ -719,6 +724,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
             return false;
         } catch (Exception e) {
+            LOG.error("", e);
             if (providerFactory.isRollbackSupported()) {
                 providerFactory.rollback();
             } else {
@@ -764,15 +770,16 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
             // setup the basic values
             contentSpecEntity.setLocale(CommonConstants.DEFAULT_LOCALE);
-            contentSpecEntity.setType(BookType.getBookTypeId(contentSpec.getBookType()));
 
             // Add the added by property tag
             final UpdateableCollectionWrapper<PropertyTagInContentSpecWrapper> propertyTagCollection = propertyTagProvider
-                    .newPropertyTagInContentSpecCollection();
+                    .newPropertyTagInContentSpecCollection(
+                    contentSpecEntity);
 
             // Create the new property tag
             final PropertyTagWrapper addedByProperty = propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
-            final PropertyTagInContentSpecWrapper propertyTag = propertyTagProvider.newPropertyTagInContentSpec(addedByProperty);
+            final PropertyTagInContentSpecWrapper propertyTag = propertyTagProvider.newPropertyTagInContentSpec(addedByProperty,
+                    contentSpecEntity);
             propertyTag.setValue(user.getUsername());
             propertyTagCollection.addNewItem(propertyTag);
 
@@ -782,10 +789,13 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             throw new ProcessingException("Unable to find the existing Content Specification");
         }
 
-        // Apply any changes to the content spec
-        if (contentSpecEntity.getLocale() == null || !contentSpecEntity.getLocale().equals(contentSpec.getLocale())) {
-            contentSpecEntity.setLocale(contentSpec.getLocale());
+        // Check that the type still matches
+        final int typeId = BookType.getBookTypeId(contentSpec.getBookType());
+        if (contentSpecEntity.getType() == null || !contentSpecEntity.getType().equals(typeId)) {
+            contentSpecEntity.setType(typeId);
         }
+
+        final CollectionWrapper<CSNodeWrapper> contentSpecNodes = contentSpecEntity.getChildren();
 
         // Save the content spec entity so that we have a valid reference to add nodes to
         if (create) {
@@ -809,7 +819,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         // Merge the base level and comments
         final Map<SpecNode, CSNodeWrapper> nodeMapping = new HashMap<SpecNode, CSNodeWrapper>();
-        mergeChildren(nodes, contentSpecEntity.getChildren(), providerFactory, null, contentSpecEntity, updatedCSNodes, nodeMapping);
+        mergeChildren(nodes, contentSpecNodes, providerFactory, null, contentSpecEntity, updatedCSNodes, nodeMapping);
 
         // Merge the relationships now all spec topics have a mapping to a node
         mergeTopicRelationships(nodeMapping, providerFactory, updatedCSNodes);
@@ -908,6 +918,13 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     foundNodeEntity.setContentSpec(contentSpec);
                     changed = true;
                 }
+            }
+
+            // If the node is a level than merge the children nodes as well
+            if (childNode instanceof Level) {
+                final Level level = (Level) childNode;
+                mergeChildren(getTransformableNodes(level.getChildNodes()), foundNodeEntity.getChildren(), providerFactory, foundNodeEntity,
+                        contentSpec, updatedCSNodes, nodeMapping);
             }
 
             // Set up the previous node relationship
@@ -1071,10 +1088,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             levelEntity.setCondition(null);
             changed = true;
         }
-
-        // Merge the child nodes
-        mergeChildren(getTransformableNodes(level.getChildNodes()), levelEntity.getChildren(), providerFactory, levelEntity, contentSpec,
-                updatedCSNodes, nodeMapping);
 
         return changed;
     }
@@ -1321,8 +1334,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the node can be transformed, otherwise false.
      */
     protected boolean isTransformableNode(final Node childNode) {
-        return childNode instanceof SpecNode || childNode instanceof Comment || childNode instanceof KeyValueNode || childNode instanceof
-                Level;
+        if (childNode instanceof KeyValueNode) {
+            return !IGNORE_META_DATA.contains(((KeyValueNode) childNode).getKey());
+        } else {
+            return childNode instanceof SpecNode || childNode instanceof Comment || childNode instanceof Level;
+        }
     }
 
     /**

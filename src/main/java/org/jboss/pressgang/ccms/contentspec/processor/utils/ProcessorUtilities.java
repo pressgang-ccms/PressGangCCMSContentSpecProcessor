@@ -173,11 +173,12 @@ public class ProcessorUtilities {
             }
         }
 
-        final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> newProperties = propertyTagProvider.newPropertyTagInTopicCollection();
+        final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> newProperties = propertyTagProvider.newPropertyTagInTopicCollection(
+                cloneTopic);
         final List<PropertyTagInTopicWrapper> propertyItems = originalTopic.getProperties().getItems();
         boolean cspPropertyFound = false;
         for (final PropertyTagInTopicWrapper property : propertyItems) {
-            final PropertyTagInTopicWrapper clonedProperty = cloneTopicProperty(propertyTagProvider, property);
+            final PropertyTagInTopicWrapper clonedProperty = cloneTopicProperty(cloneTopic, propertyTagProvider, property);
             // Ignore the CSP Property ID as we will add a new one
             if (property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
                 cspPropertyFound = true;
@@ -193,7 +194,7 @@ public class ProcessorUtilities {
 
         if (!cspPropertyFound) {
             final PropertyTagWrapper propertyTag = propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID);
-            final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic(propertyTag);
+            final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic(propertyTag, cloneTopic);
             cspProperty.setValue(specTopic.getUniqueId());
             newProperties.addNewItem(cspProperty);
         }
@@ -202,7 +203,7 @@ public class ProcessorUtilities {
         final String assignedWriter = specTopic.getAssignedWriter(true);
         if (assignedWriter != null) {
             final PropertyTagWrapper addedByPropertyTag = propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
-            final PropertyTagInTopicWrapper addedByProperty = propertyTagProvider.newPropertyTagInTopic(addedByPropertyTag);
+            final PropertyTagInTopicWrapper addedByProperty = propertyTagProvider.newPropertyTagInTopic(addedByPropertyTag, cloneTopic);
             addedByProperty.setValue(assignedWriter);
             newProperties.addNewItem(addedByProperty);
         }
@@ -217,14 +218,15 @@ public class ProcessorUtilities {
     /**
      * Clones a Topic Property Tag.
      *
+     * @param topic
      * @param propertyTagProvider The property tag provider to lookup additional details.
      * @param originalProperty    The PropertyTag to be cloned.
      * @return The cloned property tag.
      */
-    public static PropertyTagInTopicWrapper cloneTopicProperty(final PropertyTagProvider propertyTagProvider,
+    public static PropertyTagInTopicWrapper cloneTopicProperty(final TopicWrapper topic, final PropertyTagProvider propertyTagProvider,
             final PropertyTagInTopicWrapper originalProperty) {
         final PropertyTagWrapper propertyTag = propertyTagProvider.getPropertyTag(originalProperty.getId());
-        final PropertyTagInTopicWrapper newPropertyTag = propertyTagProvider.newPropertyTagInTopic(propertyTag);
+        final PropertyTagInTopicWrapper newPropertyTag = propertyTagProvider.newPropertyTagInTopic(propertyTag, topic);
 
         newPropertyTag.setName(originalProperty.getName());
         newPropertyTag.setValue(originalProperty.getValue());

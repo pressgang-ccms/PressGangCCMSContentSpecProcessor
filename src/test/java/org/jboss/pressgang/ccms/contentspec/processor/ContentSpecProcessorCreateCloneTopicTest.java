@@ -516,7 +516,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         when(tagProvider.newTagCollection()).thenReturn(tagCollection);
         newTopicWrapper.setTags(null);
         // and the property tag provider will return a new property tag collection
-        when(propertyTagProvider.newPropertyTagInTopicCollection()).thenReturn(propertyTagCollection);
+        when(propertyTagProvider.newPropertyTagInTopicCollection(any(TopicWrapper.class))).thenReturn(propertyTagCollection);
         newTopicWrapper.setProperties(null);
         // and the property tag provider will return a property tag
         when(propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID)).thenReturn(cspIdPropertyTag);
@@ -534,8 +534,9 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         // and the tag provider returns an assigned writer
         when(tagProvider.getTagsByName(eq(username))).thenReturn(writerCollection);
         // and the property tag provider creates a new property tag
-        when(propertyTagProvider.newPropertyTagInTopic(eq(cspIdPropertyTag))).thenReturn(cspIdPropertyTagInTopic);
-        when(propertyTagProvider.newPropertyTagInTopic(eq(addedByPropertyTag))).thenReturn(addedByPropertyTagInTopic);
+        when(propertyTagProvider.newPropertyTagInTopic(eq(cspIdPropertyTag), any(TopicWrapper.class))).thenReturn(cspIdPropertyTagInTopic);
+        when(propertyTagProvider.newPropertyTagInTopic(eq(addedByPropertyTag), any(TopicWrapper.class))).thenReturn(
+                addedByPropertyTagInTopic);
     }
 
     protected void verifyValidBaseTopic(final TopicWrapper topic) {
