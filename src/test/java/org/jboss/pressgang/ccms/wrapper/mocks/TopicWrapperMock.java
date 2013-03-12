@@ -1,15 +1,15 @@
-package org.jboss.pressgang.ccms.contentspec.wrapper.mocks;
+package org.jboss.pressgang.ccms.wrapper.mocks;
 
 import java.util.Date;
 import java.util.List;
 
-import org.jboss.pressgang.ccms.contentspec.wrapper.PropertyTagInTopicWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.TopicSourceURLWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.TopicWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.TranslatedTopicWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.collection.CollectionWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.collection.UpdateableCollectionWrapper;
+import org.jboss.pressgang.ccms.wrapper.PropertyTagInTopicWrapper;
+import org.jboss.pressgang.ccms.wrapper.TagWrapper;
+import org.jboss.pressgang.ccms.wrapper.TopicSourceURLWrapper;
+import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
+import org.jboss.pressgang.ccms.wrapper.TranslatedTopicWrapper;
+import org.jboss.pressgang.ccms.wrapper.collection.CollectionWrapper;
+import org.jboss.pressgang.ccms.wrapper.collection.UpdateableCollectionWrapper;
 import org.jboss.pressgang.ccms.zanata.ZanataDetails;
 
 public class TopicWrapperMock implements TopicWrapper {

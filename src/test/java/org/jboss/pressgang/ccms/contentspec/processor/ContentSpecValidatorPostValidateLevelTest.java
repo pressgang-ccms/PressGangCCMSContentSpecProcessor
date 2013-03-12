@@ -1,22 +1,8 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
-import net.sf.ipsedixit.annotation.ArbitraryString;
-import net.sf.ipsedixit.core.StringType;
-import org.jboss.pressgang.ccms.contentspec.Level;
-import org.jboss.pressgang.ccms.contentspec.SpecTopic;
-import org.jboss.pressgang.ccms.contentspec.provider.TagProvider;
-import org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker;
-import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
-import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.collection.CollectionWrapper;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static com.natpryce.makeiteasy.MakeItEasy.*;
+import static com.natpryce.makeiteasy.MakeItEasy.a;
+import static com.natpryce.makeiteasy.MakeItEasy.make;
+import static com.natpryce.makeiteasy.MakeItEasy.with;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker.tags;
@@ -24,6 +10,22 @@ import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicM
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+import java.util.List;
+
+import net.sf.ipsedixit.annotation.ArbitraryString;
+import net.sf.ipsedixit.core.StringType;
+import org.jboss.pressgang.ccms.contentspec.Level;
+import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker;
+import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
+import org.jboss.pressgang.ccms.provider.TagProvider;
+import org.jboss.pressgang.ccms.wrapper.TagWrapper;
+import org.jboss.pressgang.ccms.wrapper.collection.CollectionWrapper;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
 
 /**
  * @author kamiller@redhat.com (Katie Miller)
@@ -96,8 +98,8 @@ public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValida
         // Then the result should be a failure
         assertThat(result, is(false));
         // And an error message should be output
-        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! Tag \""
-                + tagname + "\" doesn't exist."));
+        assertThat(logger.getLogMessages().toString(),
+                containsString("Invalid Content Specification! Tag \"" + tagname + "\" doesn't exist."));
     }
 
     @Test
@@ -112,8 +114,8 @@ public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValida
         // Then the result should be a failure
         assertThat(result, is(false));
         // And an error message should be output
-        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! Tag \""
-                + tagname + "\" doesn't exist."));
+        assertThat(logger.getLogMessages().toString(),
+                containsString("Invalid Content Specification! Tag \"" + tagname + "\" doesn't exist."));
     }
 
     @Test

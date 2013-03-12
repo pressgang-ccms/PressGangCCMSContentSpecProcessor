@@ -6,21 +6,21 @@ import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.processor.exceptions.InvalidKeyValueException;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.VariableSet;
-import org.jboss.pressgang.ccms.contentspec.provider.DataProviderFactory;
-import org.jboss.pressgang.ccms.contentspec.provider.PropertyTagProvider;
-import org.jboss.pressgang.ccms.contentspec.provider.TagProvider;
-import org.jboss.pressgang.ccms.contentspec.provider.TopicProvider;
-import org.jboss.pressgang.ccms.contentspec.provider.TopicSourceURLProvider;
-import org.jboss.pressgang.ccms.contentspec.wrapper.PropertyTagInTopicWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.PropertyTagWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.TagWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.TopicSourceURLWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.TopicWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.collection.CollectionWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.collection.UpdateableCollectionWrapper;
+import org.jboss.pressgang.ccms.provider.DataProviderFactory;
+import org.jboss.pressgang.ccms.provider.PropertyTagProvider;
+import org.jboss.pressgang.ccms.provider.TagProvider;
+import org.jboss.pressgang.ccms.provider.TopicProvider;
+import org.jboss.pressgang.ccms.provider.TopicSourceURLProvider;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
+import org.jboss.pressgang.ccms.wrapper.PropertyTagInTopicWrapper;
+import org.jboss.pressgang.ccms.wrapper.PropertyTagWrapper;
+import org.jboss.pressgang.ccms.wrapper.TagWrapper;
+import org.jboss.pressgang.ccms.wrapper.TopicSourceURLWrapper;
+import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
+import org.jboss.pressgang.ccms.wrapper.collection.CollectionWrapper;
+import org.jboss.pressgang.ccms.wrapper.collection.UpdateableCollectionWrapper;
 
 public class ProcessorUtilities {
     /**

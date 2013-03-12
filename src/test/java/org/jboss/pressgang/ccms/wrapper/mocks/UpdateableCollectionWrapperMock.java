@@ -1,11 +1,11 @@
-package org.jboss.pressgang.ccms.contentspec.wrapper.mocks;
+package org.jboss.pressgang.ccms.wrapper.mocks;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.pressgang.ccms.contentspec.wrapper.base.EntityWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.collection.UpdateableCollectionWrapper;
+import org.jboss.pressgang.ccms.wrapper.base.EntityWrapper;
+import org.jboss.pressgang.ccms.wrapper.collection.UpdateableCollectionWrapper;
 
 public class UpdateableCollectionWrapperMock<T extends EntityWrapper<T>> extends CollectionWrapperMock<T> implements
         UpdateableCollectionWrapper<T> {

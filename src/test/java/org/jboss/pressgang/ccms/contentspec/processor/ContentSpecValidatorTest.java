@@ -3,11 +3,10 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 import static org.mockito.Mockito.when;
 
 import org.jboss.pressgang.ccms.contentspec.BaseUnitTest;
-import org.jboss.pressgang.ccms.contentspec.processor.ContentSpecValidator;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptions;
-import org.jboss.pressgang.ccms.contentspec.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
+import org.jboss.pressgang.ccms.provider.DataProviderFactory;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;

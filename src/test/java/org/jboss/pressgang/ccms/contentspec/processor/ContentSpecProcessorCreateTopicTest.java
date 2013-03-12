@@ -8,7 +8,7 @@ import static org.junit.Assert.fail;
 
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
-import org.jboss.pressgang.ccms.contentspec.wrapper.TopicWrapper;
+import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
 import org.junit.Test;
 
 public class ContentSpecProcessorCreateTopicTest extends ContentSpecProcessorTest {

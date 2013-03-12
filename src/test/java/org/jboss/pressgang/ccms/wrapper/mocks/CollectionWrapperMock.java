@@ -1,12 +1,12 @@
-package org.jboss.pressgang.ccms.contentspec.wrapper.mocks;
+package org.jboss.pressgang.ccms.wrapper.mocks;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.pressgang.ccms.contentspec.wrapper.base.EntityWrapper;
-import org.jboss.pressgang.ccms.contentspec.wrapper.collection.CollectionWrapper;
+import org.jboss.pressgang.ccms.wrapper.base.EntityWrapper;
+import org.jboss.pressgang.ccms.wrapper.collection.CollectionWrapper;
 
 public class CollectionWrapperMock<T extends EntityWrapper<T>> implements CollectionWrapper<T> {
     private static final Integer UNCHANGED_STATE = 0;
