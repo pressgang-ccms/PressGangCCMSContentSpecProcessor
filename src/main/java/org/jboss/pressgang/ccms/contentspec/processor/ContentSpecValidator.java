@@ -65,7 +65,6 @@ import org.jboss.pressgang.ccms.wrapper.base.BaseTopicWrapper;
 public class ContentSpecValidator implements ShutdownAbleApp {
 
     private final DataProviderFactory factory;
-    private final CSTransformer csTransformer;
     private final TopicProvider topicProvider;
     private final ContentSpecProvider contentSpecProvider;
     private final TagProvider tagProvider;
@@ -96,7 +95,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     public ContentSpecValidator(final DataProviderFactory factory, final ErrorLoggerManager loggerManager,
             final ProcessingOptions processingOptions) {
         this.factory = factory;
-        csTransformer = new CSTransformer();
         topicProvider = factory.getProvider(TopicProvider.class);
         tagProvider = factory.getProvider(TagProvider.class);
         contentSpecProvider = factory.getProvider(ContentSpecProvider.class);
@@ -178,6 +176,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // Check that the book type is valid
         if (contentSpec.getBookType() == BookType.INVALID) {
             log.error(ProcessorConstants.ERROR_INVALID_BOOK_TYPE_MSG);
+            valid = false;
+        }
+
+        // Check that the Copyright year is valid
+        if (contentSpec.getCopyrightYear() != null && !contentSpec.getCopyrightYear().matches(ProcessorConstants
+                .COPYRIGHT_YEAR_VALIDATE_REGEX)) {
+            log.error(ProcessorConstants.ERROR_CS_INVALID_COPYRIGHT_YEAR_MSG);
             valid = false;
         }
 
@@ -334,7 +339,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
                 valid = false;
             } else {
-                final ContentSpec serverContentSpec = csTransformer.transform(contentSpecTopic, factory);
+                final ContentSpec serverContentSpec = CSTransformer.transform(contentSpecTopic, factory);
 
                 /* Set the revision the content spec is being validated for */
                 contentSpec.setRevision(contentSpecTopic.getRevision());

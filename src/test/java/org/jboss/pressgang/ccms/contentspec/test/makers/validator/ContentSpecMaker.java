@@ -26,6 +26,7 @@ public class ContentSpecMaker {
     public static final Property<ContentSpec, String> product = newProperty();
     public static final Property<ContentSpec, String> version = newProperty();
     public static final Property<ContentSpec, String> copyrightHolder = newProperty();
+    public static final Property<ContentSpec, String> copyrightYear = newProperty();
     public static final Property<ContentSpec, String> dtd = newProperty();
     public static final Property<ContentSpec, BookType> bookType = newProperty();
     public static final Property<ContentSpec, String> bookVersion = newProperty();
@@ -40,6 +41,7 @@ public class ContentSpecMaker {
             contentSpec.setProduct(lookup.valueOf(product, randomAlphanumeric(10)));
             contentSpec.setVersion(lookup.valueOf(version, "1-A"));
             contentSpec.setCopyrightHolder(lookup.valueOf(copyrightHolder, randomAlphanumeric(10)));
+            contentSpec.setCopyrightYear(lookup.valueOf(copyrightYear, (String) null));
             contentSpec.setDtd(lookup.valueOf(dtd, "Docbook 4.5"));
             contentSpec.setBookType(lookup.valueOf(bookType, BookType.BOOK));
             contentSpec.setBookVersion(lookup.valueOf(bookVersion, valueOf(nextInt())));

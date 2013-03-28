@@ -9,6 +9,7 @@ import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.Content
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.bookType;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.bookVersion;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.copyrightHolder;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.copyrightYear;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.dtd;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.edition;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.product;
@@ -33,6 +34,7 @@ import org.junit.Test;
  */
 public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTest {
     @Arbitrary Integer randomInt;
+    @Arbitrary String randomString;
 
     @Test
     public void shouldPreValidateValidContentSpec() {
@@ -241,5 +243,19 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
         // And an error message should be output
         assertThat(logger.getLogMessages().toString(), containsString(
                 "Invalid Content Specification! Topic " + randomInt + " has two or more different revisions included in the Content Specification."));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenInvalidCopyrightYear() {
+        // Given an invalid content spec because of an invalid copyright year
+        ContentSpec contentSpec = make(a(ContentSpec, with(copyrightYear, randomString)));
+
+        // When the spec is prevalidated
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(), containsString("The Copyright Year is invalid."));
     }
 }
