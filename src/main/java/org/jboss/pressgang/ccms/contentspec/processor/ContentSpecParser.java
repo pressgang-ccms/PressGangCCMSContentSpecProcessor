@@ -630,7 +630,7 @@ public class ContentSpecParser {
      * @return True if the line is meta data, otherwise false.
      */
     protected boolean isMetaDataLine(String line) {
-        return getCurrentLevel().getType() == LevelType.BASE && line.trim().matches("^\\w[\\w\\s]+=.*");
+        return getCurrentLevel().getType() == LevelType.BASE && line.trim().matches("^\\w[\\w\\.\\s]+=.*");
     }
 
     /**
