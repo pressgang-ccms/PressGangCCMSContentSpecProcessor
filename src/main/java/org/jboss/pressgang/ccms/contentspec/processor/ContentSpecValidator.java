@@ -180,8 +180,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that the Copyright year is valid
-        if (contentSpec.getCopyrightYear() != null && !contentSpec.getCopyrightYear().matches(ProcessorConstants
-                .COPYRIGHT_YEAR_VALIDATE_REGEX)) {
+        if (contentSpec.getCopyrightYear() != null && !contentSpec.getCopyrightYear().matches(
+                ProcessorConstants.COPYRIGHT_YEAR_VALIDATE_REGEX)) {
             log.error(ProcessorConstants.ERROR_CS_INVALID_COPYRIGHT_YEAR_MSG);
             valid = false;
         }
@@ -229,7 +229,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private boolean checkTopicsForInvalidDuplicates(final ContentSpec contentSpec) {
         boolean valid = true;
 
-        /* Find all Topics that have two or more different revisions */
+        // Find all Topics that have two or more different revisions
         final List<SpecTopic> allSpecTopics = contentSpec.getSpecTopics();
         final Map<Integer, Map<Integer, Set<SpecTopic>>> invalidSpecTopics = new HashMap<Integer, Map<Integer, Set<SpecTopic>>>();
 
@@ -261,7 +261,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
         }
 
-        /* Loop through and generate an error message for each invalid topic */
+        // Loop through and generate an error message for each invalid topic
         for (final Entry<Integer, Map<Integer, Set<SpecTopic>>> entry : invalidSpecTopics.entrySet()) {
             final Integer topicId = entry.getKey();
             final Map<Integer, Set<SpecTopic>> revisionsToSpecTopic = entry.getValue();
@@ -276,7 +276,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 // Build up the line numbers message
                 final StringBuilder lineNumbers = new StringBuilder();
                 if (specTopics.size() > 1) {
-                    /* Sort the Topics by line numbers */
+                    // Sort the Topics by line numbers
                     Collections.sort(specTopics, new SpecTopicLineNumberComparator());
 
                     for (int i = 0; i < specTopics.size(); i++) {
@@ -330,18 +330,16 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // If editing then check that the ID exists & the CHECKSUM/SpecRevision match
         if (contentSpec.getId() != null) {
-            // TODO Use the correct entity here
             final ContentSpecWrapper contentSpecTopic = contentSpecProvider.getContentSpec(contentSpec.getId(),
                     processingOptions.getRevision());
 
-            //final TopicWrapper contentSpecTopic = topicProvider.getTopic(contentSpec.getId(), processingOptions.getRevision());
             if (contentSpecTopic == null) {
                 log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
                 valid = false;
             } else {
                 final ContentSpec serverContentSpec = CSTransformer.transform(contentSpecTopic, factory);
 
-                /* Set the revision the content spec is being validated for */
+                // Set the revision the content spec is being validated for
                 contentSpec.setRevision(contentSpecTopic.getRevision());
 
                 // Check that the checksum is valid
@@ -374,9 +372,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // Check that the injection options are valid
         if (contentSpec.getInjectionOptions() != null) {
             for (final String injectionType : contentSpec.getInjectionOptions().getStrictTopicTypes()) {
-                final List<TagWrapper> tags = tagProvider.getTagsByName(injectionType).getItems();
-                if (tags.size() == 1) {
-                    if (!tags.get(0).containedInCategory(CSConstants.TYPE_CATEGORY_ID)) {
+                final TagWrapper tag = tagProvider.getTagByName(injectionType);
+                if (tag != null) {
+                    if (!tag.containedInCategory(CSConstants.TYPE_CATEGORY_ID)) {
                         log.error(String.format(ProcessorConstants.ERROR_INVALID_INJECTION_TYPE_MSG, injectionType));
                         valid = false;
                     }
@@ -437,18 +435,19 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                                     specTopic.getText()));
                             error = true;
                         } else {
-                            /*
-                             * final SpecTopic targetTopic = targetTopics.get(relatedId); if (relationship
-                             * .getRelationshipTitle() !=
-                             * null && !relationship.getRelationshipTitle().equals(targetTopic.getTitle())) { if
-                             * (!processingOptions.isPermissiveMode()) {
-                             * log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
-                             * specTopics.get(topicId).getLineNumber(), relationship.getRelationshipTitle(),
-                             * targetTopic.getTitle())); error = true; } }
-                             */
+//                            final SpecTopic targetTopic = (SpecTopic) node;
+//                            if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
+//                                    targetTopic.getTitle())) {
+//                                if (!processingOptions.isPermissiveMode()) {
+//                                    log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
+// specTopic.getLineNumber(),
+//                                            relationship.getRelationshipTitle(), targetTopic.getTitle()));
+//                                    error = true;
+//                                }
+//                            }
                         }
                     } else if (node instanceof Level) {
-                        // final Level targetLevel = targetLevels.get(relatedId);
+//                        final Level targetLevel = (Level) node;
                         if (relationship.getType() == RelationshipType.NEXT) {
                             log.error(String.format(ProcessorConstants.ERROR_NEXT_RELATED_LEVEL_MSG, specTopic.getLineNumber(),
                                     specTopic.getText()));
@@ -458,20 +457,19 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                                     specTopic.getText()));
                             error = true;
                         }
-                        /*
-                         * else if (relationship.getRelationshipTitle() != null &&
-                         * !relationship.getRelationshipTitle().equals(targetLevel.getTitle())) { if
-                         * (!processingOptions.isPermissiveMode()) {
-                         * log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
-                         * specTopics.get(topicId).getLineNumber(), relationship.getRelationshipTitle(),
-                         * targetLevel.getTitle())); error = true; } }
-                         */
+//                        else if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
+//                                targetLevel.getTitle())) {
+//                            if (!processingOptions.isPermissiveMode()) {
+//                                log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+//                                        relationship.getRelationshipTitle(), targetLevel.getTitle()));
+//                                error = true;
+//                            }
+//                        }
                     }
                     // The relationship isn't a target so it must point to a topic directly
                 } else {
                     if (!relatedId.matches(CSConstants.NEW_TOPIC_ID_REGEX)) {
-                        // The relationship isn't a unique new topic so it will contain the line number in front of
-                        // the topic ID
+                        // The relationship isn't a unique new topic so it will contain the line number in front of the topic ID
                         if (relatedId.startsWith("X")) {
                             // Duplicated topics are never unique so throw an error straight away.
                             log.error(String.format(ProcessorConstants.ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG, specTopic.getLineNumber(),
@@ -519,15 +517,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                                 }
 
                                 // Check to ensure the title matches
-                                /*
-                                 * if (relationship.getRelationshipTitle() != null &&
-                                 * !relationship.getRelationshipTitle().equals(relatedTopic.getTitle())) { if
-                                 * (!processingOptions.isPermissiveMode()) {
-                                 * log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
-                                 * specTopic.getLineNumber(), relationship.getRelationshipTitle(),
-                                 * relatedTopic.getTitle()));
-                                 * error = true; } }
-                                 */
+//                                if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals
+//                                        (relatedTopic.getTitle())) {
+//                                    if (!processingOptions.isPermissiveMode()) {
+//                                        log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
+//                                                specTopic.getLineNumber(), relationship.getRelationshipTitle(), relatedTopic.getTitle()));
+//                                        error = true;
+//                                    }
+//                                }
                             }
                         }
                     } else {
@@ -540,15 +537,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                                         specTopic.getText()));
                             }
                             // Check to ensure the title matches
-                            /*
-                             * else if (relationship.getRelationshipTitle() != null &&
-                             * relationship.getRelationshipTitle().equals(relatedTopic.getTitle())) { if
-                             * (!processingOptions.isPermissiveMode()) {
-                             * log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
-                             * specTopic.getLineNumber(), relationship.getRelationshipTitle(),
-                             * relatedTopic.getTitle())); error
-                             * = true; } }
-                             */
+//                            else if (relationship.getRelationshipTitle() != null && relationship.getRelationshipTitle().equals
+//                                    (relatedTopic.getTitle())) {
+//                                if (!processingOptions.isPermissiveMode()) {
+//                                    log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+//                                            relationship.getRelationshipTitle(), relatedTopic.getTitle()));
+//                                    error = true;
+//                                }
+//                            }
                         } else {
                             log.error(
                                     String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
@@ -974,10 +970,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // New Topics
         if (specTopic.isTopicANewTopic()) {
-
             // Check that the type entered exists
-            final List<TagWrapper> type = tagProvider.getTagsByName(specTopic.getType()).getItems();
-            if (type == null || type.size() < 1 || !type.get(0).containedInCategory(CSConstants.TYPE_CATEGORY_ID)) {
+            final TagWrapper type = tagProvider.getTagByName(specTopic.getType());
+            if (type == null || !type.containedInCategory(CSConstants.TYPE_CATEGORY_ID)) {
                 log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
@@ -1115,14 +1110,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private boolean postValidateAssignedWriter(final SpecTopic topic) {
 
         // Check Assigned Writer exists
-        final List<TagWrapper> tagList = tagProvider.getTagsByName(topic.getAssignedWriter(true)).getItems();
-        if (tagList.size() != 1) {
+        final TagWrapper tag = tagProvider.getTagByName(topic.getAssignedWriter(true));
+        if (tag == null) {
             log.error(String.format(ProcessorConstants.ERROR_WRITER_NONEXIST_MSG, topic.getLineNumber(), topic.getText()));
             return false;
         }
 
         // Check that the writer tag is actually part of the Assigned Writer category
-        if (!tagList.get(0).containedInCategory(CSConstants.WRITER_CATEGORY_ID)) {
+        if (!tag.containedInCategory(CSConstants.WRITER_CATEGORY_ID)) {
             log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getLineNumber(), topic.getText()));
             return false;
         }
@@ -1148,18 +1143,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     return false;
                 }
                 // Get the tag from the database
-                final List<TagWrapper> tagList = tagProvider.getTagsByName(tagName).getItems();
+                final TagWrapper tag = tagProvider.getTagByName(tagName);
 
                 // Check that it exists
-                if (tagList.size() == 1) {
-                    tags.add(tagList.get(0));
-                } else if (tagList.size() == 0) {
+                if (tag != null) {
+                    tags.add(tag);
+                } else {
                     log.error(String.format(ProcessorConstants.ERROR_TAG_NONEXIST_MSG, specNode.getLineNumber(), tagName,
                             specNode.getText()));
-                    valid = false;
-                } else {
-                    log.error(
-                            String.format(ProcessorConstants.ERROR_TOPIC_TAG_DUPLICATED_MSG, specNode.getLineNumber(), specNode.getText()));
                     valid = false;
                 }
             }

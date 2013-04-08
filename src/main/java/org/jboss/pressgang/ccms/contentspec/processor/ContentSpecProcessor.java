@@ -295,15 +295,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         topic.setLocale(CommonConstants.DEFAULT_LOCALE);
 
         // Write the type
-        final CollectionWrapper<TagWrapper> tags = tagProvider.getTagsByName(specTopic.getType());
-        if (tags == null || tags.size() != 1) {
+        final TagWrapper tag = tagProvider.getTagByName(specTopic.getType());
+        if (tag == null) {
             log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
             return null;
         }
 
         // Add the type to the topic
         topic.setTags(tagProvider.newTagCollection());
-        topic.getTags().addNewItem(tags.getItems().get(0));
+        topic.getTags().addNewItem(tag);
 
         // Create the unique ID for the property
         topic.setProperties(propertyTagProvider.newPropertyTagInTopicCollection(topic));
@@ -381,9 +381,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final List<String> addTagNames = specTopic.getTags(true);
         final List<TagWrapper> addTags = new ArrayList<TagWrapper>();
         for (final String addTagName : addTagNames) {
-            final List<TagWrapper> tagList = tagProvider.getTagsByName(addTagName).getItems();
-            if (tagList.size() == 1) {
-                addTags.add(tagList.get(0));
+            final TagWrapper tag = tagProvider.getTagByName(addTagName);
+            if (tag != null) {
+                addTags.add(tag);
             }
         }
 
@@ -447,9 +447,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final List<String> removeTagNames = specTopic.getRemoveTags(true);
         final List<TagWrapper> removeTags = new ArrayList<TagWrapper>();
         for (final String removeTagName : removeTagNames) {
-            final List<TagWrapper> tagList = tagProvider.getTagsByName(removeTagName).getItems();
-            if (tagList.size() == 1) {
-                removeTags.add(tagList.get(0));
+            final TagWrapper removeTag = tagProvider.getTagByName(removeTagName);
+            if (removeTag != null) {
+                removeTags.add(removeTag);
             }
         }
 
@@ -557,8 +557,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // Set the assigned writer (Tag Table)
-        final List<TagWrapper> assignedWriterTags = tagProvider.getTagsByName(specTopic.getAssignedWriter(true)).getItems();
-        final TagWrapper writerTag = assignedWriterTags.get(0);
+        final TagWrapper writerTag = tagProvider.getTagByName(specTopic.getAssignedWriter(true));
         // Save a new assigned writer
         topic.getTags().addNewItem(writerTag);
         // Some providers need the collection to be set to set flags for saving
@@ -1152,8 +1151,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return
      */
     protected boolean mergeComment(final Comment comment, final CSNodeWrapper commentEntity) {
-        if (commentEntity.getAdditionalText() == null || !commentEntity.getAdditionalText().equals(comment.getText())) {
-            commentEntity.setAdditionalText(comment.getText());
+        if (commentEntity.getTitle() == null || !commentEntity.getTitle().equals(comment.getText())) {
+            commentEntity.setTitle(comment.getText());
             return true;
         }
 

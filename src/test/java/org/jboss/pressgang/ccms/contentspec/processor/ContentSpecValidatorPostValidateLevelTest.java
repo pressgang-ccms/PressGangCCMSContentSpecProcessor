@@ -123,12 +123,10 @@ public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValida
         // Given a valid level with an invalid child spec topic that is a new topic
         Level level = make(a(LevelMaker.Level));
         SpecTopic specTopic = make(a(SpecTopicMaker.SpecTopic, with(id, "N123")));
-        given(tagProvider.getTagsByName(specTopic.getType())).willReturn(tagWrapperCollection);
-        given(tagWrapperCollection.getItems()).willReturn(tagWrapperList);
-        given(tagWrapperList.size()).willReturn(0);
+        given(tagProvider.getTagByName(specTopic.getType())).willReturn(null);
         level.appendChild(specTopic);
         // And that the assigned writer is valid
-        given(tagProvider.getTagsByName(specTopic.getAssignedWriter(false))).willReturn(tagWrapperCollection);
+        given(tagProvider.getTagByName(specTopic.getAssignedWriter(false))).willReturn(tagWrapper);
 
         // When the level is postvalidated
         boolean result = validator.postValidateLevel(level);
@@ -141,9 +139,7 @@ public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValida
 
     private Level createLevelWithInvalidTag() {
         Level level = make(a(LevelMaker.Level, with(tags, Arrays.asList(tagname))));
-        given(tagProvider.getTagsByName(tagname)).willReturn(tagWrapperCollection);
-        given(tagWrapperCollection.getItems()).willReturn(tagWrapperList);
-        given(tagWrapperList.size()).willReturn(0);
+        given(tagProvider.getTagByName(tagname)).willReturn(null);
         return level;
     }
 }

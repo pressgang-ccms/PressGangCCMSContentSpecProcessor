@@ -232,9 +232,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         // And injection options are set
         contentSpec.setInjectionOptions(new InjectionOptions("[" + strictTopicType + "]"));
         // And no tag wrappers will be returned for a type
-        given(tagProvider.getTagsByName(strictTopicType)).willReturn(tagWrapperCollection);
-        given(tagWrapperCollection.getItems()).willReturn(tagWrapperList);
-        given(tagWrapperList.size()).willReturn(0);
+        given(tagProvider.getTagByName(strictTopicType)).willReturn(null);
 
         // When the spec is postvalidated
         boolean result = validator.postValidateContentSpec(contentSpec, user);
@@ -254,10 +252,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         // And injection options are set
         contentSpec.setInjectionOptions(new InjectionOptions("[" + strictTopicType + "]"));
         // And a tag wrapper will be returned but it's not a type tag
-        given(tagProvider.getTagsByName(strictTopicType)).willReturn(tagWrapperCollection);
-        given(tagWrapperCollection.getItems()).willReturn(tagWrapperList);
-        given(tagWrapperList.size()).willReturn(1);
-        given(tagWrapperList.get(0)).willReturn(tagWrapper);
+        given(tagProvider.getTagByName(strictTopicType)).willReturn(tagWrapper);
         given(tagWrapper.containedInCategory(CSConstants.TYPE_CATEGORY_ID)).willReturn(false);
 
         // When the spec is postvalidated
@@ -277,9 +272,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         contentSpec.setId(null);
         // And has an invalid level
         contentSpec.getBaseLevel().setTags(Arrays.asList(tagname));
-        given(tagProvider.getTagsByName(anyString())).willReturn(tagWrapperCollection);
-        given(tagWrapperCollection.getItems()).willReturn(tagWrapperList);
-        given(tagWrapperList.size()).willReturn(0);
+        given(tagProvider.getTagByName(anyString())).willReturn(null);
 
         // When the spec is postvalidated
         boolean result = validator.postValidateContentSpec(contentSpec, user);

@@ -114,7 +114,7 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         // and the content spec was set
         verify(newCSNode, times(1)).setContentSpec(contentSpecWrapper);
         // and the node had the comment set
-        verify(newCSNode, times(1)).setAdditionalText("# " + this.comment);
+        verify(newCSNode, times(1)).setTitle("# " + this.comment);
         // and the node topic id was set
         verify(newCSNode, never()).setEntityId(anyInt());
         // and the topic revision wasn't set
@@ -129,7 +129,7 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         childNodes.add(comment);
         // And a matching child node exists in the database
         given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_COMMENT);
-        given(foundCSNode.getAdditionalText()).willReturn(this.comment);
+        given(foundCSNode.getTitle()).willReturn(this.comment);
         // and is in the child nodes collection
         childrenNodes.addItem(foundCSNode);
 
@@ -145,7 +145,7 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertSame(updatedChildrenNodes.getItems().get(0), foundCSNode);
         // and the value was set
-        verify(foundCSNode, times(1)).setAdditionalText("# " + this.comment);
+        verify(foundCSNode, times(1)).setTitle("# " + this.comment);
         // and the main details haven't changed
         verifyBaseExistingComment(foundCSNode);
     }
@@ -158,7 +158,7 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         childNodes.add(comment);
         // And a matching child node exists in the database
         given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_COMMENT);
-        given(foundCSNode.getAdditionalText()).willReturn("# " + this.comment);
+        given(foundCSNode.getTitle()).willReturn("# " + this.comment);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.addItem(foundCSNode);
@@ -184,10 +184,10 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         childNodes.add(comment);
         // and a matching child node exists in the database
         given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_COMMENT);
-        given(foundCSNode.getAdditionalText()).willReturn(this.comment);
+        given(foundCSNode.getTitle()).willReturn(this.comment);
         // and another node exists that won't match
         given(newCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_META_DATA);
-        given(newCSNode.getAdditionalText()).willReturn(randomAlphaString);
+        given(newCSNode.getTitle()).willReturn(randomAlphaString);
         // and is in the child nodes collection
         childrenNodes.addItem(newCSNode);
         childrenNodes.addItem(foundCSNode);
@@ -206,9 +206,9 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         // and the other node should be set for removal
         assertThat(updatedChildrenNodes.getRemoveItems().size(), is(1));
         // and the value was set
-        verify(foundCSNode, times(1)).setAdditionalText("# " + this.comment);
+        verify(foundCSNode, times(1)).setTitle("# " + this.comment);
         // and the value of the other node wasn't touched
-        verify(newCSNode, never()).setAdditionalText(anyString());
+        verify(newCSNode, never()).setTitle(anyString());
         // and the main details haven't changed
         verifyBaseExistingComment(foundCSNode);
     }
@@ -232,7 +232,7 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         // and the content spec was set
         verify(commentNode, times(1)).setContentSpec(contentSpecWrapper);
         // and the node had the comment set
-        verify(commentNode, times(1)).setAdditionalText("# " + comment);
+        verify(commentNode, times(1)).setTitle("# " + comment);
         // and the node topic id wasn't set
         verify(commentNode, never()).setEntityId(anyInt());
         // and the topic revision wasn't set
@@ -246,8 +246,8 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         verify(commentNode, never()).setParent(any(CSNodeWrapper.class));
         // and the content spec wasn't changed
         verify(commentNode, never()).setContentSpec(any(ContentSpecWrapper.class));
-        // and the node title wasn't changed
-        verify(commentNode, never()).setTitle(anyString());
+        // and the node additional text wasn't changed
+        verify(commentNode, never()).setAdditionalText(anyString());
         // and the node topic id wasn't set
         verify(commentNode, never()).setEntityId(anyInt());
         // and the topic revision wasn't set

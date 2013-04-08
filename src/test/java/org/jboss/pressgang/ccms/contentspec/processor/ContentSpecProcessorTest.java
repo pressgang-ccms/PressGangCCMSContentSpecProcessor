@@ -62,6 +62,12 @@ public class ContentSpecProcessorTest extends BaseUnitTest {
         return makeTagCollection(tagName, tagWrapper);
     }
 
+    protected TagWrapper makeTag(String tagName) {
+        final TagWrapper tagWrapper = mock(TagWrapper.class);
+        when(tagWrapper.getName()).thenReturn(tagName);
+        return tagWrapper;
+    }
+
     protected CollectionWrapper<TagWrapper> makeTagCollection(String tagName, TagWrapper tagWrapper) {
         final CollectionWrapper<TagWrapper> tagCollection = mock(CollectionWrapper.class);
         final List<TagWrapper> tagList = Arrays.asList(tagWrapper);

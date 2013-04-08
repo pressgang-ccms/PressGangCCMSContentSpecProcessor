@@ -83,10 +83,8 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
     public void shouldCreateSpecTopicWithTags() {
         String tag1 = "Test";
         String tag2 = "Test2";
-        final TagWrapper tag1Wrapper = mock(TagWrapper.class);
-        final TagWrapper tag2Wrapper = mock(TagWrapper.class);
-        final CollectionWrapper<TagWrapper> tag1Collection = makeTagCollection(tag1, tag1Wrapper);
-        final CollectionWrapper<TagWrapper> tag2Collection = makeTagCollection(tag2, tag2Wrapper);
+        final TagWrapper tag1Wrapper = makeTag(tag1);
+        final TagWrapper tag2Wrapper = makeTag(tag2);
         // Given a list of tags
         final List<String> tags = Arrays.asList(tag1, tag2);
         // and a SpecTopic with just an id and title
@@ -98,8 +96,8 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
         // and the tags exist
-        when(tagProvider.getTagsByName(tag1)).thenReturn(tag1Collection);
-        when(tagProvider.getTagsByName(tag2)).thenReturn(tag2Collection);
+        when(tagProvider.getTagByName(tag1)).thenReturn(tag1Wrapper);
+        when(tagProvider.getTagByName(tag2)).thenReturn(tag2Wrapper);
 
         TopicWrapper topic = null;
         try {
@@ -175,30 +173,6 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         }
     }
 
-    @Test
-    public void shouldThrowExceptionWhenCreateSpecTopicWhenTypeNotFound() {
-        final CollectionWrapper<TagWrapper> types = mock(CollectionWrapper.class);
-        // Given a SpecTopic with just an id and title
-        SpecTopic specTopic = make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, "N"), with(SpecTopicMaker.uniqueId, "L-N"),
-                with(SpecTopicMaker.title, title), with(SpecTopicMaker.type, type), with(SpecTopicMaker.assignedWriter, username),
-                with(SpecTopicMaker.description, randomString)));
-        // Setup the basic details
-        setupBaseTopicMocks();
-        // and the tag provider won't return a type
-        when(tagProvider.getTagsByName(eq(type))).thenReturn(types);
-        when(types.size()).thenReturn(0);
-
-        TopicWrapper topic = null;
-        try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
-            fail("Creating a topic should have thrown an exception");
-        } catch (Exception e) {
-            // Then there should be a log message about the error
-            assertThat(logger.getLogMessages().size(), is(1));
-            assertThat(logger.getLogMessages().get(0).toString(), containsString("Invalid Topic! Type doesn't exist."));
-        }
-    }
-
     protected void setupBaseTopicMocks() {
         // and the topic provider will return a new topic
         when(topicProvider.newTopic()).thenReturn(topicWrapper);
@@ -217,12 +191,12 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
     }
 
     protected void setupValidBaseTopicMocks() {
-        final CollectionWrapper<TagWrapper> typeCollection = makeTagCollection(type);
-        final CollectionWrapper<TagWrapper> writerCollection = makeTagCollection(username, writerTag);
+        final TagWrapper typeTag = makeTag(type);
         // and the tag provider returns a type
-        when(tagProvider.getTagsByName(eq(type))).thenReturn(typeCollection);
+        when(tagProvider.getTagByName(eq(type))).thenReturn(typeTag);
         // and the tag provider returns an assigned writer
-        when(tagProvider.getTagsByName(eq(username))).thenReturn(writerCollection);
+        when(tagProvider.getTagByName(eq(username))).thenReturn(writerTag);
+        when(writerTag.getName()).thenReturn(username);
         // and the property tag provider creates a new property tag
         when(propertyTagProvider.newPropertyTagInTopic(eq(cspIdPropertyTag), any(TopicWrapper.class))).thenReturn(cspIdPropertyTagInTopic);
         when(propertyTagProvider.newPropertyTagInTopic(eq(addedByPropertyTag), any(TopicWrapper.class))).thenReturn(

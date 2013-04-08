@@ -149,10 +149,8 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
     public void shouldCreateSpecTopicWithNewTags() {
         String tag1 = "Test";
         String tag2 = "Test2";
-        final TagWrapper tag1Wrapper = mock(TagWrapper.class);
-        final TagWrapper tag2Wrapper = mock(TagWrapper.class);
-        final CollectionWrapper<TagWrapper> tag1Collection = makeTagCollection(tag1, tag1Wrapper);
-        final CollectionWrapper<TagWrapper> tag2Collection = makeTagCollection(tag2, tag2Wrapper);
+        final TagWrapper tag1Wrapper = makeTag(tag1);
+        final TagWrapper tag2Wrapper = makeTag(tag2);
         // Given a list of tags
         final List<String> tags = Arrays.asList(tag1, tag2);
         // and a SpecTopic
@@ -167,9 +165,9 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
         // and the tags exist
-        when(tagProvider.getTagsByName(tag1)).thenReturn(tag1Collection);
+        when(tagProvider.getTagByName(tag1)).thenReturn(tag1Wrapper);
         when(tag1Wrapper.getId()).thenReturn(1);
-        when(tagProvider.getTagsByName(tag2)).thenReturn(tag2Collection);
+        when(tagProvider.getTagByName(tag2)).thenReturn(tag2Wrapper);
         when(tag2Wrapper.getId()).thenReturn(2);
 
         TopicWrapper topic = null;
@@ -197,10 +195,8 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
     public void shouldCreateSpecTopicWithNewAndExistingTags() {
         String tag1 = "Test";
         String tag2 = "Test2";
-        final TagWrapper tag1Wrapper = mock(TagWrapper.class);
-        final TagWrapper tag2Wrapper = mock(TagWrapper.class);
-        final CollectionWrapper<TagWrapper> tag1Collection = makeTagCollection(tag1, tag1Wrapper);
-        final CollectionWrapper<TagWrapper> tag2Collection = makeTagCollection(tag2, tag2Wrapper);
+        final TagWrapper tag1Wrapper = makeTag(tag1);
+        final TagWrapper tag2Wrapper = makeTag(tag2);
         final TagWrapper existingTagWrapper = mock(TagWrapper.class);
         // Given a list of tags
         final List<String> tags = Arrays.asList(tag1, tag2);
@@ -216,9 +212,9 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
         // and the tags exist
-        when(tagProvider.getTagsByName(tag1)).thenReturn(tag1Collection);
+        when(tagProvider.getTagByName(tag1)).thenReturn(tag1Wrapper);
         when(tag1Wrapper.getId()).thenReturn(1);
-        when(tagProvider.getTagsByName(tag2)).thenReturn(tag2Collection);
+        when(tagProvider.getTagByName(tag2)).thenReturn(tag2Wrapper);
         when(tag2Wrapper.getId()).thenReturn(2);
         // and the topic already has some tags
         when(existingTagCollection.getItems()).thenReturn(Arrays.asList(existingTagWrapper));
@@ -250,10 +246,8 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
     public void shouldCreateSpecTopicWithExistingTagsAndAddTagThatAlreadyExists() {
         String tag1 = "Test";
         String tag2 = "Test2";
-        final TagWrapper tag1Wrapper = mock(TagWrapper.class);
-        final TagWrapper tag2Wrapper = mock(TagWrapper.class);
-        final CollectionWrapper<TagWrapper> tag1Collection = makeTagCollection(tag1, tag1Wrapper);
-        final CollectionWrapper<TagWrapper> tag2Collection = makeTagCollection(tag2, tag2Wrapper);
+        final TagWrapper tag1Wrapper = makeTag(tag1);
+        final TagWrapper tag2Wrapper = makeTag(tag2);
         // Given a list of tags
         final List<String> tags = Arrays.asList(tag1, tag2);
         // and a SpecTopic
@@ -268,9 +262,9 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
         // and the tags exist
-        when(tagProvider.getTagsByName(tag1)).thenReturn(tag1Collection);
+        when(tagProvider.getTagByName(tag1)).thenReturn(tag1Wrapper);
         when(tag1Wrapper.getId()).thenReturn(1);
-        when(tagProvider.getTagsByName(tag2)).thenReturn(tag2Collection);
+        when(tagProvider.getTagByName(tag2)).thenReturn(tag2Wrapper);
         when(tag2Wrapper.getId()).thenReturn(2);
         // and the topic already has the tag1Wrapper in it's collection
         when(existingTagCollection.getItems()).thenReturn(Arrays.asList(tag1Wrapper));
@@ -300,10 +294,8 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
     public void shouldCreateSpecTopicWithExistingTagsAndAllAddTagsAlreadyExists() {
         String tag1 = "Test";
         String tag2 = "Test2";
-        final TagWrapper tag1Wrapper = mock(TagWrapper.class);
-        final TagWrapper tag2Wrapper = mock(TagWrapper.class);
-        final CollectionWrapper<TagWrapper> tag1Collection = makeTagCollection(tag1, tag1Wrapper);
-        final CollectionWrapper<TagWrapper> tag2Collection = makeTagCollection(tag2, tag2Wrapper);
+        final TagWrapper tag1Wrapper = makeTag(tag1);
+        final TagWrapper tag2Wrapper = makeTag(tag2);
         // Given a list of tags
         final List<String> tags = Arrays.asList(tag1, tag2);
         // and a SpecTopic
@@ -318,9 +310,9 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
         // and the tags exist
-        when(tagProvider.getTagsByName(tag1)).thenReturn(tag1Collection);
+        when(tagProvider.getTagByName(tag1)).thenReturn(tag1Wrapper);
         when(tag1Wrapper.getId()).thenReturn(1);
-        when(tagProvider.getTagsByName(tag2)).thenReturn(tag2Collection);
+        when(tagProvider.getTagByName(tag2)).thenReturn(tag2Wrapper);
         when(tag2Wrapper.getId()).thenReturn(2);
         // and the topic already has the tag1Wrapper and tag2wrapper in it's collection
         when(existingTagCollection.getItems()).thenReturn(Arrays.asList(tag1Wrapper, tag2Wrapper));
@@ -349,8 +341,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
     @Test
     public void shouldCreateSpecTopicWithTagsRemoved() {
         String removeTag = "Test";
-        final TagWrapper tag1Wrapper = mock(TagWrapper.class);
-        final CollectionWrapper<TagWrapper> tag1Collection = makeTagCollection(removeTag, tag1Wrapper);
+        final TagWrapper tag1Wrapper = makeTag(removeTag);
         final TagWrapper existingTagWrapper = mock(TagWrapper.class);
         final TagWrapper existingTagWrapper2 = mock(TagWrapper.class);
         // Given a list of tags to be removed
@@ -367,7 +358,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
         // and the tags exist
-        when(tagProvider.getTagsByName(removeTag)).thenReturn(tag1Collection);
+        when(tagProvider.getTagByName(removeTag)).thenReturn(tag1Wrapper);
         when(tag1Wrapper.getId()).thenReturn(1);
         // and the existing tags have an id
         when(existingTagWrapper.getId()).thenReturn(1);
@@ -527,12 +518,12 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
     }
 
     protected void setupValidBaseTopicMocks() {
-        final CollectionWrapper<TagWrapper> typeCollection = makeTagCollection(type);
-        final CollectionWrapper<TagWrapper> writerCollection = makeTagCollection(username, writerTag);
+        final TagWrapper typeTag = makeTag(type);
         // and the tag provider returns a type
-        when(tagProvider.getTagsByName(eq(type))).thenReturn(typeCollection);
+        when(tagProvider.getTagByName(eq(type))).thenReturn(typeTag);
         // and the tag provider returns an assigned writer
-        when(tagProvider.getTagsByName(eq(username))).thenReturn(writerCollection);
+        when(tagProvider.getTagByName(eq(username))).thenReturn(writerTag);
+        when(writerTag.getName()).thenReturn(username);
         // and the property tag provider creates a new property tag
         when(propertyTagProvider.newPropertyTagInTopic(eq(cspIdPropertyTag), any(TopicWrapper.class))).thenReturn(cspIdPropertyTagInTopic);
         when(propertyTagProvider.newPropertyTagInTopic(eq(addedByPropertyTag), any(TopicWrapper.class))).thenReturn(
