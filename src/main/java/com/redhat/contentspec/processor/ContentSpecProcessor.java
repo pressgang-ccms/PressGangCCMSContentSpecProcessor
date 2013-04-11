@@ -571,7 +571,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
             if (!specTopic.isTopicAnExistingTopic()) {
                 // Save the new Source Urls
-                final List<String> urls = specTopic.getSourceUrls();
+                final List<String> urls = specTopic.getSourceUrls(true);
 
                 final RESTTopicSourceUrlCollectionV1 sourceUrls = topic.getSourceUrls_OTM() == null ? new RESTTopicSourceUrlCollectionV1
                         () : topic.getSourceUrls_OTM();

@@ -157,6 +157,13 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             valid = false;
         }
 
+        if (contentSpec.getCopyrightYear() != null && !contentSpec.getCopyrightYear().equals("")) {
+            if (!contentSpec.getCopyrightYear().matches(ProcessorConstants.COPYRIGHT_YEAR_VALIDATE_REGEX)) {
+                log.error(ProcessorConstants.ERROR_INVALID_CS_COPYRIGHT_YEAR_MSG);
+                valid = false;
+            }
+        }
+
         // Check that the content specification isn't empty
         if (contentSpec.getBaseLevel() == null) {
             log.error(ProcessorConstants.ERROR_CS_EMPTY_MSG);
@@ -207,7 +214,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             for (final SpecTopic specTopic2 : allSpecTopics) {
                 // If the Topic isn't an existing topic and doesn't match the first spec topic's id, then continue
                 if (specTopic1 == specTopic2 || !specTopic2.isTopicAnExistingTopic()
-                        || specTopic1.getDBId() != specTopic2.getDBId())
+                        || !specTopic1.getDBId().equals(specTopic2.getDBId()))
                     continue;
 
                 // Check if the revisions between the two topics are the same
@@ -861,7 +868,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
 
             // Check that the assigned writer, description and source URLS haven't been set
             if (specTopic.getAssignedWriter(false) != null || specTopic.getDescription(false) != null
-                    || !specTopic.getSourceUrls().isEmpty()) {
+                    || !specTopic.getSourceUrls(false).isEmpty()) {
                 log.error(format(ProcessorConstants.ERROR_TOPIC_EXISTING_BAD_OPTIONS, specTopic.getLineNumber(),
                         specTopic.getText()));
                 valid = false;

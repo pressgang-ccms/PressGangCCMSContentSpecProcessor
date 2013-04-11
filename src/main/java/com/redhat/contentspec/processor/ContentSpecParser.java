@@ -193,7 +193,7 @@ public class ContentSpecParser {
         final Set<Integer> ids = new HashSet<Integer>();
         for (final String topicId : specTopics.keySet()) {
             final SpecTopic specTopic = specTopics.get(topicId);
-            if (specTopic.getDBId() != 0)
+            if (specTopic.getDBId() != null)
                 ids.add(specTopic.getDBId());
         }
 
@@ -211,7 +211,7 @@ public class ContentSpecParser {
         final Set<Integer> ids = new HashSet<Integer>();
         for (final String topicId : specTopics.keySet()) {
             final SpecTopic specTopic = specTopics.get(topicId);
-            if (specTopic.getDBId() != 0 && specTopic.getRevision() == null)
+            if (specTopic.getDBId() != null && specTopic.getRevision() == null)
                 ids.add(specTopic.getDBId());
         }
 
@@ -229,7 +229,7 @@ public class ContentSpecParser {
         final Set<Pair<Integer, Integer>> ids = new HashSet<Pair<Integer, Integer>>();
         for (final String topicId : specTopics.keySet()) {
             final SpecTopic specTopic = specTopics.get(topicId);
-            if (specTopic.getDBId() != 0 && specTopic.getRevision() != null)
+            if (specTopic.getDBId() != null && specTopic.getRevision() != null)
                 ids.add(new Pair<Integer, Integer>(specTopic.getDBId(), specTopic.getRevision()));
         }
 
@@ -625,6 +625,16 @@ public class ContentSpecParser {
             tempInput = CollectionUtilities.trimStringArray(tempInput);
             if (tempInput.length >= 2) {
                 spec.setCopyrightHolder(StringUtilities.replaceEscapeChars(tempInput[1]));
+            } else {
+                log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+                return false;
+            }
+        } else if (input.toUpperCase().matches(ProcessorConstants.COPYRIGHT_YEAR_REGEX)) {
+            String tempInput[] = StringUtilities.split(input, '=');
+            // Remove the whitespace from each value in the split array
+            tempInput = CollectionUtilities.trimStringArray(tempInput);
+            if (tempInput.length >= 2) {
+                spec.setCopyrightYear(StringUtilities.replaceEscapeChars(tempInput[1]));
             } else {
                 log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
                 return false;
@@ -1209,11 +1219,11 @@ public class ContentSpecParser {
         // Process the relationships
         final String uniqueId = tempTopic.getUniqueId();
         final ArrayList<Relationship> topicRelationships = new ArrayList<Relationship>();
-        if (variableMap.containsKey(RelationshipType.RELATED)) {
-            final String[] related = variableMap.get(RelationshipType.RELATED);
+        if (variableMap.containsKey(RelationshipType.REFER_TO)) {
+            final String[] related = variableMap.get(RelationshipType.REFER_TO);
             for (final String relatedId : related) {
                 if (relatedId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
-                    topicRelationships.add(new Relationship(uniqueId, relatedId, RelationshipType.RELATED));
+                    topicRelationships.add(new Relationship(uniqueId, relatedId, RelationshipType.REFER_TO));
                 } else if (relatedId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
                     final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
                     final NamedMatcher matcher = pattern.matcher(relatedId);
@@ -1222,7 +1232,7 @@ public class ContentSpecParser {
                     final String id = matcher.group("TopicID");
                     final String relationshipTitle = matcher.group("TopicTitle").trim();
 
-                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.RELATED, relationshipTitle));
+                    topicRelationships.add(new Relationship(uniqueId, id, RelationshipType.REFER_TO, relationshipTitle));
                 } else {
                     if (relatedId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
                             ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
@@ -1299,15 +1309,15 @@ public class ContentSpecParser {
         * Branches should only exist within a process. So make sure that
         * the current level is a process otherwise throw an error.
         */
-        if (variableMap.containsKey(RelationshipType.BRANCH)) {
-            if (lvl instanceof Process) {
-                final String[] branches = variableMap.get(RelationshipType.BRANCH);
-                ((Process) lvl).addBranches(uniqueId, Arrays.asList(branches));
-            } else {
-                log.error(format(ProcessorConstants.ERROR_TOPIC_BRANCH_OUTSIDE_PROCESS, lineCounter, input));
-                return false;
-            }
-        }
+//        if (variableMap.containsKey(RelationshipType.BRANCH)) {
+//            if (lvl instanceof Process) {
+//                final String[] branches = variableMap.get(RelationshipType.BRANCH);
+//                ((Process) lvl).addBranches(uniqueId, Arrays.asList(branches));
+//            } else {
+//                log.error(format(ProcessorConstants.ERROR_TOPIC_BRANCH_OUTSIDE_PROCESS, lineCounter, input));
+//                return false;
+//            }
+//        }
 
         // Add the relationships to the global list if any exist
         if (!topicRelationships.isEmpty()) {
@@ -1431,7 +1441,7 @@ public class ContentSpecParser {
                 }
 
                 // Check that no relationships were specified for the appendix
-                if (variableMap.containsKey(RelationshipType.RELATED) || variableMap.containsKey(RelationshipType
+                if (variableMap.containsKey(RelationshipType.REFER_TO) || variableMap.containsKey(RelationshipType
                         .PREREQUISITE)
                         || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType
                         .PREVIOUS)) {
@@ -1534,9 +1544,8 @@ public class ContentSpecParser {
 
             // Split the variables set into individual variables
             final RelationshipType type = getRelationshipType(variableSet);
-            if (!ignoreTypes && (type == RelationshipType.RELATED || type == RelationshipType.PREREQUISITE || type ==
-                    RelationshipType.NEXT
-                    || type == RelationshipType.PREVIOUS || type == RelationshipType.BRANCH || type ==
+            if (!ignoreTypes && (type == RelationshipType.REFER_TO || type == RelationshipType.PREREQUISITE || type ==
+                    RelationshipType.NEXT || type == RelationshipType.PREVIOUS /*|| type == RelationshipType.BRANCH*/ || type ==
                     RelationshipType.LINKLIST)) {
                 // Remove the type specifier from the start of the variable set
                 String splitString[] = StringUtilities.split(variableSet.trim(), ':', 2);
@@ -1601,7 +1610,7 @@ public class ContentSpecParser {
     protected RelationshipType getRelationshipType(final String variableString) {
         final String uppercaseVarSet = variableString.trim().toUpperCase();
         if (uppercaseVarSet.matches(ProcessorConstants.RELATED_REGEX)) {
-            return RelationshipType.RELATED;
+            return RelationshipType.REFER_TO;
         } else if (uppercaseVarSet.matches(ProcessorConstants.PREREQUISITE_REGEX)) {
             return RelationshipType.PREREQUISITE;
         } else if (uppercaseVarSet.matches(ProcessorConstants.NEXT_REGEX)) {
@@ -1610,8 +1619,8 @@ public class ContentSpecParser {
             return RelationshipType.PREVIOUS;
         } else if (uppercaseVarSet.matches(ProcessorConstants.TARGET_REGEX)) {
             return RelationshipType.TARGET;
-        } else if (uppercaseVarSet.matches(ProcessorConstants.BRANCH_REGEX)) {
-            return RelationshipType.BRANCH;
+//        } else if (uppercaseVarSet.matches(ProcessorConstants.BRANCH_REGEX)) {
+//            return RelationshipType.BRANCH;
         } else if (uppercaseVarSet.matches(ProcessorConstants.EXTERNAL_TARGET_REGEX)) {
             return RelationshipType.EXTERNAL_TARGET;
         } else if (uppercaseVarSet.matches(ProcessorConstants.EXTERNAL_CSP_REGEX)) {

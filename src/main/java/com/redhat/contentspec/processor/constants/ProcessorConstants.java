@@ -14,6 +14,7 @@ public class ProcessorConstants {
     public static final String PRODUCT_VERSION_VALIDATE_REGEX = "(([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+))([\\s\\.\\-]?[A-Za-z]+)?";
     public static final String VERSION_VALIDATE_REGEX = "([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+)";
     public static final String VERSION_EPOCH_VALIDATE_REGEX = "(" + VERSION_VALIDATE_REGEX + ")(-[0-9]+)?";
+    public static final String COPYRIGHT_YEAR_VALIDATE_REGEX = "^\\d+[\\s\\-\\d,]*$";
 
     public static final String RELATED_REGEX = "^(R|RELATED-TO|REFER-TO)[ ]*:(.|(\r?\n))*$";
     public static final String PREREQUISITE_REGEX = "^(P|PREREQUISITE)[ ]*:(.|(\r?\n))*$";
@@ -89,6 +90,8 @@ public class ProcessorConstants {
     public static final String ERROR_CS_NESTED_PART_MSG = LINE + INVALID_CS + " A Part must have no indentation." + CSLINE_MSG;
     public static final String ERROR_CS_NESTED_ARTICLE_MSG = LINE + INVALID_CS + " An Article must have no indentation." + CSLINE_MSG;
     public static final String ERROR_CS_NO_COPYRIGHT_MSG = INVALID_CS + " A Copyright Holder must be specified.";
+    public static final String ERROR_INVALID_CS_COPYRIGHT_YEAR_MSG = INVALID_CS + " The Copyright Year must be in a comma separated list " +
+            "of a range of years.";
     public static final String ERROR_INVALID_INJECTION_MSG = LINE + INVALID_CS + " The setting for inline injection must be On or Off." +
             CSLINE_MSG;
     public static final String ERROR_INVALID_INJECTION_TYPE_MSG = INVALID_CS + " The injection type \"%s\" doesn't exist or isn't a Type.";
@@ -310,6 +313,7 @@ public class ProcessorConstants {
     public static final String PRODUCT_REGEX = "^PRODUCT[ ]*((=.*)|$)";
     public static final String ABSTRACT_REGEX = "^(DESCRIPTION|ABSTRACT)[ ]*((=.*)|$)";
     public static final String COPYRIGHT_HOLDER_REGEX = "^COPYRIGHT HOLDER[ ]*((=.*)|$)";
+    public static final String COPYRIGHT_YEAR_REGEX = "^COPYRIGHT YEAR[ ]*((=.*)|$)";
     public static final String DEBUG_REGEX = "^DEBUG[ ]*((=.*)|$)";
     public static final String VERSION_REGEX = "^VERSION[ ]*((=.*)|$)";
     public static final String BRAND_REGEX = "^BRAND[ ]*((=.*)|$)";
