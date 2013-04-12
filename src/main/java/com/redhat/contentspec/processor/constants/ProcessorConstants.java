@@ -90,8 +90,8 @@ public class ProcessorConstants {
     public static final String ERROR_CS_NESTED_PART_MSG = LINE + INVALID_CS + " A Part must have no indentation." + CSLINE_MSG;
     public static final String ERROR_CS_NESTED_ARTICLE_MSG = LINE + INVALID_CS + " An Article must have no indentation." + CSLINE_MSG;
     public static final String ERROR_CS_NO_COPYRIGHT_MSG = INVALID_CS + " A Copyright Holder must be specified.";
-    public static final String ERROR_INVALID_CS_COPYRIGHT_YEAR_MSG = INVALID_CS + " The Copyright Year must be in a comma separated list " +
-            "of a range of years.";
+    public static final String ERROR_INVALID_CS_COPYRIGHT_YEAR_MSG = INVALID_CS + " The Copyright Year must be in formatted as a comma " +
+            "separated list or year range.";
     public static final String ERROR_INVALID_INJECTION_MSG = LINE + INVALID_CS + " The setting for inline injection must be On or Off." +
             CSLINE_MSG;
     public static final String ERROR_INVALID_INJECTION_TYPE_MSG = INVALID_CS + " The injection type \"%s\" doesn't exist or isn't a Type.";
