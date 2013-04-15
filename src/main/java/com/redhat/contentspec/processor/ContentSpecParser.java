@@ -842,7 +842,7 @@ public class ContentSpecParser {
                         }
                     }
 
-                    final String finalCfg = cfg.toString();
+                    final String finalCfg = cfg.toString().trim();
 
                     // Check that the ']' character was found and that it was found before another '[' character
                     if (StringUtilities.lastIndexOf(finalCfg, ']') == -1 || StringUtilities.lastIndexOf(finalCfg,
@@ -852,7 +852,7 @@ public class ContentSpecParser {
                         return false;
                     } else {
                         spec.setPublicanCfg(StringUtilities.replaceEscapeChars(finalCfg).substring(1,
-                                cfg.length() - 2));
+                                finalCfg.length() - 1));
                     }
                 } else {
                     log.error(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineCounter, input));
