@@ -662,10 +662,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
 
             // A new content specification
-            if (contentSpec.getId() == 0) {
+            if (contentSpec.getId() == null) {
                 contentSpec.setId(writer.createContentSpec(contentSpec.getTitle(), fullText.toString(), contentSpec.getDtd(),
                         contentSpec.getCreatedBy()));
-                if (contentSpec.getId() == 0) {
+                if (contentSpec.getId() == null) {
                     log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
                     throw new Exception("Failed to create the pre content specification.");
                 }
@@ -750,12 +750,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
         } catch (ProcessingException e) {
             // Clean up the data that was created
-            if (contentSpec.getId() != 0 && !edit) writer.deleteContentSpec(contentSpec.getId());
+            if (contentSpec.getId() != null && !edit) writer.deleteContentSpec(contentSpec.getId());
             if (topics.isInitialised()) topics.rollbackPool();
             log.error(String.format("%s\n%7s%s", ProcessorConstants.ERROR_PROCESSING_ERROR_MSG, "", e.getMessage()));
         } catch (Exception e) {
             // Clean up the data that was created
-            if (contentSpec.getId() != 0 && !edit) writer.deleteContentSpec(contentSpec.getId());
+            if (contentSpec.getId() != null && !edit) writer.deleteContentSpec(contentSpec.getId());
             if (topics.isInitialised()) topics.rollbackPool();
             log.debug(e.getMessage());
             log.debug(ExceptionUtilities.getStackTrace(e), 2);
