@@ -793,7 +793,7 @@ public class ContentSpecParser {
                 }
 
                 // Check that the ']' character was found and that it was found before another '[' character
-                final String finalCfg = cfg.toString();
+                final String finalCfg = cfg.toString().trim();
                 if (StringUtilities.lastIndexOf(finalCfg, ']') == -1 || StringUtilities.lastIndexOf(finalCfg, '[') != startingPos) {
                     throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber,
                             key + " = " + finalCfg.replaceAll("\n", "\n          ")));

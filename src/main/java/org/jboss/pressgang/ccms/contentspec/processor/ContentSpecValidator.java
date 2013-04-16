@@ -1,5 +1,4 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
-org.jboss.pressgang.ccms.contentspec.processor;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
@@ -183,7 +182,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // Check that the Copyright year is valid
         if (contentSpec.getCopyrightYear() != null && !contentSpec.getCopyrightYear().matches(
                 ProcessorConstants.COPYRIGHT_YEAR_VALIDATE_REGEX)) {
-            log.error(ProcessorConstants.ERROR_CS_INVALID_COPYRIGHT_YEAR_MSG);
+            log.error(ProcessorConstants.ERROR_INVALID_CS_COPYRIGHT_YEAR_MSG);
             valid = false;
         }
 
@@ -1184,7 +1183,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
                 // Check that the tag isn't a topic type
                 if (cat.getId().equals(CSConstants.TYPE_CATEGORY_ID)) {
-                    log.error(String.format(ProcessorConstants.ERROR_TOPIC_TYPE_AS_TAG_MSG, specNode.getLineNumber(),                    log.error(String.format(ProcessorConstants.ERROR_TOPIC_TYPE_AS_TAG_MSG, specNode.getLineNumber(), specNode.getText()));
+                    log.error(String.format(ProcessorConstants.ERROR_TOPIC_TYPE_AS_TAG_MSG, specNode.getLineNumber(), specNode.getText()));
                     valid = false;
                 }
             }
