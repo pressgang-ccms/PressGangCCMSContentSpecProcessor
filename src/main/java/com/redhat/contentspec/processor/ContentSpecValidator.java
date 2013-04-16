@@ -307,7 +307,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
         boolean valid = true;
 
         // If editing then check that the ID exists & the CHECKSUM/SpecRevision match
-        if (contentSpec.getId() != 0) {
+        if (contentSpec.getId() != null) {
             final RESTTopicV1 contentSpecTopic = reader.getPostContentSpecById(contentSpec.getId(),
                     processingOptions.getRevision());
             if (contentSpecTopic == null) {
