@@ -34,7 +34,6 @@ import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
-import org.jboss.pressgang.ccms.wrapper.mocks.CollectionWrapperMock;
 import org.jboss.pressgang.ccms.wrapper.mocks.UpdateableCollectionWrapperMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,13 +53,13 @@ public class ContentSpecProcessorMergeChildrenTest extends ContentSpecProcessorT
     @Mock CSNodeWrapper newCSNode3;
     @Mock CSNodeWrapper foundCSNode;
 
-    CollectionWrapperMock<CSNodeWrapper> childrenNodes;
+    List<CSNodeWrapper> childrenNodes;
     UpdateableCollectionWrapperMock<CSNodeWrapper> updatedChildrenNodes;
     Map<SpecNode, CSNodeWrapper> nodeMap;
 
     @Before
     public void setUpCollections() {
-        childrenNodes = new CollectionWrapperMock<CSNodeWrapper>();
+        childrenNodes = new LinkedList<CSNodeWrapper>();
         updatedChildrenNodes = new UpdateableCollectionWrapperMock<CSNodeWrapper>();
         nodeMap = new HashMap<SpecNode, CSNodeWrapper>();
 
@@ -172,9 +171,9 @@ public class ContentSpecProcessorMergeChildrenTest extends ContentSpecProcessorT
                 with(LevelMaker.uniqueId, thirdId.toString())));
         childNodes.add(specLevel);
         // and we have a list of existing nodes
-        childrenNodes.addItem(newCSNode2);
-        childrenNodes.addItem(newCSNode);
-        childrenNodes.addItem(newCSNode3);
+        childrenNodes.add(newCSNode2);
+        childrenNodes.add(newCSNode);
+        childrenNodes.add(newCSNode3);
         // and the nodes has a id set
         given(newCSNode.getId()).willReturn(id);
         given(newCSNode2.getId()).willReturn(secondId);

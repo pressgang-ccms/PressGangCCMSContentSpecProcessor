@@ -3,6 +3,7 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
@@ -17,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +31,6 @@ import org.jboss.pressgang.ccms.contentspec.SpecNode;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
-import org.jboss.pressgang.ccms.wrapper.mocks.CollectionWrapperMock;
 import org.jboss.pressgang.ccms.wrapper.mocks.UpdateableCollectionWrapperMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,13 +45,13 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
     @Mock CSNodeWrapper newCSNode;
     @Mock CSNodeWrapper foundCSNode;
 
-    CollectionWrapperMock<CSNodeWrapper> childrenNodes;
+    List<CSNodeWrapper> childrenNodes;
     UpdateableCollectionWrapperMock<CSNodeWrapper> updatedChildrenNodes;
     Map<SpecNode, CSNodeWrapper> nodeMap;
 
     @Before
     public void setUpCollections() {
-        childrenNodes = new CollectionWrapperMock<CSNodeWrapper>();
+        childrenNodes = new LinkedList<CSNodeWrapper>();
         updatedChildrenNodes = new UpdateableCollectionWrapperMock<CSNodeWrapper>();
         nodeMap = new HashMap<SpecNode, CSNodeWrapper>();
 
@@ -131,7 +132,7 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_COMMENT);
         given(foundCSNode.getTitle()).willReturn(this.comment);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -161,7 +162,7 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         given(foundCSNode.getTitle()).willReturn("# " + this.comment);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -189,8 +190,8 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         given(newCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_META_DATA);
         given(newCSNode.getTitle()).willReturn(randomAlphaString);
         // and is in the child nodes collection
-        childrenNodes.addItem(newCSNode);
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(newCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -200,11 +201,12 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         }
 
         // Then a updated node should exist in the updated collection
-        assertThat(updatedChildrenNodes.size(), is(2));
+        assertThat(updatedChildrenNodes.size(), is(1));
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertSame(updatedChildrenNodes.getUpdateItems().get(0), foundCSNode);
-        // and the other node should be set for removal
-        assertThat(updatedChildrenNodes.getRemoveItems().size(), is(1));
+        // and the other node should be set for removal, by still being in the "childrenNodes" list
+        assertThat(childrenNodes.size(), is(1));
+        assertTrue(childrenNodes.contains(newCSNode));
         // and the value was set
         verify(foundCSNode, times(1)).setTitle("# " + this.comment);
         // and the value of the other node wasn't touched

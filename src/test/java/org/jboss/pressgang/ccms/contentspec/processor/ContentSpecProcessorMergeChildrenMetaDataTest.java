@@ -3,6 +3,7 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
@@ -17,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +31,6 @@ import org.jboss.pressgang.ccms.contentspec.SpecNode;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
-import org.jboss.pressgang.ccms.wrapper.mocks.CollectionWrapperMock;
 import org.jboss.pressgang.ccms.wrapper.mocks.UpdateableCollectionWrapperMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,13 +46,13 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
     @Mock CSNodeWrapper newCSNode;
     @Mock CSNodeWrapper foundCSNode;
 
-    CollectionWrapperMock<CSNodeWrapper> childrenNodes;
+    List<CSNodeWrapper> childrenNodes;
     UpdateableCollectionWrapperMock<CSNodeWrapper> updatedChildrenNodes;
     Map<SpecNode, CSNodeWrapper> nodeMap;
 
     @Before
     public void setUpCollections() {
-        childrenNodes = new CollectionWrapperMock<CSNodeWrapper>();
+        childrenNodes = new LinkedList<CSNodeWrapper>();
         updatedChildrenNodes = new UpdateableCollectionWrapperMock<CSNodeWrapper>();
         nodeMap = new HashMap<SpecNode, CSNodeWrapper>();
 
@@ -135,7 +136,7 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_META_DATA);
         given(foundCSNode.getTitle()).willReturn(key);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -167,8 +168,8 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         given(newCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_META_DATA);
         given(newCSNode.getTitle()).willReturn(randomAlphaString);
         // and is in the child nodes collection
-        childrenNodes.addItem(newCSNode);
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(newCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -178,11 +179,12 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         }
 
         // Then a updated node should exist in the updated collection
-        assertThat(updatedChildrenNodes.size(), is(2));
+        assertThat(updatedChildrenNodes.size(), is(1));
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertSame(updatedChildrenNodes.getUpdateItems().get(0), foundCSNode);
-        // and the other node should be set for removal
-        assertThat(updatedChildrenNodes.getRemoveItems().size(), is(1));
+        // and the other node should be set for removal, by still existing in the childrenNodes list
+        assertThat(childrenNodes.size(), is(1));
+        assertTrue(childrenNodes.contains(newCSNode));
         // and the value was set
         verify(foundCSNode, times(1)).setAdditionalText(value);
         // and the value of the other node wasn't touched
@@ -203,7 +205,7 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         // and the value is unchanged
         given(foundCSNode.getAdditionalText()).willReturn(value);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
         // and some values should return null
         given(foundCSNode.getNextNodeId()).willReturn(null);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
@@ -234,7 +236,7 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_META_DATA);
         given(foundCSNode.getTitle()).willReturn(key);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
         // and a parent node
         CSNodeWrapper parentNode = mock(CSNodeWrapper.class);
         given(foundCSNode.getParent()).willReturn(parentNode);

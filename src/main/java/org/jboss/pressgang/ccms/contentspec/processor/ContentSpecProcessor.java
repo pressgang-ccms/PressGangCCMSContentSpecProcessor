@@ -794,7 +794,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             contentSpecEntity.setType(typeId);
         }
 
-        final CollectionWrapper<CSNodeWrapper> contentSpecNodes = contentSpecEntity.getChildren();
+        final List<CSNodeWrapper> contentSpecNodes = getAllNodes(contentSpecEntity);
 
         // Save the content spec entity so that we have a valid reference to add nodes to
         if (create) {
@@ -824,9 +824,60 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         mergeTopicRelationships(nodeMapping, providerFactory, updatedCSNodes);
 
         // Save the updated content spec nodes
-        if (nodeProvider.updateCSNodes(updatedCSNodes) == null) {
-            throw new ProcessingException("Saving the Content Specification contents failed.");
+        if (!updatedCSNodes.isEmpty()) {
+            if (nodeProvider.updateCSNodes(updatedCSNodes) == null) {
+                throw new ProcessingException("Saving the Content Specification contents failed.");
+            }
         }
+
+        // Delete the nodes that are no longer used
+        if (!contentSpecNodes.isEmpty()) {
+            final List<Integer> removeNodeIds = new ArrayList<Integer>();
+            for (final CSNodeWrapper removeNode : contentSpecNodes) {
+                removeNodeIds.add(removeNode.getId());
+            }
+            if (!nodeProvider.deleteCSNodes(removeNodeIds)) {
+                throw new ProcessingException("Saving the Content Specification contents failed.");
+            }
+        }
+    }
+
+    /**
+     * Recursively find all of a Content Specs child nodes.
+     *
+     * @param contentSpec The content spec to get all the children nodes from.
+     * @return A list of children nodes that exist for the content spec.
+     */
+    protected List<CSNodeWrapper> getAllNodes(final ContentSpecWrapper contentSpec) {
+        final List<CSNodeWrapper> nodes = new LinkedList<CSNodeWrapper>();
+        if (contentSpec.getChildren() != null) {
+            final List<CSNodeWrapper> childrenNodes = contentSpec.getChildren().getItems();
+            for (final CSNodeWrapper childNode : childrenNodes) {
+                nodes.add(childNode);
+                nodes.addAll(getAllChildrenNodes(childNode));
+            }
+        }
+
+        return nodes;
+    }
+
+    /**
+     * Recursively find all of a Content Spec Nodes children.
+     *
+     * @param csNode The node to get all the children nodes from.
+     * @return A list of children nodes that exist for the node.
+     */
+    protected List<CSNodeWrapper> getAllChildrenNodes(final CSNodeWrapper csNode) {
+        final List<CSNodeWrapper> nodes = new LinkedList<CSNodeWrapper>();
+        if (csNode.getChildren() != null) {
+            final List<CSNodeWrapper> childrenNodes = csNode.getChildren().getItems();
+            for (final CSNodeWrapper childNode : childrenNodes) {
+                nodes.add(childNode);
+                nodes.addAll(getAllChildrenNodes(childNode));
+            }
+        }
+
+        return nodes;
     }
 
     /**
@@ -834,7 +885,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * the base of the node will be created on the server and then the rest after that.
      *
      * @param childrenNodes       The child nodes to be merged.
-     * @param entityChildrenNodes The current entity child nodes.
+     * @param contentSpecNodes    The list of content spec nodes that can be matched to.
      * @param providerFactory
      * @param parentNode          The parent entity node that the nodes should be assigned to.
      * @param contentSpec         The content spec entity that the nodes belong to.
@@ -848,13 +899,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * done this way due to the nature of serialising the object to JSON, otherwise you get a recursive loop until the JVM runs out of
      * memory.
      */
-    protected void mergeChildren(final List<Node> childrenNodes, final CollectionWrapper<CSNodeWrapper> entityChildrenNodes,
+    protected void mergeChildren(final List<Node> childrenNodes, final List<CSNodeWrapper> contentSpecNodes,
             final DataProviderFactory providerFactory, final CSNodeWrapper parentNode, final ContentSpecWrapper contentSpec,
             final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes,
             final Map<SpecNode, CSNodeWrapper> nodeMapping) throws Exception {
         final CSNodeProvider nodeProvider = providerFactory.getProvider(CSNodeProvider.class);
 
-        final List<CSNodeWrapper> processedNodes = new ArrayList<CSNodeWrapper>();
         final List<CSNodeWrapper> newNodes = new ArrayList<CSNodeWrapper>();
 
         // Update or create all of the children nodes that exist in the content spec
@@ -865,7 +915,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
 
             // Find the Entity Node that matches the Content Spec node, if one exists
-            CSNodeWrapper foundNodeEntity = findExistingNode(childNode, entityChildrenNodes, processedNodes);
+            CSNodeWrapper foundNodeEntity = findExistingNode(childNode, contentSpecNodes);
 
             // If the node was not found create a new one
             boolean changed = false;
@@ -875,7 +925,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     mergeTopic((SpecTopic) childNode, newCSNodeEntity);
                     newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_TOPIC);
                 } else if (childNode instanceof Level) {
-                    mergeLevel((Level) childNode, newCSNodeEntity, providerFactory, contentSpec, updatedCSNodes, nodeMapping);
+                    mergeLevel((Level) childNode, newCSNodeEntity);
                     newCSNodeEntity.setNodeType(((Level) childNode).getType().getId());
                 } else if (childNode instanceof Comment) {
                     mergeComment((Comment) childNode, newCSNodeEntity);
@@ -897,7 +947,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                         changed = true;
                     }
                 } else if (childNode instanceof Level) {
-                    if (mergeLevel((Level) childNode, foundNodeEntity, providerFactory, contentSpec, updatedCSNodes, nodeMapping)) {
+                    if (mergeLevel((Level) childNode, foundNodeEntity)) {
                         changed = true;
                     }
                 } else if (childNode instanceof Comment) {
@@ -910,7 +960,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     }
                 }
 
-                processedNodes.add(foundNodeEntity);
+                // If the node was found remove it from the list of content spec nodes, so it can no longer be matched
+                contentSpecNodes.remove(foundNodeEntity);
 
                 // setup the contentSpec for the entity
                 if (foundNodeEntity.getContentSpec() == null || !foundNodeEntity.getContentSpec().getId().equals(contentSpec.getId())) {
@@ -922,7 +973,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             // If the node is a level than merge the children nodes as well
             if (childNode instanceof Level) {
                 final Level level = (Level) childNode;
-                mergeChildren(getTransformableNodes(level.getChildNodes()), foundNodeEntity.getChildren(), providerFactory, foundNodeEntity,
+                mergeChildren(getTransformableNodes(level.getChildNodes()), contentSpecNodes, providerFactory, foundNodeEntity,
                         contentSpec, updatedCSNodes, nodeMapping);
             }
 
@@ -977,16 +1028,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         if (prevNode != null && prevNode.getNextNodeId() != null) {
             prevNode.setNextNodeId(null);
         }
-
-        // Loop over the entities current nodes and remove any that no longer exist
-        if (entityChildrenNodes != null && !entityChildrenNodes.isEmpty()) {
-            for (final CSNodeWrapper csNode : entityChildrenNodes.getItems()) {
-                // if the node wasn't processed then it no longer exists, so set it for removal
-                if (!processedNodes.contains(csNode)) {
-                    updatedCSNodes.addRemoveItem(csNode);
-                }
-            }
-        }
     }
 
     /**
@@ -994,17 +1035,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      *
      * @param childNode           The ContentSpec node to find a matching Entity node for.
      * @param entityChildrenNodes The entity child nodes to match from.
-     * @param processedNodes      Any nodes that have already been processed, and should be excluded.
      * @return The matching entity if one exists, otherwise null.
      */
-    protected CSNodeWrapper findExistingNode(final Node childNode, final CollectionWrapper<CSNodeWrapper> entityChildrenNodes,
-            final List<CSNodeWrapper> processedNodes) {
+    protected CSNodeWrapper findExistingNode(final Node childNode, final List<CSNodeWrapper> entityChildrenNodes) {
         CSNodeWrapper foundNodeEntity = null;
         if (entityChildrenNodes != null && !entityChildrenNodes.isEmpty()) {
-            for (final CSNodeWrapper nodeEntity : entityChildrenNodes.getItems()) {
-                // Check if the node has already been processed, if so then ignore it
-                if (processedNodes.contains(nodeEntity)) continue;
-
+            for (final CSNodeWrapper nodeEntity : entityChildrenNodes) {
                 if (childNode instanceof SpecTopic && doesTopicMatch((SpecTopic) childNode, nodeEntity)) {
                     foundNodeEntity = nodeEntity;
                     break;
@@ -1052,16 +1088,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     /**
      * @param level
      * @param levelEntity
-     * @param providerFactory
-     * @param contentSpec
-     * @param updatedCSNodes
-     * @param nodeMapping
      * @return True if some value was changed, otherwise false.
      * @throws Exception
      */
-    protected boolean mergeLevel(final Level level, final CSNodeWrapper levelEntity, final DataProviderFactory providerFactory,
-            final ContentSpecWrapper contentSpec, final UpdateableCollectionWrapper<CSNodeWrapper> updatedCSNodes,
-            final Map<SpecNode, CSNodeWrapper> nodeMapping) throws Exception {
+    protected boolean mergeLevel(final Level level, final CSNodeWrapper levelEntity) throws Exception {
         boolean changed = false;
 
         // TITLE

@@ -1,5 +1,14 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
+import static net.sf.ipsedixit.core.StringType.ALPHANUMERIC;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
+
 import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import org.hamcrest.Matchers;
@@ -16,15 +25,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-
-import static net.sf.ipsedixit.core.StringType.ALPHANUMERIC;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
 
 /**
  * @author kamiller@redhat.com (Katie Miller)
@@ -174,7 +174,7 @@ public class ContentSpecParserProcessMetaDataTest extends ContentSpecParserTest 
         // Then the publican config should be set
         ArgumentCaptor<String> publicanConfig = ArgumentCaptor.forClass(String.class);
         Mockito.verify(contentSpec, times(1)).setPublicanCfg(publicanConfig.capture());
-        assertThat(publicanConfig.getValue(), containsString(line));
+        assertThat(publicanConfig.getValue(), is(line));
     }
 
     @Test
@@ -184,7 +184,7 @@ public class ContentSpecParserProcessMetaDataTest extends ContentSpecParserTest 
         // And a value containing only an opening bracket
         keyValuePair.setSecond("[" + line);
         // And the next line contains the closing bracket
-        parser.getLines().push(line2 + "]");
+        parser.getLines().push(line2 + "]\n");
         // And the current line count
         int originalLineCount = parser.getLineCount();
 
@@ -196,8 +196,7 @@ public class ContentSpecParserProcessMetaDataTest extends ContentSpecParserTest 
         // And the publican config should be set
         ArgumentCaptor<String> publicanConfig = ArgumentCaptor.forClass(String.class);
         Mockito.verify(contentSpec, times(1)).setPublicanCfg(publicanConfig.capture());
-        assertThat(publicanConfig.getValue(), containsString(line));
-        assertThat(publicanConfig.getValue(), containsString(line2));
+        assertThat(publicanConfig.getValue(), is(line + "\n" + line2));
     }
 
     @Test

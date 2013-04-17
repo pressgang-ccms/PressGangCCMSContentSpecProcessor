@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +35,6 @@ import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
-import org.jboss.pressgang.ccms.wrapper.mocks.CollectionWrapperMock;
 import org.jboss.pressgang.ccms.wrapper.mocks.UpdateableCollectionWrapperMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,13 +55,13 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
     @Mock CSNodeWrapper newCSNode;
     @Mock CSNodeWrapper foundCSNode;
 
-    CollectionWrapperMock<CSNodeWrapper> childrenNodes;
+    List<CSNodeWrapper> childrenNodes;
     UpdateableCollectionWrapperMock<CSNodeWrapper> updatedChildrenNodes;
     Map<SpecNode, CSNodeWrapper> nodeMap;
 
     @Before
     public void setUpCollections() {
-        childrenNodes = new CollectionWrapperMock<CSNodeWrapper>();
+        childrenNodes = new LinkedList<CSNodeWrapper>();
         updatedChildrenNodes = new UpdateableCollectionWrapperMock<CSNodeWrapper>();
         nodeMap = new HashMap<SpecNode, CSNodeWrapper>();
 
@@ -243,7 +243,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -277,7 +277,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -309,7 +309,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -347,8 +347,8 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(newCSNode.getId()).willReturn(secondId);
         given(newCSNode.getEntityRevision()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(newCSNode);
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(newCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -358,11 +358,12 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         }
 
         // Then a updated node should exist in the updated collection
-        assertThat(updatedChildrenNodes.size(), is(2));
+        assertThat(updatedChildrenNodes.size(), is(1));
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertSame(updatedChildrenNodes.getUpdateItems().get(0), foundCSNode);
-        // and the other node should be set for removal
-        assertThat(updatedChildrenNodes.getRemoveItems().size(), is(1));
+        // and the other node should be set for removal, by still existing in the childrenNodes list
+        assertThat(childrenNodes.size(), is(1));
+        assertTrue(childrenNodes.contains(newCSNode));
         // and the main details haven't changed
         verifyBaseExistingTopic(foundCSNode);
     }
@@ -383,7 +384,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getEntityRevision()).willReturn(null);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -413,7 +414,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -454,7 +455,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getEntityRevision()).willReturn(topicRevision);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -485,7 +486,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getEntityRevision()).willReturn(secondTopicRevision);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -526,7 +527,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getEntityRevision()).willReturn(topicRevision);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -569,7 +570,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getCondition()).willReturn(secondTitle);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -604,7 +605,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getCondition()).willReturn(null);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -641,7 +642,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getCondition()).willReturn(randomAlphaString);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -678,7 +679,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getTargetId()).willReturn(secondTitle);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -713,7 +714,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getTargetId()).willReturn(null);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -758,7 +759,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getTargetId()).willReturn(randomAlphaString);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
@@ -803,7 +804,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getTargetId()).willReturn(null);
         given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
-        childrenNodes.addItem(foundCSNode);
+        childrenNodes.add(foundCSNode);
 
         // When merging the children nodes
         try {
