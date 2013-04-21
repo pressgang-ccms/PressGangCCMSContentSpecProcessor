@@ -823,13 +823,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Merge the relationships now all spec topics have a mapping to a node
         mergeTopicRelationships(nodeMapping, providerFactory, updatedCSNodes);
 
-        // Save the updated content spec nodes
-        if (!updatedCSNodes.isEmpty()) {
-            if (nodeProvider.updateCSNodes(updatedCSNodes) == null) {
-                throw new ProcessingException("Saving the Content Specification contents failed.");
-            }
-        }
-
         // Delete the nodes that are no longer used
         if (!contentSpecNodes.isEmpty()) {
             final List<Integer> removeNodeIds = new ArrayList<Integer>();
@@ -837,6 +830,13 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 removeNodeIds.add(removeNode.getId());
             }
             if (!nodeProvider.deleteCSNodes(removeNodeIds)) {
+                throw new ProcessingException("Saving the Content Specification contents failed.");
+            }
+        }
+
+        // Save the updated content spec nodes
+        if (!updatedCSNodes.isEmpty()) {
+            if (nodeProvider.updateCSNodes(updatedCSNodes) == null) {
                 throw new ProcessingException("Saving the Content Specification contents failed.");
             }
         }
@@ -1425,6 +1425,13 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         if (specTopic.getUniqueId() != null && specTopic.getUniqueId().matches("^\\d.*")) {
             return specTopic.getUniqueId().equals(Integer.toString(node.getId()));
         } else {
+            // Check the parent has the same name
+            if (specTopic.getParent() != null && node.getParent() != null) {
+                if (!specTopic.getParent().getTitle().equals(node.getParent().getTitle())) {
+                    return false;
+                }
+            }
+
             // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the topics match
             return specTopic.getDBId().equals(node.getEntityId());
         }
@@ -1491,7 +1498,21 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the comment is determined to match otherwise false.
      */
     protected boolean doesCommentMatch(final Comment comment, final CSNodeWrapper node) {
-        return node.getNodeType() == CommonConstants.CS_NODE_COMMENT;
+        if (!node.getNodeType().equals(CommonConstants.CS_NODE_COMMENT)) return false;
+
+        // Check the parent has the same name
+        if (comment.getParent() != null) {
+            if (comment.getParent() instanceof ContentSpec) {
+                return node.getParent() == null;
+            } else if (comment.getParent() instanceof Level && node.getParent() != null) {
+                final Level parent = ((Level) comment.getParent());
+                return parent.getTitle().equals(node.getParent().getTitle());
+            } else {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
