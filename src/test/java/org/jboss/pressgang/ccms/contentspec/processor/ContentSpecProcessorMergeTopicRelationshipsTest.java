@@ -61,6 +61,7 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
     @Mock CSNodeWrapper relatedNodeEntity2;
     @Mock CSRelatedNodeWrapper relatedNode;
     @Mock CSRelatedNodeWrapper relatedNode2;
+    @Mock CSNodeWrapper parent;
 
     UpdateableCollectionWrapperMock<CSNodeWrapper> updatedChildrenNodes;
     UpdateableCollectionWrapperMock<CSRelatedNodeWrapper> relatedToNodes;
@@ -78,6 +79,10 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
         nodeMap = new HashMap<SpecNode, CSNodeWrapper>();
 
         when(contentSpecNodeProvider.newCSRelatedNodeCollection()).thenReturn(newRelatedToNodes, newRelatedToNodes2);
+
+        // and the spec topic node has a parent
+        when(nodeEntity.getParent()).thenReturn(parent);
+        when(parent.getChildren()).thenReturn(updatedChildrenNodes);
     }
 
     @Test
@@ -93,7 +98,7 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
 
         // When merging the topic relationships
         try {
-            processor.mergeTopicRelationships(nodeMap, providerFactory, updatedChildrenNodes);
+            processor.mergeTopicRelationships(nodeMap, providerFactory);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -123,9 +128,10 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
         // and creating the new related node works
         given(contentSpecNodeProvider.newCSRelatedNode(eq(relatedNodeEntity))).willReturn(relatedNode);
 
+
         // When merging the topic relationships
         try {
-            processor.mergeTopicRelationships(nodeMap, providerFactory, updatedChildrenNodes);
+            processor.mergeTopicRelationships(nodeMap, providerFactory);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -169,7 +175,7 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
 
         // When merging the topic relationships
         try {
-            processor.mergeTopicRelationships(nodeMap, providerFactory, updatedChildrenNodes);
+            processor.mergeTopicRelationships(nodeMap, providerFactory);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -209,7 +215,7 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
 
         // When merging the topic relationships
         try {
-            processor.mergeTopicRelationships(nodeMap, providerFactory, updatedChildrenNodes);
+            processor.mergeTopicRelationships(nodeMap, providerFactory);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -245,7 +251,7 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
 
         // When merging the topic relationships
         try {
-            processor.mergeTopicRelationships(nodeMap, providerFactory, updatedChildrenNodes);
+            processor.mergeTopicRelationships(nodeMap, providerFactory);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -279,7 +285,7 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
 
         // When merging the topic relationships
         try {
-            processor.mergeTopicRelationships(nodeMap, providerFactory, updatedChildrenNodes);
+            processor.mergeTopicRelationships(nodeMap, providerFactory);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -317,7 +323,7 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
 
         // When merging the topic relationships
         try {
-            processor.mergeTopicRelationships(nodeMap, providerFactory, updatedChildrenNodes);
+            processor.mergeTopicRelationships(nodeMap, providerFactory);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
@@ -356,7 +362,7 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
 
         // When merging the topic relationships
         try {
-            processor.mergeTopicRelationships(nodeMap, providerFactory, updatedChildrenNodes);
+            processor.mergeTopicRelationships(nodeMap, providerFactory);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
@@ -407,7 +413,7 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
 
         // When merging the topic relationships
         try {
-            processor.mergeTopicRelationships(nodeMap, providerFactory, updatedChildrenNodes);
+            processor.mergeTopicRelationships(nodeMap, providerFactory);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
@@ -456,7 +462,7 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
 
         // When merging the topic relationships
         try {
-            processor.mergeTopicRelationships(nodeMap, providerFactory, updatedChildrenNodes);
+            processor.mergeTopicRelationships(nodeMap, providerFactory);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
@@ -502,7 +508,7 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
 
         // When merging the topic relationships
         try {
-            processor.mergeTopicRelationships(nodeMap, providerFactory, updatedChildrenNodes);
+            processor.mergeTopicRelationships(nodeMap, providerFactory);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
@@ -543,7 +549,7 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
 
         // When merging the topic relationships
         try {
-            processor.mergeTopicRelationships(nodeMap, providerFactory, updatedChildrenNodes);
+            processor.mergeTopicRelationships(nodeMap, providerFactory);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());

@@ -7,8 +7,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -64,10 +63,11 @@ public class ContentSpecProcessorMergeChildrenTest extends ContentSpecProcessorT
         nodeMap = new HashMap<SpecNode, CSNodeWrapper>();
 
         when(contentSpecNodeProvider.newCSNode()).thenReturn(newCSNode, newCSNode2, newCSNode3);
+        when(contentSpecNodeProvider.newCSNodeCollection()).thenReturn(new UpdateableCollectionWrapperMock<CSNodeWrapper>());
     }
 
     @Test
-    public void shouldSetPreviousNextNodeForNewNodes() throws Exception {
+    public void shouldSetNextNodeForNewNodes() throws Exception {
         final List<Node> childNodes = new LinkedList<Node>();
         // Given a new Content Spec Topic and Level node
         final SpecTopic specTopic = make(
@@ -76,21 +76,18 @@ public class ContentSpecProcessorMergeChildrenTest extends ContentSpecProcessorT
         childNodes.add(specTopic);
         final Level specLevel = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.CHAPTER), with(LevelMaker.title, title)));
         childNodes.add(specLevel);
-        // and creating the new node succeeded
-        given(contentSpecNodeProvider.createCSNode(eq(newCSNode))).willReturn(newCSNode);
-        given(contentSpecNodeProvider.createCSNode(eq(newCSNode2))).willReturn(newCSNode2);
-        // and the level and node has a id set
-        given(newCSNode.getId()).willReturn(id);
-        given(newCSNode2.getId()).willReturn(secondId);
-        // and some methods should return null, since mockito will return 0 for primitive wrappers
-        given(newCSNode.getNextNodeId()).willReturn(null);
-        given(newCSNode.getPreviousNodeId()).willReturn(null);
-        given(newCSNode2.getNextNodeId()).willReturn(null);
-        given(newCSNode2.getPreviousNodeId()).willReturn(null);
+        // and the level and node have no id since they are new
+        given(newCSNode.getId()).willReturn(null);
+        given(newCSNode2.getId()).willReturn(null);
+        // and some methods should return null
+        given(newCSNode.getNextNode()).willReturn(null);
+        given(newCSNode2.getNextNode()).willReturn(null);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
@@ -98,17 +95,17 @@ public class ContentSpecProcessorMergeChildrenTest extends ContentSpecProcessorT
 
         // Then check that two nodes are updated
         assertThat(updatedChildrenNodes.size(), is(2));
-        assertThat(updatedChildrenNodes.getUpdateItems().size(), is(2));
+        assertThat(updatedChildrenNodes.getAddItems().size(), is(2));
+        // and the collection was reset
+        verify(contentSpecWrapper, times(1)).setChildren(updatedChildrenNodes);
         // and the level node has the spec topic set as it's previous
-        verify(newCSNode2, times(1)).setPreviousNodeId(id);
-        verify(newCSNode2, never()).setNextNodeId(anyInt());
+        verify(newCSNode2, never()).setNextNode(any(CSNodeWrapper.class));
         // and the spec topic has the level as it's next
-        verify(newCSNode, times(1)).setNextNodeId(secondId);
-        verify(newCSNode, never()).setPreviousNodeId(anyInt());
+        verify(newCSNode, times(1)).setNextNode(newCSNode2);
     }
 
     @Test
-    public void shouldSetPreviousNextNodeForMultipleNewNodes() throws Exception {
+    public void shouldSetNextNodeForMultipleNewNodes() throws Exception {
         final List<Node> childNodes = new LinkedList<Node>();
         // Given a new MetaData, Content Spec Topic and Level node
         final KeyValueNode<String> metaData = new KeyValueNode<String>("Title", randomAlphaString);
@@ -119,25 +116,20 @@ public class ContentSpecProcessorMergeChildrenTest extends ContentSpecProcessorT
         childNodes.add(specTopic);
         final Level specLevel = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.CHAPTER), with(LevelMaker.title, title)));
         childNodes.add(specLevel);
-        // and creating the new node succeeded
-        given(contentSpecNodeProvider.createCSNode(eq(newCSNode))).willReturn(newCSNode);
-        given(contentSpecNodeProvider.createCSNode(eq(newCSNode2))).willReturn(newCSNode2);
-        given(contentSpecNodeProvider.createCSNode(eq(newCSNode3))).willReturn(newCSNode3);
-        // and the nodes has a id set
-        given(newCSNode.getId()).willReturn(id);
-        given(newCSNode2.getId()).willReturn(secondId);
-        given(newCSNode3.getId()).willReturn(thirdId);
+        // and the new nodes have no id
+        given(newCSNode.getId()).willReturn(null);
+        given(newCSNode2.getId()).willReturn(null);
+        given(newCSNode3.getId()).willReturn(null);
         // and some methods should return null, since mockito will return 0 for primitive wrappers
-        given(newCSNode.getNextNodeId()).willReturn(null);
-        given(newCSNode.getPreviousNodeId()).willReturn(null);
-        given(newCSNode2.getNextNodeId()).willReturn(null);
-        given(newCSNode2.getPreviousNodeId()).willReturn(null);
-        given(newCSNode3.getNextNodeId()).willReturn(null);
-        given(newCSNode3.getPreviousNodeId()).willReturn(null);
+        given(newCSNode.getNextNode()).willReturn(null);
+        given(newCSNode2.getNextNode()).willReturn(null);
+        given(newCSNode3.getNextNode()).willReturn(null);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
@@ -145,20 +137,19 @@ public class ContentSpecProcessorMergeChildrenTest extends ContentSpecProcessorT
 
         // Then check that two nodes are updated
         assertThat(updatedChildrenNodes.size(), is(3));
-        assertThat(updatedChildrenNodes.getUpdateItems().size(), is(3));
+        assertThat(updatedChildrenNodes.getAddItems().size(), is(3));
+        // and the collection was reset
+        verify(contentSpecWrapper, times(1)).setChildren(updatedChildrenNodes);
         // and the level node has the spec topic set as it's previous
-        verify(newCSNode3, times(1)).setPreviousNodeId(secondId);
-        verify(newCSNode3, never()).setNextNodeId(anyInt());
+        verify(newCSNode3, never()).setNextNode(any(CSNodeWrapper.class));
         // and the spec topic has the level as it's next
-        verify(newCSNode2, times(1)).setNextNodeId(thirdId);
-        verify(newCSNode2, times(1)).setPreviousNodeId(id);
+        verify(newCSNode2, times(1)).setNextNode(newCSNode3);
         // and the metadata has the spec topic as it's next
-        verify(newCSNode, times(1)).setNextNodeId(secondId);
-        verify(newCSNode, never()).setPreviousNodeId(anyInt());
+        verify(newCSNode, times(1)).setNextNode(newCSNode2);
     }
 
     @Test
-    public void shouldSetPreviousNextNodeForMultipleExistingUnorderedNodes() throws Exception {
+    public void shouldSetNextNodeForMultipleExistingUnorderedNodes() throws Exception {
         final List<Node> childNodes = new LinkedList<Node>();
         // Given a new MetaData, Content Spec Topic and Level node
         final KeyValueNode<String> metaData = new KeyValueNode<String>("Title", randomAlphaString);
@@ -185,16 +176,15 @@ public class ContentSpecProcessorMergeChildrenTest extends ContentSpecProcessorT
         given(newCSNode2.getNodeType()).willReturn(CommonConstants.CS_NODE_TOPIC);
         given(newCSNode3.getNodeType()).willReturn(CommonConstants.CS_NODE_CHAPTER);
         // and the previous/next already exists
-        given(newCSNode.getNextNodeId()).willReturn(null);
-        given(newCSNode.getPreviousNodeId()).willReturn(thirdId);
-        given(newCSNode2.getNextNodeId()).willReturn(thirdId);
-        given(newCSNode2.getPreviousNodeId()).willReturn(null);
-        given(newCSNode3.getNextNodeId()).willReturn(id);
-        given(newCSNode3.getPreviousNodeId()).willReturn(secondId);
+        given(newCSNode.getNextNode()).willReturn(null);
+        given(newCSNode2.getNextNode()).willReturn(newCSNode3);
+        given(newCSNode3.getNextNode()).willReturn(newCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
@@ -202,18 +192,17 @@ public class ContentSpecProcessorMergeChildrenTest extends ContentSpecProcessorT
 
         // Then the get new node should not have been called
         verify(contentSpecNodeProvider, never()).newCSNode();
+        // and the collection was reset
+        verify(contentSpecWrapper, times(1)).setChildren(updatedChildrenNodes);
         // and check that two nodes are updated
         assertThat(updatedChildrenNodes.size(), is(3));
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(3));
         // and the level node has the spec topic set as it's previous and nothing as the next node
-        verify(newCSNode3, never()).setPreviousNodeId(anyInt());
-        verify(newCSNode3, times(1)).setNextNodeId(null);
+        verify(newCSNode3, times(1)).setNextNode(null);
         // and the spec topic has the level as it's next and the meta data as the previous node
-        verify(newCSNode2, never()).setNextNodeId(anyInt());
-        verify(newCSNode2, times(1)).setPreviousNodeId(id);
+        verify(newCSNode2, never()).setNextNode(any(CSNodeWrapper.class));
         // and the metadata has the spec topic as it's next
-        verify(newCSNode, times(1)).setNextNodeId(secondId);
-        verify(newCSNode, times(1)).setPreviousNodeId(null);
+        verify(newCSNode, times(1)).setNextNode(newCSNode2);
     }
 
     @Test
@@ -222,10 +211,12 @@ public class ContentSpecProcessorMergeChildrenTest extends ContentSpecProcessorT
         // Given a text node
         final TextNode node = new TextNode("\n");
         childNodes.add(node);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());

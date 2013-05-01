@@ -42,6 +42,7 @@ import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
+import org.jboss.pressgang.ccms.provider.exception.NotFoundException;
 import org.jboss.pressgang.ccms.utils.common.DocBookUtilities;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
@@ -330,9 +331,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // If editing then check that the ID exists & the CHECKSUM/SpecRevision match
         if (contentSpec.getId() != null) {
-            final ContentSpecWrapper contentSpecTopic = contentSpecProvider.getContentSpec(contentSpec.getId(),
-                    processingOptions.getRevision());
+            ContentSpecWrapper contentSpecTopic = null;
+            try {
+                contentSpecTopic = contentSpecProvider.getContentSpec(contentSpec.getId(),
+                        processingOptions.getRevision());
+            } catch (NotFoundException e) {
 
+            }
             if (contentSpecTopic == null) {
                 log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
                 valid = false;
@@ -372,7 +377,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // Check that the injection options are valid
         if (contentSpec.getInjectionOptions() != null) {
             for (final String injectionType : contentSpec.getInjectionOptions().getStrictTopicTypes()) {
-                final TagWrapper tag = tagProvider.getTagByName(injectionType);
+                TagWrapper tag = null;
+                try {
+                    tag = tagProvider.getTagByName(injectionType);
+                } catch (NotFoundException e) {
+
+                }
                 if (tag != null) {
                     if (!tag.containedInCategory(CSConstants.TYPE_CATEGORY_ID)) {
                         log.error(String.format(ProcessorConstants.ERROR_INVALID_INJECTION_TYPE_MSG, injectionType));
@@ -971,7 +981,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // New Topics
         if (specTopic.isTopicANewTopic()) {
             // Check that the type entered exists
-            final TagWrapper type = tagProvider.getTagByName(specTopic.getType());
+            TagWrapper type = null;
+            try {
+                type = tagProvider.getTagByName(specTopic.getType());
+            } catch (NotFoundException e) {
+
+            }
+
             if (type == null || !type.containedInCategory(CSConstants.TYPE_CATEGORY_ID)) {
                 log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
@@ -998,17 +1014,21 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
 
             // Check that the id actually exists
-            final BaseTopicWrapper<?> topic;
-            if (processingOptions.isTranslation()) {
-                topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()), revision, locale);
-                if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions())) {
-                    specTopic.setRevision(topic.getTopicRevision());
+            BaseTopicWrapper<?> topic = null;
+            try {
+                if (processingOptions.isTranslation()) {
+                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()), revision, locale);
+                    if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions())) {
+                        specTopic.setRevision(topic.getTopicRevision());
+                    }
+                } else {
+                    topic = topicProvider.getTopic(Integer.parseInt(specTopic.getId()), revision);
+                    if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions())) {
+                        specTopic.setRevision(topic.getTopicRevision());
+                    }
                 }
-            } else {
-                topic = topicProvider.getTopic(Integer.parseInt(specTopic.getId()), revision);
-                if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions())) {
-                    specTopic.setRevision(topic.getTopicRevision());
-                }
+            } catch (NotFoundException e) {
+                log.debug("Could not find topic for id " + specTopic.getDBId());
             }
 
             // Check that the topic actually exists
@@ -1049,8 +1069,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             // Cloned Topics
         } else if (specTopic.isTopicAClonedTopic()) {
             // Get the original topic from the database
-            int temp = Integer.parseInt(specTopic.getId().substring(1));
-            final TopicWrapper topic = topicProvider.getTopic(temp, null);
+            int topicId = Integer.parseInt(specTopic.getId().substring(1));
+            TopicWrapper topic = null;
+            try {
+                topic = topicProvider.getTopic(topicId, null);
+            } catch (NotFoundException e) {
+                log.debug("Could not find topic for id " + topicId);
+            }
 
             // Check that the original topic was found
             if (topic == null) {
@@ -1110,7 +1135,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private boolean postValidateAssignedWriter(final SpecTopic topic) {
 
         // Check Assigned Writer exists
-        final TagWrapper tag = tagProvider.getTagByName(topic.getAssignedWriter(true));
+        TagWrapper tag = null;
+        try {
+            tag = tagProvider.getTagByName(topic.getAssignedWriter(true));
+        } catch (NotFoundException e) {
+
+        }
         if (tag == null) {
             log.error(String.format(ProcessorConstants.ERROR_WRITER_NONEXIST_MSG, topic.getLineNumber(), topic.getText()));
             return false;
@@ -1143,7 +1173,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     return false;
                 }
                 // Get the tag from the database
-                final TagWrapper tag = tagProvider.getTagByName(tagName);
+                TagWrapper tag = null;
+                try {
+                    tag = tagProvider.getTagByName(tagName);
+                } catch (NotFoundException e) {
+
+                }
 
                 // Check that it exists
                 if (tag != null) {

@@ -12,7 +12,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -66,6 +65,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         nodeMap = new HashMap<SpecNode, CSNodeWrapper>();
 
         when(contentSpecNodeProvider.newCSNode()).thenReturn(newCSNode);
+        when(contentSpecNodeProvider.newCSNodeCollection()).thenReturn(new UpdateableCollectionWrapperMock<CSNodeWrapper>());
 
         // and the found topic is already assigned to the content spec
         when(foundCSNode.getContentSpec()).thenReturn(contentSpecWrapper);
@@ -80,19 +80,20 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
                 a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.uniqueId, "L-" + id), with(SpecTopicMaker.id, topicId.toString()),
                         with(SpecTopicMaker.title, title), with(SpecTopicMaker.revision, (Integer) null)));
         childNodes.add(specTopic);
-        // and creating the new node succeeded
-        given(contentSpecNodeProvider.createCSNode(eq(newCSNode))).willReturn(newCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
 
-        // Then a new node should not exist in the updated collection, since it base details are created to get an id
-        assertThat(updatedChildrenNodes.size(), is(0));
+        // Then a new node should exist in the updated collection
+        assertThat(updatedChildrenNodes.size(), is(1));
+        assertThat(updatedChildrenNodes.getAddItems().size(), is(1));
         // and the basic details are correct
         verifyBaseNewTopic(newCSNode);
         // and the topic revision wasn't set
@@ -108,15 +109,14 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
                 a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.uniqueId, "L-" + id), with(SpecTopicMaker.id, topicId.toString()),
                         with(SpecTopicMaker.title, title), with(SpecTopicMaker.revision, (Integer) null)));
         childNodes.add(specTopic);
-        // and creating the new node succeeded
-        given(contentSpecNodeProvider.createCSNode(eq(newCSNode))).willReturn(newCSNode);
         // and a parent node
         CSNodeWrapper parentNode = mock(CSNodeWrapper.class);
+        // and the parent will return a collection
+        given(parentNode.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, parentNode, contentSpecWrapper, updatedChildrenNodes,
-                    nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, parentNode, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
@@ -124,6 +124,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
 
         // Then a new node should exist in the updated collection
         assertThat(updatedChildrenNodes.size(), is(1));
+        assertThat(updatedChildrenNodes.getAddItems().size(), is(1));
         // and the node has the Spec Topic type set
         verify(newCSNode, times(1)).setNodeType(CommonConstants.CS_NODE_TOPIC);
         // and the parent node should be null
@@ -147,19 +148,20 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
                 a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.uniqueId, "L-" + id), with(SpecTopicMaker.id, topicId.toString()),
                         with(SpecTopicMaker.title, title), with(SpecTopicMaker.revision, topicRevision)));
         childNodes.add(specTopic);
-        // and creating the new node succeeded
-        given(contentSpecNodeProvider.createCSNode(eq(newCSNode))).willReturn(newCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
 
-        // Then a new node should not exist in the updated collection, since it base details are created to get an id
-        assertThat(updatedChildrenNodes.size(), is(0));
+        // Then a new node should exist in the updated collection
+        assertThat(updatedChildrenNodes.size(), is(1));
+        assertThat(updatedChildrenNodes.getAddItems().size(), is(1));
         // and the basic details are correct
         verifyBaseNewTopic(newCSNode);
         // and the topic revision was set
@@ -176,19 +178,20 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
                         with(SpecTopicMaker.title, title), with(SpecTopicMaker.revision, (Integer) null),
                         with(SpecTopicMaker.targetId, "T-" + randomAlphaString)));
         childNodes.add(specTopic);
-        // and creating the new node succeeded
-        given(contentSpecNodeProvider.createCSNode(eq(newCSNode))).willReturn(newCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
 
-        // Then a new node should not exist in the updated collection, since it base details are created to get an id
-        assertThat(updatedChildrenNodes.size(), is(0));
+        // Then a new node should exist in the updated collection
+        assertThat(updatedChildrenNodes.size(), is(1));
+        assertThat(updatedChildrenNodes.getAddItems().size(), is(1));
         // and the basic details are correct
         verifyBaseNewTopic(newCSNode);
         // and the topic revision wasn't set
@@ -207,19 +210,20 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
                         with(SpecTopicMaker.title, title), with(SpecTopicMaker.revision, (Integer) null),
                         with(SpecTopicMaker.condition, randomAlphaString)));
         childNodes.add(specTopic);
-        // and creating the new node succeeded
-        given(contentSpecNodeProvider.createCSNode(eq(newCSNode))).willReturn(newCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
 
-        // Then a new node should not exist in the updated collection, since it base details are created to get an id
-        assertThat(updatedChildrenNodes.size(), is(0));
+        // Then a new node should exist in the updated collection
+        assertThat(updatedChildrenNodes.size(), is(1));
+        assertThat(updatedChildrenNodes.getAddItems().size(), is(1));
         // and the basic details are correct
         verifyBaseNewTopic(newCSNode);
         // and the topic revision wasn't set
@@ -229,7 +233,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
     }
 
     @Test
-    public void shouldMergeTopicWithDBIds() {
+    public void shouldMergeTopicWithDBIdsWithNoChange() {
         final List<Node> childNodes = new ArrayList<Node>();
         // Given a content spec topic that was created from a DB entity
         final SpecTopic specTopic = make(
@@ -244,18 +248,18 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getEntityRevision()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
 
-        // Then a updated node should exist in the updated collection
-        assertThat(updatedChildrenNodes.size(), is(1));
-        assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
-        assertSame(updatedChildrenNodes.getUpdateItems().get(0), foundCSNode);
+        // Then a updated node should not exist in the updated collection, since nothing was modified
+        assertThat(updatedChildrenNodes.size(), is(0));
         // and the value of the other node wasn't touched
         verify(newCSNode, never()).setAdditionalText(anyString());
         // and the main details haven't changed
@@ -263,7 +267,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
     }
 
     @Test
-    public void shouldMergeTopicWithoutDBIdsButIsTheSameTopicFromParser() {
+    public void shouldMergeTopicWithoutDBIdsButIsTheSameTopicFromParserWithNoChange() {
         final List<Node> childNodes = new ArrayList<Node>();
         // Given a content spec topic that was created from a DB entity
         final SpecTopic specTopic = make(
@@ -278,24 +282,24 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getEntityRevision()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
 
-        // Then a updated node should exist in the updated collection
-        assertThat(updatedChildrenNodes.size(), is(1));
-        assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
-        assertSame(updatedChildrenNodes.getUpdateItems().get(0), foundCSNode);
+        // Then a updated node should not exist in the updated collection, since nothing was modified
+        assertThat(updatedChildrenNodes.size(), is(0));
         // and the main details haven't changed
         verifyBaseExistingTopic(foundCSNode);
     }
 
     @Test
-    public void shouldMergeTopicWithoutDBIdsButIsTheSameTopic() {
+    public void shouldMergeTopicWithoutDBIdsButIsTheSameTopicWithNoChange() {
         final List<Node> childNodes = new ArrayList<Node>();
         // Given a content spec topic that was created from a DB entity
         final SpecTopic specTopic = make(
@@ -310,24 +314,24 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getEntityRevision()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
 
-        // Then a updated node should exist in the updated collection
-        assertThat(updatedChildrenNodes.size(), is(1));
-        assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
-        assertSame(updatedChildrenNodes.getUpdateItems().get(0), foundCSNode);
+        // Then a updated node should not exist in the updated collection, since nothing was modified
+        assertThat(updatedChildrenNodes.size(), is(0));
         // and the main details haven't changed
         verifyBaseExistingTopic(foundCSNode);
     }
 
     @Test
-    public void shouldMergeTopicWithDBIdsWhenMultipleTopics() {
+    public void shouldMergeTopicWithDBIdsWhenMultipleTopicsWithNoChange() {
         final List<Node> childNodes = new ArrayList<Node>();
         // Given a content spec topic that was created from a DB entity
         final SpecTopic specTopic = make(
@@ -349,21 +353,25 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         // and is in the child nodes collection
         childrenNodes.add(newCSNode);
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
+        // and the two nodes also exist in the content spec children collection
+        updatedChildrenNodes.addItem(newCSNode);
+        updatedChildrenNodes.addItem(foundCSNode);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
 
-        // Then a updated node should exist in the updated collection
-        assertThat(updatedChildrenNodes.size(), is(1));
-        assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
-        assertSame(updatedChildrenNodes.getUpdateItems().get(0), foundCSNode);
-        // and the other node should be set for removal, by still existing in the childrenNodes list
+        // Then the other node should be set for removal, by still being in the "childrenNodes" list
         assertThat(childrenNodes.size(), is(1));
         assertTrue(childrenNodes.contains(newCSNode));
+        // and the both nodes should be untouched
+        assertThat(updatedChildrenNodes.size(), is(2));
+        assertThat(updatedChildrenNodes.getUnchangedItems().size(), is(2));
         // and the main details haven't changed
         verifyBaseExistingTopic(foundCSNode);
     }
@@ -382,13 +390,14 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getEntityId()).willReturn(topicId);
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
-        given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -415,10 +424,12 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getEntityRevision()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -453,13 +464,14 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getEntityId()).willReturn(topicId);
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(topicRevision);
-        given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -484,13 +496,14 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getEntityId()).willReturn(topicId);
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(secondTopicRevision);
-        given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -525,13 +538,14 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getEntityId()).willReturn(topicId);
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(topicRevision);
-        given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -568,13 +582,14 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
         given(foundCSNode.getCondition()).willReturn(secondTitle);
-        given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -603,13 +618,14 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
         given(foundCSNode.getCondition()).willReturn(null);
-        given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -640,13 +656,14 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
         given(foundCSNode.getCondition()).willReturn(randomAlphaString);
-        given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -677,13 +694,14 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
         given(foundCSNode.getTargetId()).willReturn(secondTitle);
-        given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -712,13 +730,14 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
         given(foundCSNode.getTargetId()).willReturn(null);
-        given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -757,13 +776,14 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
         given(foundCSNode.getTargetId()).willReturn(randomAlphaString);
-        given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -802,13 +822,14 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
         given(foundCSNode.getTargetId()).willReturn(null);
-        given(foundCSNode.getPreviousNodeId()).willReturn(null);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -828,8 +849,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         when(nodeMock.getEntityId()).thenReturn(null);
         when(nodeMock.getTitle()).thenReturn(null);
         when(nodeMock.getTargetId()).thenReturn(null);
-        when(nodeMock.getNextNodeId()).thenReturn(null);
-        when(nodeMock.getPreviousNodeId()).thenReturn(null);
+        when(nodeMock.getNextNode()).thenReturn(null);
     }
 
     protected void verifyBaseNewTopic(final CSNodeWrapper topicNode) {

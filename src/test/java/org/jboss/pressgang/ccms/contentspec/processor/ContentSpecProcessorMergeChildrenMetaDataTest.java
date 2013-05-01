@@ -9,7 +9,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -57,6 +56,7 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         nodeMap = new HashMap<SpecNode, CSNodeWrapper>();
 
         when(contentSpecNodeProvider.newCSNode()).thenReturn(newCSNode);
+        when(contentSpecNodeProvider.newCSNodeCollection()).thenReturn(new UpdateableCollectionWrapperMock<CSNodeWrapper>());
 
         // and the found metadata is already assigned to the content spec
         when(foundCSNode.getContentSpec()).thenReturn(contentSpecWrapper);
@@ -69,19 +69,20 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         // Given a content spec meta data that doesn't exist
         final KeyValueNode<String> metaData = new KeyValueNode<String>(key, value);
         childNodes.add(metaData);
-        // and creating the new node succeeded
-        given(contentSpecNodeProvider.createCSNode(eq(newCSNode))).willReturn(newCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
 
-        // Then a new node should not exist in the updated collection, since it base details are created to get an id
-        assertThat(updatedChildrenNodes.size(), is(0));
+        // Then a new node should exist in the updated collection.
+        assertThat(updatedChildrenNodes.size(), is(1));
+        assertThat(updatedChildrenNodes.getAddItems().size(), is(1));
         // and the basic details are correct
         verifyBaseNewMetaData(newCSNode);
     }
@@ -94,22 +95,22 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         // Given a content spec meta data that doesn't exist
         final KeyValueNode<String> metaData = new KeyValueNode<String>(key, value);
         childNodes.add(metaData);
-        // and creating the new node succeeded
-        given(contentSpecNodeProvider.createCSNode(eq(newCSNode))).willReturn(newCSNode);
         // and a parent node
         CSNodeWrapper parentNode = mock(CSNodeWrapper.class);
+        // and the parent will return a collection
+        given(parentNode.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, parentNode, contentSpecWrapper, updatedChildrenNodes,
-                    nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, parentNode, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
 
-        // Then a new node should exist in the updated collection
+        // Then a new node should exist in the parent collection
         assertThat(updatedChildrenNodes.size(), is(1));
+        assertThat(updatedChildrenNodes.getAddItems().size(), is(1));
         // and the node has the Spec Topic type set
         verify(newCSNode, times(1)).setNodeType(CommonConstants.CS_NODE_META_DATA);
         // and the parent node should be null
@@ -137,10 +138,12 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         given(foundCSNode.getTitle()).willReturn(key);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -170,10 +173,12 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         // and is in the child nodes collection
         childrenNodes.add(newCSNode);
         childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -207,12 +212,13 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
         // and some values should return null
-        given(foundCSNode.getNextNodeId()).willReturn(null);
-        given(foundCSNode.getPreviousNodeId()).willReturn(null);
+        given(foundCSNode.getNextNode()).willReturn(null);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -240,10 +246,12 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         // and a parent node
         CSNodeWrapper parentNode = mock(CSNodeWrapper.class);
         given(foundCSNode.getParent()).willReturn(parentNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
         // When merging the children nodes
         try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, updatedChildrenNodes, nodeMap);
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
@@ -270,8 +278,7 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         when(mockNode.getEntityId()).thenReturn(null);
         when(mockNode.getTitle()).thenReturn(null);
         when(mockNode.getTargetId()).thenReturn(null);
-        when(mockNode.getNextNodeId()).thenReturn(null);
-        when(mockNode.getPreviousNodeId()).thenReturn(null);
+        when(mockNode.getNextNode()).thenReturn(null);
     }
 
     protected void verifyBaseNewMetaData(final CSNodeWrapper metaDataNode) {
