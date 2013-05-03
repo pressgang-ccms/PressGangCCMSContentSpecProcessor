@@ -1,5 +1,7 @@
 package org.jboss.pressgang.ccms.contentspec.processor.constants;
 
+import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
+
 public class ProcessorConstants {
     public static final String RELEASE_CATEGORY_NAME = "Release";
     public static final int ASSIGNED_WRITER_CATEGORY_ID = 12;
@@ -136,13 +138,15 @@ public class ProcessorConstants {
     public static final String ERROR_RELATIONSHIP_BASE_LEVEL_MSG = LINE + INVALID_CS + " Relationships can't be at the base level." +
             CSLINE_MSG;
 
-    public static final String ERROR_INCORRECT_EDIT_MODE_MSG = "Invalid Operation! You cannot update a new Content Specification.";
-    public static final String ERROR_INCORRECT_NEW_MODE_MSG = "Invalid Operation! You cannot create a new Content Specification, " +
-            "from an exiting Content Specification.";
+    public static final String ERROR_INCORRECT_EDIT_MODE_MSG = "Invalid Operation! The Content Specification appears to be new " +
+            "and you cannot update a new Content Specification. Please make sure the " + CSConstants.CHECKSUM_TITLE + " and " + CSConstants
+            .ID_TITLE + " exists.";
+    public static final String ERROR_INCORRECT_NEW_MODE_MSG = "Invalid Operation! The Content Specification appears to be an existing " +
+            "Content Specification and you cannot create a new Content Specification, from an exiting Content Specification.";
     public static final String ERROR_NONEXIST_CS_TYPE_MSG = "No processing type specified! Please specify whether to process as a " +
             "Content Specification or a Setup Processor.";
     public static final String ERROR_NONEXIST_CS_MODE_MSG = "No processing mode specified! Please specify whether to process as a New or " +
-            "Edited Content Specification.";
+            "" + "Edited Content Specification.";
     public static final String ERROR_INVALID_CS_ID_MSG = "The Content Specification ID doesn't exist in the database." + CSLINE_MSG;
     public static final String ERROR_INVALID_CS_ID_FORMAT_MSG = "The Content Specification ID is not valid." + CSLINE_MSG;
     public static final String ERROR_INCORRECT_FILE_FORMAT_MSG = INVALID_CS + " Incorrect file format.";
@@ -228,7 +232,7 @@ public class ProcessorConstants {
     public static final String WARN_WRITER_IGNORE_MSG = LINE + "%s topics can't be assigned a new writer, so the writer will be ignored.";
     public static final String WARN_TAGS_IGNORE_MSG = LINE + "%s topics can't have tags, so the tags will be ignored.";
     public static final String WARN_DEBUG_IGNORE_MSG = "Invalid debug setting. Debug must be set to 0, " +
-            "1 or 2! So debug will be off by default.";
+            "" + "1 or 2! So debug will be off by default.";
     public static final String WARN_IGNORE_INFO_MSG = LINE + "All descriptions, tags, source urls and writers will be ignored for " +
             "existing Topics." + CSLINE_MSG;
     public static final String WARN_IGNORE_DUP_INFO_MSG = LINE + "All types, descriptions, source urls and writers will be ignored for " +
