@@ -36,6 +36,7 @@ import org.jboss.pressgang.ccms.rest.v1.entities.RESTTagV1;
 import org.jboss.pressgang.ccms.rest.v1.entities.RESTTopicSourceUrlV1;
 import org.jboss.pressgang.ccms.rest.v1.entities.RESTTopicV1;
 import org.jboss.pressgang.ccms.rest.v1.entities.RESTUserV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.base.RESTLogDetailsV1;
 import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTAssignedPropertyTagV1;
 import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTCategoryInTagV1;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
@@ -57,7 +58,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     private final ErrorLogger log;
     private final ErrorLoggerManager elm;
 
-    private final RESTManager dbManager;
+    private final RESTManager restManager;
     private final RESTReader reader;
     private final RESTWriter writer;
 
@@ -81,9 +82,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         writer = restManager.getWriter();
         log = elm.getLogger(ContentSpecProcessor.class);
         this.elm = elm;
-        this.dbManager = restManager;
-        this.csp = new ContentSpecParser(elm, restManager);
-        this.topics = new TopicPool(restManager.getRESTClient());
+        this.restManager = restManager;
+        csp = new ContentSpecParser(elm, restManager);
+        topics = new TopicPool(restManager.getRESTClient());
         this.processingOptions = processingOptions;
     }
 
@@ -122,16 +123,16 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     /**
      * Process a content specification so that it is parsed, validated and saved.
      *
-     * @param contentSpec    The Content Specification that is to be processed.
-     * @param user           The user who requested the process operation.
-     * @param mode           The mode to parse the content specification in.
-     * @param overrideLocale Override the default locale using this parameter.
+     * @param contentSpec The Content Specification that is to be processed.
+     * @param user        The user who requested the process operation.
+     * @param logDetails  The log details to be set when saving.
+     * @param mode        The mode to parse the content specification in.
      * @return True if everything was processed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when processing.
      */
-    public boolean processContentSpec(final String contentSpec, final RESTUserV1 user, final ContentSpecParser.ParsingMode mode,
-            final String overrideLocale) throws Exception {
-        return processContentSpec(contentSpec, user, mode, overrideLocale, false);
+    public boolean processContentSpec(final String contentSpec, final RESTUserV1 user, final RESTLogDetailsV1 logDetails,
+            final ContentSpecParser.ParsingMode mode) throws Exception {
+        return processContentSpec(contentSpec, user, logDetails, mode, null);
     }
 
     /**
@@ -141,19 +142,39 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param user           The user who requested the process operation.
      * @param mode           The mode to parse the content specification in.
      * @param overrideLocale Override the default locale using this parameter.
-     * @param addRevisions   If revision numbers should be added to each SpecTopic in the output.
      * @return True if everything was processed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when processing.
      */
     @SuppressWarnings({"unchecked"})
     public boolean processContentSpec(final String contentSpec, final RESTUserV1 user, final ContentSpecParser.ParsingMode mode,
-            final String overrideLocale, final boolean addRevisions) throws Exception {
+            final String overrideLocale) throws Exception {
+        return processContentSpec(contentSpec, user, null, mode, overrideLocale);
+    }
+
+    /**
+     * Process a content specification so that it is parsed, validated and saved.
+     *
+     * @param contentSpec    The Content Specification that is to be processed.
+     * @param user           The user who requested the process operation.
+     * @param mode           The mode to parse the content specification in.
+     * @param overrideLocale Override the default locale using this parameter.
+     * @return True if everything was processed successfully otherwise false.
+     * @throws Exception Any unexpected exception that occurred when processing.
+     */
+    @SuppressWarnings({"unchecked"})
+    public boolean processContentSpec(final String contentSpec, final RESTUserV1 user, final RESTLogDetailsV1 logDetails,
+            final ContentSpecParser.ParsingMode mode, final String overrideLocale) throws Exception {
         boolean editing = false;
 
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
             return false;
+        }
+
+        // Set the log details user if one isn't set
+        if (logDetails != null && logDetails.getUser() == null) {
+            logDetails.setUser(user);
         }
 
         LOG.info("Starting to parse...");
@@ -178,7 +199,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         LOG.info("Starting first validation pass...");
 
         // Validate the relationships
-        validator = new ContentSpecValidator<RESTTopicV1>(RESTTopicV1.class, elm, dbManager, processingOptions);
+        validator = new ContentSpecValidator<RESTTopicV1>(RESTTopicV1.class, elm, restManager, processingOptions);
 
         if (!validator.preValidateRelationships(csp.getProcessedRelationships(), csp.getSpecTopics(), csp.getTargetLevels(),
                 csp.getTargetTopics()) || !validator.preValidateContentSpec(csp.getContentSpec(), csp.getSpecTopics())) {
@@ -204,7 +225,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Validate the content specification now that we have most of the data from the REST API
         LOG.info("Starting second validation pass...");
 
-        if (!validator.postValidateContentSpec(csp.getContentSpec(), csp.getSpecTopics())) {
+        if (!validator.postValidateContentSpec(csp.getContentSpec())) {
             log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
             return false;
         } else {
@@ -219,7 +240,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
 
                 LOG.info("Saving the Content Specification to the server...");
-                if (saveContentSpec(csp.getContentSpec(), csp.getSpecTopics(), editing)) {
+                if (saveContentSpec(csp.getContentSpec(), csp.getSpecTopics(), logDetails, editing)) {
                     log.info(ProcessorConstants.INFO_SUCCESSFUL_SAVE_MSG);
                 } else {
                     return false;
@@ -235,7 +256,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     protected void downloadAllTopics() {
         /* If we are updating the revisions and no processing revision is passed then
-	     * we can just get the latest version for all of the topics. Other wise we need to
+         * we can just get the latest version for all of the topics. Other wise we need to
 	     * get the topics one by one that specify a revision.
 	     */
         if (processingOptions.isUpdateRevisions() && processingOptions.getRevision() == null) {
@@ -653,7 +674,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param edit        Whether the content specification is being edited or created.
      * @return True if the topic saved successfully otherwise false.
      */
-    public boolean saveContentSpec(final ContentSpec contentSpec, final HashMap<String, SpecTopic> specTopics, final boolean edit) {
+    public boolean saveContentSpec(final ContentSpec contentSpec, final HashMap<String, SpecTopic> specTopics,
+            final RESTLogDetailsV1 logDetails, final boolean edit) {
         try {
             // Get the full text representation of the processed content spec
             final StringBuilder fullText = new StringBuilder("");
@@ -734,7 +756,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             syncDuplicatedTopics(specTopics);
 
             // Create the post processed content spec
-            final String postCS = ProcessorUtilities.generatePostContentSpec(contentSpec, specTopics);
+            final String postCS = contentSpec.toString();
             if (postCS == null) {
                 throw new ProcessingException("Failed to create the Post Content Specification.");
             }
@@ -744,7 +766,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 throw new ProcessingException("Failed to create the Post Content Specification.");
             }
 
-            if (!writer.updatePostContentSpec(contentSpec.getId(), postCS)) {
+            if (!writer.updatePostContentSpec(contentSpec.getId(), postCS, logDetails)) {
                 log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
                 throw new Exception("Failed to save the post content Specification");
             }

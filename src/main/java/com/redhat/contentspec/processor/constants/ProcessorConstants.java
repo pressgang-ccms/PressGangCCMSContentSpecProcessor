@@ -50,8 +50,8 @@ public class ProcessorConstants {
 
     public static final String ERROR_DATABASE_ERROR_MSG = "An error occurred when inserting into the database please try again.";
     public static final String ERROR_PROCESSING_ERROR_MSG = "An error occurred during processing please try again.";
-    public static final String WARN_EDIT_INFO_MSG = "Note: All descriptions, tags, source urls and writers will be ignored for existing " +
-            "Topics.";
+    public static final String WARN_EDIT_INFO_MSG = "Note: All descriptions, tags, source urls and writers will be ignored for existing "
+            + "Topics.";
 
     // Content Spec Errors
     public static final String ERROR_CS_INVALID_ID_MSG = INVALID_CS + " The specified ID doesn't exist in the database.";
@@ -84,6 +84,8 @@ public class ProcessorConstants {
     public static final String ERROR_CS_SECTION_NO_CHAPTER_MSG = LINE + INVALID_CS + " A Section can't be outside of a Chapter, " +
             "Article or Appendix." + CSLINE_MSG;
     public static final String ERROR_CS_NESTED_CHAPTER_MSG = LINE + INVALID_CS + " A Chapter must be within a \"Part\" or have no " +
+            "indentation." + CSLINE_MSG;
+    public static final String ERROR_CS_NESTED_PREFACE_MSG = LINE + INVALID_CS + " A Preface must be within a \"Part\" or have no " +
             "indentation." + CSLINE_MSG;
     public static final String ERROR_CS_NESTED_APPENDIX_MSG = LINE + INVALID_CS + " An Appendix must be within a \"Part\" or have no " +
             "indentation." + CSLINE_MSG;
@@ -118,6 +120,7 @@ public class ProcessorConstants {
     // Article based level errors
     public static final String ERROR_ARTICLE_CHAPTER_MSG = LINE + INVALID_CS + " Chapters can't be used in Articles." + CSLINE_MSG;
     public static final String ERROR_ARTICLE_PART_MSG = LINE + INVALID_CS + " Parts can't be used in Articles." + CSLINE_MSG;
+    public static final String ERROR_ARTICLE_PREFACE_MSG = LINE + INVALID_CS + " Prefaces can't be used in Articles." + CSLINE_MSG;
     public static final String ERROR_ARTICLE_PROCESS_MSG = LINE + INVALID_CS + " Processes can't be used in Articles." + CSLINE_MSG;
     public static final String ERROR_ARTICLE_NESTED_APPENDIX_MSG = LINE + INVALID_CS + " An Appendix must have no indentation." +
             CSLINE_MSG;
@@ -127,6 +130,7 @@ public class ProcessorConstants {
             CSLINE_MSG;
 
     public static final String ERROR_NO_ENDING_BRACKET_MSG = LINE + INVALID_CS + " Missing ending bracket (%c) detected.";
+    public static final String ERROR_NO_BRACKET_MSG = LINE + INVALID_CS + " Missing brackets %c%c detected.";
     public static final String ERROR_MISSING_SEPARATOR_MSG = LINE + INVALID_CS + " Missing separator(%c) detected.";
     public static final String ERROR_INCORRECT_INDENTATION_MSG = LINE + INVALID_CS + " Indentation is invalid." + CSLINE_MSG;
     public static final String ERROR_RELATIONSHIP_BASE_LEVEL_MSG = LINE + INVALID_CS + " Relationships can't be at the base level." +
@@ -134,11 +138,11 @@ public class ProcessorConstants {
 
     public static final String ERROR_INCORRECT_EDIT_MODE_MSG = "Invalid Operation! You cannot update a new Content Specification.";
     public static final String ERROR_INCORRECT_NEW_MODE_MSG = "Invalid Operation! You cannot create a new Content Specification, " +
-            "from an exiting Content Specification.";
-    public static final String ERROR_NONEXIST_CS_TYPE_MSG = "No processing type specified! Please specify whether to process as a Content" +
-            " Specification or a Setup Processor.";
+            "" + "from an exiting Content Specification.";
+    public static final String ERROR_NONEXIST_CS_TYPE_MSG = "No processing type specified! Please specify whether to process as a " +
+            "Content" + " Specification or a Setup Processor.";
     public static final String ERROR_NONEXIST_CS_MODE_MSG = "No processing mode specified! Please specify whether to process as a New or " +
-            "Edited Content Specification.";
+            "" + "Edited Content Specification.";
     public static final String ERROR_INVALID_CS_ID_MSG = "The Content Specification ID doesn't exist in the database." + CSLINE_MSG;
     public static final String ERROR_INVALID_CS_ID_FORMAT_MSG = "The Content Specification ID is not valid." + CSLINE_MSG;
     public static final String ERROR_INCORRECT_FILE_FORMAT_MSG = INVALID_CS + " Incorrect file format.";
@@ -154,8 +158,7 @@ public class ProcessorConstants {
     public static final String ERROR_LEVEL_RELATIONSHIP_MSG = LINE + "Invalid %s! Relationships can't be used for a %s." + CSLINE_MSG;
 
     public static final String ERROR_INVALID_NUMBER_MSG = LINE + "Invalid number specified." + CSLINE_MSG;
-    public static final String ERROR_INVALID_VERSION_NUMBER_MSG = LINE + "Invalid number specified. The value must be a valid version." +
-            CSLINE_MSG;
+    public static final String ERROR_INVALID_VERSION_NUMBER_MSG = "Invalid %s specified. The value must be a valid version.";
     public static final String WARN_EMPTY_BRACKETS_MSG = LINE + "Empty brackets found.";
 
     public static final String ERROR_HIBERNATE_ROLLBACK_MSG = "Hibernate Transaction rollback.";
@@ -179,7 +182,7 @@ public class ProcessorConstants {
             "set." + CSLINE_MSG;
     public static final String ERROR_TOPIC_NO_TECH_OR_RELEASE_MSG = LINE + INVALID_TOPIC + " A Technology or Release tag has not been set" +
             "." + CSLINE_MSG;
-    public static final String ERROR_TOPIC_TOO_MANY_CATS_MSG = LINE + INVALID_TOPIC + " To many tags for the category: %s." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_TOO_MANY_CATS_MSG = LINE + INVALID_TOPIC + " Too many tags for the category: %s." + CSLINE_MSG;
     public static final String ERROR_TOPIC_ID_NONEXIST_MSG = LINE + INVALID_TOPIC + " ID doesn't exist in the database." + CSLINE_MSG;
     public static final String ERROR_TOPIC_TITLES_NONMATCH_MSG = LINE + INVALID_TOPIC + " Existing topic title doesn't match." +
             CSLINE_MSG + CSLINE_MSG;
@@ -216,6 +219,11 @@ public class ProcessorConstants {
     public static final String ERROR_TOPIC_INVALID_REVISION_FORMAT = LINE + INVALID_TOPIC + " " + CSLINE_MSG;
     public static final String ERROR_TOPIC_NOT_IN_PART_INTRO_MSG = LINE + INVALID_TOPIC + " A topic must be before any chapters inside of" +
             " a part." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_HAS_RELATIONSHIPS_MSG = LINE + INVALID_TOPIC + " The Topic has relationships, " +
+            "but isn't allowed any." + CSLINE_MSG;
+    public static final String ERROR_INVALID_TYPE_MSG = LINE + INVALID_TOPIC + " Invalid Type." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_NOT_ALLOWED_MSG = LINE + INVALID_TOPIC + " The Topic is not allowed in the structure of a book" +
+            " because it is not a normal Topic." + CSLINE_MSG;
 
 
     // Warnings
@@ -225,7 +233,7 @@ public class ProcessorConstants {
     public static final String WARN_WRITER_IGNORE_MSG = LINE + "%s topics can't be assigned a new writer, so the writer will be ignored.";
     public static final String WARN_TAGS_IGNORE_MSG = LINE + "%s topics can't have tags, so the tags will be ignored.";
     public static final String WARN_DEBUG_IGNORE_MSG = "Invalid debug setting. Debug must be set to 0, " +
-            "1 or 2! So debug will be off by default.";
+            "" + "1 or 2! So debug will be off by default.";
     public static final String WARN_IGNORE_INFO_MSG = LINE + "All descriptions, tags, source urls and writers will be ignored for " +
             "existing Topics." + CSLINE_MSG;
     public static final String WARN_IGNORE_DUP_INFO_MSG = LINE + "All types, descriptions, source urls and writers will be ignored for " +
@@ -284,24 +292,6 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_LINK_LIST_RELATIONSHIP = LINE + INVALID_RELATIONSHIP + " Invalid Link-List Relationship " +
             "format";
 
-    // Setup Processor Constants
-    public static final String ERROR_INVALID_MUTEX_MSG = LINE + "Mutex value must be either 0 or 1." + CSLINE_MSG;
-    public static final String ERROR_INVALID_CATEGORY_FORMAT_MSG = LINE + "Invalid Category attribute format. (%s)" + CSLINE_MSG;
-    public static final String ERROR_NO_CATEGORY_NAME_MSG = LINE + "No category name entered." + CSLINE_MSG;
-    public static final String INFO_NEW_CATEGORY_MSG = "New Category created - ID = %d, Name = %s, Mutex = %d";
-    public static final String ERROR_CATEGORY_EXISTS_MSG = LINE + "Category already exists! Name = %s, Mutex = %d";
-
-    public static final String ERROR_INVALID_TAG_FORMAT_MSG = LINE + "Invalid Tag attribute format. (%s)" + CSLINE_MSG;
-    public static final String ERROR_NO_TAG_NAME_MSG = LINE + "No tag name entered." + CSLINE_MSG;
-    public static final String INFO_NEW_TAG_MSG = "New Tag created - ID = %d, Name = %s, Category = %s";
-    public static final String ERROR_TAG_EXISTS_MSG = LINE + "Tag already exists! Name = %s, Category = %s";
-    public static final String ERROR_CATEGORY_NONEXIST_MSG = LINE + "Category doesn't exist! Category = %s";
-
-    public static final String ERROR_TYPE_EXISTS_MSG = LINE + "Type already exists! Name = %s";
-    public static final String ERROR_NO_TYPE_NAME_MSG = LINE + "No type name entered." + CSLINE_MSG;
-    public static final String ERROR_INVALID_TYPE_FORMAT_MSG = LINE + "Invalid Type attribute format. (%s)" + CSLINE_MSG;
-    public static final String INFO_NEW_TYPE_MSG = LINE + "New Type created - ID = %d, Name = %s";
-
     // Meta Data Regex Constants
     public static final String SPEC_REVISION_REGEX = "^SPECREVISION[ ]*((=.*)|$)";
     public static final String CHECKSUM_REGEX = "^CHECKSUM[ ]*((=.*)|$)";
@@ -327,7 +317,19 @@ public class ProcessorConstants {
     public static final String INLINE_INJECTION_REGEX = "^INLINE INJECTION[ ]*((=.*)|$)";
     public static final String SPACES_REGEX = "^SPACES[ ]*((=.*)|$)";
     public static final String DTD_REGEX = "^DTD[ ]*((=.*)|$)";
+    public static final String REV_HISTORY_REGEX = "^REVISION[ ]+HISTORY[ ]*((=.*)|$)";
+    public static final String FEEDBACK_REGEX = "^FEEDBACK[ ]*((=.*)|$)";
+    public static final String LEGAL_NOTICE_REGEX = "^LEGAL[ ]+NOTICE[ ]*((=.*)|$)";
 
     // Outdated Meta Data Regex Constants
     public static final String OUTPUT_STYLE_REGEX = "^OUTPUT STYLE[ ]*((=.*)|$)";
+
+    // Level Regex Cosntants
+    public static final String CHAPTER_REGEX = "^CHAPTER[ ]*((:.*)|$)";
+    public static final String SECTION_REGEX = "^SECTION[ ]*((:.*)|$)";
+    public static final String APPENDIX_REGEX = "^APPENDIX[ ]*((:.*)|$)";
+    public static final String PART_REGEX = "^PART[ ]*((:.*)|$)";
+    public static final String PREFACE_REGEX = "^PREFACE[ ]*((:.*)|$)";
+    public static final String PROCESS_REGEX = "^PROCESS[ ]*((:.*)|$)";
+    public static final String LEVEL_REGEX = "^(CHAPTER|SECTION|APPENDIX|PART|PREFACE|PROCESS)[ ]*((:.*)|$)";
 }
