@@ -1197,20 +1197,30 @@ public class ContentSpecParser {
             newLvl.setTitle(title);
             try {
                 // Get the mapping of variables
-                final HashMap<RelationshipType, String[]> variableMap = getLineVariables(splitVars[1], '[', ']', ',', false);
+                final HashMap<RelationshipType, List<String[]>> variableMap = getLineVariables(splitVars[1], '[', ']', ',', false, true);
                 if (variableMap.containsKey(RelationshipType.NONE)) {
-                    final String[] variables = variableMap.get(RelationshipType.NONE);
-                    // Process the options
-                    if (variables.length >= 1) {
-                        if (!addOptions(newLvl, variables, 0, input)) {
-                            return null;
+                    for (final String[] variables : variableMap.get(RelationshipType.NONE)) {
+                        if (variables[0].matches(CSConstants.ALL_TOPIC_ID_REGEX)) {
+                            final String topicString = title + " [" + StringUtilities.buildString(variables, ", ") + "]";
+                            final SpecTopic innerTopic = parseTopic(topicString);
+                            if (innerTopic != null) {
+                                innerTopic.setTopicType(TopicType.LEVEL);
+                                newLvl.setInnerTopic(innerTopic);
+                            }
+                        } else {
+                            // Process the options
+                            if (variables.length >= 1) {
+                                if (!addOptions(newLvl, variables, 0, input)) {
+                                    return null;
+                                }
+                            }
                         }
                     }
                 }
 
                 // Add targets for the level
                 if (variableMap.containsKey(RelationshipType.TARGET)) {
-                    final String targetId = variableMap.get(RelationshipType.TARGET)[0];
+                    final String targetId = variableMap.get(RelationshipType.TARGET).get(0)[0];
                     if (targetTopics.containsKey(targetId)) {
                         log.error(format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, targetTopics.get(targetId).getLineNumber(),
                                 targetTopics.get(targetId).getText(), lineCounter, input));
@@ -1227,7 +1237,7 @@ public class ContentSpecParser {
 
                 // Check for external targets
                 if (variableMap.containsKey(RelationshipType.EXTERNAL_TARGET)) {
-                    final String externalTargetId = variableMap.get(RelationshipType.EXTERNAL_TARGET)[0];
+                    final String externalTargetId = variableMap.get(RelationshipType.EXTERNAL_TARGET).get(0)[0];
                     externalTargetLevels.put(externalTargetId, newLvl);
                     newLvl.setExternalTargetId(externalTargetId);
                 }

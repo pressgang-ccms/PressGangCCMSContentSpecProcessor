@@ -630,6 +630,11 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             valid = false;
         }
 
+        // Validate the topics level
+        if (level.getInnerTopic() != null && !preValidateTopic(level.getInnerTopic(), specTopics, bookType, false)) {
+            valid = false;
+        }
+
         // Validate the sub levels and topics
         for (final Node childNode : level.getChildNodes()) {
             if (childNode instanceof Level) {
@@ -758,8 +763,6 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
      * Validates a level to ensure its format and child levels/topics are valid.
      *
      * @param level              The level to be validated.
-     * @param csAllowEmptyLevels If the "Allow Empty Levels" bit is set in a content specification.
-     * @param bookType           The type of book the level should be validated for.
      * @return True if the level is valid otherwise false.
      */
     public boolean postValidateLevel(final Level level) {
@@ -773,6 +776,11 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
 
         // Validate the tags
         if (!validateTopicTags(level, level.getTags(false))) {
+            valid = false;
+        }
+
+        // Validate the topics level
+        if (level.getInnerTopic() != null && !postValidateTopic(level.getInnerTopic())) {
             valid = false;
         }
 
@@ -1028,7 +1036,8 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             } else if (specTopic.getTopicType() == TopicType.LEGAL_NOTICE && !type.getId().equals(CSConstants.LEGAL_NOTICE_TAG_ID)) {
                 log.error(format(ProcessorConstants.ERROR_INVALID_TYPE_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
-            } else if (specTopic.getTopicType() == TopicType.REVISION_HISTORY && !type.getId().equals(CSConstants.REVISION_HISTORY_TAG_ID)) {
+            } else if (specTopic.getTopicType() == TopicType.REVISION_HISTORY && !type.getId().equals(
+                    CSConstants.REVISION_HISTORY_TAG_ID)) {
                 log.error(format(ProcessorConstants.ERROR_INVALID_TYPE_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
@@ -1087,7 +1096,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             }
 
             // Validate the title matches for normal topics if we aren't using permissive mode
-            if (specTopic.getTopicType() == TopicType.NORMAL) {
+            if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL) {
                 final String topicTitle = getTopicTitleWithConditions(specTopic, (T) topic);
                 if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
                     String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topicTitle;
@@ -1098,6 +1107,9 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
                 // If we are using permissive mode then change the title to the correct title
                 else if (processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
                     specTopic.setTitle(topicTitle);
+                    if (specTopic.getTopicType() == TopicType.LEVEL) {
+                        ((Level) specTopic.getParent()).setTitle(topicTitle);
+                    }
                 }
             }
 
@@ -1124,7 +1136,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
                 valid = false;
             } else {
                 // Validate the title matches if we aren't using permissive mode
-                if (specTopic.getTopicType() == TopicType.NORMAL) {
+                if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL) {
                     final String topicTitle = getTopicTitleWithConditions(specTopic, (T) topic);
                     if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
                         String topicTitleMsg = "Topic " + topic.getId() + ": " + topicTitle;
@@ -1135,6 +1147,9 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
                     // If we are using permissive mode then change the title to the correct title
                     else if (processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
                         specTopic.setTitle(topicTitle);
+                        if (specTopic.getTopicType() == TopicType.LEVEL) {
+                            ((Level) specTopic.getParent()).setTitle(topicTitle);
+                        }
                     }
                 }
 
@@ -1164,7 +1179,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
      * Gets a Topics title with conditional statements applied
      *
      * @param specTopic The SpecTopic of the topic to get the title for.
-     * @param topic The actual topic to get the non-processed title from.
+     * @param topic     The actual topic to get the non-processed title from.
      * @return The processed title that has the conditions applied.
      */
     private String getTopicTitleWithConditions(final SpecTopic specTopic, final T topic) {
