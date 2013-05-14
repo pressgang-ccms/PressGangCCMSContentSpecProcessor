@@ -240,6 +240,8 @@ public class ProcessorConstants {
             "existing Topics." + CSLINE_MSG;
     public static final String WARN_INTERNAL_TOPIC_MSG = LINE + "The topic is an internal-only topic and contains sensitive information. " +
             "Ensure you are not publishing this publicly." + CSLINE_MSG;
+    public static final String WARN_CS_NO_SUBTITLE_MSG = "No Subtitle specified, so a default will be used instead.";
+    public static final String WARN_CS_NO_ABSTRACT_MSG = "No Abstract specified, so a default will be used instead.";
 
     public static final String ERROR_NEW_TOPIC_DISABLED_MESSAGE = LINE + "Creating new topics via Content Specification is not supported " +
             "on this server" + CSLINE_MSG;

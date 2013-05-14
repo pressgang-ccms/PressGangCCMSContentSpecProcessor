@@ -209,6 +209,14 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             valid = false;
         }
 
+        // Print Warnings for content that maybe important
+        if (contentSpec.getSubtitle() == null || contentSpec.getSubtitle().equals("")) {
+            log.warn(ProcessorConstants.WARN_CS_NO_SUBTITLE_MSG);
+        }
+        if (contentSpec.getAbstract() == null || contentSpec.getAbstract().equals("")) {
+            log.warn(ProcessorConstants.WARN_CS_NO_ABSTRACT_MSG);
+        }
+
         // Check that the content specification isn't empty
         if (contentSpec.getBaseLevel() == null) {
             log.error(ProcessorConstants.ERROR_CS_EMPTY_MSG);
