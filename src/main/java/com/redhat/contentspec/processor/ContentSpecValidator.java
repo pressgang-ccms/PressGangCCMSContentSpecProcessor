@@ -770,7 +770,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
     /**
      * Validates a level to ensure its format and child levels/topics are valid.
      *
-     * @param level              The level to be validated.
+     * @param level The level to be validated.
      * @return True if the level is valid otherwise false.
      */
     public boolean postValidateLevel(final Level level) {
@@ -1121,11 +1121,27 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
                 }
             }
 
-            // Check to make sure the topic is a normal topic and not a special case
-            if (ComponentBaseTopicV1.hasTag(topic, CSConstants.LEGAL_NOTICE_TAG_ID) || ComponentBaseTopicV1.hasTag(topic,
-                    CSConstants.REVISION_HISTORY_TAG_ID)) {
-                log.error(format(ProcessorConstants.ERROR_TOPIC_NOT_ALLOWED_MSG, specTopic.getLineNumber(), specTopic.getText()));
-                valid = false;
+            if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL) {
+                // Check to make sure the topic is a normal topic and not a special case
+                if (ComponentBaseTopicV1.hasTag(topic, CSConstants.LEGAL_NOTICE_TAG_ID) || ComponentBaseTopicV1.hasTag(topic,
+                        CSConstants.REVISION_HISTORY_TAG_ID)) {
+                    log.error(format(ProcessorConstants.ERROR_TOPIC_NOT_ALLOWED_MSG, specTopic.getLineNumber(), specTopic.getText()));
+                    valid = false;
+                }
+            } else if (specTopic.getTopicType() == TopicType.LEGAL_NOTICE) {
+                // Check to make sure the topic is a legal notice topic
+                if (!ComponentBaseTopicV1.hasTag(topic, CSConstants.LEGAL_NOTICE_TAG_ID)) {
+                    log.error(format(ProcessorConstants.ERROR_LEGAL_NOTICE_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(),
+                            specTopic.getText()));
+                    valid = false;
+                }
+            } else if (specTopic.getTopicType() == TopicType.REVISION_HISTORY) {
+                // Check to make sure the topic is a revision history topic
+                if (!ComponentBaseTopicV1.hasTag(topic, CSConstants.REVISION_HISTORY_TAG_ID)) {
+                    log.error(format(ProcessorConstants.ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(),
+                            specTopic.getText()));
+                    valid = false;
+                }
             }
 
             // Validate the tags
@@ -1161,11 +1177,27 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
                     }
                 }
 
-                // Check to make sure the topic is a normal topic and not a special case
-                if (ComponentBaseTopicV1.hasTag(topic, CSConstants.LEGAL_NOTICE_TAG_ID) || ComponentBaseTopicV1.hasTag(topic,
-                        CSConstants.REVISION_HISTORY_TAG_ID)) {
-                    log.error(format(ProcessorConstants.ERROR_TOPIC_NOT_ALLOWED_MSG, specTopic.getLineNumber(), specTopic.getText()));
-                    valid = false;
+                if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL) {
+                    // Check to make sure the topic is a normal topic and not a special case
+                    if (ComponentBaseTopicV1.hasTag(topic, CSConstants.LEGAL_NOTICE_TAG_ID) || ComponentBaseTopicV1.hasTag(topic,
+                            CSConstants.REVISION_HISTORY_TAG_ID)) {
+                        log.error(format(ProcessorConstants.ERROR_TOPIC_NOT_ALLOWED_MSG, specTopic.getLineNumber(), specTopic.getText()));
+                        valid = false;
+                    }
+                } else if (specTopic.getTopicType() == TopicType.LEGAL_NOTICE) {
+                    // Check to make sure the topic is a legal notice topic
+                    if (!ComponentBaseTopicV1.hasTag(topic, CSConstants.LEGAL_NOTICE_TAG_ID)) {
+                        log.error(format(ProcessorConstants.ERROR_LEGAL_NOTICE_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(),
+                                specTopic.getText()));
+                        valid = false;
+                    }
+                } else if (specTopic.getTopicType() == TopicType.REVISION_HISTORY) {
+                    // Check to make sure the topic is a revision history topic
+                    if (!ComponentBaseTopicV1.hasTag(topic, CSConstants.REVISION_HISTORY_TAG_ID)) {
+                        log.error(format(ProcessorConstants.ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(),
+                                specTopic.getText()));
+                        valid = false;
+                    }
                 }
 
                 // Check Assigned Writer exists

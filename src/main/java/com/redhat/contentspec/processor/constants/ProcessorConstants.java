@@ -224,7 +224,10 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_TYPE_MSG = LINE + INVALID_TOPIC + " Invalid Type." + CSLINE_MSG;
     public static final String ERROR_TOPIC_NOT_ALLOWED_MSG = LINE + INVALID_TOPIC + " The Topic is not allowed in the structure of a book" +
             " because it is not a normal Topic." + CSLINE_MSG;
-
+    public static final String ERROR_LEGAL_NOTICE_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not a Legal " +
+            "Notice Topic." +  CSLINE_MSG;
+    public static final String ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not a Revision " +
+            "History Topic." +  CSLINE_MSG;
 
     // Warnings
     public static final String WARN_DESCRIPTION_IGNORE_MSG = LINE + "%s topics can't have a description, " +
