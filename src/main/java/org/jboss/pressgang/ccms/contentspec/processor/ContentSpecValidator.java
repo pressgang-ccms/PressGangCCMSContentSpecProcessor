@@ -765,7 +765,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     break;
                 case SECTION:
                     if (!(parentLevelType == LevelType.APPENDIX || parentLevelType == LevelType.CHAPTER || parentLevelType == LevelType
-                            .SECTION)) {
+                            .PREFACE || parentLevelType == LevelType.SECTION)) {
                         log.error(format(ProcessorConstants.ERROR_CS_SECTION_NO_CHAPTER_MSG, level.getLineNumber(), level.getText()));
                         valid = false;
                     }
