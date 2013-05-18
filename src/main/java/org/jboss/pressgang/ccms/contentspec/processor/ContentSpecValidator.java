@@ -203,15 +203,15 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that any metadata topics are valid
-        if (contentSpec.getRevisionHistory() != null && !preValidateTopic(contentSpec.getRevisionHistory(), specTopics,
+        if (contentSpec.getRevisionHistory() != null && !preValidateTopic(contentSpec.getRevisionHistory(), specTopicMap,
                 contentSpec.getBookType(), false)) {
             valid = false;
         }
-        if (contentSpec.getFeedback() != null && !preValidateTopic(contentSpec.getFeedback(), specTopics, contentSpec.getBookType(),
+        if (contentSpec.getFeedback() != null && !preValidateTopic(contentSpec.getFeedback(), specTopicMap, contentSpec.getBookType(),
                 false)) {
             valid = false;
         }
-        if (contentSpec.getLegalNotice() != null && !preValidateTopic(contentSpec.getLegalNotice(), specTopics, contentSpec.getBookType(),
+        if (contentSpec.getLegalNotice() != null && !preValidateTopic(contentSpec.getLegalNotice(), specTopicMap, contentSpec.getBookType(),
                 false)) {
             valid = false;
         }
