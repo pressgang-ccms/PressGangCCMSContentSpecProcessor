@@ -28,6 +28,7 @@ import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
 import org.jboss.pressgang.ccms.contentspec.enums.BookType;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
 import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
+import org.jboss.pressgang.ccms.contentspec.enums.TopicType;
 import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
 import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptions;
@@ -45,6 +46,7 @@ import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.provider.exception.NotFoundException;
 import org.jboss.pressgang.ccms.utils.common.DocBookUtilities;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
+import org.jboss.pressgang.ccms.utils.common.XMLUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.CategoryInTagWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
@@ -52,6 +54,8 @@ import org.jboss.pressgang.ccms.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.UserWrapper;
 import org.jboss.pressgang.ccms.wrapper.base.BaseTopicWrapper;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 
 /**
@@ -196,6 +200,28 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         if (contentSpec.getEdition() != null && !contentSpec.getEdition().matches(ProcessorConstants.VERSION_VALIDATE_REGEX)) {
             log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, CSConstants.EDITION_TITLE));
             valid = false;
+        }
+
+        // Check that any metadata topics are valid
+        if (contentSpec.getRevisionHistory() != null && !preValidateTopic(contentSpec.getRevisionHistory(), specTopics,
+                contentSpec.getBookType(), false)) {
+            valid = false;
+        }
+        if (contentSpec.getFeedback() != null && !preValidateTopic(contentSpec.getFeedback(), specTopics, contentSpec.getBookType(),
+                false)) {
+            valid = false;
+        }
+        if (contentSpec.getLegalNotice() != null && !preValidateTopic(contentSpec.getLegalNotice(), specTopics, contentSpec.getBookType(),
+                false)) {
+            valid = false;
+        }
+
+        // Print Warnings for content that maybe important
+        if (isNullOrEmpty(contentSpec.getSubtitle())) {
+            log.warn(ProcessorConstants.WARN_CS_NO_SUBTITLE_MSG);
+        }
+        if (isNullOrEmpty(contentSpec.getAbstract())) {
+            log.warn(ProcessorConstants.WARN_CS_NO_ABSTRACT_MSG);
         }
 
         // Check that each level is valid
@@ -395,6 +421,17 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
         }
 
+        // Check that any metadata topics are valid
+        if (contentSpec.getRevisionHistory() != null && !postValidateTopic(contentSpec.getRevisionHistory())) {
+            valid = false;
+        }
+        if (contentSpec.getFeedback() != null && !postValidateTopic(contentSpec.getFeedback())) {
+            valid = false;
+        }
+        if (contentSpec.getLegalNotice() != null && !postValidateTopic(contentSpec.getLegalNotice())) {
+            valid = false;
+        }
+
         // Check that each level is valid
         if (!postValidateLevel(contentSpec.getBaseLevel())) {
             valid = false;
@@ -587,25 +624,32 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         boolean valid = true;
 
+        // Make sure the level has a type, if it doesn't then return false immediately
+        final LevelType levelType = level.getLevelType();
+        if (levelType == null) {
+            log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
+            return false;
+        }
+
         // Check that the level isn't empty
         if (level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 0 /*
                                                                                        * && !allowEmptyLevels &&
                                                                                        * (allowEmptyLevels &&
                                                                                        * !csAllowEmptyLevels)
                                                                                        */) {
-            log.error(String.format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), level.getType().getTitle(),
-                    level.getType().getTitle(), level.getText()));
+            log.error(String.format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), levelType.getTitle(), 
+                    levelType.getTitle(), level.getText()));
             valid = false;
         }
 
-        if (level.getType() == null) {
-            log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
-            valid = false;
-        }
-
-        if (level.getTitle() == null || level.getTitle().equals("")) {
-            log.error(String.format(ProcessorConstants.ERROR_LEVEL_NO_TITLE_MSG, level.getLineNumber(), level.getType().getTitle(),
+        if (isNullOrEmpty(level.getTitle())) {
+            log.error(String.format(ProcessorConstants.ERROR_LEVEL_NO_TITLE_MSG, level.getLineNumber(), levelType.getTitle(),
                     level.getText()));
+            valid = false;
+        }
+
+        // Validate the topics level
+        if (level.getInnerTopic() != null && !preValidateTopic(level.getInnerTopic(), specTopics, bookType, false)) {
             valid = false;
         }
 
@@ -623,10 +667,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Validate certain requirements depending on the type of level
+        LevelType parentLevelType = level.getParent() != null ? level.getParent().getLevelType() : null;
         if (bookType == BookType.ARTICLE || bookType == BookType.ARTICLE_DRAFT) {
-            switch (level.getType()) {
+            switch (levelType) {
                 case APPENDIX:
-                    if (!(level.getParent().getType() == LevelType.BASE)) {
+                    if (parentLevelType != LevelType.BASE) {
                         log.error(String.format(ProcessorConstants.ERROR_ARTICLE_NESTED_APPENDIX_MSG, level.getLineNumber(),
                                 level.getText()));
                         valid = false;
@@ -639,8 +684,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     while (parentNodes.hasNext()) {
                         final Node node = parentNodes.next();
                         if (node instanceof Level && !(node instanceof Appendix)) {
-                            log.error(String.format(ProcessorConstants.ERROR_CS_APPENDIX_STRUCTURE_MSG, level.getLineNumber(),
-                                    level.getText()));
+                            log.error(format(ProcessorConstants.ERROR_CS_APPENDIX_STRUCTURE_MSG, level.getLineNumber(), level.getText()));
                             valid = false;
                         }
                     }
@@ -657,9 +701,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     log.error(String.format(ProcessorConstants.ERROR_ARTICLE_PART_MSG, level.getLineNumber(), level.getText()));
                     valid = false;
                     break;
+                case PREFACE:
+                    log.error(format(ProcessorConstants.ERROR_ARTICLE_PREFACE_MSG, level.getLineNumber(), level.getText()));
+                    valid = false;
+                    break;
                 case SECTION:
-                    if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.SECTION)) {
-                        log.error(String.format(ProcessorConstants.ERROR_ARTICLE_SECTION_MSG, level.getLineNumber(), level.getText()));
+                    if (!(parentLevelType == LevelType.BASE || parentLevelType == LevelType.SECTION)) {
+                        log.error(format(ProcessorConstants.ERROR_ARTICLE_SECTION_MSG, level.getLineNumber(), level.getText()));
                         valid = false;
                     }
                     break;
@@ -669,10 +717,10 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
         // Generic book based validation
         else {
-            switch (level.getType()) {
+            switch (levelType) {
                 case APPENDIX:
-                    if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.PART)) {
-                        log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_APPENDIX_MSG, level.getLineNumber(), level.getText()));
+                    if (!(parentLevelType == LevelType.BASE || parentLevelType == LevelType.PART)) {
+                        log.error(format(ProcessorConstants.ERROR_CS_NESTED_APPENDIX_MSG, level.getLineNumber(), level.getText()));
                         valid = false;
                     }
 
@@ -683,16 +731,15 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     while (parentNodes.hasNext()) {
                         final Node node = parentNodes.next();
                         if (node instanceof Level && !(node instanceof Appendix)) {
-                            log.error(String.format(ProcessorConstants.ERROR_CS_APPENDIX_STRUCTURE_MSG, level.getLineNumber(),
-                                    level.getText()));
+                            log.error(format(ProcessorConstants.ERROR_CS_APPENDIX_STRUCTURE_MSG, level.getLineNumber(), level.getText()));
                             valid = false;
                         }
                     }
 
                     break;
                 case CHAPTER:
-                    if (!(level.getParent().getType() == LevelType.BASE || level.getParent().getType() == LevelType.PART)) {
-                        log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_CHAPTER_MSG, level.getLineNumber(), level.getText()));
+                    if (!(parentLevelType == LevelType.BASE || parentLevelType == LevelType.PART)) {
+                        log.error(format(ProcessorConstants.ERROR_CS_NESTED_CHAPTER_MSG, level.getLineNumber(), level.getText()));
                         valid = false;
                     }
                     break;
@@ -700,22 +747,26 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     // Check that the process has no children
                     Process process = (Process) level;
                     if (process.getNumberOfChildLevels() != 0) {
-                        log.error(
-                                String.format(ProcessorConstants.ERROR_PROCESS_HAS_LEVELS_MSG, process.getLineNumber(), process.getText()));
+                        log.error(format(ProcessorConstants.ERROR_PROCESS_HAS_LEVELS_MSG, process.getLineNumber(), process.getText()));
                         valid = false;
                     }
                     break;
                 case PART:
-                    if (level.getParent().getType() != LevelType.BASE) {
-                        log.error(String.format(ProcessorConstants.ERROR_CS_NESTED_PART_MSG, level.getLineNumber(), level.getText()));
+                    if (parentLevelType != LevelType.BASE) {
+                        log.error(format(ProcessorConstants.ERROR_CS_NESTED_PART_MSG, level.getLineNumber(), level.getText()));
+                        valid = false;
+                    }
+                    break;
+                case PREFACE:
+                    if (parentLevelType != LevelType.BASE || parentLevelType == LevelType.PART) {
+                        log.error(format(ProcessorConstants.ERROR_CS_NESTED_PREFACE_MSG, level.getLineNumber(), level.getText()));
                         valid = false;
                     }
                     break;
                 case SECTION:
-                    if (!(level.getParent().getType() == LevelType.APPENDIX || level.getParent().getType() == LevelType.CHAPTER || level
-                            .getParent().getType() == LevelType.SECTION)) {
-                        log.error(
-                                String.format(ProcessorConstants.ERROR_CS_SECTION_NO_CHAPTER_MSG, level.getLineNumber(), level.getText()));
+                    if (!(parentLevelType == LevelType.APPENDIX || parentLevelType == LevelType.CHAPTER || parentLevelType == LevelType
+                            .SECTION)) {
+                        log.error(format(ProcessorConstants.ERROR_CS_SECTION_NO_CHAPTER_MSG, level.getLineNumber(), level.getText()));
                         valid = false;
                     }
                     break;
@@ -747,6 +798,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
+        // Validate the topics level
+        if (level.getInnerTopic() != null && !postValidateTopic(level.getInnerTopic())) {
+            valid = false;
+        }
+
         // Validate the sub levels and topics
         for (final Node childNode : level.getChildNodes()) {
             if (childNode instanceof Level) {
@@ -772,6 +828,19 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @return True if the topic is valid otherwise false.
      */
     public boolean preValidateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics, final BookType bookType) {
+        return preValidateTopic(specTopic, specTopics, bookType, true);
+    }
+
+    /**
+     * Validates a topic against the database and for formatting issues.
+     *
+     * @param specTopic  The topic to be validated.
+     * @param specTopics The list of topics that exist within the content specification.
+     * @param bookType   The type of book the topic is to be validated against.
+     * @return True if the topic is valid otherwise false.
+     */
+    public boolean preValidateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics, final BookType bookType,
+            boolean allowRelationships) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -792,19 +861,20 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
-        if (bookType != BookType.ARTICLE && bookType != BookType.ARTICLE_DRAFT) {
-            // Check that the topic is inside a chapter/section/process/appendix/part
-            if (specTopic.getParent() == null || !(specTopic.getParent().getType() == LevelType.CHAPTER || specTopic.getParent().getType
-                    () == LevelType.APPENDIX || specTopic.getParent().getType() == LevelType.PROCESS || specTopic.getParent().getType()
-                    == LevelType.SECTION || specTopic.getParent().getType() == LevelType.PART)) {
-                log.error(
-                        String.format(ProcessorConstants.ERROR_TOPIC_OUTSIDE_CHAPTER_MSG, specTopic.getLineNumber(), specTopic.getText()));
+        if ((bookType == BookType.BOOK || bookType == BookType.BOOK_DRAFT) && specTopic.getParent() instanceof Level) {
+            final Level parent = (Level) specTopic.getParent();
+            // Check that the topic is inside a chapter/section/process/appendix/part/preface
+            final LevelType parentLevelType = parent.getLevelType();
+            if (parent == null || !(parentLevelType == LevelType.CHAPTER || parentLevelType == LevelType.APPENDIX ||
+                    parentLevelType == LevelType.PROCESS || parentLevelType == LevelType.SECTION || parentLevelType == LevelType.PART ||
+                    parentLevelType == LevelType.PREFACE)) {
+                log.error(format(ProcessorConstants.ERROR_TOPIC_OUTSIDE_CHAPTER_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
 
             // Check that there are no levels in the parent part (ie the topic is in the intro)
-            if (specTopic.getParent() != null && specTopic.getParent().getType() == LevelType.PART) {
-                final LinkedList<Node> parentChildren = specTopic.getParent().getChildNodes();
+            if (parent != null && parentLevelType == LevelType.PART) {
+                final LinkedList<Node> parentChildren = parent.getChildNodes();
                 final int index = parentChildren.indexOf(specTopic);
 
                 for (int i = 0; i < index; i++) {
@@ -820,7 +890,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that the title exists
-        if (specTopic.getTitle() == null || specTopic.getTitle().equals("")) {
+        if (isNullOrEmpty(specTopic.getTitle())) {
             log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getLineNumber(), specTopic.getText()));
             valid = false;
         }
@@ -959,6 +1029,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 }
             }
         }
+
+        // Check to make sure no relationships exist if they aren't allowed
+        if (!allowRelationships && specTopic.getRelationships().size() > 0) {
+            log.error(format(ProcessorConstants.ERROR_TOPIC_HAS_RELATIONSHIPS_MSG, specTopic.getLineNumber(), specTopic.getText()));
+            valid = false;
+        }
+
         return valid;
     }
 
@@ -990,6 +1067,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
             if (type == null || !type.containedInCategory(CSConstants.TYPE_CATEGORY_ID)) {
                 log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
+                valid = false;
+            } else if (specTopic.getTopicType() == TopicType.LEGAL_NOTICE && !type.getId().equals(CSConstants.LEGAL_NOTICE_TAG_ID)) {
+                log.error(format(ProcessorConstants.ERROR_INVALID_TYPE_MSG, specTopic.getLineNumber(), specTopic.getText()));
+                valid = false;
+            } else if (specTopic.getTopicType() == TopicType.REVISION_HISTORY && !type.getId().equals(
+                    CSConstants.REVISION_HISTORY_TAG_ID)) {
+                log.error(format(ProcessorConstants.ERROR_INVALID_TYPE_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
 
@@ -1050,16 +1134,44 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 valid = false;
             }
 
-            // Validate the title matches if we aren't using permissive mode
-            if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topic.getTitle())) {
-                String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topic.getTitle();
-                log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
-                        "Specified: " + specTopic.getText(), topicTitleMsg));
-                valid = false;
+            // Validate the title matches for normal topics if we aren't using permissive mode
+            if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL) {
+                final String topicTitle = getTopicTitleWithConditions(specTopic, topic);
+                if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
+                    String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topicTitle;
+                    log.error(format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
+                            "Specified: " + specTopic.getText(), topicTitleMsg));
+                    valid = false;
+                }
+                // If we are using permissive mode then change the title to the correct title
+                else if (processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
+                    specTopic.setTitle(topicTitle);
+                    if (specTopic.getTopicType() == TopicType.LEVEL) {
+                        ((Level) specTopic.getParent()).setTitle(topicTitle);
+                    }
+                }
             }
-            // If we are using permissive mode then change the title to the correct title
-            else if (processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topic.getTitle())) {
-                specTopic.setTitle(topic.getTitle());
+
+            if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL) {
+                // Check to make sure the topic is a normal topic and not a special case
+                if (topic.hasTag(CSConstants.LEGAL_NOTICE_TAG_ID) || topic.hasTag(CSConstants.REVISION_HISTORY_TAG_ID)) {
+                    log.error(format(ProcessorConstants.ERROR_TOPIC_NOT_ALLOWED_MSG, specTopic.getLineNumber(), specTopic.getText()));
+                    valid = false;
+                }
+            } else if (specTopic.getTopicType() == TopicType.LEGAL_NOTICE) {
+                // Check to make sure the topic is a legal notice topic
+                if (!topic.hasTag(CSConstants.LEGAL_NOTICE_TAG_ID)) {
+                    log.error(format(ProcessorConstants.ERROR_LEGAL_NOTICE_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(),
+                            specTopic.getText()));
+                    valid = false;
+                }
+            } else if (specTopic.getTopicType() == TopicType.REVISION_HISTORY) {
+                // Check to make sure the topic is a revision history topic
+                if (!topic.hasTag(CSConstants.REVISION_HISTORY_TAG_ID)) {
+                    log.error(format(ProcessorConstants.ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(),
+                            specTopic.getText()));
+                    valid = false;
+                }
             }
 
             // Validate the tags
@@ -1082,16 +1194,44 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 log.error(String.format(ProcessorConstants.ERROR_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             } else {
-                // Validate the title matches if we aren't using permissive mode
-                if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topic.getTitle())) {
-                    String topicTitleMsg = "Topic " + topic.getId() + ": " + topic.getTitle();
-                    log.error(String.format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
-                            specTopic.getText(), topicTitleMsg));
-                    valid = false;
+                // Validate the title matches for normal topics if we aren't using permissive mode
+                if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL) {
+                    final String topicTitle = getTopicTitleWithConditions(specTopic, topic);
+                    if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
+                        String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topicTitle;
+                        log.error(format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
+                                "Specified: " + specTopic.getText(), topicTitleMsg));
+                        valid = false;
+                    }
+                    // If we are using permissive mode then change the title to the correct title
+                    else if (processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
+                        specTopic.setTitle(topicTitle);
+                        if (specTopic.getTopicType() == TopicType.LEVEL) {
+                            ((Level) specTopic.getParent()).setTitle(topicTitle);
+                        }
+                    }
                 }
-                // If we are using permissive mode then change the title to the correct title
-                else if (processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topic.getTitle())) {
-                    specTopic.setTitle(topic.getTitle());
+
+                if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL) {
+                    // Check to make sure the topic is a normal topic and not a special case
+                    if (topic.hasTag(CSConstants.LEGAL_NOTICE_TAG_ID) || topic.hasTag(CSConstants.REVISION_HISTORY_TAG_ID)) {
+                        log.error(format(ProcessorConstants.ERROR_TOPIC_NOT_ALLOWED_MSG, specTopic.getLineNumber(), specTopic.getText()));
+                        valid = false;
+                    }
+                } else if (specTopic.getTopicType() == TopicType.LEGAL_NOTICE) {
+                    // Check to make sure the topic is a legal notice topic
+                    if (!topic.hasTag(CSConstants.LEGAL_NOTICE_TAG_ID)) {
+                        log.error(format(ProcessorConstants.ERROR_LEGAL_NOTICE_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(),
+                                specTopic.getText()));
+                        valid = false;
+                    }
+                } else if (specTopic.getTopicType() == TopicType.REVISION_HISTORY) {
+                    // Check to make sure the topic is a revision history topic
+                    if (!topic.hasTag(CSConstants.REVISION_HISTORY_TAG_ID)) {
+                        log.error(format(ProcessorConstants.ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(),
+                                specTopic.getText()));
+                        valid = false;
+                    }
                 }
 
                 // Check Assigned Writer exists
@@ -1107,6 +1247,30 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         return valid;
+    }
+
+    /**
+     * Gets a Topics title with conditional statements applied
+     *
+     * @param specTopic The SpecTopic of the topic to get the title for.
+     * @param topic     The actual topic to get the non-processed title from.
+     * @return The processed title that has the conditions applied.
+     */
+    private String getTopicTitleWithConditions(final SpecTopic specTopic, final BaseTopicWrapper<?> topic) {
+        try {
+            final Document doc = XMLUtilities.convertStringToDocument("<title>" + topic.getTitle() + "</title>");
+            String condition = specTopic.getConditionStatement(true);
+
+            // Process the condition on the title
+            DocBookUtilities.processConditions(condition, doc);
+
+            // Return the processed title
+            return XMLUtilities.convertNodeToString(doc, false);
+        } catch (SAXException e) {
+            log.debug(e.getMessage());
+        }
+
+        return "";
     }
 
     /**
