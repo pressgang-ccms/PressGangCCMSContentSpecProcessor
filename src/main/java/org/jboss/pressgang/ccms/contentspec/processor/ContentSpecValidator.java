@@ -15,7 +15,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.jboss.pressgang.ccms.contentspec.Appendix;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Node;
@@ -683,7 +682,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
                     while (parentNodes.hasNext()) {
                         final Node node = parentNodes.next();
-                        if (node instanceof Level && !(node instanceof Appendix)) {
+                        if (node instanceof Level && ((Level) node).getLevelType() != LevelType.APPENDIX) {
                             log.error(format(ProcessorConstants.ERROR_CS_APPENDIX_STRUCTURE_MSG, level.getLineNumber(), level.getText()));
                             valid = false;
                         }
@@ -730,7 +729,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
                     while (parentNodes.hasNext()) {
                         final Node node = parentNodes.next();
-                        if (node instanceof Level && !(node instanceof Appendix)) {
+                        if (node instanceof Level && ((Level) node).getLevelType() != LevelType.APPENDIX) {
                             log.error(format(ProcessorConstants.ERROR_CS_APPENDIX_STRUCTURE_MSG, level.getLineNumber(), level.getText()));
                             valid = false;
                         }
@@ -1225,20 +1224,24 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @return The processed title that has the conditions applied.
      */
     private String getTopicTitleWithConditions(final SpecTopic specTopic, final BaseTopicWrapper<?> topic) {
-        try {
-            final Document doc = XMLUtilities.convertStringToDocument("<title>" + topic.getTitle() + "</title>");
-            String condition = specTopic.getConditionStatement(true);
+        final String condition = specTopic.getConditionStatement(true);
+        if (condition != null) {
+            try {
+                final Document doc = XMLUtilities.convertStringToDocument("<title>" + topic.getTitle() + "</title>");
 
-            // Process the condition on the title
-            DocBookUtilities.processConditions(condition, doc);
+                // Process the condition on the title
+                DocBookUtilities.processConditions(condition, doc);
 
-            // Return the processed title
-            return XMLUtilities.convertNodeToString(doc, false);
-        } catch (SAXException e) {
-            log.debug(e.getMessage());
+                // Return the processed title
+                return XMLUtilities.convertNodeToString(doc, false);
+            } catch (SAXException e) {
+                log.debug(e.getMessage());
+            }
+
+            return "";
+        } else {
+            return topic.getTitle();
         }
-
-        return "";
     }
 
     /**

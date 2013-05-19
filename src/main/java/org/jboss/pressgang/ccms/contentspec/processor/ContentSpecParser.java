@@ -1195,18 +1195,25 @@ public class ContentSpecParser {
             final HashMap<RelationshipType, List<String[]>> variableMap = getLineVariables(splitVars[1], lineNumber, '[', ']', ',',
                     false, true);
             if (variableMap.containsKey(RelationshipType.NONE)) {
+                boolean optionsProcessed = false;
                 for (final String[] variables : variableMap.get(RelationshipType.NONE)) {
-                    if (variables[0].matches(CSConstants.ALL_TOPIC_ID_REGEX)) {
-                        final String topicString = title + " [" + StringUtilities.buildString(variables, ", ") + "]";
-                        final SpecTopic innerTopic = parseTopic(topicString, lineNumber);
-                        if (innerTopic != null) {
-                            innerTopic.setTopicType(TopicType.LEVEL);
-                            newLvl.setInnerTopic(innerTopic);
-                        }
-                    } else {
-                        // Process the options
-                        if (variables.length >= 1) {
-                            addOptions(newLvl, variables, 0, line, lineNumber);
+                    if (variables.length >= 1) {
+                        if (variables[0].matches(CSConstants.ALL_TOPIC_ID_REGEX)) {
+                            final String topicString = title + " [" + StringUtilities.buildString(variables, ", ") + "]";
+                            final SpecTopic innerTopic = parseTopic(topicString, lineNumber);
+                            if (innerTopic != null) {
+                                innerTopic.setTopicType(TopicType.LEVEL);
+                                newLvl.setInnerTopic(innerTopic);
+                            }
+                        } else {
+                            // Process the options
+                            if (!optionsProcessed) {
+                                addOptions(newLvl, variables, 0, line, lineNumber);
+                                optionsProcessed = true;
+                            } else {
+                                throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG, lineNumber,
+                                        line));
+                            }
                         }
                     }
                 }
@@ -1214,18 +1221,23 @@ public class ContentSpecParser {
 
             // Add targets for the level
             if (variableMap.containsKey(RelationshipType.TARGET)) {
-                final String targetId = variableMap.get(RelationshipType.TARGET).get(0)[0];
-                if (getTargetTopics().containsKey(targetId)) {
-                    throw new ParsingException(
-                            format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetTopics().get(targetId).getLineNumber(),
-                                    getTargetTopics().get(targetId).getText(), lineNumber, line));
-                } else if (getTargetLevels().containsKey(targetId)) {
-                    throw new ParsingException(
-                            format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetLevels().get(targetId).getLineNumber(),
-                                    getTargetLevels().get(targetId).getText(), lineNumber, line));
+                final List<String[]> targets = variableMap.get(RelationshipType.TARGET);
+                if (targets.size() == 1) {
+                    final String targetId = targets.get(0)[0];
+                    if (getTargetTopics().containsKey(targetId)) {
+                        throw new ParsingException(
+                                format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetTopics().get(targetId).getLineNumber(),
+                                        getTargetTopics().get(targetId).getText(), lineNumber, line));
+                    } else if (getTargetLevels().containsKey(targetId)) {
+                        throw new ParsingException(
+                                format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG, getTargetLevels().get(targetId).getLineNumber(),
+                                        getTargetLevels().get(targetId).getText(), lineNumber, line));
+                    } else {
+                        getTargetLevels().put(targetId, newLvl);
+                        newLvl.setTargetId(targetId);
+                    }
                 } else {
-                    getTargetLevels().put(targetId, newLvl);
-                    newLvl.setTargetId(targetId);
+                    throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG, lineNumber, line));
                 }
             }
 

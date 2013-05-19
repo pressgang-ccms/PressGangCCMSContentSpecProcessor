@@ -5,6 +5,8 @@ import static com.natpryce.makeiteasy.MakeItEasy.make;
 import static com.natpryce.makeiteasy.MakeItEasy.with;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker.id;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker.revision;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.ContentSpec;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.bookType;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.bookVersion;
@@ -15,17 +17,16 @@ import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.Content
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.product;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.title;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.version;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker.id;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker.revision;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
 
-import java.util.Arrays;
-
 import net.sf.ipsedixit.annotation.Arbitrary;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.enums.BookType;
+import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
+import org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
 import org.junit.Test;
 
@@ -40,6 +41,8 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void shouldPreValidateValidContentSpec() {
         // Given a valid content spec
         ContentSpec contentSpec = make(a(ContentSpec));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -54,6 +57,8 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void shouldFailAndLogErrorWhenInvalidBookType() {
         // Given an otherwise valid content spec with an invalid book type
         ContentSpec contentSpec = make(a(ContentSpec, with(bookType, BookType.INVALID)));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -69,6 +74,8 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void shouldFailAndLogErrorWhenInvalidVersion() {
         // Given an otherwise valid content spec with an invalid version
         ContentSpec contentSpec = make(a(ContentSpec, with(version, "AAA")));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -84,6 +91,8 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
         // Given an otherwise valid content spec with no version set
         ContentSpec contentSpec = make(a(ContentSpec));
         contentSpec.setVersion(null);
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -98,6 +107,8 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void shouldFailAndLogErrorWhenEmptyVersion() {
         // Given an otherwise valid content spec with an empty version set
         ContentSpec contentSpec = make(a(ContentSpec, with(version, "")));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -112,6 +123,8 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void shouldFailAndLogErrorWhenInvalidEdition() {
         // Given an otherwise valid content spec with an invalid edition
         ContentSpec contentSpec = make(a(ContentSpec, with(edition, "AAA")));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -126,6 +139,8 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void shouldFailAndLogErrorWhenInvalidBookVersion() {
         // Given an otherwise valid content spec with an invalid book version
         ContentSpec contentSpec = make(a(ContentSpec, with(bookVersion, "AAA")));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -141,6 +156,8 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void shouldFailAndLogErrorWhenEmptyTitle() {
         // Given an otherwise valid content spec with an empty title
         ContentSpec contentSpec = make(a(ContentSpec, with(title, "")));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -155,6 +172,8 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void shouldFailAndLogErrorWhenEmptyProduct() {
         // Given an otherwise valid content spec with an empty product
         ContentSpec contentSpec = make(a(ContentSpec, with(product, "")));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -169,6 +188,8 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void shouldFailAndLogErrorWhenEmptyDtd() {
         // Given an otherwise valid content spec with an empty DTD
         ContentSpec contentSpec = make(a(ContentSpec, with(dtd, "")));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -183,6 +204,8 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void shouldFailAndLogErrorWhenUnexpectedDtd() {
         // Given an otherwise valid content spec with an unexpected DTD
         ContentSpec contentSpec = make(a(ContentSpec, with(dtd, "Docbook 3")));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -198,6 +221,8 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void shouldFailAndLogErrorWhenEmptyCopyrightHolder() {
         // Given an otherwise valid content spec with an empty copyright holder
         ContentSpec contentSpec = make(a(ContentSpec, with(copyrightHolder, "")));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -213,7 +238,6 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void shouldFailAndLogErrorWhenLevelsInvalid() {
         // Given an otherwise valid content spec with invalid levels
         ContentSpec contentSpec = make(a(ContentSpec));
-        contentSpec.getBaseLevel().getSpecTopics().clear();
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -232,8 +256,10 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
         given(processingOptions.isUpdateRevisions()).willReturn(false);
         SpecTopic specTopic = make(a(SpecTopicMaker.SpecTopic, with(id, randomInt.toString()), with(revision, randomInt)));
         SpecTopic specTopic2 = make(a(SpecTopicMaker.SpecTopic, with(id, randomInt.toString()), with(revision, randomInt + 1)));
-        contentSpec.getBaseLevel().getSpecTopics().clear();
-        contentSpec.getBaseLevel().getSpecTopics().addAll(Arrays.asList(specTopic, specTopic2));
+        final Level level = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.CHAPTER)));
+        contentSpec.getBaseLevel().appendChild(level);
+        level.appendChild(specTopic);
+        level.appendChild(specTopic2);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -249,6 +275,8 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void shouldFailAndLogErrorWhenInvalidCopyrightYear() {
         // Given an invalid content spec because of an invalid copyright year
         ContentSpec contentSpec = make(a(ContentSpec, with(copyrightYear, randomString)));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
 
         // When the spec is prevalidated
         boolean result = validator.preValidateContentSpec(contentSpec);
@@ -257,5 +285,63 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
         assertThat(result, is(false));
         // And an error message should be output
         assertThat(logger.getLogMessages().toString(), containsString("The Copyright Year is invalid."));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenInvalidRevisionHistory() {
+        // Given an invalid content spec because of an invalid revision history
+        ContentSpec contentSpec = make(a(ContentSpec));
+        contentSpec.setRevisionHistory(new SpecTopic(0, null));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When the spec is prevalidated
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Topic!"));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenInvalidFeedbackHistory() {
+        // Given an invalid content spec because of an invalid feedback
+        ContentSpec contentSpec = make(a(ContentSpec));
+        contentSpec.setFeedback(new SpecTopic(0, null));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When the spec is prevalidated
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Topic!"));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenInvalidLegalNoticeHistory() {
+        // Given an invalid content spec because of an invalid legal notice
+        ContentSpec contentSpec = make(a(ContentSpec));
+        contentSpec.setLegalNotice(new SpecTopic(0, null));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When the spec is prevalidated
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Topic!"));
+    }
+
+    private void addLevelAndTopicToContentSpec(final ContentSpec contentSpec) {
+        // with a level and spec topic
+        Level childLevel = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.APPENDIX)));
+        contentSpec.getBaseLevel().appendChild(childLevel);
+        childLevel.appendChild(make(a(SpecTopicMaker.SpecTopic)));
     }
 }

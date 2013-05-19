@@ -17,16 +17,19 @@ import java.util.List;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.entities.InjectionOptions;
 import org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
+import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
+import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.UserWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.CollectionWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.UpdateableCollectionWrapper;
@@ -55,12 +58,15 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
     @Mock CollectionWrapper<TagWrapper> tagWrapperCollection;
     @Mock List<TagWrapper> tagWrapperList;
     @Mock TagWrapper tagWrapper;
+    @Mock TopicProvider topicProvider;
+    @Mock TopicWrapper topicWrapper;
 
     @Before
     public void setUp() {
         when(user.getUsername()).thenReturn(username);
         when(dataProviderFactory.getProvider(ContentSpecProvider.class)).thenReturn(contentSpecProvider);
         when(dataProviderFactory.getProvider(TagProvider.class)).thenReturn(tagProvider);
+        when(dataProviderFactory.getProvider(TopicProvider.class)).thenReturn(topicProvider);
         super.setUp();
     }
 
@@ -282,5 +288,59 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         // And an error message should be output
         assertThat(logger.getLogMessages().toString(),
                 containsString("Invalid Content Specification! Tag \"" + tagname + "\" doesn't exist."));
+    }
+
+    @Test
+    public void shouldLogErrorAndFailIfRevisionHistoryInvalid() {
+        // Given a valid content spec that has no id set
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setId(null);
+        // And has an invalid Revision History
+        contentSpec.setRevisionHistory(new SpecTopic(0, "Revision History"));
+        given(topicProvider.getTopic(anyInt(), anyInt())).willReturn(null);
+
+        // When the spec is postvalidated
+        boolean result = validator.postValidateContentSpec(contentSpec, user);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Topic!"));
+    }
+
+    @Test
+    public void shouldLogErrorAndFailIfFeedbackInvalid() {
+        // Given a valid content spec that has no id set
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setId(null);
+        // And has an invalid Feedback topic
+        contentSpec.setFeedback(new SpecTopic(0, "Feedback"));
+        given(topicProvider.getTopic(anyInt(), anyInt())).willReturn(null);
+
+        // When the spec is postvalidated
+        boolean result = validator.postValidateContentSpec(contentSpec, user);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Topic!"));
+    }
+
+    @Test
+    public void shouldLogErrorAndFailIfLegalNoticeInvalid() {
+        // Given a valid content spec that has no id set
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setId(null);
+        // And has an invalid Legal Notice
+        contentSpec.setLegalNotice(new SpecTopic(0, "Legal Notice"));
+        given(topicProvider.getTopic(anyInt(), anyInt())).willReturn(null);
+
+        // When the spec is postvalidated
+        boolean result = validator.postValidateContentSpec(contentSpec, user);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Topic!"));
     }
 }

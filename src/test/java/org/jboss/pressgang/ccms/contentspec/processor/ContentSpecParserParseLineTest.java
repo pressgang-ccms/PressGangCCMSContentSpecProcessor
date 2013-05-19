@@ -26,7 +26,7 @@ import org.jboss.pressgang.ccms.contentspec.test.makers.parser.LevelStringMaker;
 import org.jboss.pressgang.ccms.contentspec.test.makers.parser.TopicStringMaker;
 import org.junit.Test;
 
-public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
+public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
 
     @Arbitrary Integer id;
     @Arbitrary Integer lineNumber;

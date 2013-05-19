@@ -26,7 +26,7 @@ import org.junit.Test;
 /**
  * @author kamiller@redhat.com (Katie Miller)
  */
-public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
+public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
 
     @Arbitrary Integer lineNumber;
     @Arbitrary Integer id;

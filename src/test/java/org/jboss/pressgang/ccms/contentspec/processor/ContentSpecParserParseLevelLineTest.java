@@ -20,7 +20,7 @@ import org.junit.Test;
 /**
  * @author kamiller@redhat.com (Katie Miller)
  */
-public class ContentSpecParserProcessLevelLineTest extends ContentSpecParserTest {
+public class ContentSpecParserParseLevelLineTest extends ContentSpecParserTest {
 
     @Arbitrary Integer lineNumber;
     @ArbitraryString(type = ALPHANUMERIC) String title;

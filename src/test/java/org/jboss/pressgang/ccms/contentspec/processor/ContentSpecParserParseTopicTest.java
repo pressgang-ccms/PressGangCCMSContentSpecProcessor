@@ -26,7 +26,7 @@ import org.jboss.pressgang.ccms.contentspec.test.makers.parser.TopicStringMaker;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
+public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
     @Arbitrary Integer id;
     @Arbitrary Integer randomNumber;
     @ArbitraryString(type = StringType.ALPHANUMERIC) String randomString;

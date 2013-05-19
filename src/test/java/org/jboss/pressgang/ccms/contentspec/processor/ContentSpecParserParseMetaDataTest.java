@@ -36,7 +36,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
  * @author kamiller@redhat.com (Katie Miller)
  */
 @PrepareForTest({ProcessorUtilities.class})
-public class ContentSpecParserProcessMetaDataTest extends ContentSpecParserTest {
+public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
     @Arbitrary Integer lineNumber;
     @Arbitrary Integer id;
