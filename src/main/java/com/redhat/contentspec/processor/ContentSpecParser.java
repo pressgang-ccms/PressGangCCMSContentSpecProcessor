@@ -1200,16 +1200,16 @@ public class ContentSpecParser {
                 final HashMap<RelationshipType, List<String[]>> variableMap = getLineVariables(splitVars[1], '[', ']', ',', false, true);
                 if (variableMap.containsKey(RelationshipType.NONE)) {
                     for (final String[] variables : variableMap.get(RelationshipType.NONE)) {
-                        if (variables[0].matches(CSConstants.ALL_TOPIC_ID_REGEX)) {
-                            final String topicString = title + " [" + StringUtilities.buildString(variables, ", ") + "]";
-                            final SpecTopic innerTopic = parseTopic(topicString);
-                            if (innerTopic != null) {
-                                innerTopic.setTopicType(TopicType.LEVEL);
-                                newLvl.setInnerTopic(innerTopic);
-                            }
-                        } else {
-                            // Process the options
-                            if (variables.length >= 1) {
+                        if (variables.length >= 1) {
+                            if (variables[0].matches(CSConstants.ALL_TOPIC_ID_REGEX)) {
+                                final String topicString = title + " [" + StringUtilities.buildString(variables, ", ") + "]";
+                                final SpecTopic innerTopic = parseTopic(topicString);
+                                if (innerTopic != null) {
+                                    innerTopic.setTopicType(TopicType.LEVEL);
+                                    newLvl.setInnerTopic(innerTopic);
+                                }
+                            } else {
+                                // Process the options
                                 if (!addOptions(newLvl, variables, 0, input)) {
                                     return null;
                                 }
