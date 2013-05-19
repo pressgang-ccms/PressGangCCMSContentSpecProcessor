@@ -373,7 +373,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
     @Test
     public void shouldSetSpecTopicMetaData() throws Exception {
-        // Given a line produces a key-value pair with a publican.cfg key
+        // Given a line produces a key-value pair with a Revision History key
         keyValuePair.setFirst("Revision History");
         // And a value containing both an opening and closing bracket and an id
         keyValuePair.setSecond("[" + id.toString() + "]");

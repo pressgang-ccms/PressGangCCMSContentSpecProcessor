@@ -36,7 +36,6 @@ import org.jboss.pressgang.ccms.contentspec.entities.InjectionOptions;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
 import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
-import org.jboss.pressgang.ccms.contentspec.enums.TopicType;
 import org.jboss.pressgang.ccms.contentspec.exceptions.IndentationException;
 import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
 import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
@@ -1201,10 +1200,7 @@ public class ContentSpecParser {
                         if (variables[0].matches(CSConstants.ALL_TOPIC_ID_REGEX)) {
                             final String topicString = title + " [" + StringUtilities.buildString(variables, ", ") + "]";
                             final SpecTopic innerTopic = parseTopic(topicString, lineNumber);
-                            if (innerTopic != null) {
-                                innerTopic.setTopicType(TopicType.LEVEL);
-                                newLvl.setInnerTopic(innerTopic);
-                            }
+                            newLvl.setInnerTopic(innerTopic);
                         } else {
                             // Process the options
                             if (!optionsProcessed) {

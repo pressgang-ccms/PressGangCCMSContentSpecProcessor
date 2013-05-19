@@ -8,6 +8,8 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.jboss.pressgang.ccms.contentspec.TestUtil.selectRandomListItem;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker.Level;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker.SpecTopic;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -20,6 +22,7 @@ import net.sf.ipsedixit.annotation.ArbitraryString;
 import org.hamcrest.Matchers;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
+import org.jboss.pressgang.ccms.contentspec.enums.TopicType;
 import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
 import org.junit.Test;
 
@@ -174,7 +177,7 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
     }
 
     @Test
-    public void shouldThrowExceptionIfAppendixRelationshipSpecified() throws Exception {
+    public void shouldThrowExceptionIfRelationshipSpecified() throws Exception {
         // Given a line number, level type and a line with an appendix relationship specified
         List<String> relationshipTypes = Arrays.asList("R", "P", "NEXT", "PREV");
         String relationship = selectRandomListItem(relationshipTypes);
@@ -191,6 +194,34 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
             // And the line number should be included
             assertThat(e.getMessage(), containsString(lineNumber.toString()));
         }
+    }
+
+    @Test
+    public void shouldSetInnerTopic() throws Exception {
+        // Given a line number, level type and a line specifying an id
+        String line = "Section:" + title + "[" + id + "]";
+
+        // When process level is called
+        Level result = parser.parseLevel(lineNumber, levelType, line);
+
+        // Then the inner topic is set
+        assertNotNull(result.getInnerTopic());
+        assertEquals(result.getInnerTopic().getId(), id.toString());
+        assertEquals(result.getInnerTopic().getTopicType(), TopicType.LEVEL);
+    }
+
+    @Test
+    public void shouldSetInnerTopicAndGlobalOptions() throws Exception {
+        // Given a line number, level type, a line specifying an id and a tag
+        String line = "Section:" + title + "[" + id + "] [" + topicTag + "]";
+
+        // When process level is called
+        Level result = parser.parseLevel(lineNumber, levelType, line);
+
+        // Then the inner topic and tag is set
+        assertNotNull(result.getInnerTopic());
+        assertEquals(result.getInnerTopic().getId(), id.toString());
+        assertThat(result.getTags(false), Matchers.contains(topicTag));
     }
 
 //    @Test
