@@ -1,14 +1,5 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
-import net.sf.ipsedixit.annotation.Arbitrary;
-import net.sf.ipsedixit.annotation.ArbitraryString;
-import org.jboss.pressgang.ccms.contentspec.Level;
-import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
-import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
-import org.junit.Test;
-
-import java.util.ArrayList;
-
 import static java.util.Arrays.asList;
 import static net.sf.ipsedixit.core.StringType.ALPHANUMERIC;
 import static org.hamcrest.core.Is.is;
@@ -16,6 +7,15 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.jboss.pressgang.ccms.contentspec.TestUtil.selectRandomListItem;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+
+import java.util.ArrayList;
+
+import net.sf.ipsedixit.annotation.Arbitrary;
+import net.sf.ipsedixit.annotation.ArbitraryString;
+import org.jboss.pressgang.ccms.contentspec.Level;
+import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
+import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
+import org.junit.Test;
 
 /**
  * @author kamiller@redhat.com (Katie Miller)
@@ -32,7 +32,7 @@ public class ContentSpecParserProcessLevelLineTest extends ContentSpecParserTest
 
         // When the level line is processed
         try {
-            parser.processLevelLine(line, lineNumber);
+            parser.parseLevelLine(line, lineNumber);
 
             // Then an exception is thrown with an appropriate error
             fail(MISSING_PARSING_EXCEPTION);
@@ -52,10 +52,10 @@ public class ContentSpecParserProcessLevelLineTest extends ContentSpecParserTest
         String line = levelType.name() + ": " + title;
 
         // When the level line is processed
-        Level result = parser.processLevelLine(line, lineNumber);
+        Level result = parser.parseLevelLine(line, lineNumber);
 
         // Then the result should be a level of that type
-        assertThat(result.getType(), is(levelType));
+        assertThat(result.getLevelType(), is(levelType));
     }
 
     @Test
@@ -67,10 +67,10 @@ public class ContentSpecParserProcessLevelLineTest extends ContentSpecParserTest
         String line = levelType.name() + ": " + "[";
 
         // When the level line is processed
-        Level result = parser.processLevelLine(line, lineNumber);
+        Level result = parser.parseLevelLine(line, lineNumber);
 
         // Then an empty level of that type is returned
-        assertThat(result.getType(), is(levelType));
+        assertThat(result.getLevelType(), is(levelType));
         assertThat(result.getChildLevels().size(), is(0));
     }
 }

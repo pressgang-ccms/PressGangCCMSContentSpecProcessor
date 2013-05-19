@@ -45,7 +45,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, blankLine, lineNumber);
+            result = parser.parseLine(contentSpec, blankLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -71,7 +71,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, blankLine, lineNumber);
+            result = parser.parseLine(contentSpec, blankLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -96,7 +96,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, commentLine, lineNumber);
+            result = parser.parseLine(contentSpec, commentLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -122,7 +122,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, commentLine, lineNumber);
+            result = parser.parseLine(contentSpec, commentLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -149,7 +149,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, topicLine, lineNumber);
+            result = parser.parseLine(contentSpec, topicLine, lineNumber);
             fail("Indentation Exception should have been thrown.");
         } catch (IndentationException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Content Specification! Indentation is invalid."));
@@ -172,7 +172,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, topicLine, lineNumber);
+            result = parser.parseLine(contentSpec, topicLine, lineNumber);
             fail("Indentation Exception should have been thrown.");
         } catch (IndentationException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Content Specification! Indentation is invalid."));
@@ -198,7 +198,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, topicLine, lineNumber);
+            result = parser.parseLine(contentSpec, topicLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -233,7 +233,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, topicLine, lineNumber);
+            result = parser.parseLine(contentSpec, topicLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -259,7 +259,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, metaData, lineNumber);
+            result = parser.parseLine(contentSpec, metaData, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -288,7 +288,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, topicLine, lineNumber);
+            result = parser.parseLine(contentSpec, topicLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -315,7 +315,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, levelLine, lineNumber);
+            result = parser.parseLine(contentSpec, levelLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -324,7 +324,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         assertThat(contentSpec.getBaseLevel().getChildNodes().size(), is(1));
         final Level level = (Level) contentSpec.getBaseLevel().getChildNodes().get(0);
         assertThat(level.getTitle(), is(title));
-        assertThat(level.getType(), is(LevelType.CHAPTER));
+        assertThat(level.getLevelType(), is(LevelType.CHAPTER));
         // and the line processed successfully
         assertTrue(result);
     }
@@ -342,7 +342,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, levelLine, lineNumber);
+            result = parser.parseLine(contentSpec, levelLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -351,7 +351,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         assertThat(contentSpec.getBaseLevel().getChildNodes().size(), is(1));
         final Level level = (Level) contentSpec.getBaseLevel().getChildNodes().get(0);
         assertThat(level.getTitle(), is(title));
-        assertThat(level.getType(), is(LevelType.PROCESS));
+        assertThat(level.getLevelType(), is(LevelType.PROCESS));
         // and the processes list in the parser has the process
         assertThat(parser.getProcesses().size(), is(1));
         // and the line processed successfully
@@ -370,7 +370,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, topicLine, lineNumber);
+            result = parser.parseLine(contentSpec, topicLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -394,7 +394,7 @@ public class ContentSpecParserProcessLineTest extends ContentSpecParserTest {
         // When parsing the a line
         Boolean result = null;
         try {
-            result = parser.processLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(contentSpec, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }

@@ -936,7 +936,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_TOPIC);
                 } else if (childNode instanceof Level) {
                     mergeLevel((Level) childNode, newCSNodeEntity);
-                    newCSNodeEntity.setNodeType(((Level) childNode).getType().getId());
+                    newCSNodeEntity.setNodeType(((Level) childNode).getLevelType().getId());
                 } else if (childNode instanceof Comment) {
                     mergeComment((Comment) childNode, newCSNodeEntity);
                     newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_COMMENT);
@@ -1392,6 +1392,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
     /**
      * Checks to see if a ContentSpec meta data matches a Content Spec Entity meta data.
+     * TODO Deal with SpecTopic Meta Data
      *
      * @param metaData The ContentSpec meta data object.
      * @param node     The Content Spec Entity topic.
@@ -1420,7 +1421,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return level.getUniqueId().equals(Integer.toString(node.getId()));
         } else {
             // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the level matches
-            if (node.getNodeType() != level.getType().getId()) return false;
+            if (node.getNodeType() != level.getLevelType().getId()) return false;
 
             // If the target ids match then the level should be the same
             if (level.getTargetId() != null && level.getTargetId() == node.getTargetId()) {
@@ -1446,8 +1447,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return specTopic.getUniqueId().equals(Integer.toString(node.getId()));
         } else {
             // Check the parent has the same name
-            if (specTopic.getParent() != null && node.getParent() != null) {
-                if (!specTopic.getParent().getTitle().equals(node.getParent().getTitle())) {
+            if (specTopic.getParent() != null && node.getParent() != null && node .getParent() instanceof Level) {
+                if (!((Level) specTopic.getParent()).getTitle().equals(node.getParent().getTitle())) {
                     return false;
                 }
             }

@@ -42,10 +42,10 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
         String line = "";
 
         // When process level is called
-        Level result = parser.processLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(lineNumber, levelType, line);
 
         // Then an empty level of the given type is created a returned
-        assertThat(result.getType(), is(levelType));
+        assertThat(result.getLevelType(), is(levelType));
         assertThat(result.getChildLevels().size(), is(0));
         // And it title is null
         assertNull(result.getTitle());
@@ -57,10 +57,10 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
         String line = "Chapter:" + title;
 
         // When process level is called
-        Level result = parser.processLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(lineNumber, levelType, line);
 
         // Then a level of the given type is created a returned
-        assertThat(result.getType(), is(levelType));
+        assertThat(result.getLevelType(), is(levelType));
         // And it title is as given
         assertThat(result.getTitle(), is(title));
     }
@@ -72,10 +72,10 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
         String line = "Chapter:" + title + "\\," + title;
 
         // When process level is called
-        Level result = parser.processLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(lineNumber, levelType, line);
 
         // Then a level of the given type is created a returned
-        assertThat(result.getType(), is(levelType));
+        assertThat(result.getLevelType(), is(levelType));
         // And it title is as given
         assertThat(result.getTitle(), is(title + "," + title));
     }
@@ -87,7 +87,7 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
 
         // When process level is called
         try {
-            parser.processLevel(lineNumber, levelType, line);
+            parser.parseLevel(lineNumber, levelType, line);
 
             // Then a parsing exception should be thrown containing an appropriate error
             fail(MISSING_PARSING_EXCEPTION);
@@ -104,7 +104,7 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
         String line = "Section:" + title + "[URL=" + url + ",Writer=" + writer + "]";
 
         // When process level is called
-        Level result = parser.processLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(lineNumber, levelType, line);
 
         // Then the options are set
         assertThat(result.getAssignedWriter(false), is(writer));
@@ -117,7 +117,7 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
         String line = "Section:" + title + "[" + topicTag + "]";
 
         // When process level is called
-        Level result = parser.processLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(lineNumber, levelType, line);
 
         // Then the options are set
         assertThat(result.getTags(false), Matchers.contains(topicTag));
@@ -131,7 +131,7 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
 
         // When process level is called
         try {
-            parser.processLevel(lineNumber, levelType, line);
+            parser.parseLevel(lineNumber, levelType, line);
 
             // Then a parsing exception should be thrown containing an appropriate error
             fail(MISSING_PARSING_EXCEPTION);
@@ -150,7 +150,7 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
 
         // When process level is called
         try {
-            parser.processLevel(lineNumber, levelType, line);
+            parser.parseLevel(lineNumber, levelType, line);
 
             // Then a parsing exception should be thrown containing an appropriate error
             fail(MISSING_PARSING_EXCEPTION);
@@ -167,7 +167,7 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
         String line = "Section:" + title + "[T" + id + "]";
 
         // When process level is called
-        Level result = parser.processLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(lineNumber, levelType, line);
 
         // Then the target id should be set
         assertThat(result.getTargetId(), is("T" + id));
@@ -182,7 +182,7 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
 
         // When process level is called
         try {
-            parser.processLevel(lineNumber, levelType, line);
+            parser.parseLevel(lineNumber, levelType, line);
 
             // Then a parsing exception should be thrown containing an appropriate error
             fail(MISSING_PARSING_EXCEPTION);
@@ -199,7 +199,7 @@ public class ContentSpecParserProcessLevelTest extends ContentSpecParserTest {
 //        String line = "Section:" + title + "[ET" + id + "]";
 //
 //        // When process level is called
-//        Level result = parser.processLevel(lineNumber, levelType, line);
+//        Level result = parser.parseLevel(lineNumber, levelType, line);
 //
 //        // Then the target id should be set
 //        assertThat(result.getExternalTargetId(), is("ET" + id));

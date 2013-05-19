@@ -43,7 +43,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -67,7 +67,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -92,7 +92,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Revision attribute must be a valid number" +
@@ -111,7 +111,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -135,7 +135,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -161,7 +161,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -179,7 +179,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Title, Type and ID must be specified."));
@@ -198,7 +198,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -221,7 +221,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -244,7 +244,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -267,7 +267,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -291,7 +291,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         ArgumentCaptor<String> warningMessage = ArgumentCaptor.forClass(String.class);
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -316,7 +316,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -341,7 +341,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Title and ID must be specified."));
@@ -361,7 +361,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -386,7 +386,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Incorrect topic format."));
@@ -405,7 +405,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -425,7 +425,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -443,7 +443,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Title and ID must be specified."));
@@ -462,7 +462,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -482,7 +482,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -507,7 +507,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -532,7 +532,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Duplicated bracket types found."));
@@ -553,7 +553,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Target ID is duplicated. Target ID's must be unique."));
@@ -574,7 +574,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Target ID is duplicated. Target ID's must be unique."));
@@ -598,7 +598,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -639,7 +639,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -678,7 +678,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -719,7 +719,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -758,7 +758,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -799,7 +799,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -845,7 +845,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -889,7 +889,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -915,7 +915,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -941,7 +941,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -967,7 +967,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -994,7 +994,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -1022,7 +1022,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -1052,7 +1052,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -1080,7 +1080,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Content Specification! Missing ending bracket (])" +
@@ -1105,7 +1105,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString(
@@ -1131,7 +1131,7 @@ public class ContentSpecParserProcessTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.processTopic(topicString, lineNumber);
+            topic = parser.parseTopic(topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString(
