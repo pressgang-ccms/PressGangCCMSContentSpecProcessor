@@ -837,24 +837,13 @@ public class ContentSpecParser {
                 throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_INJECTION_MSG, lineNumber, line));
             }
             contentSpec.setInjectionOptions(injectionOptions);
-        } else if (isSpecTopicMetaData(key)) {
+        } else if (ContentSpecUtilities.isSpecTopicMetaData(key)) {
             final SpecTopic specTopic = parseSpecTopicMetaData(value, key, lineNumber);
             contentSpec.appendKeyValueNode(new KeyValueNode<SpecTopic>(key, specTopic));
         } else {
             final KeyValueNode<String> node = new KeyValueNode<String>(key, value);
             contentSpec.appendKeyValueNode(node);
         }
-    }
-
-    /**
-     * Check to see if a Meta Data line is a Spec Topic Meta Data, based on the key value.
-     *
-     * @param key The Meta Data key.
-     * @return True if the Meta Data is a Spec Topic Meta Data, otherwise false.
-     */
-    private boolean isSpecTopicMetaData(final String key) {
-        return key.equalsIgnoreCase(CSConstants.LEGAL_NOTICE_TITLE) || key.equalsIgnoreCase(
-                CSConstants.REV_HISTORY_TITLE) || key.equalsIgnoreCase(CSConstants.FEEDBACK_TITLE);
     }
 
     /**

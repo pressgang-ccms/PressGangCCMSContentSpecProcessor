@@ -1092,15 +1092,23 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     protected boolean mergeMetaData(final KeyValueNode<?> metaData, final CSNodeWrapper metaDataEntity) {
         boolean changed = false;
 
-        // Meta Data Title
-        if (metaDataEntity.getTitle() == null || !metaDataEntity.getTitle().equals(metaData.getKey())) {
-            metaDataEntity.setTitle(metaData.getKey());
+        // Meta Data Value
+        final Object value = metaData.getValue();
+        if (metaDataEntity.getAdditionalText() == null || !metaDataEntity.getAdditionalText().equals(value.toString())) {
+            metaDataEntity.setAdditionalText(value.toString());
             changed = true;
         }
 
-        // Meta Data Value
-        if (metaDataEntity.getAdditionalText() == null || !metaDataEntity.getAdditionalText().equals(metaData.getValue().toString())) {
-            metaDataEntity.setAdditionalText(metaData.getValue().toString());
+        // Set the Topic details if the Meta Data is a Spec Topic
+        if (value instanceof SpecTopic) {
+            if (mergeTopic((SpecTopic) value, metaDataEntity)) {
+                changed = true;
+            }
+        }
+
+        // Meta Data Title
+        if (metaDataEntity.getTitle() == null || !metaDataEntity.getTitle().equals(metaData.getKey())) {
+            metaDataEntity.setTitle(metaData.getKey());
             changed = true;
         }
 
