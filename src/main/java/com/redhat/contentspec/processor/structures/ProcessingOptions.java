@@ -10,6 +10,7 @@ public class ProcessingOptions {
     private boolean addRevisions = false;
     private boolean updateRevisions = false;
     private Integer revision = null;
+    private boolean strictLevelTitles = false;
 
     public boolean isPermissiveMode() {
         return permissiveMode;
@@ -73,5 +74,13 @@ public class ProcessingOptions {
 
     public void setRevision(final Integer revision) {
         this.revision = revision;
+    }
+
+    public boolean isStrictLevelTitles() {
+        return strictLevelTitles;
+    }
+
+    public void setStrictLevelTitles(boolean strictLevelTitles) {
+        this.strictLevelTitles = strictLevelTitles;
     }
 }
