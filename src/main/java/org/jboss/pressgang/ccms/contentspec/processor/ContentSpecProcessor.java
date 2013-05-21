@@ -42,6 +42,7 @@ import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.CSRelatedNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
+import org.jboss.pressgang.ccms.wrapper.LogMessageWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInTopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagWrapper;
@@ -101,9 +102,22 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if everything was processed successfully otherwise false.
      */
     public boolean processContentSpec(final ContentSpec contentSpec, final UserWrapper user, final ContentSpecParser.ParsingMode mode) {
-        return processContentSpec(contentSpec, user, mode, null);
+        return processContentSpec(contentSpec, user, mode, (String) null);
     }
 
+    /**
+     * Process a content specification so that it is parsed, validated and saved.
+     *
+     * @param contentSpec The Content Specification that is to be processed.
+     * @param user        The user who requested the process operation.
+     * @param mode        The mode to parse the content specification in.
+     * @param logMessage
+     * @return True if everything was processed successfully otherwise false.
+     */
+    public boolean processContentSpec(final ContentSpec contentSpec, final UserWrapper user, final ContentSpecParser.ParsingMode mode,
+            final LogMessageWrapper logMessage) {
+        return processContentSpec(contentSpec, user, mode, null, logMessage);
+    }
 
     /**
      * Process a content specification so that it is parsed, validated and saved.
@@ -116,6 +130,21 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     public boolean processContentSpec(final ContentSpec contentSpec, final UserWrapper user, final ContentSpecParser.ParsingMode mode,
             final String overrideLocale) {
+        return processContentSpec(contentSpec, user, mode, overrideLocale, null);
+    }
+
+    /**
+     * Process a content specification so that it is parsed, validated and saved.
+     *
+     * @param contentSpec    The Content Specification that is to be processed.
+     * @param user           The user who requested the process operation.
+     * @param mode           The mode to parse the content specification in.
+     * @param overrideLocale Override the default locale using this parameter.
+     * @param logMessage
+     * @return True if everything was processed successfully otherwise false.
+     */
+    public boolean processContentSpec(final ContentSpec contentSpec, final UserWrapper user, final ContentSpecParser.ParsingMode mode,
+            final String overrideLocale, final LogMessageWrapper logMessage) {
         boolean editing = false;
         if (mode == ContentSpecParser.ParsingMode.EDITED) {
             editing = true;
@@ -127,6 +156,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Change the locale if the overrideLocale isn't null
         if (overrideLocale != null) {
             contentSpec.setLocale(overrideLocale);
+        }
+
+        // Set the log details user if one isn't set
+        if (logMessage != null && user != null && logMessage.getUser() == null) {
+            logMessage.setUser(user.getUsername());
         }
 
         // Check if the app should be shutdown
@@ -168,7 +202,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
 
                 LOG.info("Saving the Content Specification to the server...");
-                if (saveContentSpec(providerFactory, contentSpec, editing, user)) {
+                if (saveContentSpec(providerFactory, contentSpec, editing, user, logMessage)) {
                     log.info(ProcessorConstants.INFO_SUCCESSFUL_SAVE_MSG);
                 } else {
                     log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
@@ -639,14 +673,16 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     /**
      * Saves the Content Specification and all of the topics in the content specification
      *
+     *
      * @param providerFactory
      * @param contentSpec     The Content Specification to be saved.
      * @param edit            Whether the content specification is being edited or created.
      * @param user            The User who requested the Content Spec be saved.
+     * @param logMessage
      * @return True if the topic saved successfully otherwise false.
      */
     protected boolean saveContentSpec(final DataProviderFactory providerFactory, final ContentSpec contentSpec, final boolean edit,
-            final UserWrapper user) {
+            final UserWrapper user, final LogMessageWrapper logMessage) {
         final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
 
         try {
@@ -705,7 +741,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             syncDuplicatedTopics(specTopics);
 
             // Save the content spec
-            mergeAndSaveContentSpec(contentSpec, providerFactory, !edit, user);
+            mergeAndSaveContentSpec(contentSpec, providerFactory, !edit, user, logMessage);
         } catch (ProcessingException e) {
             if (providerFactory.isRollbackSupported()) {
                 providerFactory.rollback();
@@ -747,14 +783,16 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * Merges a Content Spec object with it's Database counterpart if one exists, otherwise it will create a new Database Entity if
      * create is set to true.
      *
+     *
      * @param contentSpec     The ContentSpec object to merge with the database entity.
      * @param providerFactory
      * @param create          If a new Content Spec Entity should be created if one doesn't exist.
      * @param user            The user who requested the save.
+     * @param logMessage
      * @throws Exception Thrown if a problem occurs saving to the database.
      */
     protected void mergeAndSaveContentSpec(final ContentSpec contentSpec, final DataProviderFactory providerFactory, boolean create,
-            final UserWrapper user) throws Exception {
+            final UserWrapper user, final LogMessageWrapper logMessage) throws Exception {
         // Get the providers
         final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
         final PropertyTagProvider propertyTagProvider = providerFactory.getProvider(PropertyTagProvider.class);
@@ -840,7 +878,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
         }
 
-        contentSpecProvider.updateContentSpec(contentSpecEntity);
+        contentSpecProvider.updateContentSpec(contentSpecEntity, logMessage);
     }
 
     /**
