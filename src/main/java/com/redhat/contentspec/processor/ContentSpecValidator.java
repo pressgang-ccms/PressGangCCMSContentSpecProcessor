@@ -50,7 +50,6 @@ import org.jboss.pressgang.ccms.utils.common.HashUtilities;
 import org.jboss.pressgang.ccms.utils.common.XMLUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 /**
  * A class that is used to validate a Content Specification and the objects within a Content Specification. It
@@ -1135,58 +1134,81 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
 
     private boolean postValidateExistingTopic(final SpecTopic specTopic, final T topic) {
         boolean valid = true;
-        // Validate the title matches for normal topics if we aren't using permissive mode
-        if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL) {
+
+        if (specTopic.getTopicType() == TopicType.NORMAL) {
+            // Validate the title matches for normal topics if we aren't using permissive mode
             final String topicTitle = getTopicTitleWithConditions(specTopic, (T) topic);
             if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
                 String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topicTitle;
-
-                // Produce an error if strict titles is on or the topic is a normal topic, otherwise just throw a warning
-                if (specTopic.getTopicType() == TopicType.NORMAL || processingOptions.isStrictLevelTitles()) {
-                    log.error(format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
-                            "Specified: " + specTopic.getText(), topicTitleMsg));
-                    valid = false;
-                } else {
-                    log.warn(format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
-                            "Specified: " + specTopic.getText(), topicTitleMsg));
-                }
+                log.error(format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
+                        "Specified: " + specTopic.getTitle(), topicTitleMsg));
+                valid = false;
             }
             // If we are using permissive mode then change the title to the correct title
             else if (processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
-                if (specTopic.getTopicType() == TopicType.NORMAL || processingOptions.isStrictLevelTitles()) {
-                    specTopic.setTitle(topicTitle);
-                    if (specTopic.getTopicType() == TopicType.LEVEL) {
-                        ((Level) specTopic.getParent()).setTitle(topicTitle);
-                    }
+                specTopic.setTitle(topicTitle);
+            }
+        } else if (specTopic.getTopicType() == TopicType.LEVEL) {
+            // Validate the title matches for inner level topics
+            final Level parent = (Level) specTopic.getParent();
+            final String topicTitle = getTopicTitleWithConditions(specTopic, (T) topic);
+            if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
+                String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topicTitle;
+                if (processingOptions.isStrictLevelTitles()) {
+                    log.error(format(ProcessorConstants.ERROR_LEVEL_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
+                            parent.getLevelType().getTitle(), "Specified: " + specTopic.getTitle(), topicTitleMsg));
+                    valid = false;
+                } else {
+                    log.warn(format(ProcessorConstants.WARN_LEVEL_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
+                            parent.getLevelType().getTitle(), "Specified: " + specTopic.getTitle(), topicTitleMsg));
+                }
+                // If we are using permissive mode then change the title to the correct title
+            } else if (processingOptions.isStrictLevelTitles() && processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(
+                    topicTitle)) {
+                specTopic.setTitle(topicTitle);
+                if (specTopic.getTopicType() == TopicType.LEVEL) {
+                    ((Level) specTopic.getParent()).setTitle(topicTitle);
                 }
             }
         }
 
-        if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL) {
+        if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL)
+
+        {
             // Check to make sure the topic is a normal topic and not a special case
             if (ComponentBaseTopicV1.hasTag(topic, CSConstants.LEGAL_NOTICE_TAG_ID) || ComponentBaseTopicV1.hasTag(topic,
                     CSConstants.REVISION_HISTORY_TAG_ID)) {
                 log.error(format(ProcessorConstants.ERROR_TOPIC_NOT_ALLOWED_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
-        } else if (specTopic.getTopicType() == TopicType.LEGAL_NOTICE) {
+        } else if (specTopic.getTopicType() == TopicType.LEGAL_NOTICE)
+
+        {
             // Check to make sure the topic is a legal notice topic
             if (!ComponentBaseTopicV1.hasTag(topic, CSConstants.LEGAL_NOTICE_TAG_ID)) {
-                log.error(format(ProcessorConstants.ERROR_LEGAL_NOTICE_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(),
-                        specTopic.getText()));
+                log.error(
+                        format(ProcessorConstants.ERROR_LEGAL_NOTICE_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
-        } else if (specTopic.getTopicType() == TopicType.REVISION_HISTORY) {
+        } else if (specTopic.getTopicType() == TopicType.REVISION_HISTORY)
+
+        {
             // Check to make sure the topic is a revision history topic
             if (!ComponentBaseTopicV1.hasTag(topic, CSConstants.REVISION_HISTORY_TAG_ID)) {
-                log.error(format(ProcessorConstants.ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(),
-                        specTopic.getText()));
+                log.error(
+                        format(ProcessorConstants.ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
         }
 
         // Validate the tags
-        if (!validateTopicTags(specTopic, specTopic.getTags(false))) {
+        if (!
+
+                validateTopicTags(specTopic, specTopic.getTags(false)
+
+                ))
+
+        {
             valid = false;
         }
 

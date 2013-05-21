@@ -156,6 +156,8 @@ public class ProcessorConstants {
     public static final String ERROR_LEVEL_NO_TOPICS_MSG = LINE + "Invalid %s! No topics or levels in this %s." + CSLINE_MSG;
     public static final String ERROR_LEVEL_FORMAT_MSG = LINE + GENERIC_INVALID_LEVEL + " Incorrect format." + CSLINE_MSG;
     public static final String ERROR_LEVEL_RELATIONSHIP_MSG = LINE + "Invalid %s! Relationships can't be used for a %s." + CSLINE_MSG;
+    public static final String ERROR_LEVEL_TOPIC_TITLES_NONMATCH_MSG = LINE + "Invalid %s! The topic title doesn't match." +
+            CSLINE_MSG + CSLINE_MSG;
 
     public static final String ERROR_INVALID_NUMBER_MSG = LINE + "Invalid number specified." + CSLINE_MSG;
     public static final String ERROR_INVALID_VERSION_NUMBER_MSG = "Invalid %s specified. The value must be a valid version.";
@@ -225,9 +227,9 @@ public class ProcessorConstants {
     public static final String ERROR_TOPIC_NOT_ALLOWED_MSG = LINE + INVALID_TOPIC + " The Topic is not allowed in the structure of a book" +
             " because it is not a normal Topic." + CSLINE_MSG;
     public static final String ERROR_LEGAL_NOTICE_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not a Legal " +
-            "Notice Topic." +  CSLINE_MSG;
+            "Notice Topic." + CSLINE_MSG;
     public static final String ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not a Revision " +
-            "History Topic." +  CSLINE_MSG;
+            "History Topic." + CSLINE_MSG;
 
     // Warnings
     public static final String WARN_DESCRIPTION_IGNORE_MSG = LINE + "%s topics can't have a description, " +
@@ -245,9 +247,10 @@ public class ProcessorConstants {
             "Ensure you are not publishing this publicly." + CSLINE_MSG;
     public static final String WARN_CS_NO_SUBTITLE_MSG = "No Subtitle specified, so a default will be used instead.";
     public static final String WARN_CS_NO_ABSTRACT_MSG = "No Abstract specified, so a default will be used instead.";
-
     public static final String ERROR_NEW_TOPIC_DISABLED_MESSAGE = LINE + "Creating new topics via Content Specification is not supported " +
             "on this server" + CSLINE_MSG;
+    public static final String WARN_LEVEL_TOPIC_TITLES_NONMATCH_MSG = LINE + "Possible Invalid %s! The topic title doesn't match." +
+            CSLINE_MSG + CSLINE_MSG;
 
     // Process Errors
     public static final String ERROR_PROCESS_NONEXIST_MSG = LINE + INVALID_PROCESS + " Topic %s doesn't exist in the database." +
