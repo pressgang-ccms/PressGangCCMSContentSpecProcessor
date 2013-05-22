@@ -626,10 +626,14 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
                                                                                        * (allowEmptyLevels &&
                                                                                        * !csAllowEmptyLevels)
                                                                                        */) {
-            log.error(
-                    format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), levelType.getTitle(), levelType.getTitle(),
-                            level.getText()));
-            valid = false;
+            // Check to make sure an inner topic doesn't exist, unless its a section level as in that case the section should just be a
+            // normal topic
+            if (levelType == LevelType.SECTION || level.getInnerTopic() == null) {
+                log.error(
+                        format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), levelType.getTitle(), levelType.getTitle(),
+                                level.getText()));
+                valid = false;
+            }
         }
 
         if (level.getTitle() == null || level.getTitle().equals("")) {
