@@ -921,7 +921,7 @@ public class ContentSpecParser {
     protected boolean parseMetaData(final String input) {
         final String upperCaseInput = input.toUpperCase();
         // Split the input to get the key value pair and remove the whitespace from each value in the split array
-        final String tempInput[] = CollectionUtilities.trimStringArray(StringUtilities.split(input, '='));
+        final String tempInput[] = CollectionUtilities.trimStringArray(StringUtilities.split(input, '=', 2));
         if (tempInput.length >= 2) {
             if (upperCaseInput.matches(ProcessorConstants.SPEC_REVISION_REGEX)) {
                 log.error(format(ProcessorConstants.ERROR_CS_INVALID_SPEC_REVISION_MSG, lineCounter));
