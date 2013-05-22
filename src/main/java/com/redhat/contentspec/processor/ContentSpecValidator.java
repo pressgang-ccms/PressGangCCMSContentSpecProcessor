@@ -621,7 +621,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
         }
 
         // Check that the level isn't empty
-        if (level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 0 /*
+        if (levelType != LevelType.PART && level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 0 /*
                                                                                        * && !allowEmptyLevels &&
                                                                                        * (allowEmptyLevels &&
                                                                                        * !csAllowEmptyLevels)
@@ -629,11 +629,15 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             // Check to make sure an inner topic doesn't exist, unless its a section level as in that case the section should just be a
             // normal topic
             if (levelType == LevelType.SECTION || level.getInnerTopic() == null) {
-                log.error(
-                        format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), levelType.getTitle(), levelType.getTitle(),
-                                level.getText()));
+                log.error(format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), levelType.getTitle(),
+                        levelType.getTitle(), level.getText()));
                 valid = false;
             }
+        } else if (levelType == LevelType.PART && level.getNumberOfChildLevels() <= 0) {
+            log.error(
+                    format(ProcessorConstants.ERROR_LEVEL_NO_CHILD_LEVELS_MSG, level.getLineNumber(), levelType.getTitle(),
+                            levelType.getTitle(), level.getText()));
+            valid = false;
         }
 
         if (level.getTitle() == null || level.getTitle().equals("")) {

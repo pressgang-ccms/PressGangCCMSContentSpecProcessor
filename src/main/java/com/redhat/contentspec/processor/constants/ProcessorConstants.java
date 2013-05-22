@@ -154,6 +154,7 @@ public class ProcessorConstants {
 
     public static final String ERROR_LEVEL_NO_TITLE_MSG = LINE + "Invalid %s! No title." + CSLINE_MSG;
     public static final String ERROR_LEVEL_NO_TOPICS_MSG = LINE + "Invalid %s! No topics or levels in this %s." + CSLINE_MSG;
+    public static final String ERROR_LEVEL_NO_CHILD_LEVELS_MSG = LINE + "Invalid %s! No levels in this %s." + CSLINE_MSG;
     public static final String ERROR_LEVEL_FORMAT_MSG = LINE + GENERIC_INVALID_LEVEL + " Incorrect format." + CSLINE_MSG;
     public static final String ERROR_LEVEL_RELATIONSHIP_MSG = LINE + "Invalid %s! Relationships can't be used for a %s." + CSLINE_MSG;
     public static final String ERROR_LEVEL_TOPIC_TITLES_NONMATCH_MSG = LINE + "Invalid %s! The topic title doesn't match." +
