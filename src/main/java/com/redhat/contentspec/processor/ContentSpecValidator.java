@@ -1172,27 +1172,21 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             }
         }
 
-        if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL)
-
-        {
+        if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL) {
             // Check to make sure the topic is a normal topic and not a special case
             if (ComponentBaseTopicV1.hasTag(topic, CSConstants.LEGAL_NOTICE_TAG_ID) || ComponentBaseTopicV1.hasTag(topic,
                     CSConstants.REVISION_HISTORY_TAG_ID)) {
                 log.error(format(ProcessorConstants.ERROR_TOPIC_NOT_ALLOWED_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
-        } else if (specTopic.getTopicType() == TopicType.LEGAL_NOTICE)
-
-        {
+        } else if (specTopic.getTopicType() == TopicType.LEGAL_NOTICE) {
             // Check to make sure the topic is a legal notice topic
             if (!ComponentBaseTopicV1.hasTag(topic, CSConstants.LEGAL_NOTICE_TAG_ID)) {
                 log.error(
                         format(ProcessorConstants.ERROR_LEGAL_NOTICE_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
-        } else if (specTopic.getTopicType() == TopicType.REVISION_HISTORY)
-
-        {
+        } else if (specTopic.getTopicType() == TopicType.REVISION_HISTORY) {
             // Check to make sure the topic is a revision history topic
             if (!ComponentBaseTopicV1.hasTag(topic, CSConstants.REVISION_HISTORY_TAG_ID)) {
                 log.error(
@@ -1202,13 +1196,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
         }
 
         // Validate the tags
-        if (!
-
-                validateTopicTags(specTopic, specTopic.getTags(false)
-
-                ))
-
-        {
+        if (!validateTopicTags(specTopic, specTopic.getTags(false))) {
             valid = false;
         }
 

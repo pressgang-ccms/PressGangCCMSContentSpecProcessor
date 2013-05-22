@@ -775,6 +775,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             if (contentSpec.getId() != null && !edit) writer.deleteContentSpec(contentSpec.getId());
             if (topics.isInitialised()) topics.rollbackPool();
             log.error(String.format("%s\n%7s%s", ProcessorConstants.ERROR_PROCESSING_ERROR_MSG, "", e.getMessage()));
+            return false;
         } catch (Exception e) {
             // Clean up the data that was created
             if (contentSpec.getId() != null && !edit) writer.deleteContentSpec(contentSpec.getId());
