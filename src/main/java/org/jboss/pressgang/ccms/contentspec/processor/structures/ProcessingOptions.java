@@ -1,4 +1,4 @@
-package org.jboss.pressgang.ccms.contentspec.processor.structures;
+package com.redhat.contentspec.processor.structures;
 
 public class ProcessingOptions {
 
@@ -10,6 +10,7 @@ public class ProcessingOptions {
     private boolean addRevisions = false;
     private boolean updateRevisions = false;
     private Integer revision = null;
+    private boolean strictLevelTitles = false;
     private boolean translation = false;
 
     public boolean isPermissiveMode() {
@@ -74,6 +75,14 @@ public class ProcessingOptions {
 
     public void setRevision(final Integer revision) {
         this.revision = revision;
+    }
+
+    public boolean isStrictLevelTitles() {
+        return strictLevelTitles;
+    }
+
+    public void setStrictLevelTitles(boolean strictLevelTitles) {
+        this.strictLevelTitles = strictLevelTitles;
     }
 
     public boolean isTranslation() {
