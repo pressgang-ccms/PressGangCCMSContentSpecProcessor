@@ -1171,7 +1171,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         if (specTopic.getTopicType() == TopicType.NORMAL) {
             // Validate the title matches for normal topics if we aren't using permissive mode
-            final String topicTitle = getTopicTitleWithConditions(specTopic, (T) topic);
+            final String topicTitle = getTopicTitleWithConditions(specTopic, topic);
             if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
                 String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topicTitle;
                 log.error(format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
@@ -1185,7 +1185,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         } else if (specTopic.getTopicType() == TopicType.LEVEL) {
             // Validate the title matches for inner level topics
             final Level parent = (Level) specTopic.getParent();
-            final String topicTitle = getTopicTitleWithConditions(specTopic, (T) topic);
+            final String topicTitle = getTopicTitleWithConditions(specTopic, topic);
             if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
                 String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topicTitle;
                 if (processingOptions.isStrictLevelTitles()) {
