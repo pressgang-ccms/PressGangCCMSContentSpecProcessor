@@ -984,7 +984,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
 
                 // set the content spec for the new entity
-                newCSNodeEntity.setContentSpec(contentSpec);
                 foundNodeEntity = newCSNodeEntity;
                 newNode = true;
             } else {
@@ -1008,12 +1007,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
                 // If the node was found remove it from the list of content spec nodes, so it can no longer be matched
                 contentSpecNodes.remove(foundNodeEntity);
-
-                // setup the contentSpec for the entity
-                if (foundNodeEntity.getContentSpec() == null || !foundNodeEntity.getContentSpec().getId().equals(contentSpec.getId())) {
-                    foundNodeEntity.setContentSpec(contentSpec);
-                    changed = true;
-                }
             }
             processedNodes.add(foundNodeEntity);
 
@@ -1366,10 +1359,18 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             // Make sure the node is in the updated state
             if (topicEntity.getParent() == null) {
                 topicEntity.getContentSpec().getChildren().remove(topicEntity);
-                topicEntity.getContentSpec().getChildren().addUpdateItem(topicEntity);
+                if (topicEntity.getId() == null) {
+                    topicEntity.getContentSpec().getChildren().addNewItem(topicEntity);
+                } else {
+                    topicEntity.getContentSpec().getChildren().addUpdateItem(topicEntity);
+                }
             } else {
                 topicEntity.getParent().getChildren().remove(topicEntity);
-                topicEntity.getParent().getChildren().addUpdateItem(topicEntity);
+                if (topicEntity.getId() == null) {
+                    topicEntity.getParent().getChildren().addNewItem(topicEntity);
+                } else {
+                    topicEntity.getParent().getChildren().addUpdateItem(topicEntity);
+                }
             }
         }
     }

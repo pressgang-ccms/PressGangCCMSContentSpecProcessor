@@ -115,8 +115,6 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         verify(newCSNode, times(1)).setNodeType(CommonConstants.CS_NODE_META_DATA);
         // and the parent node should be null
         verify(newCSNode, times(1)).setParent(parentNode);
-        // and the content spec was set
-        verify(newCSNode, times(1)).setContentSpec(contentSpecWrapper);
         // and the node had the key set
         verify(newCSNode, times(1)).setTitle(key);
         // and the node had the value set
@@ -286,8 +284,6 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         verify(metaDataNode, times(1)).setNodeType(CommonConstants.CS_NODE_META_DATA);
         // and the parent node should be null
         verify(metaDataNode, never()).setParent(any(CSNodeWrapper.class));
-        // and the content spec was set
-        verify(metaDataNode, times(1)).setContentSpec(contentSpecWrapper);
         // and the node had the key set
         verify(metaDataNode, times(1)).setTitle(key);
         // and the node had the value set

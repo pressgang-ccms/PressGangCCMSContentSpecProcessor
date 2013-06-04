@@ -120,8 +120,6 @@ public class ContentSpecProcessorMergeChildrenLevelTest extends ContentSpecProce
         verify(newCSNode, times(1)).setNodeType(CommonConstants.CS_NODE_CHAPTER);
         // and the parent node should be null
         verify(newCSNode, times(1)).setParent(parentNode);
-        // and the content spec was set
-        verify(newCSNode, times(1)).setContentSpec(contentSpecWrapper);
         // and the node had the title set
         verify(newCSNode, times(1)).setTitle(title);
         // and the node topic id was set
@@ -612,8 +610,6 @@ public class ContentSpecProcessorMergeChildrenLevelTest extends ContentSpecProce
         verify(levelNode, times(1)).setNodeType(CommonConstants.CS_NODE_CHAPTER);
         // and the parent node should be null
         verify(levelNode, never()).setParent(any(CSNodeWrapper.class));
-        // and the content spec was set
-        verify(levelNode, times(1)).setContentSpec(contentSpecWrapper);
         // and the node had the title set
         verify(levelNode, times(1)).setTitle(title);
         // and the node topic id wasn't set

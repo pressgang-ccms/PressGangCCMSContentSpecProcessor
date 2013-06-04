@@ -113,8 +113,6 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         verify(newCSNode, times(1)).setNodeType(CommonConstants.CS_NODE_COMMENT);
         // and the parent node should be null
         verify(newCSNode, times(1)).setParent(parentNode);
-        // and the content spec was set
-        verify(newCSNode, times(1)).setContentSpec(contentSpecWrapper);
         // and the node had the comment set
         verify(newCSNode, times(1)).setTitle("# " + this.comment);
         // and the node topic id was set
@@ -232,8 +230,6 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         verify(commentNode, times(1)).setNodeType(CommonConstants.CS_NODE_COMMENT);
         // and the parent node should be null
         verify(commentNode, never()).setParent(any(CSNodeWrapper.class));
-        // and the content spec was set
-        verify(commentNode, times(1)).setContentSpec(contentSpecWrapper);
         // and the node had the comment set
         verify(commentNode, times(1)).setTitle("# " + comment);
         // and the node topic id wasn't set
