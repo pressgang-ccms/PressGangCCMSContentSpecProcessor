@@ -978,6 +978,13 @@ public class ContentSpecParser {
                 spec.setBugzillaComponent(StringUtilities.replaceEscapeChars(tempInput[1]));
             } else if (upperCaseInput.matches(ProcessorConstants.BUGZILLA_VERSION_REGEX)) {
                 spec.setBugzillaVersion(StringUtilities.replaceEscapeChars(tempInput[1]));
+            } else if (upperCaseInput.matches(ProcessorConstants.BUGZILLA_ASSIGNEE_REGEX)) {
+                if (tempInput[1].equalsIgnoreCase("OFF")) {
+                    spec.setInjectBugzillaAssignee(false);
+                } else if (!tempInput[1].equalsIgnoreCase("ON")) {
+                    log.error(format(ProcessorConstants.ERROR_INVALID_BUGZILLA_ASSIGNEE_MSG, lineCounter, input));
+                    return false;
+                }
             } else if (upperCaseInput.matches(ProcessorConstants.SURVEY_LINK_REGEX)) {
                 if (tempInput[1].equalsIgnoreCase("ON")) {
                     spec.setInjectSurveyLinks(true);
