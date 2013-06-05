@@ -109,60 +109,64 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     /**
      * Process a content specification so that it is parsed, validated and saved.
      *
+     *
      * @param contentSpec The Content Specification that is to be processed.
-     * @param user        The user who requested the process operation.
+     * @param username        The user who requested the process operation.
      * @param mode        The mode to parse the content specification in.
      * @return True if everything was processed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when processing.
      */
-    public boolean processContentSpec(final String contentSpec, final RESTUserV1 user,
+    public boolean processContentSpec(final String contentSpec, final String username,
             final ContentSpecParser.ParsingMode mode) throws Exception {
-        return processContentSpec(contentSpec, user, mode, null);
+        return processContentSpec(contentSpec, username, mode, null);
     }
 
     /**
      * Process a content specification so that it is parsed, validated and saved.
      *
+     *
+     *
      * @param contentSpec The Content Specification that is to be processed.
-     * @param user        The user who requested the process operation.
+     * @param username        The user who requested the process operation.
      * @param logDetails  The log details to be set when saving.
      * @param mode        The mode to parse the content specification in.
      * @return True if everything was processed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when processing.
      */
-    public boolean processContentSpec(final String contentSpec, final RESTUserV1 user, final RESTLogDetailsV1 logDetails,
+    public boolean processContentSpec(final String contentSpec, final String username, final RESTLogDetailsV1 logDetails,
             final ContentSpecParser.ParsingMode mode) throws Exception {
-        return processContentSpec(contentSpec, user, logDetails, mode, null);
+        return processContentSpec(contentSpec, username, logDetails, mode, null);
     }
 
     /**
      * Process a content specification so that it is parsed, validated and saved.
      *
+     *
      * @param contentSpec    The Content Specification that is to be processed.
-     * @param user           The user who requested the process operation.
+     * @param username           The user who requested the process operation.
      * @param mode           The mode to parse the content specification in.
      * @param overrideLocale Override the default locale using this parameter.
      * @return True if everything was processed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when processing.
      */
     @SuppressWarnings({"unchecked"})
-    public boolean processContentSpec(final String contentSpec, final RESTUserV1 user, final ContentSpecParser.ParsingMode mode,
+    public boolean processContentSpec(final String contentSpec, final String username, final ContentSpecParser.ParsingMode mode,
             final String overrideLocale) throws Exception {
-        return processContentSpec(contentSpec, user, null, mode, overrideLocale);
+        return processContentSpec(contentSpec, username, null, mode, overrideLocale);
     }
 
     /**
      * Process a content specification so that it is parsed, validated and saved.
      *
+     *
      * @param contentSpec    The Content Specification that is to be processed.
-     * @param user           The user who requested the process operation.
-     * @param mode           The mode to parse the content specification in.
-     * @param overrideLocale Override the default locale using this parameter.
-     * @return True if everything was processed successfully otherwise false.
+     * @param username
+     *@param mode           The mode to parse the content specification in.
+     * @param overrideLocale Override the default locale using this parameter.   @return True if everything was processed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when processing.
      */
     @SuppressWarnings({"unchecked"})
-    public boolean processContentSpec(final String contentSpec, final RESTUserV1 user, final RESTLogDetailsV1 logDetails,
+    public boolean processContentSpec(final String contentSpec, final String username, final RESTLogDetailsV1 logDetails,
             final ContentSpecParser.ParsingMode mode, final String overrideLocale) throws Exception {
         boolean editing = false;
 
@@ -174,12 +178,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         // Set the log details user if one isn't set
         if (logDetails != null && logDetails.getUser() == null) {
+            final RESTUserV1 user = new RESTUserV1();
+            user.setId(CSConstants.UNKNOWN_USER_ID);
             logDetails.setUser(user);
         }
 
         LOG.info("Starting to parse...");
         if (mode == ContentSpecParser.ParsingMode.EDITED) editing = true;
-        if (!csp.parse(contentSpec, user, mode, true)) {
+        if (!csp.parse(contentSpec, username, mode, true)) {
             log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
             return false;
         }

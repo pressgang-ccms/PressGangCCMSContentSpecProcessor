@@ -50,7 +50,6 @@ import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
 import org.jboss.pressgang.ccms.rest.v1.entities.RESTTopicV1;
-import org.jboss.pressgang.ccms.rest.v1.entities.RESTUserV1;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
@@ -134,13 +133,14 @@ public class ContentSpecParser {
      * <p/>
      * Note: Relationships in Processes won't be added as they require access to a TopicIndex REST Interface.
      *
+     *
      * @param contentSpec A string representation of the Content Specification.
-     * @param user        The user who requested the parse.
+     * @param username        The user who requested the parse.
      * @return True if everything was parsed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when parsing.
      */
-    public boolean parse(final String contentSpec, final RESTUserV1 user) throws Exception {
-        return parse(contentSpec, user, ParsingMode.EITHER);
+    public boolean parse(final String contentSpec, final String username) throws Exception {
+        return parse(contentSpec, username, ParsingMode.EITHER);
     }
 
     /**
@@ -148,14 +148,15 @@ public class ContentSpecParser {
      * <p/>
      * Note: Relationships in Processes won't be added as they require access to a TopicIndex REST Interface.
      *
+     *
      * @param contentSpec A string representation of the Content Specification.
-     * @param user        The user who requested the parse.
+     * @param username        The user who requested the parse.
      * @param mode        The mode in which the Content Specification should be parsed.
      * @return True if everything was parsed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when parsing.
      */
-    public boolean parse(final String contentSpec, final RESTUserV1 user, final ParsingMode mode) throws Exception {
-        return parse(contentSpec, user, mode, false);
+    public boolean parse(final String contentSpec, final String username, final ParsingMode mode) throws Exception {
+        return parse(contentSpec, username, mode, false);
     }
 
     /**
@@ -163,13 +164,14 @@ public class ContentSpecParser {
      * <p/>
      * Note: Relationships in Processes won't be added as they require access to a TopicIndex REST Interface.
      *
+     *
      * @param contentSpec A string representation of the Content Specification.
-     * @param user        The user who requested the parse.
+     * @param username        The user who requested the parse.
      * @param mode        The mode in which the Content Specification should be parsed.
      * @return True if everything was parsed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when parsing.
      */
-    public boolean parse(final String contentSpec, final RESTUserV1 user, final ParsingMode mode,
+    public boolean parse(final String contentSpec, final String username, final ParsingMode mode,
             final boolean processProcesses) throws Exception {
         // Reset the variables
         spaces = 2;
@@ -188,7 +190,7 @@ public class ContentSpecParser {
         this.processProcesses = processProcesses;
 
         final BufferedReader br = new BufferedReader(new StringReader(contentSpec));
-        return readFileData(br, user, mode);
+        return readFileData(br, username, mode);
     }
 
     /**
@@ -298,14 +300,15 @@ public class ContentSpecParser {
     /**
      * Reads the data from a file that is passed into a BufferedReader and processes it accordingly.
      *
+     *
      * @param br   A BufferedReader object that has been initialised with a file's data.
-     * @param user The database User entity object for the user who loaded the content specification.
+     * @param username The database User entity object for the user who loaded the content specification.
      * @param mode The mode to process the Content Spec in (edited, either or new).
      * @return True if the Content Specification was read successfully otherwise false.
      * @throws Exception Any uncaught exception that occurs when parsing.
      */
     @SuppressWarnings("deprecation")
-    protected boolean readFileData(final BufferedReader br, final RESTUserV1 user, final ParsingMode mode) throws Exception {
+    protected boolean readFileData(final BufferedReader br, final String username, final ParsingMode mode) throws Exception {
         // Read in the entire file so we can peek ahead later on
         String line;
         while ((line = br.readLine()) != null) {
@@ -339,8 +342,8 @@ public class ContentSpecParser {
                     }
                     spec.setTitle(lineVars[1]);
                     lvl = spec.getBaseLevel();
-                    spec.setCreatedBy(user == null ? null : user.getName());
-                    lvl.setAssignedWriter(user == null ? null : user.getName());
+                    spec.setCreatedBy(username);
+                    lvl.setAssignedWriter(username);
                     while (lines.peek() != null) {
                         lineCounter++;
                         // Process the content specification and print an error message if an error occurs
