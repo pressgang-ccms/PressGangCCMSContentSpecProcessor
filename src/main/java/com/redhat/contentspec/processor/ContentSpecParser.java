@@ -18,8 +18,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import com.google.code.regexp.NamedMatcher;
-import com.google.code.regexp.NamedPattern;
 import com.redhat.contentspec.processor.constants.ProcessorConstants;
 import com.redhat.contentspec.processor.structures.VariableSet;
 import com.redhat.contentspec.processor.utils.ProcessorUtilities;
@@ -763,8 +761,8 @@ public class ContentSpecParser {
                 if (relatedId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
                     topicRelationships.add(new Relationship(uniqueId, relatedId, RelationshipType.REFER_TO));
                 } else if (relatedId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
-                    final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-                    final NamedMatcher matcher = pattern.matcher(relatedId);
+                    final Pattern pattern = Pattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
+                    final Matcher matcher = pattern.matcher(relatedId);
 
                     matcher.find();
                     final String id = matcher.group("TopicID");
@@ -789,8 +787,8 @@ public class ContentSpecParser {
                 if (prerequisiteId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
                     topicRelationships.add(new Relationship(uniqueId, prerequisiteId, RelationshipType.PREREQUISITE));
                 } else if (prerequisiteId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
-                    final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-                    final NamedMatcher matcher = pattern.matcher(prerequisiteId);
+                    final Pattern pattern = Pattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
+                    final Matcher matcher = pattern.matcher(prerequisiteId);
 
                     matcher.find();
                     final String id = matcher.group("TopicID");
@@ -815,8 +813,8 @@ public class ContentSpecParser {
                 if (linkListId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
                     topicRelationships.add(new Relationship(uniqueId, linkListId, RelationshipType.LINKLIST));
                 } else if (linkListId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
-                    final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-                    final NamedMatcher matcher = pattern.matcher(linkListId);
+                    final Pattern pattern = Pattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
+                    final Matcher matcher = pattern.matcher(linkListId);
 
                     matcher.find();
                     final String id = matcher.group("TopicID");
@@ -1089,9 +1087,9 @@ public class ContentSpecParser {
                 String[] types = null;
                 if (StringUtilities.indexOf(tempInput[1], '[') != -1) {
                     if (StringUtilities.indexOf(tempInput[1], ']') != -1) {
-                        final NamedPattern bracketPattern = NamedPattern.compile(
+                        final Pattern bracketPattern = Pattern.compile(
                                 format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']'));
-                        final NamedMatcher matcher = bracketPattern.matcher(tempInput[1]);
+                        final Matcher matcher = bracketPattern.matcher(tempInput[1]);
 
                         // Find all of the variables inside of the brackets defined by the regex
                         while (matcher.find()) {

@@ -16,6 +16,7 @@
     <properties>
         <pressgang.ccms.version>1.0-SNAPSHOT</pressgang.ccms.version>
         <slf4j.version>1.6.4</slf4j.version>
+        <jsoup.version>1.7.2</jsoup.version>
     </properties>
 
     <build>
@@ -77,6 +78,14 @@
             <version>${pressgang.ccms.version}</version>
         </dependency>
 
+        <!-- HTML Parser -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>${jsoup.version}</version>
+        </dependency>
+
+        <!-- Logging Libraries -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>

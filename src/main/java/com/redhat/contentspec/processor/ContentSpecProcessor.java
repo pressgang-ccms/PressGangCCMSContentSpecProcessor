@@ -43,6 +43,8 @@ import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.ExceptionUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 /**
  * A class to fully process a Content Specification. It first parses the data using a ContentSpecParser,
@@ -606,6 +608,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 for (final String url : urls) {
                     final RESTTopicSourceUrlV1 sourceUrl = new RESTTopicSourceUrlV1();
                     sourceUrl.explicitSetUrl(url);
+
+                    // Get the Source URL title from the URL
+                    try {
+                        final Document doc = Jsoup.connect(url).get();
+                        sourceUrl.explicitSetTitle(doc.title());
+                    } catch (Exception e) {
+                        // Do nothing if the HTML couldn't be parsed successfully.
+                    }
+
                     sourceUrls.addNewItem(sourceUrl);
                 }
 
