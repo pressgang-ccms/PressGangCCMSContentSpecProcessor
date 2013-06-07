@@ -332,6 +332,8 @@ public class ProcessorConstants {
     public static final String REV_HISTORY_REGEX = "^REVISION[ ]+HISTORY[ ]*((=.*)|$)";
     public static final String FEEDBACK_REGEX = "^FEEDBACK[ ]*((=.*)|$)";
     public static final String LEGAL_NOTICE_REGEX = "^LEGAL[ ]+NOTICE[ ]*((=.*)|$)";
+    public static final String MAVEN_GROUP_ID_REGEX = "^GROUPID[ ]*((=.*)|$)";
+    public static final String MAVEN_ARTIFACT_ID_REGEX = "^ARTIFACTID[ ]*((=.*)|$)";
 
     // Outdated Meta Data Regex Constants
     public static final String OUTPUT_STYLE_REGEX = "^OUTPUT STYLE[ ]*((=.*)|$)";

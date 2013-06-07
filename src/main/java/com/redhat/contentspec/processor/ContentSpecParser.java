@@ -1135,6 +1135,10 @@ public class ContentSpecParser {
             } else if (input.toUpperCase().matches(ProcessorConstants.DTD_REGEX)) {
                 spec.setDtd(StringUtilities.replaceEscapeChars(tempInput[1]));
             }
+        } else if (upperCaseInput.matches(ProcessorConstants.MAVEN_ARTIFACT_ID_REGEX)) {
+            spec.setArtifactId(StringUtilities.replaceEscapeChars(tempInput[1]));
+        } else if (upperCaseInput.matches(ProcessorConstants.MAVEN_GROUP_ID_REGEX)) {
+            spec.setGroupId(StringUtilities.replaceEscapeChars(tempInput[1]));
         } else {
             log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
             return false;
