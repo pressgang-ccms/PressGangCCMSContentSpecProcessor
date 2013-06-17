@@ -400,7 +400,7 @@ public class ContentSpecParser {
 
         if (lineVars.length >= 2) {
             if (lineVars[0].equalsIgnoreCase(CSConstants.TITLE_TITLE)) {
-                contentSpec.setTitle(StringUtilities.replaceEscapeChars(lineVars[1]));
+                contentSpec.setTitle(ProcessorUtilities.replaceEscapeChars(lineVars[1]));
 
                 // Process the rest of the spec now that we know the start is correct
                 return processSpecContents(contentSpec, processProcesses);
@@ -798,7 +798,7 @@ public class ContentSpecParser {
                     throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber,
                             key + " = " + finalCfg.replaceAll("\n", "\n          ")));
                 } else {
-                    contentSpec.setPublicanCfg(StringUtilities.replaceEscapeChars(finalCfg).substring(1, finalCfg.length() - 1));
+                    contentSpec.setPublicanCfg(ProcessorUtilities.replaceEscapeChars(finalCfg).substring(1, finalCfg.length() - 1));
                 }
             } else {
                 throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber, line));
@@ -933,7 +933,7 @@ public class ContentSpecParser {
                 if (variables[1].matches("^C:[ ]*[0-9]+$")) {
                     variables[0] = "C" + variables[1].replaceAll("^C:[ ]*", "");
                 } else {
-                    tempTopic.setType(StringUtilities.replaceEscapeChars(variables[1]));
+                    tempTopic.setType(ProcessorUtilities.replaceEscapeChars(variables[1]));
                 }
             }
             // If we have two variables for a existing topic then check to see if the second variable is the revision
@@ -968,7 +968,7 @@ public class ContentSpecParser {
         }
 
         // Set the title
-        String title = StringUtilities.replaceEscapeChars(getTitle(line, '['));
+        String title = ProcessorUtilities.replaceEscapeChars(getTitle(line, '['));
         tempTopic.setTitle(title);
 
         // Set the topic ID
@@ -1175,7 +1175,7 @@ public class ContentSpecParser {
 
         // Parse the input
         if (splitVars.length >= 2) {
-            final String title = StringUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
+            final String title = ProcessorUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
             newLvl.setTitle(title);
             // Get the mapping of variables
             final HashMap<RelationshipType, List<String[]>> variableMap = getLineVariables(splitVars[1], lineNumber, '[', ']', ',',
@@ -1443,11 +1443,11 @@ public class ContentSpecParser {
                 temp = CollectionUtilities.trimStringArray(temp);
                 if (temp.length == 2) {
                     if (temp[0].equalsIgnoreCase("URL")) {
-                        node.addSourceUrl(StringUtilities.replaceEscapeChars(temp[1]));
+                        node.addSourceUrl(ProcessorUtilities.replaceEscapeChars(temp[1]));
                     } else if (temp[0].equalsIgnoreCase("description")) {
-                        node.setDescription(StringUtilities.replaceEscapeChars(temp[1]));
+                        node.setDescription(ProcessorUtilities.replaceEscapeChars(temp[1]));
                     } else if (temp[0].equalsIgnoreCase("Writer")) {
-                        node.setAssignedWriter(StringUtilities.replaceEscapeChars(temp[1]));
+                        node.setAssignedWriter(ProcessorUtilities.replaceEscapeChars(temp[1]));
                     } else if (temp[0].equalsIgnoreCase("condition")) {
                         final String condition = temp[1];
                         node.setConditionStatement(condition);
@@ -1508,7 +1508,7 @@ public class ContentSpecParser {
                     }
                     // Just a single tag so add it straight away
                     else {
-                        if (!node.addTag(StringUtilities.replaceEscapeChars(temp[1]))) {
+                        if (!node.addTag(ProcessorUtilities.replaceEscapeChars(temp[1]))) {
                             throw new ParsingException(format(ProcessorConstants.ERROR_TAG_DUPLICATED_MSG, lineNumber, originalInput));
                         }
                     }

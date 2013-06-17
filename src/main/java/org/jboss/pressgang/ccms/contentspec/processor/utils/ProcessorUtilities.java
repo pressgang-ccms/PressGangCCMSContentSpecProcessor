@@ -1,6 +1,7 @@
 package org.jboss.pressgang.ccms.contentspec.processor.utils;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
@@ -23,6 +24,16 @@ import org.jboss.pressgang.ccms.wrapper.collection.CollectionWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.UpdateableCollectionWrapper;
 
 public class ProcessorUtilities {
+    private static final Pattern LEFT_SQUARE_BRACKET_PATTERN = Pattern.compile("\\\\\\[");
+    private static final Pattern RIGHT_SQUARE_BRACKET_PATTERN = Pattern.compile("\\\\\\]");
+    private static final Pattern LEFT_BRACKET_PATTERN = Pattern.compile("\\\\\\(");
+    private static final Pattern RIGHT_BRACKET_PATTERN = Pattern.compile("\\\\\\)");
+    private static final Pattern COLON_PATTERN = Pattern.compile("\\\\:");
+    private static final Pattern COMMA_PATTERN = Pattern.compile("\\\\,");
+    private static final Pattern EQUALS_PATTERN = Pattern.compile("\\\\=");
+    private static final Pattern PLUS_PATTERN = Pattern.compile("\\\\\\+");
+    private static final Pattern MINUS_PATTERN = Pattern.compile("\\\\-");
+
     /**
      * Finds a set of variables that are grouped by delimiters. It also skips nested
      * groups and returns them as part of the set so they can be processed separately.
@@ -95,7 +106,7 @@ public class ProcessorUtilities {
         // Remove the whitespace from each value in the split array
         tempInput = CollectionUtilities.trimStringArray(tempInput);
         if (tempInput.length >= 2) {
-            return new Pair<String, String>(tempInput[0], StringUtilities.replaceEscapeChars(tempInput[1]));
+            return new Pair<String, String>(tempInput[0], replaceEscapeChars(tempInput[1]));
         } else {
             throw new InvalidKeyValueException();
         }
@@ -251,5 +262,25 @@ public class ProcessorUtilities {
         sourceUrl.setUrl(originalSourceUrl.getUrl());
 
         return sourceUrl;
+    }
+
+    /**
+     * Replaces the escaped chars with their normal counterpart. Only replaces ('[', ']', '(', ')', ';', ',', '+', '-' and '=')
+     *
+     * @param input The string to have all its escaped characters replaced.
+     * @return The input string with the escaped characters replaced back to normal.
+     */
+    public static String replaceEscapeChars(final String input) {
+        if (input == null) return null;
+
+        String retValue = LEFT_SQUARE_BRACKET_PATTERN.matcher(input).replaceAll("[");
+        retValue = RIGHT_SQUARE_BRACKET_PATTERN.matcher(retValue).replaceAll("]");
+        retValue = LEFT_BRACKET_PATTERN.matcher(retValue).replaceAll("(");
+        retValue = RIGHT_BRACKET_PATTERN.matcher(retValue).replaceAll(")");
+        retValue = COLON_PATTERN.matcher(retValue).replaceAll(":");
+        retValue = COMMA_PATTERN.matcher(retValue).replaceAll(",");
+        retValue = EQUALS_PATTERN.matcher(retValue).replaceAll("=");
+        retValue = PLUS_PATTERN.matcher(retValue).replaceAll("+");
+        return MINUS_PATTERN.matcher(retValue).replaceAll("-");
     }
 }
