@@ -510,7 +510,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     }
                     // The relationship isn't a target so it must point to a topic directly
                 } else {
-                    if (!relatedId.matches(CSConstants.NEW_TOPIC_ID_REGEX)) {
+                    if (!CSConstants.NEW_TOPIC_ID_PATTERN.matcher(relatedId).matches()) {
                         // The relationship isn't a unique new topic so it will contain the line number in front of the topic ID
                         if (relatedId.startsWith("X")) {
                             // Duplicated topics are never unique so throw an error straight away.

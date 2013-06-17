@@ -929,7 +929,7 @@ public class ContentSpecParser {
         // Process and validate the Types & ID
         if (variables.length >= 2) {
             // Check the type and the set it
-            if (variables[0].matches(CSConstants.NEW_TOPIC_ID_REGEX)) {
+            if (CSConstants.NEW_TOPIC_ID_PATTERN.matcher(variables[0]).matches()) {
                 if (variables[1].matches("^C:[ ]*[0-9]+$")) {
                     variables[0] = "C" + variables[1].replaceAll("^C:[ ]*", "");
                 } else {
@@ -959,7 +959,7 @@ public class ContentSpecParser {
                     CSConstants.EXISTING_TOPIC_ID_REGEX + ")|(" + CSConstants.NEW_TOPIC_ID_REGEX + ")|(" +
                     CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX + ")")) {
                 throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TITLE_ID_MSG, lineNumber, line));
-            } else if (variables[0].matches(CSConstants.NEW_TOPIC_ID_REGEX)) {
+            } else if (CSConstants.NEW_TOPIC_ID_PATTERN.matcher(variables[0]).matches()) {
                 throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TYPE_TITLE_ID_MSG, lineNumber, line));
             }
             varStartPos = 1;
@@ -980,8 +980,8 @@ public class ContentSpecParser {
          * using the line number and topic ID.
          */
         String uniqueId = variables[0];
-        if (variables[0].matches(CSConstants.NEW_TOPIC_ID_REGEX) && !variables[0].equals("N") && !getSpecTopics().containsKey(
-                variables[0])) {
+        if (CSConstants.NEW_TOPIC_ID_PATTERN.matcher(variables[0]).matches() && !variables[0].equals("N") &&
+                !getSpecTopics().containsKey(variables[0])) {
             getSpecTopics().put(uniqueId, tempTopic);
         } else if (variables[0].equals("N") || variables[0].matches(CSConstants.DUPLICATE_TOPIC_ID_REGEX) ||
                 variables[0].matches(CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX) || variables[0].matches(
@@ -1178,8 +1178,8 @@ public class ContentSpecParser {
             final String title = ProcessorUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
             newLvl.setTitle(title);
             // Get the mapping of variables
-            final HashMap<RelationshipType, List<String[]>> variableMap = getLineVariables(splitVars[1], lineNumber, '[', ']', ',',
-                    false, true);
+            final HashMap<RelationshipType, List<String[]>> variableMap = getLineVariables(splitVars[1], lineNumber, '[', ']', ',', false,
+                    true);
             if (variableMap.containsKey(RelationshipType.NONE)) {
                 boolean optionsProcessed = false;
                 for (final String[] variables : variableMap.get(RelationshipType.NONE)) {
@@ -1194,8 +1194,8 @@ public class ContentSpecParser {
                                 addOptions(newLvl, variables, 0, line, lineNumber);
                                 optionsProcessed = true;
                             } else {
-                                throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG, lineNumber,
-                                        line));
+                                throw new ParsingException(
+                                        format(ProcessorConstants.ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG, lineNumber, line));
                             }
                         }
                     }
@@ -1568,7 +1568,7 @@ public class ContentSpecParser {
                 }
                 // The relationship isn't a target so it must point to a topic directly
                 else {
-                    if (!relatedId.matches(CSConstants.NEW_TOPIC_ID_REGEX)) {
+                    if (!CSConstants.NEW_TOPIC_ID_PATTERN.matcher(relatedId).matches()) {
                         // The relationship isn't a unique new topic so it will contain the line number in front of
                         // the topic ID
                         if (!relatedId.startsWith("X")) {
