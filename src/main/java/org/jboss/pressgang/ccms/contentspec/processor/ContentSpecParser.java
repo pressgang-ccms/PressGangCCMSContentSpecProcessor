@@ -59,6 +59,8 @@ import org.jboss.pressgang.ccms.utils.structures.Pair;
  */
 public class ContentSpecParser {
     private static final Pattern LEVEL_PATTERN = Pattern.compile(ProcessorConstants.LEVEL_REGEX);
+    private static final Pattern SQUARE_BRACKET_PATTERN = Pattern.compile(format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']'));
+    private static final Pattern RELATION_ID_LONG_PATTERN = Pattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
 
     /**
      * An Enumerator used to specify the parsing mode of the Parser.
@@ -806,8 +808,7 @@ public class ContentSpecParser {
             String[] types = null;
             if (StringUtilities.indexOf(value, '[') != -1) {
                 if (StringUtilities.indexOf(value, ']') != -1) {
-                    final Pattern bracketPattern = Pattern.compile(format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']'));
-                    final Matcher matcher = bracketPattern.matcher(value);
+                    final Matcher matcher = SQUARE_BRACKET_PATTERN.matcher(value);
 
                     // Find all of the variables inside of the brackets defined by the regex
                     while (matcher.find()) {
@@ -1110,8 +1111,7 @@ public class ContentSpecParser {
                 if (relationshipId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
                     topicRelationships.add(new Relationship(uniqueId, relationshipId, relationshipType));
                 } else if (relationshipId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
-                    final Pattern pattern = Pattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-                    final Matcher matcher = pattern.matcher(relationshipId);
+                    final Matcher matcher = RELATION_ID_LONG_PATTERN.matcher(relationshipId);
 
                     matcher.find();
                     final String id = matcher.group("TopicID");
