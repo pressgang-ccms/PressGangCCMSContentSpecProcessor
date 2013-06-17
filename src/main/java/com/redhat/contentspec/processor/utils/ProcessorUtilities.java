@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import com.redhat.contentspec.processor.structures.VariableSet;
 import org.jboss.pressgang.ccms.rest.v1.entities.RESTTagV1;
@@ -11,6 +12,16 @@ import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTCategoryInTagV1;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 
 public class ProcessorUtilities {
+    private static final Pattern LEFT_SQUARE_BRACKET_PATTERN = Pattern.compile("\\\\\\[");
+    private static final Pattern RIGHT_SQUARE_BRACKET_PATTERN = Pattern.compile("\\\\\\]");
+    private static final Pattern LEFT_BRACKET_PATTERN = Pattern.compile("\\\\\\(");
+    private static final Pattern RIGHT_BRACKET_PATTERN = Pattern.compile("\\\\\\)");
+    private static final Pattern COLON_PATTERN = Pattern.compile("\\\\:");
+    private static final Pattern COMMA_PATTERN = Pattern.compile("\\\\,");
+    private static final Pattern EQUALS_PATTERN = Pattern.compile("\\\\=");
+    private static final Pattern PLUS_PATTERN = Pattern.compile("\\\\\\+");
+    private static final Pattern MINUS_PATTERN = Pattern.compile("\\\\-");
+
     /**
      * Converts a list of tags into a mapping of categories to tags. The key is the Category and the value is a List
      * of Tags for that category.
@@ -19,8 +30,7 @@ public class ProcessorUtilities {
      * @return The mapping of Categories to Tags.
      */
     public static Map<RESTCategoryInTagV1, List<RESTTagV1>> getCategoryMappingFromTagList(final List<RESTTagV1> tags) {
-        final HashMap<RESTCategoryInTagV1, List<RESTTagV1>> mapping = new HashMap<RESTCategoryInTagV1,
-                List<RESTTagV1>>();
+        final HashMap<RESTCategoryInTagV1, List<RESTTagV1>> mapping = new HashMap<RESTCategoryInTagV1, List<RESTTagV1>>();
         for (final RESTTagV1 tag : tags) {
             final List<RESTCategoryInTagV1> catList = tag.getCategories().returnItems();
             if (catList != null) {
@@ -45,8 +55,7 @@ public class ProcessorUtilities {
      * @return A VariableSet object that contains the contents of the set, the start position
      *         in the string and the end position.
      */
-    public static VariableSet findVariableSet(final String input, final char startDelim, final char endDelim,
-            final int startPos) {
+    public static VariableSet findVariableSet(final String input, final char startDelim, final char endDelim, final int startPos) {
         final int startIndex = StringUtilities.indexOf(input, startDelim, startPos);
         int endIndex = StringUtilities.indexOf(input, endDelim, startPos);
         int nextStartIndex = StringUtilities.indexOf(input, startDelim, startIndex + 1);
@@ -80,5 +89,25 @@ public class ProcessorUtilities {
             set.setStartPos(null);
         }
         return set;
+    }
+
+    /**
+     * Replaces the escaped chars with their normal counterpart. Only replaces ('[', ']', '(', ')', ';', ',', '+', '-' and '=')
+     *
+     * @param input The string to have all its escaped characters replaced.
+     * @return The input string with the escaped characters replaced back to normal.
+     */
+    public static String replaceEscapeChars(final String input) {
+        if (input == null) return null;
+
+        String retValue = LEFT_SQUARE_BRACKET_PATTERN.matcher(input).replaceAll("[");
+        retValue = RIGHT_SQUARE_BRACKET_PATTERN.matcher(retValue).replaceAll("]");
+        retValue = LEFT_BRACKET_PATTERN.matcher(retValue).replaceAll("(");
+        retValue = RIGHT_BRACKET_PATTERN.matcher(retValue).replaceAll(")");
+        retValue = COLON_PATTERN.matcher(retValue).replaceAll(":");
+        retValue = COMMA_PATTERN.matcher(retValue).replaceAll(",");
+        retValue = EQUALS_PATTERN.matcher(retValue).replaceAll("=");
+        retValue = PLUS_PATTERN.matcher(retValue).replaceAll("+");
+        return MINUS_PATTERN.matcher(retValue).replaceAll("-");
     }
 }

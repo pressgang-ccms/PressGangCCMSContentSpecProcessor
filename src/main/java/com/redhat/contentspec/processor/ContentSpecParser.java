@@ -62,6 +62,9 @@ import org.jboss.pressgang.ccms.utils.structures.Pair;
  */
 public class ContentSpecParser {
     private static final Pattern LEVEL_PATTERN = Pattern.compile(ProcessorConstants.LEVEL_REGEX);
+    private static final Pattern SQUARE_BRACKET_PATTERN = Pattern.compile(format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']'));
+    private static final Pattern RELATIONSHIP_ID_LONG_PATTERN = Pattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
+    private static final Pattern META_DATA_LINE_PATTERN = Pattern.compile("^\\w[\\w\\.\\s]+=.*");
 
     /**
      * An Enumerator used to specify the parsing mode of the Parser.
@@ -131,9 +134,8 @@ public class ContentSpecParser {
      * <p/>
      * Note: Relationships in Processes won't be added as they require access to a TopicIndex REST Interface.
      *
-     *
      * @param contentSpec A string representation of the Content Specification.
-     * @param username        The user who requested the parse.
+     * @param username    The user who requested the parse.
      * @return True if everything was parsed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when parsing.
      */
@@ -146,9 +148,8 @@ public class ContentSpecParser {
      * <p/>
      * Note: Relationships in Processes won't be added as they require access to a TopicIndex REST Interface.
      *
-     *
      * @param contentSpec A string representation of the Content Specification.
-     * @param username        The user who requested the parse.
+     * @param username    The user who requested the parse.
      * @param mode        The mode in which the Content Specification should be parsed.
      * @return True if everything was parsed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when parsing.
@@ -162,9 +163,8 @@ public class ContentSpecParser {
      * <p/>
      * Note: Relationships in Processes won't be added as they require access to a TopicIndex REST Interface.
      *
-     *
      * @param contentSpec A string representation of the Content Specification.
-     * @param username        The user who requested the parse.
+     * @param username    The user who requested the parse.
      * @param mode        The mode in which the Content Specification should be parsed.
      * @return True if everything was parsed successfully otherwise false.
      * @throws Exception Any unexpected exception that occurred when parsing.
@@ -298,10 +298,9 @@ public class ContentSpecParser {
     /**
      * Reads the data from a file that is passed into a BufferedReader and processes it accordingly.
      *
-     *
-     * @param br   A BufferedReader object that has been initialised with a file's data.
+     * @param br       A BufferedReader object that has been initialised with a file's data.
      * @param username The database User entity object for the user who loaded the content specification.
-     * @param mode The mode to process the Content Spec in (edited, either or new).
+     * @param mode     The mode to process the Content Spec in (edited, either or new).
      * @return True if the Content Specification was read successfully otherwise false.
      * @throws Exception Any uncaught exception that occurs when parsing.
      */
@@ -573,7 +572,7 @@ public class ContentSpecParser {
             HashMap<RelationshipType, String[]> variableMap;
             try {
                 variableMap = getLineVariables(splitVars[1], '[', ']', ',', false);
-                final String title = StringUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
+                final String title = ProcessorUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
                 processExternalLevel(lvl, variableMap.get(RelationshipType.EXTERNAL_CONTENT_SPEC)[0], title, input);
             } catch (Exception e) {
                 log.error(e.getMessage());
@@ -650,7 +649,7 @@ public class ContentSpecParser {
                 if (variables[1].matches("^C:[ ]*[0-9]+$")) {
                     variables[0] = "C" + variables[1].replaceAll("^C:[ ]*", "");
                 } else {
-                    tempTopic.setType(StringUtilities.replaceEscapeChars(variables[1]));
+                    tempTopic.setType(ProcessorUtilities.replaceEscapeChars(variables[1]));
                 }
             }
             // If we have two variables for a existing topic then check to see if the second variable is the revision
@@ -694,7 +693,7 @@ public class ContentSpecParser {
         }
 
         // Set the title
-        String title = StringUtilities.replaceEscapeChars(getTitle(input, '['));
+        String title = ProcessorUtilities.replaceEscapeChars(getTitle(input, '['));
         tempTopic.setTitle(title);
 
         // Set the topic ID
@@ -744,7 +743,6 @@ public class ContentSpecParser {
     }
 
     /**
-     *
      * @param tempTopic
      * @param variableMap
      * @param input
@@ -761,8 +759,7 @@ public class ContentSpecParser {
                 if (relatedId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
                     topicRelationships.add(new Relationship(uniqueId, relatedId, RelationshipType.REFER_TO));
                 } else if (relatedId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
-                    final Pattern pattern = Pattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-                    final Matcher matcher = pattern.matcher(relatedId);
+                    final Matcher matcher = RELATIONSHIP_ID_LONG_PATTERN.matcher(relatedId);
 
                     matcher.find();
                     final String id = matcher.group("TopicID");
@@ -787,8 +784,7 @@ public class ContentSpecParser {
                 if (prerequisiteId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
                     topicRelationships.add(new Relationship(uniqueId, prerequisiteId, RelationshipType.PREREQUISITE));
                 } else if (prerequisiteId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
-                    final Pattern pattern = Pattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-                    final Matcher matcher = pattern.matcher(prerequisiteId);
+                    final Matcher matcher = RELATIONSHIP_ID_LONG_PATTERN.matcher(prerequisiteId);
 
                     matcher.find();
                     final String id = matcher.group("TopicID");
@@ -813,8 +809,7 @@ public class ContentSpecParser {
                 if (linkListId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
                     topicRelationships.add(new Relationship(uniqueId, linkListId, RelationshipType.LINKLIST));
                 } else if (linkListId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
-                    final Pattern pattern = Pattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-                    final Matcher matcher = pattern.matcher(linkListId);
+                    final Matcher matcher = RELATIONSHIP_ID_LONG_PATTERN.matcher(linkListId);
 
                     matcher.find();
                     final String id = matcher.group("TopicID");
@@ -899,7 +894,7 @@ public class ContentSpecParser {
      * @return True if the line is meta data, otherwise false.
      */
     protected boolean isMetaDataLine(String line) {
-        return lvl.getLevelType() == LevelType.BASE && line.trim().matches("^\\w[\\w\\.\\s]+=.*");
+        return lvl.getLevelType() == LevelType.BASE && META_DATA_LINE_PATTERN.matcher(line.trim()).matches();
     }
 
     /**
@@ -924,127 +919,98 @@ public class ContentSpecParser {
         // Split the input to get the key value pair and remove the whitespace from each value in the split array
         final String tempInput[] = CollectionUtilities.trimStringArray(StringUtilities.split(input, '=', 2));
         if (tempInput.length >= 2) {
-            if (upperCaseInput.matches(ProcessorConstants.SPEC_REVISION_REGEX)) {
-                log.error(format(ProcessorConstants.ERROR_CS_INVALID_SPEC_REVISION_MSG, lineCounter));
-                return false;
-            } else if (upperCaseInput.matches(ProcessorConstants.CHECKSUM_REGEX)) {
+            final String escapedValue = ProcessorUtilities.replaceEscapeChars(tempInput[1]);
+            if (ProcessorConstants.CHECKSUM_PATTERN.matcher(upperCaseInput).matches()) {
                 log.error(format(ProcessorConstants.ERROR_CS_INVALID_CHECKSUM_MSG, lineCounter));
                 return false;
-            } else if (upperCaseInput.matches(ProcessorConstants.SUBTITLE_REGEX)) {
-                spec.setSubtitle(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.EDITION_REGEX)) {
-                spec.setEdition(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.BOOK_VERSION_REGEX)) {
-                spec.setBookVersion(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.PUBSNUMBER_REGEX)) {
+            } else if (ProcessorConstants.SUBTITLE_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setSubtitle(escapedValue);
+            } else if (ProcessorConstants.EDITION_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setEdition(escapedValue);
+            } else if (ProcessorConstants.PUBSNUMBER_PATTERN.matcher(upperCaseInput).matches()) {
                 try {
                     spec.setPubsNumber(Integer.parseInt(tempInput[1]));
                 } catch (NumberFormatException e) {
                     log.error(format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineCounter, input));
                     return false;
                 }
-            } else if (upperCaseInput.matches(ProcessorConstants.PRODUCT_REGEX)) {
-                spec.setProduct(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.ABSTRACT_REGEX)) {
-                spec.setAbstract(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.COPYRIGHT_HOLDER_REGEX)) {
-                spec.setCopyrightHolder(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.COPYRIGHT_YEAR_REGEX)) {
-                spec.setCopyrightYear(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.DEBUG_REGEX)) {
-                if (tempInput[1].equals("1")) {
-                    elm.setVerboseDebug(1);
-                } else if (tempInput[1].equals("2")) {
-                    elm.setVerboseDebug(2);
-                } else if (!tempInput[1].equals("0")) {
-                    log.warn(ProcessorConstants.WARN_DEBUG_IGNORE_MSG);
-                }
-            } else if (upperCaseInput.matches(ProcessorConstants.VERSION_REGEX)) {
-                spec.setVersion(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.BRAND_REGEX)) {
-                spec.setBrand(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.BUG_LINKS_REGEX)) {
+            } else if (ProcessorConstants.PRODUCT_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setProduct(escapedValue);
+            } else if (ProcessorConstants.ABSTRACT_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setAbstract(escapedValue);
+            } else if (ProcessorConstants.COPYRIGHT_HOLDER_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setCopyrightHolder(escapedValue);
+            } else if (ProcessorConstants.COPYRIGHT_YEAR_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setCopyrightYear(escapedValue);
+            } else if (ProcessorConstants.VERSION_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setVersion(escapedValue);
+            } else if (ProcessorConstants.BRAND_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setBrand(escapedValue);
+            } else if (ProcessorConstants.BUG_LINKS_PATTERN.matcher(upperCaseInput).matches()) {
                 if (tempInput[1].equalsIgnoreCase("OFF")) {
                     spec.setInjectBugLinks(false);
                 } else if (!tempInput[1].equalsIgnoreCase("ON")) {
                     log.error(format(ProcessorConstants.ERROR_INVALID_BUG_LINKS_MSG, lineCounter, input));
                     return false;
                 }
-            } else if (upperCaseInput.matches(ProcessorConstants.BUGZILLA_PRODUCT_REGEX)) {
-                spec.setBugzillaProduct(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.BUGZILLA_COMPONENT_REGEX)) {
-                spec.setBugzillaComponent(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.BUGZILLA_VERSION_REGEX)) {
-                spec.setBugzillaVersion(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.BUGZILLA_ASSIGNEE_REGEX)) {
+            } else if (ProcessorConstants.BUGZILLA_PRODUCT_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setBugzillaProduct(escapedValue);
+            } else if (ProcessorConstants.BUGZILLA_COMPONENT_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setBugzillaComponent(escapedValue);
+            } else if (ProcessorConstants.BUGZILLA_VERSION_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setBugzillaVersion(escapedValue);
+            } else if (ProcessorConstants.BUGZILLA_ASSIGNEE_PATTERN.matcher(upperCaseInput).matches()) {
                 if (tempInput[1].equalsIgnoreCase("OFF")) {
                     spec.setInjectBugzillaAssignee(false);
                 } else if (!tempInput[1].equalsIgnoreCase("ON")) {
                     log.error(format(ProcessorConstants.ERROR_INVALID_BUGZILLA_ASSIGNEE_MSG, lineCounter, input));
                     return false;
                 }
-            } else if (upperCaseInput.matches(ProcessorConstants.SURVEY_LINK_REGEX)) {
+            } else if (ProcessorConstants.BOOK_TYPE_PATTERN.matcher(upperCaseInput).matches()) {
+                if (ProcessorConstants.VALID_BOOK_TYPE_PATTERN.matcher(escapedValue.toUpperCase()).matches()) {
+                    spec.setBookType(BookType.getBookType(escapedValue));
+                } else {
+                    log.error(ProcessorConstants.ERROR_INVALID_BOOK_TYPE_MSG);
+                    return false;
+                }
+            } else if (ProcessorConstants.REV_HISTORY_PATTERN.matcher(upperCaseInput).matches()) {
+                final SpecTopic specTopic = getSpecTopicMetaData(tempInput[1], CSConstants.REV_HISTORY_TITLE);
+                if (specTopic != null) {
+                    specTopic.setTopicType(TopicType.REVISION_HISTORY);
+                    spec.setRevisionHistory(specTopic);
+                } else {
+                    return false;
+                }
+            } else if (ProcessorConstants.FEEDBACK_PATTERN.matcher(upperCaseInput).matches()) {
+                final SpecTopic specTopic = getSpecTopicMetaData(tempInput[1], CSConstants.FEEDBACK_TITLE);
+                if (specTopic != null) {
+                    specTopic.setTopicType(TopicType.FEEDBACK);
+                    spec.setFeedback(specTopic);
+                } else {
+                    return false;
+                }
+            } else if (ProcessorConstants.LEGAL_NOTICE_PATTERN.matcher(upperCaseInput).matches()) {
+                final SpecTopic specTopic = getSpecTopicMetaData(tempInput[1], CSConstants.LEGAL_NOTICE);
+                if (specTopic != null) {
+                    specTopic.setTopicType(TopicType.LEGAL_NOTICE);
+                    spec.setLegalNotice(specTopic);
+                } else {
+                    return false;
+                }
+            } else if (ProcessorConstants.MAVEN_ARTIFACT_ID_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setArtifactId(escapedValue);
+            } else if (ProcessorConstants.MAVEN_GROUP_ID_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setGroupId(escapedValue);
+            } else if (ProcessorConstants.BOOK_VERSION_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setBookVersion(escapedValue);
+            } else if (ProcessorConstants.SURVEY_LINK_PATTERN.matcher(upperCaseInput).matches()) {
                 if (tempInput[1].equalsIgnoreCase("ON")) {
                     spec.setInjectSurveyLinks(true);
                 } else if (!tempInput[1].equalsIgnoreCase("OFF")) {
                     log.error(format(ProcessorConstants.ERROR_INVALID_SURVEY_LINKS_MSG, lineCounter, input));
                     return false;
                 }
-            }
-            // TODO Look at removing Translation Locale as it should be a command line property (maybe?)
-            else if (upperCaseInput.matches("^TRANSLATION LOCALE[ ]*((=.*)|$)")) {
-                spec.setLocale(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.BOOK_TYPE_REGEX)) {
-                final String bookType = StringUtilities.replaceEscapeChars(tempInput[1]);
-                if (bookType.toUpperCase().matches(ProcessorConstants.VALID_BOOK_TYPE_REGEX)) {
-                    spec.setBookType(BookType.getBookType(bookType));
-                } else {
-                    log.error(ProcessorConstants.ERROR_INVALID_BOOK_TYPE_MSG);
-                    return false;
-                }
-            } else if (upperCaseInput.matches(ProcessorConstants.OUTPUT_STYLE_REGEX)) {
-                spec.setOutputStyle(StringUtilities.replaceEscapeChars(tempInput[1]));
-            } else if (upperCaseInput.matches(ProcessorConstants.REV_HISTORY_REGEX)) {
-                final SpecTopic specTopic = getSpecTopicMetaData(tempInput[1], CSConstants.REV_HISTORY_TITLE);
-                specTopic.setTopicType(TopicType.REVISION_HISTORY);
-                if (specTopic != null) {
-                    spec.setRevisionHistory(specTopic);
-                } else {
-                    return false;
-                }
-            } else if (upperCaseInput.matches(ProcessorConstants.FEEDBACK_REGEX)) {
-                final SpecTopic specTopic = getSpecTopicMetaData(tempInput[1], CSConstants.FEEDBACK_TITLE);
-                specTopic.setTopicType(TopicType.FEEDBACK);
-                if (specTopic != null) {
-                    spec.setFeedback(specTopic);
-                } else {
-                    return false;
-                }
-            } else if (upperCaseInput.matches(ProcessorConstants.LEGAL_NOTICE_REGEX)) {
-                final SpecTopic specTopic = getSpecTopicMetaData(tempInput[1], CSConstants.LEGAL_NOTICE);
-                specTopic.setTopicType(TopicType.LEGAL_NOTICE);
-                if (specTopic != null) {
-                    spec.setLegalNotice(specTopic);
-                } else {
-                    return false;
-                }
-                // TODO Fix empty chapter processing
-            /*} else if (input.toUpperCase().matches("^ALLOW EMPTY LEVELS[ ]*((=.*)|$)")) {
-                try {
-                    spec.setAllowEmptyLevels(Boolean.parseBoolean(StringUtilities.replaceEscapeChars(tempInput[1])));
-                } catch (Exception ex) {
-                    log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
-                    return false;
-                }*/
-                // TODO Fix the CSP to allow for an spec to not have duplicate topics
-            /*} else if (input.toUpperCase().matches("^DUPLICATE TOPICS[ ]*((=.*)|$)")) {
-                try {
-                    spec.setAllowDuplicateTopics(Boolean.parseBoolean(StringUtilities.replaceEscapeChars(tempInput[1])));
-                } catch (Exception ex) {
-                    log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
-                    return false;
-                }*/
-            } else if (upperCaseInput.matches(ProcessorConstants.PUBLICAN_CFG_REGEX)) {
+            } else if (ProcessorConstants.PUBLICAN_CFG_PATTERN.matcher(upperCaseInput).matches()) {
                 int startingPos = StringUtilities.indexOf(tempInput[1], '[');
                 if (startingPos != -1) {
                     final StringBuilder cfg = new StringBuilder(tempInput[1]);
@@ -1076,20 +1042,18 @@ public class ContentSpecParser {
                                 tempInput[0] + " = " + finalCfg.replaceAll("\n", "\n          ")));
                         return false;
                     } else {
-                        spec.setPublicanCfg(StringUtilities.replaceEscapeChars(finalCfg).substring(1, finalCfg.length() - 1));
+                        spec.setPublicanCfg(ProcessorUtilities.replaceEscapeChars(finalCfg).substring(1, finalCfg.length() - 1));
                     }
                 } else {
                     log.error(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineCounter, input));
                     return false;
                 }
-            } else if (upperCaseInput.matches(ProcessorConstants.INLINE_INJECTION_REGEX)) {
+            } else if (ProcessorConstants.INLINE_INJECTION_PATTERN.matcher(upperCaseInput).matches()) {
                 final InjectionOptions injectionOptions = new InjectionOptions();
                 String[] types = null;
                 if (StringUtilities.indexOf(tempInput[1], '[') != -1) {
                     if (StringUtilities.indexOf(tempInput[1], ']') != -1) {
-                        final Pattern bracketPattern = Pattern.compile(
-                                format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']'));
-                        final Matcher matcher = bracketPattern.matcher(tempInput[1]);
+                        final Matcher matcher = SQUARE_BRACKET_PATTERN.matcher(tempInput[1]);
 
                         // Find all of the variables inside of the brackets defined by the regex
                         while (matcher.find()) {
@@ -1119,7 +1083,31 @@ public class ContentSpecParser {
                     return false;
                 }
                 spec.setInjectionOptions(injectionOptions);
-            } else if (upperCaseInput.matches(ProcessorConstants.SPACES_REGEX)) {
+            // TODO Fix empty chapter processing
+            /*} else if (input.toUpperCase().matches("^ALLOW EMPTY LEVELS[ ]*((=.*)|$)")) {
+                try {
+                    spec.setAllowEmptyLevels(Boolean.parseBoolean(StringUtilities.replaceEscapeChars(tempInput[1])));
+                } catch (Exception ex) {
+                    log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+                    return false;
+                }*/
+             // TODO Fix the CSP to allow for an spec to not have duplicate topics
+            /*} else if (input.toUpperCase().matches("^DUPLICATE TOPICS[ ]*((=.*)|$)")) {
+                try {
+                    spec.setAllowDuplicateTopics(Boolean.parseBoolean(StringUtilities.replaceEscapeChars(tempInput[1])));
+                } catch (Exception ex) {
+                    log.error(String.format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
+                    return false;
+                }*/
+            } else if (ProcessorConstants.OUTPUT_STYLE_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setOutputStyle(escapedValue);
+            } else if (upperCaseInput.matches("^TRANSLATION LOCALE[ ]*((=.*)|$)")) {
+                // TODO Look at removing Translation Locale as it should be a command line property (maybe?)
+                spec.setLocale(escapedValue);
+            } else if (ProcessorConstants.SPEC_REVISION_PATTERN.matcher(upperCaseInput).matches()) {
+                log.error(format(ProcessorConstants.ERROR_CS_INVALID_SPEC_REVISION_MSG, lineCounter));
+                return false;
+            } else if (ProcessorConstants.SPACES_PATTERN.matcher(upperCaseInput).matches()) {
                 // Read in the amount of spaces that were used for the content specification
                 try {
                     spaces = Integer.parseInt(tempInput[1]);
@@ -1130,13 +1118,17 @@ public class ContentSpecParser {
                     log.error(format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineCounter, input));
                     return false;
                 }
-            } else if (input.toUpperCase().matches(ProcessorConstants.DTD_REGEX)) {
-                spec.setDtd(StringUtilities.replaceEscapeChars(tempInput[1]));
+            } else if (ProcessorConstants.DEBUG_PATTERN.matcher(upperCaseInput).matches()) {
+                if (tempInput[1].equals("1")) {
+                    elm.setVerboseDebug(1);
+                } else if (tempInput[1].equals("2")) {
+                    elm.setVerboseDebug(2);
+                } else if (!tempInput[1].equals("0")) {
+                    log.warn(ProcessorConstants.WARN_DEBUG_IGNORE_MSG);
+                }
+            } else if (ProcessorConstants.DTD_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setDtd(escapedValue);
             }
-        } else if (upperCaseInput.matches(ProcessorConstants.MAVEN_ARTIFACT_ID_REGEX)) {
-            spec.setArtifactId(StringUtilities.replaceEscapeChars(tempInput[1]));
-        } else if (upperCaseInput.matches(ProcessorConstants.MAVEN_GROUP_ID_REGEX)) {
-            spec.setGroupId(StringUtilities.replaceEscapeChars(tempInput[1]));
         } else {
             log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineCounter, input));
             return false;
@@ -1205,7 +1197,7 @@ public class ContentSpecParser {
 
         // Parse the input
         if (splitVars.length >= 2) {
-            final String title = StringUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
+            final String title = ProcessorUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
             newLvl.setTitle(title);
             try {
                 // Get the mapping of variables
@@ -1464,11 +1456,11 @@ public class ContentSpecParser {
                 temp = CollectionUtilities.trimStringArray(temp);
                 if (temp.length == 2) {
                     if (temp[0].equalsIgnoreCase("URL")) {
-                        node.addSourceUrl(StringUtilities.replaceEscapeChars(temp[1]));
+                        node.addSourceUrl(ProcessorUtilities.replaceEscapeChars(temp[1]));
                     } else if (temp[0].equalsIgnoreCase("description")) {
-                        node.setDescription(StringUtilities.replaceEscapeChars(temp[1]));
+                        node.setDescription(ProcessorUtilities.replaceEscapeChars(temp[1]));
                     } else if (temp[0].equalsIgnoreCase("Writer")) {
-                        node.setAssignedWriter(StringUtilities.replaceEscapeChars(temp[1]));
+                        node.setAssignedWriter(ProcessorUtilities.replaceEscapeChars(temp[1]));
                     } else if (temp[0].equalsIgnoreCase("condition")) {
                         final String condition = temp[1];
                         node.setConditionStatement(condition);
@@ -1519,22 +1511,21 @@ public class ContentSpecParser {
                             return false;
                         }
 
-                        if (tempTags.length >= 2) {
-                            final String tags[] = new String[tempTags.length - 1];
-                            System.arraycopy(tempTags, 1, tags, 0, tempTags.length - 1);
+                        // Clean each tag and place it in the new container
+                        final String tags[] = new String[tempTags.length];
+                        for (int j = 0; j < tempTags.length; j++) {
+                            tags[j] = ProcessorUtilities.replaceEscapeChars(tempTags[j]);
+                        }
 
-                            if (!node.addTags(Arrays.asList(tags))) {
-                                log.error(format(ProcessorConstants.ERROR_MULTI_TAG_DUPLICATED_MSG, lineCounter, originalInput));
-                                return false;
-                            }
-                        } else {
-                            log.error(format(ProcessorConstants.ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG, lineCounter, originalInput));
+                        // Add the tags to the node
+                        if (!node.addTags(Arrays.asList(tags))) {
+                            log.error(format(ProcessorConstants.ERROR_MULTI_TAG_DUPLICATED_MSG, lineCounter, originalInput));
                             return false;
                         }
                     }
                     // Just a single tag so add it straight away
                     else {
-                        if (!node.addTag(StringUtilities.replaceEscapeChars(temp[1]))) {
+                        if (!node.addTag(ProcessorUtilities.replaceEscapeChars(temp[1]))) {
                             log.error(format(ProcessorConstants.ERROR_TAG_DUPLICATED_MSG, lineCounter, originalInput));
                             return false;
                         }
@@ -1551,7 +1542,7 @@ public class ContentSpecParser {
                     return false;
                 }
 
-                if (!node.addTag(str)) {
+                if (!node.addTag(ProcessorUtilities.replaceEscapeChars(str))) {
                     log.error(format(ProcessorConstants.ERROR_TAG_DUPLICATED_MSG, lineCounter, originalInput));
                     return false;
                 }

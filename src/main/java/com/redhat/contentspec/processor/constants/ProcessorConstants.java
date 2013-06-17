@@ -1,5 +1,7 @@
 package com.redhat.contentspec.processor.constants;
 
+import java.util.regex.Pattern;
+
 public class ProcessorConstants {
     public static final String RELEASE_CATEGORY_NAME = "Release";
     public static final int ASSIGNED_WRITER_CATEGORY_ID = 12;
@@ -34,7 +36,7 @@ public class ProcessorConstants {
     public static final String RELATION_ID_LONG_REGEX = "^.*\\[((" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
     public static final String RELATION_ID_LONG_PATTERN = "^(?<TopicTitle>.*)[ ]*\\[(?<TopicID>(" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
 
-    public static final String VALID_BOOK_TYPE_REGEX = "^(BOOK|ARTICLE)(-DRAFT)?$";
+    public static final Pattern VALID_BOOK_TYPE_PATTERN = Pattern.compile("^(BOOK|ARTICLE)(-DRAFT)?$");
 
     public static final String LINE = "Line %d: ";
     public static final String INVALID_CS = "Invalid Content Specification!";
@@ -303,40 +305,40 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_LINK_LIST_RELATIONSHIP = LINE + INVALID_RELATIONSHIP + " Invalid Link-List Relationship " +
             "format";
 
-    // Meta Data Regex Constants
-    public static final String SPEC_REVISION_REGEX = "^SPECREVISION[ ]*((=.*)|$)";
-    public static final String CHECKSUM_REGEX = "^CHECKSUM[ ]*((=.*)|$)";
-    public static final String ID_REGEX = "^ID[ ]*((=.*)|$)";
-    public static final String SUBTITLE_REGEX = "^SUBTITLE[ ]*((=.*)|$)";
-    public static final String EDITION_REGEX = "^EDITION[ ]*((=.*)|$)";
-    public static final String BOOK_VERSION_REGEX = "^BOOK VERSION[ ]*((=.*)|$)";
-    public static final String PUBSNUMBER_REGEX = "^PUBSNUMBER[ ]*((=.*)|$)";
-    public static final String PRODUCT_REGEX = "^PRODUCT[ ]*((=.*)|$)";
-    public static final String ABSTRACT_REGEX = "^(DESCRIPTION|ABSTRACT)[ ]*((=.*)|$)";
-    public static final String COPYRIGHT_HOLDER_REGEX = "^COPYRIGHT HOLDER[ ]*((=.*)|$)";
-    public static final String COPYRIGHT_YEAR_REGEX = "^COPYRIGHT YEAR[ ]*((=.*)|$)";
-    public static final String DEBUG_REGEX = "^DEBUG[ ]*((=.*)|$)";
-    public static final String VERSION_REGEX = "^VERSION[ ]*((=.*)|$)";
-    public static final String BRAND_REGEX = "^BRAND[ ]*((=.*)|$)";
-    public static final String BUG_LINKS_REGEX = "^BUG[ ]*LINKS[ ]*((=.*)|$)";
-    public static final String BUGZILLA_PRODUCT_REGEX = "^BZPRODUCT[ ]*((=.*)|$)";
-    public static final String BUGZILLA_COMPONENT_REGEX = "^BZCOMPONENT[ ]*((=.*)|$)";
-    public static final String BUGZILLA_VERSION_REGEX = "^BZVERSION[ ]*((=.*)|$)";
-    public static final String BUGZILLA_ASSIGNEE_REGEX = "^BZ[ ]*ASSIGNEE[ ]*((=.*)|$)";
-    public static final String SURVEY_LINK_REGEX = "^SURVEY[ ]*LINKS[ ]*((=.*)|$)";
-    public static final String BOOK_TYPE_REGEX = "^TYPE[ ]*((=.*)|$)";
-    public static final String PUBLICAN_CFG_REGEX = "^PUBLICAN\\.CFG[ ]*((=.*)|$)";
-    public static final String INLINE_INJECTION_REGEX = "^INLINE INJECTION[ ]*((=.*)|$)";
-    public static final String SPACES_REGEX = "^SPACES[ ]*((=.*)|$)";
-    public static final String DTD_REGEX = "^DTD[ ]*((=.*)|$)";
-    public static final String REV_HISTORY_REGEX = "^REVISION[ ]+HISTORY[ ]*((=.*)|$)";
-    public static final String FEEDBACK_REGEX = "^FEEDBACK[ ]*((=.*)|$)";
-    public static final String LEGAL_NOTICE_REGEX = "^LEGAL[ ]+NOTICE[ ]*((=.*)|$)";
-    public static final String MAVEN_GROUP_ID_REGEX = "^GROUPID[ ]*((=.*)|$)";
-    public static final String MAVEN_ARTIFACT_ID_REGEX = "^ARTIFACTID[ ]*((=.*)|$)";
+    // Meta Data Pattern Constants
+    public static final Pattern SPEC_REVISION_PATTERN = Pattern.compile("^SPECREVISION[ ]*((=.*)|$)");
+    public static final Pattern CHECKSUM_PATTERN = Pattern.compile("^CHECKSUM[ ]*((=.*)|$)");
+    public static final Pattern ID_REGEX = Pattern.compile("^ID[ ]*((=.*)|$)");
+    public static final Pattern SUBTITLE_PATTERN = Pattern.compile("^SUBTITLE[ ]*((=.*)|$)");
+    public static final Pattern EDITION_PATTERN = Pattern.compile("^EDITION[ ]*((=.*)|$)");
+    public static final Pattern BOOK_VERSION_PATTERN = Pattern.compile("^BOOK VERSION[ ]*((=.*)|$)");
+    public static final Pattern PUBSNUMBER_PATTERN = Pattern.compile("^PUBSNUMBER[ ]*((=.*)|$)");
+    public static final Pattern PRODUCT_PATTERN = Pattern.compile("^PRODUCT[ ]*((=.*)|$)");
+    public static final Pattern ABSTRACT_PATTERN = Pattern.compile("^(DESCRIPTION|ABSTRACT)[ ]*((=.*)|$)");
+    public static final Pattern COPYRIGHT_HOLDER_PATTERN = Pattern.compile("^COPYRIGHT HOLDER[ ]*((=.*)|$)");
+    public static final Pattern COPYRIGHT_YEAR_PATTERN = Pattern.compile("^COPYRIGHT YEAR[ ]*((=.*)|$)");
+    public static final Pattern DEBUG_PATTERN = Pattern.compile("^DEBUG[ ]*((=.*)|$)");
+    public static final Pattern VERSION_PATTERN = Pattern.compile("^VERSION[ ]*((=.*)|$)");
+    public static final Pattern BRAND_PATTERN = Pattern.compile("^BRAND[ ]*((=.*)|$)");
+    public static final Pattern BUG_LINKS_PATTERN = Pattern.compile("^BUG[ ]*LINKS[ ]*((=.*)|$)");
+    public static final Pattern BUGZILLA_PRODUCT_PATTERN = Pattern.compile("^BZPRODUCT[ ]*((=.*)|$)");
+    public static final Pattern BUGZILLA_COMPONENT_PATTERN = Pattern.compile("^BZCOMPONENT[ ]*((=.*)|$)");
+    public static final Pattern BUGZILLA_VERSION_PATTERN = Pattern.compile("^BZVERSION[ ]*((=.*)|$)");
+    public static final Pattern BUGZILLA_ASSIGNEE_PATTERN = Pattern.compile("^BZ[ ]*ASSIGNEE[ ]*((=.*)|$)");
+    public static final Pattern SURVEY_LINK_PATTERN = Pattern.compile("^SURVEY[ ]*LINKS[ ]*((=.*)|$)");
+    public static final Pattern BOOK_TYPE_PATTERN = Pattern.compile("^TYPE[ ]*((=.*)|$)");
+    public static final Pattern PUBLICAN_CFG_PATTERN = Pattern.compile("^PUBLICAN\\.CFG[ ]*((=.*)|$)");
+    public static final Pattern INLINE_INJECTION_PATTERN = Pattern.compile("^INLINE INJECTION[ ]*((=.*)|$)");
+    public static final Pattern SPACES_PATTERN = Pattern.compile("^SPACES[ ]*((=.*)|$)");
+    public static final Pattern DTD_PATTERN = Pattern.compile("^DTD[ ]*((=.*)|$)");
+    public static final Pattern REV_HISTORY_PATTERN = Pattern.compile("^REVISION[ ]+HISTORY[ ]*((=.*)|$)");
+    public static final Pattern FEEDBACK_PATTERN = Pattern.compile("^FEEDBACK[ ]*((=.*)|$)");
+    public static final Pattern LEGAL_NOTICE_PATTERN = Pattern.compile("^LEGAL[ ]+NOTICE[ ]*((=.*)|$)");
+    public static final Pattern MAVEN_GROUP_ID_PATTERN = Pattern.compile("^GROUPID[ ]*((=.*)|$)");
+    public static final Pattern MAVEN_ARTIFACT_ID_PATTERN = Pattern.compile("^ARTIFACTID[ ]*((=.*)|$)");
 
-    // Outdated Meta Data Regex Constants
-    public static final String OUTPUT_STYLE_REGEX = "^OUTPUT STYLE[ ]*((=.*)|$)";
+    // Outdated Meta Data Pattern Constants
+    public static final Pattern OUTPUT_STYLE_PATTERN = Pattern.compile("^OUTPUT STYLE[ ]*((=.*)|$)");
 
     // Level Regex Cosntants
     public static final String CHAPTER_REGEX = "^CHAPTER[ ]*((:.*)|$)";
