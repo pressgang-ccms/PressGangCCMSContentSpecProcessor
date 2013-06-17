@@ -14,12 +14,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import com.google.code.regexp.NamedMatcher;
-import com.google.code.regexp.NamedPattern;
+import com.google.code.regexp.Matcher;
+import com.google.code.regexp.Pattern;
 import org.jboss.pressgang.ccms.contentspec.Appendix;
 import org.jboss.pressgang.ccms.contentspec.Chapter;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
@@ -808,8 +806,8 @@ public class ContentSpecParser {
             String[] types = null;
             if (StringUtilities.indexOf(value, '[') != -1) {
                 if (StringUtilities.indexOf(value, ']') != -1) {
-                    final NamedPattern bracketPattern = NamedPattern.compile(format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']'));
-                    final NamedMatcher matcher = bracketPattern.matcher(value);
+                    final Pattern bracketPattern = Pattern.compile(format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']'));
+                    final Matcher matcher = bracketPattern.matcher(value);
 
                     // Find all of the variables inside of the brackets defined by the regex
                     while (matcher.find()) {
@@ -1112,8 +1110,8 @@ public class ContentSpecParser {
                 if (relationshipId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
                     topicRelationships.add(new Relationship(uniqueId, relationshipId, relationshipType));
                 } else if (relationshipId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
-                    final NamedPattern pattern = NamedPattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
-                    final NamedMatcher matcher = pattern.matcher(relationshipId);
+                    final Pattern pattern = Pattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
+                    final Matcher matcher = pattern.matcher(relationshipId);
 
                     matcher.find();
                     final String id = matcher.group("TopicID");

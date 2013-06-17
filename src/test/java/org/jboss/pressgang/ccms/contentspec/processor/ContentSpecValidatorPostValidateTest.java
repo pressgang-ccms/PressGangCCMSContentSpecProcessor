@@ -30,7 +30,6 @@ import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
-import org.jboss.pressgang.ccms.wrapper.UserWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.CollectionWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.UpdateableCollectionWrapper;
 import org.junit.Before;
@@ -49,7 +48,6 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
     @ArbitraryString(type = StringType.ALPHANUMERIC) String username;
     @ArbitraryString(type = StringType.ALPHA) String strictTopicType;
     @ArbitraryString(type = StringType.ALPHA) String tagname;
-    @Mock UserWrapper user;
     @Mock ContentSpecProvider contentSpecProvider;
     @Mock ContentSpecWrapper contentSpecWrapper;
     @Mock UpdateableCollectionWrapper<CSNodeWrapper> metaData;
@@ -63,7 +61,6 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
 
     @Before
     public void setUp() {
-        when(user.getUsername()).thenReturn(username);
         when(dataProviderFactory.getProvider(ContentSpecProvider.class)).thenReturn(contentSpecProvider);
         when(dataProviderFactory.getProvider(TagProvider.class)).thenReturn(tagProvider);
         when(dataProviderFactory.getProvider(TopicProvider.class)).thenReturn(topicProvider);
@@ -77,7 +74,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         contentSpec.setId(null);
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a success
         assertThat(result, is(true));
@@ -98,7 +95,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(HashUtilities.generateMD5(anyString())).willReturn(contentSpec.getChecksum());
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a success
         assertThat(result, is(true));
@@ -114,7 +111,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(contentSpecProvider.getContentSpec(anyInt(), anyInt())).willReturn(null);
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a failure
         assertThat(result, is(false));
@@ -132,7 +129,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a failure
         assertThat(result, is(false));
@@ -151,7 +148,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a failure
         assertThat(result, is(false));
@@ -173,7 +170,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         PowerMockito.mockStatic(HashUtilities.class);
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a success as the checksums are ignored
         assertThat(result, is(true));
@@ -198,7 +195,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(processingOptions.isIgnoreChecksum()).willReturn(true);
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a failure
         assertThat(result, is(false));
@@ -222,7 +219,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(processingOptions.isIgnoreChecksum()).willReturn(true);
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a success
         assertThat(result, is(true));
@@ -241,7 +238,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(tagProvider.getTagByName(strictTopicType)).willReturn(null);
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a failure
         assertThat(result, is(false));
@@ -262,7 +259,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(tagWrapper.containedInCategory(CSConstants.TYPE_CATEGORY_ID)).willReturn(false);
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a failure
         assertThat(result, is(false));
@@ -281,7 +278,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(tagProvider.getTagByName(anyString())).willReturn(null);
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a failure
         assertThat(result, is(false));
@@ -300,7 +297,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(topicProvider.getTopic(anyInt(), anyInt())).willReturn(null);
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a failure
         assertThat(result, is(false));
@@ -318,7 +315,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(topicProvider.getTopic(anyInt(), anyInt())).willReturn(null);
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a failure
         assertThat(result, is(false));
@@ -336,7 +333,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(topicProvider.getTopic(anyInt(), anyInt())).willReturn(null);
 
         // When the spec is postvalidated
-        boolean result = validator.postValidateContentSpec(contentSpec, user);
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
 
         // Then the result should be a failure
         assertThat(result, is(false));

@@ -104,6 +104,8 @@ public class ProcessorConstants {
     public static final String ERROR_DUPLICATE_ID_MSG = LINE + INVALID_CS + " Duplicate topic ID ( %s )." + CSLINE_MSG;
     public static final String ERROR_INVALID_BUG_LINKS_MSG = LINE + INVALID_CS + " The setting for bug links must be On or Off." +
             CSLINE_MSG;
+    public static final String ERROR_INVALID_BUGZILLA_ASSIGNEE_MSG = LINE + INVALID_CS + " The setting for Bugzilla assignee must be On " +
+            "or Off." + CSLINE_MSG;
     public static final String ERROR_CS_READ_ONLY_MSG = INVALID_CS + " The content specification is read-only.";
     public static final String ERROR_INVALID_SURVEY_LINKS_MSG = LINE + INVALID_CS + " The setting for survey links must be On or Off." +
             CSLINE_MSG;

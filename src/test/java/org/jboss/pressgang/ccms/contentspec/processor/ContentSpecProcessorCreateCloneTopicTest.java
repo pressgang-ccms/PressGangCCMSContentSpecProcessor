@@ -437,6 +437,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         String url1 = "http://www.example.com/";
         String url2 = "http://www.domain.com/";
         final TopicSourceURLWrapper urlWrapper = mock(TopicSourceURLWrapper.class);
+        final TopicSourceURLWrapper urlWrapper2 = mock(TopicSourceURLWrapper.class);
         // Given a list of urls
         final List<String> urls = Arrays.asList(url1, url2);
         // and a SpecTopic with just an id and title
@@ -450,7 +451,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
         // and creating a new source url is setup
-        when(topicSourceURLProvider.newTopicSourceURL(eq(newTopicWrapper))).thenReturn(urlWrapper);
+        when(topicSourceURLProvider.newTopicSourceURL(eq(newTopicWrapper))).thenReturn(urlWrapper, urlWrapper2);
 
         TopicWrapper topic = null;
         try {
@@ -464,11 +465,16 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         verifyValidBaseTopic(topic);
         verifyValidBaseTopicNewProperties(topic);
         verifyUnchangedOriginalTopic();
-        // and the source url collection will have one object. It should have two url's but since it holds a set and we only can mock one
-        // url than the collection will only have the one object.
-        assertThat(topicSourceURLCollection.size(), is(1));
-        // and the tags exist in the new state in the collection
+        // and the source url collection will have the two source url objects.
+        assertThat(topicSourceURLCollection.size(), is(2));
+        // and the urls exist in the new state in the collection
         assertTrue(topicSourceURLCollection.getAddItems().contains(urlWrapper));
+        assertTrue(topicSourceURLCollection.getAddItems().contains(urlWrapper2));
+        // check that a title and url was set for each url
+        verify(urlWrapper, times(1)).setTitle(anyString());
+        verify(urlWrapper, times(1)).setUrl(eq(url1));
+        verify(urlWrapper2, times(1)).setTitle(anyString());
+        verify(urlWrapper2, times(1)).setUrl(eq(url2));
         // and only new source urls were set, as clones shouldn't have existing tags
         assertThat(topicSourceURLCollection.getRemoveItems().size(), is(0));
         assertThat(topicSourceURLCollection.getUnchangedItems().size(), is(0));

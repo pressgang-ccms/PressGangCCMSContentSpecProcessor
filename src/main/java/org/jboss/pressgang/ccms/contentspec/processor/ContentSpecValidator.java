@@ -51,7 +51,6 @@ import org.jboss.pressgang.ccms.wrapper.CategoryInTagWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
-import org.jboss.pressgang.ccms.wrapper.UserWrapper;
 import org.jboss.pressgang.ccms.wrapper.base.BaseTopicWrapper;
 import org.w3c.dom.Document;
 
@@ -111,13 +110,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * wrapper to first call PreValidate and then PostValidate.
      *
      * @param contentSpec The content specification to be validated.
-     * @param user        The user who requested the content spec validation.
+     * @param username        The user who requested the content spec validation.
      * @return True if the content specification is valid, otherwise false.
      */
-    public boolean validateContentSpec(final ContentSpec contentSpec, final UserWrapper user) {
+    public boolean validateContentSpec(final ContentSpec contentSpec, final String username) {
         boolean valid = preValidateContentSpec(contentSpec);
 
-        if (!postValidateContentSpec(contentSpec, user)) {
+        if (!postValidateContentSpec(contentSpec, username)) {
             valid = false;
         }
 
@@ -337,11 +336,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * Validates that a Content Specification is valid by checking the META data, child levels and topics.
      *
      * @param contentSpec The content specification to be validated.
-     * @param user        The user who requested the content spec validation.
+     * @param username    The user who requested the content spec validation.
      * @return True if the content specification is valid, otherwise false.
      */
     @SuppressWarnings("deprecation")
-    public boolean postValidateContentSpec(final ContentSpec contentSpec, final UserWrapper user) {
+    public boolean postValidateContentSpec(final ContentSpec contentSpec, final String username) {
         locale = contentSpec.getLocale() == null ? locale : contentSpec.getLocale();
 
         // Check if the app should be shutdown
@@ -356,8 +355,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         if (contentSpec.getId() != null) {
             ContentSpecWrapper contentSpecTopic = null;
             try {
-                contentSpecTopic = contentSpecProvider.getContentSpec(contentSpec.getId(),
-                        processingOptions.getRevision());
+                contentSpecTopic = contentSpecProvider.getContentSpec(contentSpec.getId(), processingOptions.getRevision());
             } catch (NotFoundException e) {
 
             }
@@ -389,7 +387,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 // Check that the Content Spec isn't read only
                 if (contentSpecTopic.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID) != null) {
                     if (!contentSpecTopic.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID).getValue().matches(
-                            "(^|.*,)" + user.getUsername() + "(,.*|$)")) {
+                            "(^|.*,)" + username + "(,.*|$)")) {
                         log.error(ProcessorConstants.ERROR_CS_READ_ONLY_MSG);
                         valid = false;
                     }
@@ -584,7 +582,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 //                            else if (relationship.getRelationshipTitle() != null && relationship.getRelationshipTitle().equals
 //                                    (relatedTopic.getTitle())) {
 //                                if (!processingOptions.isPermissiveMode()) {
-//                                    log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+//                                    log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
+// specTopic.getLineNumber(),
 //                                            relationship.getRelationshipTitle(), relatedTopic.getTitle()));
 //                                    error = true;
 //                                }
@@ -642,9 +641,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 valid = false;
             }
         } else if (levelType == LevelType.PART && level.getNumberOfChildLevels() <= 0) {
-            log.error(
-                    format(ProcessorConstants.ERROR_LEVEL_NO_CHILD_LEVELS_MSG, level.getLineNumber(), levelType.getTitle(),
-                            levelType.getTitle(), level.getText()));
+            log.error(format(ProcessorConstants.ERROR_LEVEL_NO_CHILD_LEVELS_MSG, level.getLineNumber(), levelType.getTitle(),
+                    levelType.getTitle(), level.getText()));
             valid = false;
         }
 
