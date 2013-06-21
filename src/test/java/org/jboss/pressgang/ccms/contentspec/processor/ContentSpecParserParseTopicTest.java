@@ -302,7 +302,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is("L" + randomNumber + "-X" + id));
         assertThat(logger.getLogMessages().get(0).toString(), containsString("Line " + lineNumber + ": All types, descriptions, " +
-                "source urls and writers will be ignored for duplicate Topics."));
+                "source urls and writers will be ignored for existing Topics."));
     }
 
     @Test
@@ -327,7 +327,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is("L" + randomNumber + "-XC" + id));
         assertThat(logger.getLogMessages().get(0).toString(), containsString("Line " + lineNumber + ": All types, descriptions, " +
-                "source urls and writers will be ignored for duplicate Topics."));
+                "source urls and writers will be ignored for existing Topics."));
     }
 
     @Test

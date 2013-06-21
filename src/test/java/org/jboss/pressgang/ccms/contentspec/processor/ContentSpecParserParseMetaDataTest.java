@@ -52,6 +52,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
     public void setUp() throws Exception {
         PowerMockito.mockStatic(ProcessorUtilities.class);
         when(ProcessorUtilities.getAndValidateKeyValuePair(anyString())).thenReturn(keyValuePair);
+        when(ProcessorUtilities.replaceEscapeChars(anyString())).thenCallRealMethod();
         super.setUp();
     }
 
