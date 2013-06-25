@@ -35,6 +35,10 @@ public class ProcessorConstants {
     public static final String RELATION_ID_LONG_REGEX = "^.*\\[((" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
     public static final String RELATION_ID_LONG_PATTERN = "^(?<TopicTitle>.*)[ ]*\\[(?<TopicID>(" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
 
+    public static final String FILE_ID_REGEX = "^[0-9]+$";
+    public static final String FILE_ID_LONG_REGEX = "^.*\\[[0-9]+([ ]*,[ ]*rev:[ ]+[0-9]+)?\\]$";
+    public static final String FILE_ID_LONG_PATTERN = "^(?<Title>.*)[ ]*\\[(?<ID>[0-9]+)([ ]*,[ ]*rev:[ ]+(?<REV>[0-9]+))?\\]$";
+
     public static final String VALID_BOOK_TYPE_REGEX = "^(BOOK|ARTICLE)(-DRAFT)?$";
 
     public static final String LINE = "Line %d: ";
@@ -42,6 +46,7 @@ public class ProcessorConstants {
     public static final String INVALID_TOPIC = "Invalid Topic!";
     public static final String INVALID_RELATIONSHIP = "Invalid Relationship!";
     public static final String AMBIGUOUS_RELATIONSHIP = "Ambiguous Relationship!";
+    public static final String INVALID_FILE = "Invalid Additional File!";
     public static final String INVALID_PROCESS = "Invalid Process!";
     public static final String GENERIC_INVALID_LEVEL = "Invalid Chapter/Section/Appendix!";
     public static final String NEW_LINE_SPACER = "\n       -> ";
@@ -123,6 +128,8 @@ public class ProcessorConstants {
             " in the Content Specification. The topic is located at:";
     public static final String ERROR_TOPIC_WITH_DIFFERENT_REVS_REV_MSG = "Revision %s, lines(s) %s.";
     public static final String ERROR_INVALID_VERSION_NUMBER_MSG = "Invalid %s specified. The value must be a valid version.";
+    public static final String ERROR_INVALID_FILES_MSG = LINE + INVALID_CS + " Incorrect additional files input." + CSLINE_MSG;
+    public static final String ERROR_INVALID_FILE = LINE + INVALID_FILE + " Invalid format.";
 
     // Article based level errors
     public static final String ERROR_ARTICLE_CHAPTER_MSG = LINE + INVALID_CS + " Chapters can't be used in Articles." + CSLINE_MSG;

@@ -24,7 +24,6 @@ import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
 import org.jboss.pressgang.ccms.contentspec.test.makers.parser.TopicRelationshipStringMaker;
 import org.jboss.pressgang.ccms.contentspec.test.makers.parser.TopicStringMaker;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
     @Arbitrary Integer id;
@@ -288,7 +287,6 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         int lineNumber = randomNumber;
 
         // When parsing the topic string
-        ArgumentCaptor<String> warningMessage = ArgumentCaptor.forClass(String.class);
         SpecTopic topic = null;
         try {
             topic = parser.parseTopic(topicString, lineNumber);

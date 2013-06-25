@@ -14,10 +14,13 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+
 import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import org.hamcrest.Matchers;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.File;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.entities.InjectionOptions;
@@ -40,6 +43,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
     @Arbitrary Integer lineNumber;
     @Arbitrary Integer id;
+    @Arbitrary Integer revision;
     @ArbitraryString(type = ALPHANUMERIC) String line;
     @ArbitraryString(type = ALPHANUMERIC) String line2;
     @ArbitraryString(type = ALPHANUMERIC) String type;
@@ -53,6 +57,8 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         PowerMockito.mockStatic(ProcessorUtilities.class);
         when(ProcessorUtilities.getAndValidateKeyValuePair(anyString())).thenReturn(keyValuePair);
         when(ProcessorUtilities.replaceEscapeChars(anyString())).thenCallRealMethod();
+        when(ProcessorUtilities.findVariableSet(anyString(), anyChar(), anyChar(), anyInt())).thenCallRealMethod();
+        line = line.replace("[", "\\[");
         super.setUp();
     }
 
@@ -455,5 +461,112 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
             // And the error message contains the line number
             assertThat(e.getMessage(), containsString(lineNumber.toString()));
         }
+    }
+
+    @Test
+    public void shouldParseShortFiles() throws Exception {
+        // Given a line produces a key-value pair with a additional files key
+        keyValuePair.setFirst("Additional Files");
+        // And a value containing both an opening and closing bracket
+        keyValuePair.setSecond("[" + id + "]");
+
+        // When the metadata line is processed
+        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+
+        // Then the files should be set
+        ArgumentCaptor<List> files = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(contentSpec, times(1)).setFiles(files.capture());
+        assertThat(files.getValue().size(), is(1));
+        final List<File> fileList = files.getValue();
+        assertThat(fileList.get(0).getId(), is(id));
+    }
+
+    @Test
+    public void shouldParseLongFiles() throws Exception {
+        // Given a line produces a key-value pair with a additional files key
+        keyValuePair.setFirst("Additional Files");
+        // And a value containing both an opening and closing bracket
+        keyValuePair.setSecond("[" + line  + " [" + id + ", rev: " + revision + "]]");
+
+        // When the metadata line is processed
+        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+
+        // Then the files should be set
+        ArgumentCaptor<List> files = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(contentSpec, times(1)).setFiles(files.capture());
+        assertThat(files.getValue().size(), is(1));
+        final List<File> fileList = files.getValue();
+        assertThat(fileList.get(0).getId(), is(id));
+        assertThat(fileList.get(0).getTitle(), is(line));
+        assertThat(fileList.get(0).getRevision(), is(revision));
+    }
+
+    @Test
+    public void shouldThrowExceptionIfFilesEndNotFound() throws Exception {
+        // Given a line produces a key-value pair with a additional files key
+        keyValuePair.setFirst("Additional Files");
+        // And a value containing only an opening bracket
+        keyValuePair.setSecond("[" + id);
+
+        // When the metadata line is processed
+        try {
+            parser.parseMetaDataLine(contentSpec, line, lineNumber);
+
+            // Then an exception is thrown
+            fail(MISSING_PARSING_EXCEPTION);
+        } catch (ParsingException e) {
+            // And it contains an error about the config
+            assertThat(e.getMessage(), containsString("Invalid Content Specification! Missing ending bracket (]) detected."));
+            // And the error message contains the line number
+            assertThat(e.getMessage(), containsString(lineNumber.toString()));
+        }
+    }
+
+    @Test
+    public void shouldThrowExceptionIfSingleLongFileEndNotFound() throws Exception {
+        // Given a line produces a key-value pair with a additional files key
+        keyValuePair.setFirst("Additional Files");
+        // And a value containing only an opening bracket
+        keyValuePair.setSecond("[" + line + " [" + id + "]");
+
+        // When the metadata line is processed
+        try {
+            parser.parseMetaDataLine(contentSpec, line, lineNumber);
+
+            // Then an exception is thrown
+            fail(MISSING_PARSING_EXCEPTION);
+        } catch (ParsingException e) {
+            // And it contains an error about the config
+            assertThat(e.getMessage(), containsString("Invalid Content Specification! Missing ending bracket (]) detected."));
+            // And the error message contains the line number
+            assertThat(e.getMessage(), containsString(lineNumber.toString()));
+        }
+    }
+
+    @Test
+    public void shouldSearchSubsequentLinesForRemainingFiles() throws Exception {
+        // Given a line produces a key-value pair with an additional files key
+        keyValuePair.setFirst("Additional Files");
+        // And a value containing only an opening bracket
+        keyValuePair.setSecond("[" + line + " [" + id + "],");
+        // And the next line contains the closing bracket
+        parser.getLines().push(line2 + " [" + revision + "]]\n");
+        // And the current line count
+        int originalLineCount = parser.getLineCount();
+
+        // When the metadata line is processed
+        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+
+        // Then the line count should be incremented
+        assertThat(parser.getLineCount(), is(originalLineCount + 1));
+        // And the files should be set
+        ArgumentCaptor<List> files = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(contentSpec, times(1)).setFiles(files.capture());
+        assertThat(files.getValue().size(), is(2));
+        final List<File> fileList = files.getValue();
+        assertThat(fileList.get(0).getId(), is(id));
+        assertThat(fileList.get(0).getTitle(), is(line));
+        assertThat(fileList.get(1).getId(), is(revision));
+        assertThat(fileList.get(1).getTitle(), is(line2));
     }
 }

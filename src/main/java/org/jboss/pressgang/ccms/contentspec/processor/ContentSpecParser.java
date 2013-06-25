@@ -21,6 +21,7 @@ import com.google.code.regexp.Pattern;
 import org.jboss.pressgang.ccms.contentspec.Appendix;
 import org.jboss.pressgang.ccms.contentspec.Chapter;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.File;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Part;
@@ -61,6 +62,7 @@ public class ContentSpecParser {
     private static final Pattern LEVEL_PATTERN = Pattern.compile(ProcessorConstants.LEVEL_REGEX);
     private static final Pattern SQUARE_BRACKET_PATTERN = Pattern.compile(format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']'));
     private static final Pattern RELATION_ID_LONG_PATTERN = Pattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
+    private static final Pattern FILE_ID_LONG_PATTERN = Pattern.compile(ProcessorConstants.FILE_ID_LONG_PATTERN);
 
     /**
      * An Enumerator used to specify the parsing mode of the Parser.
@@ -836,6 +838,9 @@ public class ContentSpecParser {
                 throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_INJECTION_MSG, lineNumber, line));
             }
             contentSpec.setInjectionOptions(injectionOptions);
+        } else if (key.equalsIgnoreCase(CSConstants.FILE_TITLE) || key.equalsIgnoreCase(CSConstants.FILE_SHORT_TITLE)) {
+            final List<File> files = parseFilesMetaData(value, lineNumber, line);
+            contentSpec.setFiles(files);
         } else if (ContentSpecUtilities.isSpecTopicMetaData(key)) {
             final SpecTopic specTopic = parseSpecTopicMetaData(value, key, lineNumber);
             contentSpec.appendKeyValueNode(new KeyValueNode<SpecTopic>(key, specTopic));
@@ -865,6 +870,67 @@ public class ContentSpecParser {
                 throw new ParsingException(format(ProcessorConstants.ERROR_NO_BRACKET_MSG, lineNumber, '[', ']'));
             }
         }
+    }
+
+    /**
+     * Parse an "Additional Files" metadata component into a List of {@link org.jboss.pressgang.ccms.contentspec.File} objects.
+     *
+     * @param value The value of the key value pair
+     * @param lineNumber The line number of the additional files key
+     * @param line The full line of the key value pair
+     * @return A list of parsed File objects.
+     * @throws ParsingException Thrown if an error occurs during parsing.
+     */
+    protected List<File> parseFilesMetaData(final String value, final int lineNumber, final String line) throws ParsingException {
+        int startingPos = StringUtilities.indexOf(value, '[');
+        if (startingPos != -1) {
+            final List<File> files = new ArrayList<File>();
+            final HashMap<RelationshipType, String[]> variables = getLineVariables(value,lineNumber, '[', ']', ',', true);
+            final String[] vars = variables.get(RelationshipType.NONE);
+
+            // Loop over each file found and parse it
+            for (final String var : vars) {
+                final File file = parseFileMetaData(var, lineNumber);
+                if (file != null) {
+                    files.add(file);
+                }
+            }
+
+            return files;
+        } else {
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_FILES_MSG, lineNumber, line));
+        }
+    }
+
+    /**
+     * Parse a File MetaData component into a {@link org.jboss.pressgang.ccms.contentspec.File} object.
+     *
+     * @param line The line to be parsed.
+     * @param lineNumber The line number of the line being parsed.
+     * @return A file object initialised with the data from the line.
+     * @throws ParsingException Thrown if the line contains invalid content and couldn't be parsed.
+     */
+    protected File parseFileMetaData(final String line, final int lineNumber) throws ParsingException {
+        final File file;
+        if (line.matches(ProcessorConstants.FILE_ID_REGEX)) {
+            file = new File(Integer.parseInt(line));
+        } else if (FILE_ID_LONG_PATTERN.matcher(line).matches()) {
+            final Matcher matcher = FILE_ID_LONG_PATTERN.matcher(line);
+
+            matcher.find();
+            final String id = matcher.group("ID");
+            final String title = matcher.group("Title");
+            final String rev = matcher.group("REV");
+            file = new File(title.trim(), Integer.parseInt(id));
+
+            if (rev != null) {
+                file.setRevision(Integer.parseInt(rev));
+            }
+        } else {
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_FILE, lineNumber));
+        }
+
+        return file;
     }
 
     /**
@@ -1340,9 +1406,30 @@ public class ContentSpecParser {
                 String splitString[] = StringUtilities.split(variableSet.trim(), ':', 2);
                 // Check that there are actually variables set
                 if (splitString.length > 1) {
-                    splitString = StringUtilities.split(splitString[1], separator);
+                    // Replace any inner content with markers, so that any splitting doesn't get messed up
+                    final Matcher matcher = SQUARE_BRACKET_PATTERN.matcher(splitString[1]);
+                    final HashMap<String, String> replacements = new HashMap<String, String>();
+                    int i = 0;
+                    String fixedString = splitString[1];
+                    while (matcher.find()) {
+                        final String replacement = matcher.group(CSConstants.BRACKET_CONTENTS);
+                        final String marker = "###" + i + "###";
+                        replacements.put(replacement, marker);
+                        fixedString = fixedString.replace(replacement, marker);
+                        i++;
+                    }
+
+                    // Split the string and add the variables
+                    splitString = StringUtilities.split(fixedString, separator);
                     for (final String s : splitString) {
                         final String var = s.replaceAll("(^\\s*(\r?\n)*)|((\r?\n)*\\s*$)", "");
+
+                        // Replace any markers
+                        String fixedVar = var.trim();
+                        for (final Map.Entry<String, String> entry : replacements.entrySet()) {
+                            fixedVar = fixedVar.replace(entry.getValue(), entry.getKey());
+                        }
+
                         // Check that a separator wasn't missed.
                         if (StringUtilities.lastIndexOf(var, startDelim) != StringUtilities.indexOf(var, startDelim) || var.indexOf(
                                 '\n') != -1) {
@@ -1350,7 +1437,7 @@ public class ContentSpecParser {
                         } else if (s.trim().isEmpty()) {
                             throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_ATTRIB_FORMAT_MSG, lineNumber, line));
                         } else {
-                            variables.add(var.trim());
+                            variables.add(fixedVar);
                         }
                     }
                 } else {
@@ -1363,11 +1450,30 @@ public class ContentSpecParser {
             } else if (!ignoreTypes && type == RelationshipType.EXTERNAL_CONTENT_SPEC) {
                 variables.add(variableSet.trim());
             } else if (!variableSet.trim().isEmpty()) {
+                // Replace any inner content with markers, so that any splitting doesn't get messed up
+                final Matcher matcher = SQUARE_BRACKET_PATTERN.matcher(variableSet);
+                final HashMap<String, String> replacements = new HashMap<String, String>();
+                int i = 0;
+                String fixedString = variableSet;
+                while (matcher.find()) {
+                    final String replacement = matcher.group(CSConstants.BRACKET_CONTENTS);
+                    final String marker = "###" + i + "###";
+                    replacements.put(replacement, marker);
+                    fixedString = fixedString.replace(replacement, marker);
+                    i++;
+                }
+
                 // Normal set of variables that contains the ID and/or tags
-                final String splitString[] = StringUtilities.split(variableSet, separator);
+                final String splitString[] = StringUtilities.split(fixedString, separator);
                 for (final String s : splitString) {
                     if (!s.trim().isEmpty()) {
-                        variables.add(s.trim());
+                        // Replace any markers
+                        String fixedVar = s.trim();
+                        for (final Map.Entry<String, String> entry : replacements.entrySet()) {
+                            fixedVar = fixedVar.replace(entry.getValue(), entry.getKey());
+                        }
+
+                        variables.add(fixedVar);
                     } else {
                         throw new ParsingException(format(ProcessorConstants.ERROR_MISSING_ATTRIB_FORMAT_MSG, lineNumber, line));
                     }
