@@ -1,5 +1,6 @@
 package com.redhat.contentspec.processor;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
 
 import java.util.ArrayList;
@@ -134,20 +135,18 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
         }
 
         boolean valid = true;
-        if (contentSpec.getTitle() == null || contentSpec.getTitle().equals("")) {
+        if (isNullOrEmpty(contentSpec.getTitle())) {
             log.error(ProcessorConstants.ERROR_CS_NO_TITLE_MSG);
             valid = false;
         }
 
-        if (contentSpec.getProduct() == null || contentSpec.getProduct().equals("")) {
+        if (isNullOrEmpty(contentSpec.getProduct())) {
             log.error(ProcessorConstants.ERROR_CS_NO_PRODUCT_MSG);
             valid = false;
         }
 
-        if (contentSpec.getVersion() == null || contentSpec.getVersion().equals("")) {
-            log.error(ProcessorConstants.ERROR_CS_NO_VERSION_MSG);
-            valid = false;
-        } else if (!contentSpec.getVersion().matches(ProcessorConstants.PRODUCT_VERSION_VALIDATE_REGEX)) {
+        if (!isNullOrEmpty(contentSpec.getVersion()) && !contentSpec.getVersion().matches(
+                ProcessorConstants.PRODUCT_VERSION_VALIDATE_REGEX)) {
             log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, CSConstants.VERSION_TITLE));
             return false;
         }
@@ -157,7 +156,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             valid = false;
         }
 
-        if (contentSpec.getDtd() == null || contentSpec.getDtd().equals("")) {
+        if (isNullOrEmpty(contentSpec.getDtd())) {
             log.error(ProcessorConstants.ERROR_CS_NO_DTD_MSG);
             valid = false;
             // Check that the DTD specified is a valid DTD format
@@ -171,7 +170,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             valid = false;
         }
 
-        if (contentSpec.getCopyrightHolder() == null || contentSpec.getCopyrightHolder().equals("")) {
+        if (isNullOrEmpty(contentSpec.getCopyrightHolder())) {
             log.error(ProcessorConstants.ERROR_CS_NO_COPYRIGHT_MSG);
             valid = false;
         }
@@ -634,9 +633,8 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
                 valid = false;
             }
         } else if (levelType == LevelType.PART && level.getNumberOfChildLevels() <= 0) {
-            log.error(
-                    format(ProcessorConstants.ERROR_LEVEL_NO_CHILD_LEVELS_MSG, level.getLineNumber(), levelType.getTitle(),
-                            levelType.getTitle(), level.getText()));
+            log.error(format(ProcessorConstants.ERROR_LEVEL_NO_CHILD_LEVELS_MSG, level.getLineNumber(), levelType.getTitle(),
+                    levelType.getTitle(), level.getText()));
             valid = false;
         }
 
