@@ -644,7 +644,7 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
         }
 
         // Validate the topics level
-        if (level.getInnerTopic() != null && !preValidateTopic(level.getInnerTopic(), specTopics, bookType, false)) {
+        if (level.getInnerTopic() != null && !preValidateTopic(level.getInnerTopic(), specTopics, bookType)) {
             valid = false;
         }
 

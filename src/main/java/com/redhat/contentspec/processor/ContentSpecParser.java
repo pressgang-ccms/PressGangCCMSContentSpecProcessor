@@ -1251,13 +1251,24 @@ public class ContentSpecParser {
 //                    processExternalLevel(newLvl, variableMap.get(RelationshipType.EXTERNAL_CONTENT_SPEC)[0], title, input);
 //                }
 
-                // Check that no relationships were specified for the appendix
                 if (variableMap.containsKey(RelationshipType.REFER_TO) || variableMap.containsKey(
                         RelationshipType.PREREQUISITE) || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(
                         RelationshipType.PREVIOUS)) {
-                    log.error(format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineCounter, CSConstants.CHAPTER, CSConstants.CHAPTER,
-                            input));
-                    return null;
+                    // Check that no relationships were specified for the level
+                    if (lvl.getInnerTopic() == null) {
+                        log.error(format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineCounter, CSConstants.CHAPTER, CSConstants.CHAPTER,
+                                input));
+                        return null;
+                    } else {
+                        final HashMap<RelationshipType, String[]> flattenedVariableMap = new HashMap<RelationshipType, String[]>();
+                        for (final Map.Entry<RelationshipType, List<String[]>> lineVariable : variableMap.entrySet()) {
+                            flattenedVariableMap.put(lineVariable.getKey(), lineVariable.getValue().get(0));
+                        }
+
+                        if (!processTopicRelationships(lvl.getInnerTopic(), flattenedVariableMap, input)) {
+                            return null;
+                        }
+                    }
                 }
             } catch (Exception e) {
                 log.error(e.getMessage());
