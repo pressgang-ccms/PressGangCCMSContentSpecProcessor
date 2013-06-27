@@ -959,6 +959,8 @@ public class ContentSpecParser {
                 spec.setBugzillaComponent(escapedValue);
             } else if (ProcessorConstants.BUGZILLA_VERSION_PATTERN.matcher(upperCaseInput).matches()) {
                 spec.setBugzillaVersion(escapedValue);
+            } else if (ProcessorConstants.BUGZILLA_KEYWORDS_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setBugzillaKeywords(escapedValue);
             } else if (ProcessorConstants.BUGZILLA_ASSIGNEE_PATTERN.matcher(upperCaseInput).matches()) {
                 if (tempInput[1].equalsIgnoreCase("OFF")) {
                     spec.setInjectBugzillaAssignee(false);

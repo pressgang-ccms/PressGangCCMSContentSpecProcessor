@@ -324,6 +324,7 @@ public class ProcessorConstants {
     public static final Pattern BUGZILLA_PRODUCT_PATTERN = Pattern.compile("^BZPRODUCT[ ]*((=.*)|$)");
     public static final Pattern BUGZILLA_COMPONENT_PATTERN = Pattern.compile("^BZCOMPONENT[ ]*((=.*)|$)");
     public static final Pattern BUGZILLA_VERSION_PATTERN = Pattern.compile("^BZVERSION[ ]*((=.*)|$)");
+    public static final Pattern BUGZILLA_KEYWORDS_PATTERN = Pattern.compile("^BZKEYWORDS[ ]*((=.*)|$)");
     public static final Pattern BUGZILLA_ASSIGNEE_PATTERN = Pattern.compile("^BZ[ ]*ASSIGNEE[ ]*((=.*)|$)");
     public static final Pattern SURVEY_LINK_PATTERN = Pattern.compile("^SURVEY[ ]*LINKS[ ]*((=.*)|$)");
     public static final Pattern BOOK_TYPE_PATTERN = Pattern.compile("^TYPE[ ]*((=.*)|$)");
