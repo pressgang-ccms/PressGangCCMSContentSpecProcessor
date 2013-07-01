@@ -87,39 +87,6 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     }
 
     @Test
-    public void shouldFailAndLogErrorWhenNoVersion() {
-        // Given an otherwise valid content spec with no version set
-        ContentSpec contentSpec = make(a(ContentSpec));
-        contentSpec.setVersion(null);
-        // with a level and spec topic
-        addLevelAndTopicToContentSpec(contentSpec);
-
-        // When the spec is prevalidated
-        boolean result = validator.preValidateContentSpec(contentSpec);
-
-        // Then the result should be a failure
-        assertThat(result, is(false));
-        // And an error message should be output
-        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! No Version specified."));
-    }
-
-    @Test
-    public void shouldFailAndLogErrorWhenEmptyVersion() {
-        // Given an otherwise valid content spec with an empty version set
-        ContentSpec contentSpec = make(a(ContentSpec, with(version, "")));
-        // with a level and spec topic
-        addLevelAndTopicToContentSpec(contentSpec);
-
-        // When the spec is prevalidated
-        boolean result = validator.preValidateContentSpec(contentSpec);
-
-        // Then the result should be a failure
-        assertThat(result, is(false));
-        // And an error message should be output
-        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! No Version specified."));
-    }
-
-    @Test
     public void shouldFailAndLogErrorWhenInvalidEdition() {
         // Given an otherwise valid content spec with an invalid edition
         ContentSpec contentSpec = make(a(ContentSpec, with(edition, "AAA")));

@@ -651,7 +651,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Validate the topics level
-        if (level.getInnerTopic() != null && !preValidateTopic(level.getInnerTopic(), specTopics, bookType, false)) {
+        if (level.getInnerTopic() != null && !preValidateTopic(level.getInnerTopic(), specTopics, bookType)) {
             valid = false;
         }
 
