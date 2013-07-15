@@ -15,7 +15,7 @@ public class ProcessorUtilitiesTest extends BaseUnitTest {
 
     @ArbitraryString(type = StringType.ALPHANUMERIC) String key;
     @ArbitraryString(type = StringType.ALPHANUMERIC) String value;
-    @ArbitraryString String randomString;
+    @ArbitraryString(type = StringType.ALPHANUMERIC) String randomString;
 
     @Test
     public void shouldGetKeyValuePairWithMultipleEquals() {

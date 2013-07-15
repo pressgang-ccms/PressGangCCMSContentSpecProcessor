@@ -372,8 +372,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final TopicWrapper topic = topicProvider.getTopic(specTopic.getDBId(), null);
 
         // Update the CSP Property tag
-        final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties = propertyTagProvider.newPropertyTagInTopicCollection(
-                topic);
+        final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties;
+        if (topic.getProperties() == null) {
+            properties = propertyTagProvider.newPropertyTagInTopicCollection(topic);
+        } else {
+            properties = topic.getProperties();
+        }
         final List<PropertyTagInTopicWrapper> propertyItems = topic.getProperties().getItems();
         boolean cspPropertyFound = false;
         for (final PropertyTagInTopicWrapper property : propertyItems) {

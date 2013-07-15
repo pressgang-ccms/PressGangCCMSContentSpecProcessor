@@ -121,18 +121,6 @@ public class TopicWrapperMock implements TopicWrapper {
     }
 
     @Override
-    public String getHtml() {
-        // TODO
-        return null;
-    }
-
-    @Override
-    public void setHtml(String html) {
-        // TODO
-
-    }
-
-    @Override
     public CollectionWrapper<TagWrapper> getTags() {
         return tags;
     }

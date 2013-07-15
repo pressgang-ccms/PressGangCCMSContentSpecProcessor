@@ -135,7 +135,6 @@ public class ProcessorUtilities {
         // Set-up the basic parameters
         cloneTopic.setTitle(originalTopic.getTitle());
         cloneTopic.setDescription(originalTopic.getDescription());
-        cloneTopic.setHtml(originalTopic.getHtml());
         cloneTopic.setXml(originalTopic.getXml());
         cloneTopic.setXmlDoctype(originalTopic.getXmlDoctype());
         cloneTopic.setLocale(originalTopic.getLocale());

@@ -20,7 +20,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -63,14 +62,13 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
     private CollectionWrapper<TagWrapper> tagCollection;
     private UpdateableCollectionWrapper<PropertyTagInTopicWrapper> propertyTagCollection;
     private CollectionWrapper<TopicSourceURLWrapper> topicSourceURLCollection;
-    private List<PropertyTagInTopicWrapper> existingProperties;
 
     @Before
     public void setUpEntities() {
         tagCollection = new CollectionWrapperMock<TagWrapper>();
         propertyTagCollection = new UpdateableCollectionWrapperMock<PropertyTagInTopicWrapper>();
         topicSourceURLCollection = new CollectionWrapperMock<TopicSourceURLWrapper>();
-        existingProperties = new ArrayList<PropertyTagInTopicWrapper>();
+        existingTopicProperties = new UpdateableCollectionWrapperMock<PropertyTagInTopicWrapper>();
     }
 
     @Test
@@ -112,7 +110,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
         // and setup the basic valid mocks
         setupValidBaseTopicMocks();
         // and the csp id already exists
-        existingProperties.add(cspIdPropertyTagInTopic);
+        existingTopicProperties.addItem(cspIdPropertyTagInTopic);
         when(cspIdPropertyTagInTopic.getId()).thenReturn(CSConstants.CSP_PROPERTY_ID);
         // and the tag we are adding exist
         when(tagProvider.getTagByName(tagName)).thenReturn(tag1Wrapper);
@@ -128,7 +126,6 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         // Then the base topic should be valid
         verifyValidBaseTopic(topic);
-        verifyUnchangedBaseTopicCollections();
         // and the property should have changed
         verifyValidBaseTopicUpdatedProperties();
     }
@@ -166,8 +163,6 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         // Then the base topic should be valid
         verifyValidBaseTopic(topic);
-        verifyValidBaseTopicNewProperties();
-        verifyUnchangedBaseTopicCollections();
         // and the tags were added
         assertTrue(tagCollection.getAddItems().contains(tag1Wrapper));
         assertTrue(tagCollection.getAddItems().contains(tag2Wrapper));
@@ -210,8 +205,6 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         // Then the base topic should be valid
         verifyValidBaseTopic(topic);
-        verifyValidBaseTopicNewProperties();
-        verifyUnchangedBaseTopicCollections();
         // and the tags were added
         assertTrue(tagCollection.getAddItems().contains(tag1Wrapper));
         assertTrue(tagCollection.getAddItems().contains(tag2Wrapper));
@@ -255,8 +248,6 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         // Then the base topic should be valid
         verifyValidBaseTopic(topic);
-        verifyValidBaseTopicNewProperties();
-        verifyUnchangedBaseTopicCollections();
         // and the new tags were added
         assertFalse(tagCollection.getAddItems().contains(tag1Wrapper));
         assertTrue(tagCollection.getAddItems().contains(tag2Wrapper));
@@ -388,8 +379,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
         when(topicSourceURLProvider.newTopicSourceURLCollection(eq(topicWrapper))).thenReturn(topicSourceURLCollection);
         when(topicWrapper.getSourceURLs()).thenReturn(existingTopicSourceURLCollection);
         // and the property tag collection already has the added by tag
-        existingProperties.add(addedByPropertyTagInTopic);
-        when(existingTopicProperties.getItems()).thenReturn(existingProperties);
+        existingTopicProperties.addItem(addedByPropertyTagInTopic);
         when(addedByPropertyTagInTopic.getId()).thenReturn(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
         when(addedByPropertyTagInTopic.getValue()).thenReturn(username);
     }
@@ -436,9 +426,9 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
     protected void verifyValidBaseTopicUpdatedProperties() {
         // and the topic had the properties set
-        verify(topicWrapper, times(1)).setProperties(eq(propertyTagCollection));
+        verify(topicWrapper, times(1)).setProperties(eq(existingTopicProperties));
         // and the topic had the CSP property tag set
-        assertTrue(propertyTagCollection.getUpdateItems().contains(cspIdPropertyTagInTopic));
+        assertTrue(existingTopicProperties.getUpdateItems().contains(cspIdPropertyTagInTopic));
         verify(cspIdPropertyTagInTopic, times(1)).setValue("L-" + id);
     }
 
