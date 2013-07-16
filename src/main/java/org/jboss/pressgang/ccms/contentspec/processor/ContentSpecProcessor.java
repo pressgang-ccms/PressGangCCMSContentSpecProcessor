@@ -385,10 +385,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             if (property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
                 cspPropertyFound = true;
 
+                // Remove the current property
+                properties.remove(property);
+
+                // Add the updated one
                 property.setValue(specTopic.getUniqueId());
                 properties.addUpdateItem(property);
-            } else {
-                properties.addItem(property);
             }
         }
 
@@ -716,7 +718,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                             topics.addNewTopic(topic);
                         }
                     } catch (Exception e) {
-                        throw new ProcessingException("Failed to create topic: " + specTopic.getId());
+                        throw new ProcessingException("Failed to create topic: " + specTopic.getId(), e);
                     }
                 } else if (specTopic.isTopicAnExistingTopic() && !specTopic.getTags(true).isEmpty() && specTopic.getRevision() == null) {
                     try {
@@ -725,7 +727,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                             topics.addUpdatedTopic(topic);
                         }
                     } catch (Exception e) {
-                        throw new ProcessingException("Failed to create topic: " + specTopic.getId());
+                        throw new ProcessingException("Failed to create topic: " + specTopic.getId(), e);
                     }
                 }
             }
@@ -864,9 +866,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final Map<SpecNode, CSNodeWrapper> nodeMapping = new HashMap<SpecNode, CSNodeWrapper>();
         mergeChildren(nodes, contentSpecNodes, providerFactory, null, contentSpecEntity, nodeMapping);
 
-        // Merge the relationships now all spec topics have a mapping to a node
-        mergeTopicRelationships(nodeMapping, providerFactory);
-
         // Set the nodes that are no longer used for removal
         if (!contentSpecNodes.isEmpty()) {
             for (final CSNodeWrapper childNode : contentSpecNodes) {
@@ -887,6 +886,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
             }
         }
+
+        contentSpecProvider.updateContentSpec(contentSpecEntity);
+
+        // Merge the relationships now all spec topics have a mapping to a node
+        mergeTopicRelationships(nodeMapping, providerFactory);
 
         contentSpecProvider.updateContentSpec(contentSpecEntity, logMessage);
     }
@@ -1375,11 +1379,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     topicEntity.getContentSpec().getChildren().addUpdateItem(topicEntity);
                 }
             } else {
-                topicEntity.getParent().getChildren().remove(topicEntity);
+                final CSNodeWrapper parent = topicEntity.getParent();
+                parent.getChildren().remove(topicEntity);
                 if (topicEntity.getId() == null) {
-                    topicEntity.getParent().getChildren().addNewItem(topicEntity);
+                    parent.getChildren().addNewItem(topicEntity);
                 } else {
-                    topicEntity.getParent().getChildren().addUpdateItem(topicEntity);
+                    parent.getChildren().addUpdateItem(topicEntity);
                 }
             }
         }
