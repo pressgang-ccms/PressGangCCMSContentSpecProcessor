@@ -69,6 +69,9 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
 
         // and the found topic is already assigned to the content spec
         when(foundCSNode.getContentSpec()).thenReturn(contentSpecWrapper);
+
+        // Make sure the return type is always a topic
+        when(foundCSNode.getNodeType()).thenReturn(0);
     }
 
     @Test

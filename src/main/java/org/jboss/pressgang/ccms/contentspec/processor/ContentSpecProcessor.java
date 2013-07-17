@@ -23,6 +23,7 @@ import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TopicRelationship;
 import org.jboss.pressgang.ccms.contentspec.enums.BookType;
 import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
+import org.jboss.pressgang.ccms.contentspec.enums.TopicType;
 import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
 import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
 import org.jboss.pressgang.ccms.contentspec.processor.exceptions.ProcessingException;
@@ -621,7 +622,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         if (urls != null && !urls.isEmpty()) {
             final CollectionWrapper<TopicSourceURLWrapper> sourceUrls = topic.getSourceURLs() == null ? topicSourceURLProvider
-                    .newTopicSourceURLCollection(topic) : topic.getSourceURLs();
+                    .newTopicSourceURLCollection(
+                    topic) : topic.getSourceURLs();
 
             // Iterate over the spec topic urls and add them
             for (final String url : urls) {
@@ -823,7 +825,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             if (username != null) {
                 // Add the added by property tag
                 final UpdateableCollectionWrapper<PropertyTagInContentSpecWrapper> propertyTagCollection = propertyTagProvider
-                        .newPropertyTagInContentSpecCollection(contentSpecEntity);
+                        .newPropertyTagInContentSpecCollection(
+                        contentSpecEntity);
 
                 // Create the new property tag
                 final PropertyTagWrapper addedByProperty = propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
@@ -984,8 +987,13 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             if (foundNodeEntity == null) {
                 final CSNodeWrapper newCSNodeEntity = nodeProvider.newCSNode();
                 if (childNode instanceof SpecTopic) {
-                    mergeTopic((SpecTopic) childNode, newCSNodeEntity);
-                    newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_TOPIC);
+                    final SpecTopic specTopic = (SpecTopic) childNode;
+                    mergeTopic(specTopic, newCSNodeEntity);
+                    if (specTopic.getTopicType().equals(TopicType.LEVEL)) {
+                        newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_INNER_TOPIC);
+                    } else {
+                        newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_TOPIC);
+                    }
                 } else if (childNode instanceof Level) {
                     mergeLevel((Level) childNode, newCSNodeEntity);
                     newCSNodeEntity.setNodeType(((Level) childNode).getLevelType().getId());
@@ -1002,8 +1010,17 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 newNode = true;
             } else {
                 if (childNode instanceof SpecTopic) {
+                    final SpecTopic specTopic = (SpecTopic) childNode;
                     if (mergeTopic((SpecTopic) childNode, foundNodeEntity)) {
                         changed = true;
+                    }
+                    if (specTopic.getTopicType().equals(
+                            TopicType.LEVEL) && (foundNodeEntity.getNodeType() == null || !foundNodeEntity.getNodeType().equals(
+                            CommonConstants.CS_NODE_INNER_TOPIC))) {
+                        foundNodeEntity.setNodeType(CommonConstants.CS_NODE_INNER_TOPIC);
+                    } else if (foundNodeEntity.getNodeType() == null || !foundNodeEntity.getNodeType().equals(
+                            CommonConstants.CS_NODE_TOPIC)) {
+                        foundNodeEntity.setNodeType(CommonConstants.CS_NODE_TOPIC);
                     }
                 } else if (childNode instanceof Level) {
                     if (mergeLevel((Level) childNode, foundNodeEntity)) {
@@ -1027,24 +1044,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             // If the node is a level than merge the children nodes as well
             if (childNode instanceof Level) {
                 final Level level = (Level) childNode;
-                mergeChildren(getTransformableNodes(level.getChildNodes()), contentSpecNodes, providerFactory, foundNodeEntity, contentSpec,
-                        nodeMapping);
-            }
 
-            // Set up the next node relationship for the previous node
-            if (prevNode != null && (prevNode.getNextNode() == null || (prevNode.getNextNode() != null && foundNodeEntity.getId() ==
-                    null) || (prevNode.getNextNode() != null && !prevNode.getNextNode().getId().equals(
-                    foundNodeEntity.getId())))) {
-                prevNode.setNextNode(foundNodeEntity);
-                changed = true;
-
-                // Add the previous node to the updated collection if it's not already there
-                levelChildren.remove(prevNode);
-                if (prevNode.getId() == null) {
-                    levelChildren.addNewItem(prevNode);
-                } else {
-                    levelChildren.addUpdateItem(prevNode);
+                // Add the levels inner topic to the lsi tof children if one exists
+                final LinkedList<Node> children = level.getChildNodes();
+                if (level.getInnerTopic() != null) {
+                    children.add(level.getInnerTopic());
                 }
+
+                mergeChildren(getTransformableNodes(children), contentSpecNodes, providerFactory, foundNodeEntity, contentSpec,
+                        nodeMapping);
             }
 
             // setup the parent for the entity
@@ -1055,6 +1063,23 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     parentNode.getId()))) {
                 foundNodeEntity.setParent(parentNode);
                 changed = true;
+            }
+
+            // Set up the next node relationship for the previous node
+            if (!foundNodeEntity.getNodeType().equals(CommonConstants.CS_NODE_INNER_TOPIC) && prevNode != null &&
+                    (prevNode.getNextNode() == null || (prevNode.getNextNode() != null && foundNodeEntity.getId() == null) || (prevNode
+                            .getNextNode() != null && !prevNode.getNextNode().getId().equals(
+                            foundNodeEntity.getId())))) {
+                prevNode.setNextNode(foundNodeEntity);
+                changed = true;
+
+                // Add the previous node to the updated collection if it's not already there
+                levelChildren.remove(prevNode);
+                if (prevNode.getId() == null) {
+                    levelChildren.addNewItem(prevNode);
+                } else {
+                    levelChildren.addUpdateItem(prevNode);
+                }
             }
 
             // The node has been updated or created so update it's state
@@ -1073,7 +1098,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
 
             // Set the previous node to the current node since processing is done
-            prevNode = foundNodeEntity;
+            if (!foundNodeEntity.getNodeType().equals(CommonConstants.CS_NODE_INNER_TOPIC)) {
+                prevNode = foundNodeEntity;
+            }
         }
 
         // If there is a previous node then make sure it's next node id is null as it's the last in the linked list
@@ -1475,8 +1502,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the level is determined to match otherwise false.
      */
     protected boolean doesLevelMatch(final Level level, final CSNodeWrapper node) {
-        if (node.getNodeType().equals(CommonConstants.CS_NODE_COMMENT) || node.getNodeType().equals(CommonConstants.CS_NODE_TOPIC))
-            return false;
+        if (node.getNodeType().equals(CommonConstants.CS_NODE_COMMENT) || node.getNodeType().equals(CommonConstants.CS_NODE_TOPIC) ||
+                node.getNodeType().equals(CommonConstants.CS_NODE_INNER_TOPIC)) return false;
 
         // If the unique id is not from the parser, than use the unique id to compare
         if (level.getUniqueId() != null && level.getUniqueId().matches("^\\d.*")) {
@@ -1502,7 +1529,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the topic is determined to match otherwise false.
      */
     protected boolean doesTopicMatch(final SpecTopic specTopic, final CSNodeWrapper node) {
-        if (!node.getNodeType().equals(CommonConstants.CS_NODE_TOPIC)) return false;
+        if (!node.getNodeType().equals(CommonConstants.CS_NODE_TOPIC) && !node.getNodeType().equals(CommonConstants.CS_NODE_INNER_TOPIC))
+            return false;
 
         // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
         if (specTopic.getUniqueId() != null && specTopic.getUniqueId().matches("^\\d.*")) {
@@ -1528,8 +1556,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the topic is determined to match otherwise false.
      */
     protected boolean doesRelationshipMatch(final TopicRelationship relationship, final CSRelatedNodeWrapper relatedNode) {
-        // If the relations ship is a TopicRelationship, then the related node must be a topic or its not a match
-        if (!relatedNode.getNodeType().equals(CommonConstants.CS_NODE_TOPIC)) return false;
+        // If the relationship is a TopicRelationship, then the related node must be a topic or its not a match
+        if (!relatedNode.getNodeType().equals(CommonConstants.CS_NODE_TOPIC) && !relatedNode.getNodeType().equals(
+                CommonConstants.CS_NODE_INNER_TOPIC)) return false;
 
         // Check if the type matches first
         if (!RelationshipType.getRelationshipTypeId(relationship.getType()).equals(relatedNode.getRelationshipType())) return false;
