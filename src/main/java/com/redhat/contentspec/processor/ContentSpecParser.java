@@ -975,6 +975,8 @@ public class ContentSpecParser {
                     log.error(ProcessorConstants.ERROR_INVALID_BOOK_TYPE_MSG);
                     return false;
                 }
+            } else if (ProcessorConstants.BRAND_LOGO_PATTERN.matcher(upperCaseInput).matches()) {
+                spec.setBrandLogo(escapedValue);
             } else if (ProcessorConstants.REV_HISTORY_PATTERN.matcher(upperCaseInput).matches()) {
                 final SpecTopic specTopic = getSpecTopicMetaData(tempInput[1], CSConstants.REV_HISTORY_TITLE);
                 if (specTopic != null) {

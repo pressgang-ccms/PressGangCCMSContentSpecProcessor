@@ -337,6 +337,7 @@ public class ProcessorConstants {
     public static final Pattern LEGAL_NOTICE_PATTERN = Pattern.compile("^LEGAL[ ]+NOTICE[ ]*((=.*)|$)");
     public static final Pattern MAVEN_GROUP_ID_PATTERN = Pattern.compile("^GROUPID[ ]*((=.*)|$)");
     public static final Pattern MAVEN_ARTIFACT_ID_PATTERN = Pattern.compile("^ARTIFACTID[ ]*((=.*)|$)");
+    public static final Pattern BRAND_LOGO_PATTERN = Pattern.compile("^BRAND[ ]+LOGO[ ]*((=.*)|$)");
 
     // Outdated Meta Data Pattern Constants
     public static final Pattern OUTPUT_STYLE_PATTERN = Pattern.compile("^OUTPUT STYLE[ ]*((=.*)|$)");
