@@ -224,13 +224,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         /*
-         * Ensure that no topics exist that have the same ID but different revisions. This needs to be done at the
-         * Content Spec
+         * Ensure that no topics exist that have the same ID but different revisions. This needs to be done at the Content Spec
          * level rather than the Topic level as it isn't the topic that would be invalid but rather the set of topics
-          * in the
-         * content specification. If we are updating revisions however, we can ignore this check.
+          * in the content specification.
          */
-        if (!processingOptions.isUpdateRevisions() && !checkTopicsForInvalidDuplicates(contentSpec)) {
+        if (!checkTopicsForInvalidDuplicates(contentSpec)) {
             valid = false;
         }
 
@@ -353,7 +351,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         if (contentSpec.getId() != null) {
             ContentSpecWrapper contentSpecTopic = null;
             try {
-                contentSpecTopic = contentSpecProvider.getContentSpec(contentSpec.getId(), processingOptions.getRevision());
+                contentSpecTopic = contentSpecProvider.getContentSpec(contentSpec.getId(), contentSpec.getRevision());
             } catch (NotFoundException e) {
 
             }
@@ -1090,27 +1088,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
         // Existing Topics
         else if (specTopic.isTopicAnExistingTopic()) {
-            // Calculate the revision for the topic
-            final Integer revision;
-            if (specTopic.getRevision() == null || processingOptions.isUpdateRevisions()) {
-                revision = processingOptions.getRevision();
-            } else {
-                revision = specTopic.getRevision();
-            }
-
             // Check that the id actually exists
             BaseTopicWrapper<?> topic = null;
             try {
                 if (processingOptions.isTranslation()) {
-                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()), revision, locale);
-                    if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions())) {
-                        specTopic.setRevision(topic.getTopicRevision());
-                    }
+                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()), specTopic.getRevision(), locale);
                 } else {
-                    topic = topicProvider.getTopic(Integer.parseInt(specTopic.getId()), revision);
-                    if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions())) {
-                        specTopic.setRevision(topic.getTopicRevision());
-                    }
+                    topic = topicProvider.getTopic(Integer.parseInt(specTopic.getId()), specTopic.getRevision());
                 }
             } catch (NotFoundException e) {
                 log.debug("Could not find topic for id " + specTopic.getDBId());

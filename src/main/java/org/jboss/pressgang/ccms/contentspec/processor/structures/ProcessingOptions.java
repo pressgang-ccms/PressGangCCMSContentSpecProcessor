@@ -7,9 +7,6 @@ public class ProcessingOptions {
     private boolean ignoreChecksum = false;
     private boolean allowEmptyLevels = false;
     private boolean allowNewTopics = true;
-    private boolean addRevisions = false;
-    private boolean updateRevisions = false;
-    private Integer revision = null;
     private boolean strictLevelTitles = false;
     private boolean translation = false;
 
@@ -51,30 +48,6 @@ public class ProcessingOptions {
 
     public void setAllowNewTopics(boolean allowNewTopics) {
         this.allowNewTopics = allowNewTopics;
-    }
-
-    public boolean isAddRevisions() {
-        return addRevisions;
-    }
-
-    public void setAddRevisions(boolean addRevisions) {
-        this.addRevisions = addRevisions;
-    }
-
-    public boolean isUpdateRevisions() {
-        return updateRevisions;
-    }
-
-    public void setUpdateRevisions(boolean updateRevisions) {
-        this.updateRevisions = updateRevisions;
-    }
-
-    public Integer getRevision() {
-        return revision;
-    }
-
-    public void setRevision(final Integer revision) {
-        this.revision = revision;
     }
 
     public boolean isStrictLevelTitles() {
