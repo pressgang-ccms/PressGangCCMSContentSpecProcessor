@@ -18,7 +18,6 @@ import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.Content
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.title;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.version;
 import static org.junit.Assert.assertThat;
-import static org.mockito.BDDMockito.given;
 
 import net.sf.ipsedixit.annotation.Arbitrary;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
@@ -220,7 +219,6 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
         // Given an otherwise valid content spec with two spec topics that are existing topics with the same id
         // but different revisions
         ContentSpec contentSpec = make(a(ContentSpec));
-        given(processingOptions.isUpdateRevisions()).willReturn(false);
         SpecTopic specTopic = make(a(SpecTopicMaker.SpecTopic, with(id, randomInt.toString()), with(revision, randomInt)));
         SpecTopic specTopic2 = make(a(SpecTopicMaker.SpecTopic, with(id, randomInt.toString()), with(revision, randomInt + 1)));
         final Level level = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.CHAPTER)));
