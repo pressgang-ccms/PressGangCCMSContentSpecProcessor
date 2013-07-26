@@ -978,6 +978,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 continue;
             }
 
+            LOG.debug("Processing: " + childNode.getText());
+
             // Find the Entity Node that matches the Content Spec node, if one exists
             CSNodeWrapper foundNodeEntity = findExistingNode(childNode, contentSpecNodes);
 
@@ -985,6 +987,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             boolean changed = false;
             boolean newNode = false;
             if (foundNodeEntity == null) {
+                LOG.debug("Creating a new node");
                 final CSNodeWrapper newCSNodeEntity = nodeProvider.newCSNode();
                 if (childNode instanceof SpecTopic) {
                     final SpecTopic specTopic = (SpecTopic) childNode;
@@ -1009,6 +1012,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 foundNodeEntity = newCSNodeEntity;
                 newNode = true;
             } else {
+                LOG.debug("Found existing node " + foundNodeEntity.getId());
+
                 if (childNode instanceof SpecTopic) {
                     final SpecTopic specTopic = (SpecTopic) childNode;
                     if (mergeTopic((SpecTopic) childNode, foundNodeEntity)) {
