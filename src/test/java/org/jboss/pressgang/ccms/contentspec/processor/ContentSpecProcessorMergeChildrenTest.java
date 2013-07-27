@@ -179,6 +179,10 @@ public class ContentSpecProcessorMergeChildrenTest extends ContentSpecProcessorT
         given(newCSNode.getNextNode()).willReturn(null);
         given(newCSNode2.getNextNode()).willReturn(newCSNode3);
         given(newCSNode3.getNextNode()).willReturn(newCSNode);
+        // and the nodes belong to the content spec
+        given(newCSNode.getContentSpec()).willReturn(contentSpecWrapper);
+        given(newCSNode2.getContentSpec()).willReturn(contentSpecWrapper);
+        given(newCSNode3.getContentSpec()).willReturn(contentSpecWrapper);
         // and the content spec will return a collection
         given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 

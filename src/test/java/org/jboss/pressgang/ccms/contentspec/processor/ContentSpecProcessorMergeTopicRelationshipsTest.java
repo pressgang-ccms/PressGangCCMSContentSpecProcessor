@@ -141,11 +141,11 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertSame(updatedChildrenNodes.getUpdateItems().get(0), nodeEntity);
         // and the node had the relationships set
-        verify(nodeEntity, times(1)).setRelatedToNodes(newRelatedToNodes);
+        verify(nodeEntity, times(1)).setRelatedToNodes(relatedToNodes);
         // and the related node was added to the collection
-        assertThat(newRelatedToNodes.size(), is(1));
-        assertThat(newRelatedToNodes.getAddItems().size(), is(1));
-        assertSame(newRelatedToNodes.getItems().get(0), relatedNode);
+        assertThat(relatedToNodes.size(), is(1));
+        assertThat(relatedToNodes.getAddItems().size(), is(1));
+        assertSame(relatedToNodes.getItems().get(0), relatedNode);
         // and the related node has the type and sort set
         verify(relatedNode, times(1)).setRelationshipSort(1);
         verify(relatedNode, times(1)).setRelationshipType(CommonConstants.CS_RELATIONSHIP_REFER_TO);
@@ -185,12 +185,12 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertTrue(updatedChildrenNodes.getUpdateItems().contains(nodeEntity));
         // and the node had the relationships set
-        verify(nodeEntity, times(1)).setRelatedToNodes(newRelatedToNodes);
+        verify(nodeEntity, times(1)).setRelatedToNodes(relatedToNodes);
         // and the related topic & level node were added to the collection
-        assertThat(newRelatedToNodes.size(), is(2));
-        assertThat(newRelatedToNodes.getAddItems().size(), is(2));
-        assertTrue(newRelatedToNodes.getAddItems().contains(relatedNode));
-        assertTrue(newRelatedToNodes.getAddItems().contains(relatedNode2));
+        assertThat(relatedToNodes.size(), is(2));
+        assertThat(relatedToNodes.getAddItems().size(), is(2));
+        assertTrue(relatedToNodes.getAddItems().contains(relatedNode));
+        assertTrue(relatedToNodes.getAddItems().contains(relatedNode2));
         // and the related topic node has the type and sort set
         verify(relatedNode, times(1)).setRelationshipSort(1);
         verify(relatedNode, times(1)).setRelationshipType(CommonConstants.CS_RELATIONSHIP_REFER_TO);
@@ -225,11 +225,11 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertSame(updatedChildrenNodes.getUpdateItems().get(0), nodeEntity);
         // and the node had the relationships set
-        verify(nodeEntity, times(1)).setRelatedToNodes(newRelatedToNodes);
+        verify(nodeEntity, times(1)).setRelatedToNodes(relatedToNodes);
         // and the related node was added to the collection
-        assertThat(newRelatedToNodes.size(), is(1));
-        assertThat(newRelatedToNodes.getAddItems().size(), is(1));
-        assertSame(newRelatedToNodes.getItems().get(0), relatedNode);
+        assertThat(relatedToNodes.size(), is(1));
+        assertThat(relatedToNodes.getAddItems().size(), is(1));
+        assertSame(relatedToNodes.getItems().get(0), relatedNode);
         // and the related node has the type and sort set
         verify(relatedNode, times(1)).setRelationshipSort(1);
         verify(relatedNode, times(1)).setRelationshipType(CommonConstants.CS_RELATIONSHIP_PREREQUISITE);
@@ -261,11 +261,11 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertSame(updatedChildrenNodes.getUpdateItems().get(0), nodeEntity);
         // and the node had the relationships set
-        verify(nodeEntity, times(1)).setRelatedToNodes(newRelatedToNodes);
+        verify(nodeEntity, times(1)).setRelatedToNodes(relatedToNodes);
         // and the related node was added to the collection
-        assertThat(newRelatedToNodes.size(), is(1));
-        assertThat(newRelatedToNodes.getAddItems().size(), is(1));
-        assertSame(newRelatedToNodes.getItems().get(0), relatedNode);
+        assertThat(relatedToNodes.size(), is(1));
+        assertThat(relatedToNodes.getAddItems().size(), is(1));
+        assertSame(relatedToNodes.getItems().get(0), relatedNode);
         // and the related node has the type and sort set
         verify(relatedNode, times(1)).setRelationshipSort(1);
         verify(relatedNode, times(1)).setRelationshipType(CommonConstants.CS_RELATIONSHIP_LINK_LIST);
@@ -373,11 +373,11 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertSame(updatedChildrenNodes.getUpdateItems().get(0), nodeEntity);
         // and the node had the relationships set
-        verify(nodeEntity, times(1)).setRelatedToNodes(newRelatedToNodes);
+        verify(nodeEntity, times(1)).setRelatedToNodes(relatedToNodes);
         // and the updated related node was added to the collection
-        assertThat(newRelatedToNodes.size(), is(1));
-        assertThat(newRelatedToNodes.getUpdateItems().size(), is(1));
-        assertSame(newRelatedToNodes.getItems().get(0), relatedNode);
+        assertThat(relatedToNodes.size(), is(1));
+        assertThat(relatedToNodes.getUpdateItems().size(), is(1));
+        assertSame(relatedToNodes.getItems().get(0), relatedNode);
         // and the related node has the sort set
         verify(relatedNode, times(1)).setRelationshipSort(1);
         // and the related node still has the same relationship type
@@ -424,14 +424,14 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertSame(updatedChildrenNodes.getUpdateItems().get(0), nodeEntity);
         // and the node had the relationships set
-        verify(nodeEntity, times(1)).setRelatedToNodes(newRelatedToNodes);
+        verify(nodeEntity, times(1)).setRelatedToNodes(relatedToNodes);
         // and the updated related node was added to the collection
-        assertThat(newRelatedToNodes.size(), is(2));
-        assertThat(newRelatedToNodes.getUpdateItems().size(), is(1));
-        assertSame(newRelatedToNodes.getUpdateItems().get(0), relatedNode);
+        assertThat(relatedToNodes.size(), is(2));
+        assertThat(relatedToNodes.getUpdateItems().size(), is(1));
+        assertSame(relatedToNodes.getUpdateItems().get(0), relatedNode);
         // and the other relationship should be set for removal
-        assertThat(newRelatedToNodes.getRemoveItems().size(), is(1));
-        assertSame(newRelatedToNodes.getRemoveItems().get(0), relatedNode2);
+        assertThat(relatedToNodes.getRemoveItems().size(), is(1));
+        assertSame(relatedToNodes.getRemoveItems().get(0), relatedNode2);
         // and the related node has the sort set
         verify(relatedNode, times(1)).setRelationshipSort(1);
         // and the related node still has the same relationship type
@@ -473,11 +473,11 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertSame(updatedChildrenNodes.getUpdateItems().get(0), nodeEntity);
         // and the node had the relationships set
-        verify(nodeEntity, times(1)).setRelatedToNodes(newRelatedToNodes);
+        verify(nodeEntity, times(1)).setRelatedToNodes(relatedToNodes);
         // and the updated related node was added to the collection
-        assertThat(newRelatedToNodes.size(), is(1));
-        assertThat(newRelatedToNodes.getUpdateItems().size(), is(1));
-        assertSame(newRelatedToNodes.getItems().get(0), relatedNode);
+        assertThat(relatedToNodes.size(), is(1));
+        assertThat(relatedToNodes.getUpdateItems().size(), is(1));
+        assertSame(relatedToNodes.getItems().get(0), relatedNode);
         // and the related node has the sort set
         verify(relatedNode, times(1)).setRelationshipSort(1);
         // and the related node still has the same relationship type
@@ -519,11 +519,11 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertSame(updatedChildrenNodes.getUpdateItems().get(0), nodeEntity);
         // and the node had the relationships set
-        verify(nodeEntity, times(1)).setRelatedToNodes(newRelatedToNodes);
+        verify(nodeEntity, times(1)).setRelatedToNodes(relatedToNodes);
         // and the updated related node was added to the collection
-        assertThat(newRelatedToNodes.size(), is(1));
-        assertThat(newRelatedToNodes.getUpdateItems().size(), is(1));
-        assertSame(newRelatedToNodes.getItems().get(0), relatedNode);
+        assertThat(relatedToNodes.size(), is(1));
+        assertThat(relatedToNodes.getUpdateItems().size(), is(1));
+        assertSame(relatedToNodes.getItems().get(0), relatedNode);
         // and the related node has the sort set
         verify(relatedNode, times(1)).setRelationshipSort(1);
         // and the related node still has the same relationship type
@@ -560,11 +560,11 @@ public class ContentSpecProcessorMergeTopicRelationshipsTest extends ContentSpec
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertSame(updatedChildrenNodes.getUpdateItems().get(0), nodeEntity);
         // and the node had the relationships set
-        verify(nodeEntity, times(1)).setRelatedToNodes(newRelatedToNodes);
+        verify(nodeEntity, times(1)).setRelatedToNodes(relatedToNodes);
         // and the existing relationships should have been set for removal
-        assertThat(newRelatedToNodes.size(), is(2));
-        assertThat(newRelatedToNodes.getRemoveItems().size(), is(2));
-        assertTrue(newRelatedToNodes.getRemoveItems().contains(relatedNode));
-        assertTrue(newRelatedToNodes.getRemoveItems().contains(relatedNode2));
+        assertThat(relatedToNodes.size(), is(2));
+        assertThat(relatedToNodes.getRemoveItems().size(), is(2));
+        assertTrue(relatedToNodes.getRemoveItems().contains(relatedNode));
+        assertTrue(relatedToNodes.getRemoveItems().contains(relatedNode2));
     }
 }

@@ -3,6 +3,11 @@ package org.jboss.pressgang.ccms.contentspec.processor.constants;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 
 public class ProcessorConstants {
+    /**
+     * The minimum value that designates if two strings match.
+     */
+    public static final double MIN_MATCH_SIMILARITY = 0.8;
+
     public static final String RELEASE_CATEGORY_NAME = "Release";
     public static final int ASSIGNED_WRITER_CATEGORY_ID = 12;
     public static final String ASSIGNED_WRITER_CATEGORY_NAME = "Assigned Writer";

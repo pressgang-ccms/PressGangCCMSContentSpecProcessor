@@ -12,7 +12,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -69,7 +68,7 @@ public class ContentSpecProcessorMergeChildrenLevelTest extends ContentSpecProce
     }
 
     @Test
-    public void shouldCreateNewLevelNodeWithoutParent() throws Exception {
+    public void shouldCreateNewLevelNode() throws Exception {
         final List<Node> childNodes = new ArrayList<Node>();
         setUpNodeToReturnNulls(newCSNode);
         // Given a content spec level that doesn't exist
@@ -91,41 +90,6 @@ public class ContentSpecProcessorMergeChildrenLevelTest extends ContentSpecProce
         assertThat(updatedChildrenNodes.getAddItems().size(), is(1));
         // and the basic details are correct
         verifyBaseNewLevel(newCSNode);
-    }
-
-    @Test
-    public void shouldCreateNewLevelNodeWithParent() throws Exception {
-        final List<Node> childNodes = new ArrayList<Node>();
-        setUpNodeToReturnNulls(newCSNode);
-        // Given a content spec level that doesn't exist
-        final Level level = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.CHAPTER), with(LevelMaker.title, title)));
-        childNodes.add(level);
-        // and a parent node
-        CSNodeWrapper parentNode = mock(CSNodeWrapper.class);
-        // and the parent will return a collection
-        given(parentNode.getChildren()).willReturn(updatedChildrenNodes);
-
-        // When merging the children nodes
-        try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, parentNode, contentSpecWrapper, nodeMap);
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("An Exception should not have been thrown. Message: " + e.getMessage());
-        }
-
-        // Then a new node should exist in the updated collection
-        assertThat(updatedChildrenNodes.size(), is(1));
-        assertThat(updatedChildrenNodes.getAddItems().size(), is(1));
-        // and the node has the Spec Topic type set
-        verify(newCSNode, times(1)).setNodeType(CommonConstants.CS_NODE_CHAPTER);
-        // and the parent node should be null
-        verify(newCSNode, times(1)).setParent(parentNode);
-        // and the node had the title set
-        verify(newCSNode, times(1)).setTitle(title);
-        // and the node topic id was set
-        verify(newCSNode, never()).setEntityId(anyInt());
-        // and the topic revision wasn't set
-        verify(newCSNode, never()).setEntityRevision(anyInt());
     }
 
     @Test

@@ -9,7 +9,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -38,6 +37,7 @@ import org.mockito.Mock;
 public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecProcessorTest {
     @Arbitrary Integer id;
     @ArbitraryString(type = StringType.ALPHANUMERIC) String comment;
+    @ArbitraryString(type = StringType.ALPHANUMERIC) String comment2;
     @ArbitraryString(type = StringType.ALPHANUMERIC) String randomAlphaString;
 
     @Mock ContentSpecWrapper contentSpecWrapper;
@@ -62,7 +62,7 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
     }
 
     @Test
-    public void shouldCreateNewMetaDataNodeWithoutParent() throws Exception {
+    public void shouldCreateNewCommentNode() throws Exception {
         final List<Node> childNodes = new ArrayList<Node>();
         setUpNodeToReturnNulls(newCSNode);
         // Given a content spec comment that doesn't exist
@@ -87,49 +87,16 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
     }
 
     @Test
-    public void shouldCreateNewMetaDataNodeWithParent() throws Exception {
-        final List<Node> childNodes = new ArrayList<Node>();
-        setUpNodeToReturnNulls(newCSNode);
-        // Given a content spec comment that doesn't exist
-        final Comment comment = new Comment(this.comment);
-        childNodes.add(comment);
-        // and a parent node
-        CSNodeWrapper parentNode = mock(CSNodeWrapper.class);
-        // and the parent will return a collection
-        given(parentNode.getChildren()).willReturn(updatedChildrenNodes);
-
-        // When merging the children nodes
-        try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, parentNode, contentSpecWrapper, nodeMap);
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("An Exception should not have been thrown. Message: " + e.getMessage());
-        }
-
-        // Then a new node should exist in the updated collection
-        assertThat(updatedChildrenNodes.size(), is(1));
-        assertThat(updatedChildrenNodes.getAddItems().size(), is(1));
-        // and the node has the Spec Topic type set
-        verify(newCSNode, times(1)).setNodeType(CommonConstants.CS_NODE_COMMENT);
-        // and the parent node should be null
-        verify(newCSNode, times(1)).setParent(parentNode);
-        // and the node had the comment set
-        verify(newCSNode, times(1)).setTitle("# " + this.comment);
-        // and the node topic id was set
-        verify(newCSNode, never()).setEntityId(anyInt());
-        // and the topic revision wasn't set
-        verify(newCSNode, never()).setEntityRevision(anyInt());
-    }
-
-    @Test
     public void shouldMergeCommentWithDBIds() {
         final List<Node> childNodes = new ArrayList<Node>();
         // Given a content spec level that was created from a DB entity
         final Comment comment = new Comment(this.comment);
+        comment.setUniqueId(id.toString());
         childNodes.add(comment);
         // And a matching child node exists in the database
         given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_COMMENT);
-        given(foundCSNode.getTitle()).willReturn(this.comment);
+        given(foundCSNode.getTitle()).willReturn(this.comment2);
+        given(foundCSNode.getId()).willReturn(id);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
         // and the content spec will return a collection
@@ -153,16 +120,25 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
     }
 
     @Test
-    public void shouldIgnoreMergeCommentWithDBIdsWhenTextIsTheSame() {
+    public void shouldIgnoreMergeCommentWithoutDBIdsWhenTextIsTheSame() {
         final List<Node> childNodes = new ArrayList<Node>();
         // Given a content spec level that was created from a DB entity
         final Comment comment = new Comment(this.comment);
+        final Comment comment2 = new Comment(this.comment2);
         childNodes.add(comment);
+        childNodes.add(comment2);
         // And a matching child node exists in the database
         given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_COMMENT);
         given(foundCSNode.getTitle()).willReturn("# " + this.comment);
+        given(foundCSNode.getNextNode()).willReturn(newCSNode);
+        given(newCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_COMMENT);
+        given(newCSNode.getTitle()).willReturn("# " + this.comment2);
+        given(newCSNode.getId()).willReturn(id);
         // and is in the child nodes collection
         childrenNodes.add(foundCSNode);
+        childrenNodes.add(newCSNode);
+        updatedChildrenNodes.addItem(foundCSNode);
+        updatedChildrenNodes.addItem(newCSNode);
         // and the content spec will return a collection
         given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
@@ -174,26 +150,103 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         }
 
         // Then a updated node shouldn't exist since nothing was modified
-        assertThat(updatedChildrenNodes.size(), is(0));
+        assertThat(updatedChildrenNodes.size(), is(2));
+        assertThat(updatedChildrenNodes.getUnchangedItems().size(), is(2));
         // and the main details haven't changed
         verifyBaseExistingComment(foundCSNode);
     }
 
     @Test
-    public void shouldMergeMetaDataWithDBIdsWhenMultipleMetaData() {
+    public void shouldIgnoreMergeCommentWithDBIdsWhenTextIsTheSame() {
         final List<Node> childNodes = new ArrayList<Node>();
-        // Given a content spec meta data that was created from a DB entity
+        // Given a content spec level that was created from a DB entity
         final Comment comment = new Comment(this.comment);
+        comment.setUniqueId(id.toString());
+        childNodes.add(comment);
+        // And a matching child node exists in the database
+        given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_COMMENT);
+        given(foundCSNode.getTitle()).willReturn("# " + this.comment);
+        given(foundCSNode.getId()).willReturn(id);
+        // and is in the child nodes collection
+        childrenNodes.add(foundCSNode);
+        updatedChildrenNodes.addItem(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
+
+        // When merging the children nodes
+        try {
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
+        } catch (Exception e) {
+            fail("An Exception should not have been thrown. Message: " + e.getMessage());
+        }
+
+        // Then no nodes should have been updated
+        assertThat(updatedChildrenNodes.size(), is(1));
+        assertThat(updatedChildrenNodes.getUnchangedItems().size(), is(1));
+        // and the main details haven't changed
+        verifyBaseExistingComment(foundCSNode);
+    }
+
+    @Test
+    public void shouldMergeCommentWithoutDBIdsWhenMultipleComments() {
+        final List<Node> childNodes = new ArrayList<Node>();
+        // Given a content spec level that was created from a DB entity
+        final Comment comment = new Comment(this.comment);
+        final Comment comment2 = new Comment(this.comment2);
+        childNodes.add(comment);
+        childNodes.add(comment2);
+        // And a matching child node exists in the database
+        given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_COMMENT);
+        given(foundCSNode.getTitle()).willReturn("# " + this.comment);
+        given(foundCSNode.getNextNode()).willReturn(newCSNode);
+        given(newCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_COMMENT);
+        given(newCSNode.getTitle()).willReturn("# " + randomAlphaString);
+        given(newCSNode.getId()).willReturn(id);
+        given(newCSNode.getContentSpec()).willReturn(contentSpecWrapper);
+        // and is in the child nodes collection (in reverse order)
+        childrenNodes.add(newCSNode);
+        childrenNodes.add(foundCSNode);
+        updatedChildrenNodes.addItem(newCSNode);
+        updatedChildrenNodes.addItem(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
+
+        // When merging the children nodes
+        try {
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
+        } catch (Exception e) {
+            fail("An Exception should not have been thrown. Message: " + e.getMessage());
+        }
+
+        // Then the found node should be unchanged
+        assertThat(updatedChildrenNodes.size(), is(2));
+        assertThat(updatedChildrenNodes.getUnchangedItems().size(), is(1));
+        // and the new node be updated
+        assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
+        assertTrue(updatedChildrenNodes.getUpdateItems().contains(newCSNode));
+        // and the main details haven't changed
+        verifyBaseExistingComment(foundCSNode);
+    }
+
+    @Test
+    public void shouldMergeCommentWithDBIdsWhenMultipleComments() {
+        final List<Node> childNodes = new ArrayList<Node>();
+        // Given a content spec comment that was created from a DB entity
+        final Comment comment = new Comment(this.comment);
+        comment.setUniqueId(id.toString());
         childNodes.add(comment);
         // and a matching child node exists in the database
         given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_COMMENT);
         given(foundCSNode.getTitle()).willReturn("# " + this.comment);
+        given(foundCSNode.getId()).willReturn(id);
         // and another node exists that won't match
         given(newCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_META_DATA);
         given(newCSNode.getTitle()).willReturn(randomAlphaString);
         // and is in the child nodes collection
         childrenNodes.add(newCSNode);
         childrenNodes.add(foundCSNode);
+        updatedChildrenNodes.addItem(newCSNode);
+        updatedChildrenNodes.addItem(foundCSNode);
         // and the content spec will return a collection
         given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
 
@@ -205,7 +258,7 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         }
 
         // Then a updated node should not exist in the updated collection, since nothing changed
-        assertThat(updatedChildrenNodes.size(), is(0));
+        assertThat(updatedChildrenNodes.size(), is(2));
         // and the other node should be set for removal, by still being in the "childrenNodes" list
         assertThat(childrenNodes.size(), is(1));
         assertTrue(childrenNodes.contains(newCSNode));

@@ -9,7 +9,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -63,7 +62,7 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
     }
 
     @Test
-    public void shouldCreateNewMetaDataNodeWithoutParent() throws Exception {
+    public void shouldCreateNewMetaDataNode() throws Exception {
         final List<Node> childNodes = new ArrayList<Node>();
         setUpNodeToReturnNulls(newCSNode);
         // Given a content spec meta data that doesn't exist
@@ -85,44 +84,6 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         assertThat(updatedChildrenNodes.getAddItems().size(), is(1));
         // and the basic details are correct
         verifyBaseNewMetaData(newCSNode);
-    }
-
-    // A meta data node should never have a parent but that isn't enforced here and is done else where
-    @Test
-    public void shouldCreateNewMetaDataNodeWithParent() throws Exception {
-        final List<Node> childNodes = new ArrayList<Node>();
-        setUpNodeToReturnNulls(newCSNode);
-        // Given a content spec meta data that doesn't exist
-        final KeyValueNode<String> metaData = new KeyValueNode<String>(key, value);
-        childNodes.add(metaData);
-        // and a parent node
-        CSNodeWrapper parentNode = mock(CSNodeWrapper.class);
-        // and the parent will return a collection
-        given(parentNode.getChildren()).willReturn(updatedChildrenNodes);
-
-        // When merging the children nodes
-        try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, parentNode, contentSpecWrapper, nodeMap);
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("An Exception should not have been thrown. Message: " + e.getMessage());
-        }
-
-        // Then a new node should exist in the parent collection
-        assertThat(updatedChildrenNodes.size(), is(1));
-        assertThat(updatedChildrenNodes.getAddItems().size(), is(1));
-        // and the node has the Spec Topic type set
-        verify(newCSNode, times(1)).setNodeType(CommonConstants.CS_NODE_META_DATA);
-        // and the parent node should be null
-        verify(newCSNode, times(1)).setParent(parentNode);
-        // and the node had the key set
-        verify(newCSNode, times(1)).setTitle(key);
-        // and the node had the value set
-        verify(newCSNode, times(1)).setAdditionalText(value);
-        // and the node topic id was set
-        verify(newCSNode, never()).setEntityId(anyInt());
-        // and the topic revision wasn't set
-        verify(newCSNode, never()).setEntityRevision(anyInt());
     }
 
     @Test
@@ -227,41 +188,6 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         verify(foundCSNode, never()).setAdditionalText(value);
         // and the main details haven't changed
         verifyBaseExistingMetaData(foundCSNode);
-    }
-
-    // A Meta Data node should never have a parent anyways but this makes sure it gets removed in the rare case it does have one.
-    @Test
-    public void shouldMergeMetaDataWithDBIdsAndRemoveParent() {
-        final List<Node> childNodes = new ArrayList<Node>();
-        // Given a content spec meta data that was created from a DB entity
-        final KeyValueNode<String> metaData = new KeyValueNode<String>(key, value);
-        childNodes.add(metaData);
-        // And a matching child node exists in the database
-        given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_META_DATA);
-        given(foundCSNode.getTitle()).willReturn(key);
-        // and is in the child nodes collection
-        childrenNodes.add(foundCSNode);
-        // and a parent node
-        CSNodeWrapper parentNode = mock(CSNodeWrapper.class);
-        given(foundCSNode.getParent()).willReturn(parentNode);
-        // and the content spec will return a collection
-        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
-
-        // When merging the children nodes
-        try {
-            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
-        } catch (Exception e) {
-            fail("An Exception should not have been thrown. Message: " + e.getMessage());
-        }
-
-        // Then a updated node should exist in the updated collection
-        assertThat(updatedChildrenNodes.size(), is(1));
-        assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
-        assertSame(updatedChildrenNodes.getItems().get(0), foundCSNode);
-        // and the value was set
-        verify(foundCSNode, times(1)).setAdditionalText(value);
-        // and the parent was changed to null
-        verify(foundCSNode, times(1)).setParent(null);
     }
 
     /**

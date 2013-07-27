@@ -39,6 +39,7 @@ import org.jboss.pressgang.ccms.provider.PropertyTagProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.provider.TopicSourceURLProvider;
+import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.CSRelatedNodeWrapper;
@@ -872,6 +873,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Set the nodes that are no longer used for removal
         if (!contentSpecNodes.isEmpty()) {
             for (final CSNodeWrapper childNode : contentSpecNodes) {
+                LOG.debug("Removing entity " + childNode.getId());
                 final UpdateableCollectionWrapper<CSNodeWrapper> children;
                 if (childNode.getParent() == null) {
                     children = childNode.getContentSpec().getChildren();
@@ -981,7 +983,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             LOG.debug("Processing: " + childNode.getText());
 
             // Find the Entity Node that matches the Content Spec node, if one exists
-            CSNodeWrapper foundNodeEntity = findExistingNode(childNode, contentSpecNodes);
+            CSNodeWrapper foundNodeEntity = findExistingNode(parentNode, childNode, contentSpecNodes);
 
             // If the node was not found create a new one
             boolean changed = false;
@@ -1043,6 +1045,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
                 // If the node was found remove it from the list of content spec nodes, so it can no longer be matched
                 contentSpecNodes.remove(foundNodeEntity);
+
+                // Check if the parent node is different, if so then set it as moved
+                if (!doesParentMatch(parentNode, foundNodeEntity.getParent())) {
+                    LOG.debug("Setting entity " + foundNodeEntity.getId() + " as moved");
+                    changed = true;
+                }
             }
             processedNodes.add(foundNodeEntity);
 
@@ -1050,7 +1058,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             if (childNode instanceof Level) {
                 final Level level = (Level) childNode;
 
-                // Add the levels inner topic to the lsi tof children if one exists
+                // Add the levels inner topic to the list of children if one exists
                 final LinkedList<Node> children = level.getChildNodes();
                 if (level.getInnerTopic() != null) {
                     children.add(level.getInnerTopic());
@@ -1058,16 +1066,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
                 mergeChildren(getTransformableNodes(children), contentSpecNodes, providerFactory, foundNodeEntity, contentSpec,
                         nodeMapping);
-            }
-
-            // setup the parent for the entity
-            if (parentNode == null && foundNodeEntity.getParent() != null) {
-                foundNodeEntity.setParent(null);
-                changed = true;
-            } else if (parentNode != null && (foundNodeEntity.getParent() == null || !foundNodeEntity.getParent().getId().equals(
-                    parentNode.getId()))) {
-                foundNodeEntity.setParent(parentNode);
-                changed = true;
             }
 
             // Set up the next node relationship for the previous node
@@ -1079,21 +1077,19 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 changed = true;
 
                 // Add the previous node to the updated collection if it's not already there
-                levelChildren.remove(prevNode);
-                if (prevNode.getId() == null) {
-                    levelChildren.addNewItem(prevNode);
+                if (parentNode == null) {
+                    addContentSpecChild(contentSpec, levelChildren, prevNode);
                 } else {
-                    levelChildren.addUpdateItem(prevNode);
+                    addChild(parentNode, levelChildren, prevNode);
                 }
             }
 
             // The node has been updated or created so update it's state
             if (changed || newNode) {
-                levelChildren.remove(foundNodeEntity);
-                if (newNode) {
-                    levelChildren.addNewItem(foundNodeEntity);
+                if (parentNode == null) {
+                    addContentSpecChild(contentSpec, levelChildren, foundNodeEntity);
                 } else {
-                    levelChildren.addUpdateItem(foundNodeEntity);
+                    addChild(parentNode, levelChildren, foundNodeEntity);
                 }
             }
 
@@ -1113,11 +1109,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             prevNode.setNextNode(null);
 
             // Add the previous node to the updated collection if it's not already there
-            levelChildren.remove(prevNode);
-            if (prevNode.getId() == null) {
-                levelChildren.addNewItem(prevNode);
+            if (parentNode == null) {
+                addContentSpecChild(contentSpec, levelChildren, prevNode);
             } else {
-                levelChildren.addUpdateItem(prevNode);
+                addChild(parentNode, levelChildren, prevNode);
             }
         }
 
@@ -1129,6 +1124,40 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
     }
 
+    protected void addChild(final CSNodeWrapper parent, final UpdateableCollectionWrapper<CSNodeWrapper> collection,
+            final CSNodeWrapper item) {
+        collection.remove(item);
+        if (item.getId() == null) {
+            collection.addNewItem(item);
+        } else {
+            if (item.getParent() != null && item.getParent().equals(parent)) {
+                collection.addUpdateItem(item);
+            } else if (item.getParent() != null) {
+                item.getParent().getChildren().addRemoveItem(item);
+                collection.addNewItem(item);
+            } else {
+                collection.addNewItem(item);
+            }
+        }
+    }
+
+    protected void addContentSpecChild(final ContentSpecWrapper parent, final UpdateableCollectionWrapper<CSNodeWrapper> collection,
+            final CSNodeWrapper item) {
+        collection.remove(item);
+        if (item.getId() == null) {
+            collection.addNewItem(item);
+        } else {
+            if (item.getContentSpec() != null && item.getContentSpec().equals(parent)) {
+                collection.addUpdateItem(item);
+            } else if (item.getContentSpec() != null) {
+                item.getContentSpec().getChildren().addRemoveItem(item);
+                collection.addNewItem(item);
+            } else {
+                collection.addNewItem(item);
+            }
+        }
+    }
+
     /**
      * Finds the existing Entity Node that matches a ContentSpec node.
      *
@@ -1136,27 +1165,46 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param entityChildrenNodes The entity child nodes to match from.
      * @return The matching entity if one exists, otherwise null.
      */
-    protected CSNodeWrapper findExistingNode(final Node childNode, final List<CSNodeWrapper> entityChildrenNodes) {
+    protected CSNodeWrapper findExistingNode(final CSNodeWrapper parent, final Node childNode,
+            final List<CSNodeWrapper> entityChildrenNodes) {
         CSNodeWrapper foundNodeEntity = null;
         if (entityChildrenNodes != null && !entityChildrenNodes.isEmpty()) {
             for (final CSNodeWrapper nodeEntity : entityChildrenNodes) {
-                if (childNode instanceof SpecTopic && doesTopicMatch((SpecTopic) childNode, nodeEntity)) {
-                    foundNodeEntity = nodeEntity;
-                    break;
-                } else if (childNode instanceof Level && doesLevelMatch((Level) childNode, nodeEntity)) {
-                    foundNodeEntity = nodeEntity;
-                    break;
-                } else if (childNode instanceof Comment && doesCommentMatch((Comment) childNode, nodeEntity)) {
-                    foundNodeEntity = nodeEntity;
-                    break;
-                } else if (childNode instanceof KeyValueNode && doesMetaDataMatch((KeyValueNode<?>) childNode, nodeEntity)) {
-                    foundNodeEntity = nodeEntity;
-                    break;
+                if (childNode instanceof Comment) {
+                    // Comments are handled differently to try and get the exact comment better, since its common for multiple comments
+                    // to be on the same level
+                    if (doesCommentMatch((Comment) childNode, nodeEntity, foundNodeEntity != null)) {
+                        foundNodeEntity = nodeEntity;
+                    }
+                } else {
+                    if (childNode instanceof SpecTopic && doesTopicMatch((SpecTopic) childNode, nodeEntity)) {
+                        foundNodeEntity = nodeEntity;
+                    } else if (childNode instanceof Level && doesLevelMatch((Level) childNode, nodeEntity)) {
+                        foundNodeEntity = nodeEntity;
+                    } else if (childNode instanceof KeyValueNode && doesMetaDataMatch((KeyValueNode<?>) childNode, nodeEntity)) {
+                        foundNodeEntity = nodeEntity;
+                    }
+
+                    // stop looking if the parent matches otherwise keep looking to see if we can find a better match
+                    if (foundNodeEntity != null && doesParentMatch(parent, foundNodeEntity.getParent())) {
+                        break;
+                    }
                 }
             }
         }
 
         return foundNodeEntity;
+    }
+
+    /**
+     * Checks to see if two parent nodes match
+     *
+     * @param parent       The current parent being used for processing.
+     * @param entityParent The processed entities parent.
+     * @return True if the two match, otherwise false.
+     */
+    protected boolean doesParentMatch(final CSNodeWrapper parent, final CSNodeWrapper entityParent) {
+        return (parent != null && parent.getId().equals(entityParent.getId())) || (parent == null && entityParent == null);
     }
 
     /**
@@ -1332,8 +1380,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     protected void mergeTopicRelationship(final Map<SpecNode, CSNodeWrapper> nodeMapping, final SpecTopic specTopic,
             final CSNodeWrapper topicEntity, final CSNodeProvider nodeProvider) {
-        final UpdateableCollectionWrapper<CSRelatedNodeWrapper> updatedRelatedToNodes = nodeProvider.newCSRelatedNodeCollection();
-        final List<CSRelatedNodeWrapper> processedRelationships = new ArrayList<CSRelatedNodeWrapper>();
+        final UpdateableCollectionWrapper<CSRelatedNodeWrapper> updatedRelatedToNodes = topicEntity.getRelatedToNodes() == null ?
+                nodeProvider.newCSRelatedNodeCollection() : topicEntity.getRelatedToNodes();
+        final List<CSRelatedNodeWrapper> existingRelationships = new ArrayList<CSRelatedNodeWrapper>(
+                topicEntity.getRelatedToNodes().getItems());
+
+        LOG.debug("Processing relationships for topic: " + topicEntity.getEntityId());
 
         // Check to make sure that the spec topic has any relationships
         if (!specTopic.getRelationships().isEmpty()) {
@@ -1343,10 +1395,16 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 // All process relationships should not be stored
                 if (relationship instanceof ProcessRelationship) continue;
 
+                LOG.debug("Processing Relationship: " + relationship.getSecondaryRelationshipTopicId());
+
                 // See if the related node already exists
-                CSRelatedNodeWrapper foundRelatedNode = findExistingRelatedNode(relationship, topicEntity);
+                CSRelatedNodeWrapper foundRelatedNode = findExistingRelatedNode(relationship, existingRelationships);
 
                 if (foundRelatedNode != null) {
+                    LOG.debug("Found existing related node " + foundRelatedNode.getRelationshipId());
+                    // Remove the related node from the list of existing nodes
+                    existingRelationships.remove(foundRelatedNode);
+
                     // Found a node so update anything that might have changed
                     boolean updated = false;
                     if (foundRelatedNode.getRelationshipSort() != relationshipSortCount) {
@@ -1357,13 +1415,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     // If the node was updated, set it's state in the collection to updated, otherwise just put it back in normally.
                     if (updated) {
                         updatedRelatedToNodes.addUpdateItem(foundRelatedNode);
-                    } else {
-                        updatedRelatedToNodes.addItem(foundRelatedNode);
                     }
-
-                    // Add the related node to the list of processed nodes
-                    processedRelationships.add(foundRelatedNode);
                 } else {
+                    LOG.debug("Creating new relationship");
                     // No related node was found for the relationship so make a new one.
                     final CSNodeWrapper relatedNode;
                     if (relationship instanceof TargetRelationship) {
@@ -1385,15 +1439,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // Remove any existing relationships that are no longer valid
-        final CollectionWrapper<CSRelatedNodeWrapper> topicRelatedNodes = topicEntity.getRelatedToNodes();
-        if (topicRelatedNodes != null) {
-            for (final CSRelatedNodeWrapper relatedNode : topicRelatedNodes.getItems()) {
-                // If the node was processed then ignore it, otherwise remove it
-                if (processedRelationships.contains(relatedNode)) {
-                    continue;
-                } else {
-                    updatedRelatedToNodes.addRemoveItem(relatedNode);
-                }
+        if (existingRelationships != null) {
+            for (final CSRelatedNodeWrapper relatedNode : existingRelationships) {
+                LOG.debug("Removing relationship " + relatedNode.getRelationshipId());
+                updatedRelatedToNodes.addRemoveItem(relatedNode);
             }
         }
 
@@ -1425,17 +1474,16 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     /**
      * Finds an existing relationship for a topic.
      *
-     * @param relationship The relationship to be found.
-     * @param topicEntity  The topic to find the relationship from.
+     * @param relationship      The relationship to be found.
+     * @param topicRelatedNodes The topic related nodes to find the relationship from.
      * @return The related Entity, otherwise null if one can't be found.
      */
-    protected CSRelatedNodeWrapper findExistingRelatedNode(final Relationship relationship, final CSNodeWrapper topicEntity) {
-        final CollectionWrapper<CSRelatedNodeWrapper> topicRelatedNodes = topicEntity.getRelatedToNodes();
-
+    protected CSRelatedNodeWrapper findExistingRelatedNode(final Relationship relationship,
+            final List<CSRelatedNodeWrapper> topicRelatedNodes) {
         CSRelatedNodeWrapper foundRelatedNode = null;
         if (topicRelatedNodes != null) {
             // Loop over the current nodes and see if any match
-            for (final CSRelatedNodeWrapper relatedNode : topicRelatedNodes.getItems()) {
+            for (final CSRelatedNodeWrapper relatedNode : topicRelatedNodes) {
                 if (relationship instanceof TargetRelationship) {
                     if (doesRelationshipMatch((TargetRelationship) relationship, relatedNode)) {
                         foundRelatedNode = relatedNode;
@@ -1486,7 +1534,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
     /**
      * Checks to see if a ContentSpec meta data matches a Content Spec Entity meta data.
-     * TODO Deal with SpecTopic Meta Data
      *
      * @param metaData The ContentSpec meta data object.
      * @param node     The Content Spec Entity topic.
@@ -1495,8 +1542,18 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     protected boolean doesMetaDataMatch(final KeyValueNode<?> metaData, final CSNodeWrapper node) {
         if (!node.getNodeType().equals(CommonConstants.CS_NODE_META_DATA)) return false;
 
-        // Check if the key matches, if it does than the nodes match.
-        return metaData.getKey().equals(node.getTitle());
+        // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
+        if (metaData.getUniqueId() != null && metaData.getUniqueId().matches("^\\d.*")) {
+            return metaData.getUniqueId().equals(Integer.toString(node.getId()));
+        } else {
+            // Allow for old abstract references.
+            if (metaData.getKey().equals(CSConstants.ABSTRACT_TITLE) && node.getTitle().equals(CSConstants.ABSTRACT_ALTERNATE_TITLE)) {
+                return true;
+            }
+
+            // Check if the key matches, if it does than the nodes match.
+            return metaData.getKey().equals(node.getTitle());
+        }
     }
 
     /**
@@ -1522,7 +1579,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 return true;
             }
 
-            return level.getTitle().equals(node.getTitle());
+            return StringUtilities.similarDamerauLevenshtein(level.getTitle(), node.getTitle()) >= ProcessorConstants.MIN_MATCH_SIMILARITY;
         }
     }
 
@@ -1610,26 +1667,34 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     /**
      * Checks to see if a ContentSpec comment matches a Content Spec Entity comment.
      *
-     * @param comment The ContentSpec comment object.
-     * @param node    The Content Spec Entity comment.
+     * @param comment      The ContentSpec comment object.
+     * @param node         The Content Spec Entity comment.
+     * @param matchContent If the contents of the comment have to match to a reasonable extent.
      * @return True if the comment is determined to match otherwise false.
      */
-    protected boolean doesCommentMatch(final Comment comment, final CSNodeWrapper node) {
+    protected boolean doesCommentMatch(final Comment comment, final CSNodeWrapper node, boolean matchContent) {
         if (!node.getNodeType().equals(CommonConstants.CS_NODE_COMMENT)) return false;
 
-        // Check the parent has the same name
-        if (comment.getParent() != null) {
-            if (comment.getParent() instanceof ContentSpec) {
-                return node.getParent() == null;
-            } else if (comment.getParent() instanceof Level && node.getParent() != null) {
-                final Level parent = ((Level) comment.getParent());
-                return parent.getTitle().equals(node.getParent().getTitle());
-            } else {
-                return false;
+        // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
+        if (comment.getUniqueId() != null && comment.getUniqueId().matches("^\\d.*")) {
+            return comment.getUniqueId().equals(Integer.toString(node.getId()));
+        } else if (matchContent) {
+            return StringUtilities.similarDamerauLevenshtein(comment.getText(), node.getTitle()) >= ProcessorConstants.MIN_MATCH_SIMILARITY;
+        } else {
+            // Check the parent has the same name
+            if (comment.getParent() != null) {
+                if (comment.getParent() instanceof ContentSpec) {
+                    return node.getParent() == null;
+                } else if (comment.getParent() instanceof Level && node.getParent() != null) {
+                    final Level parent = ((Level) comment.getParent());
+                    return parent.getTitle().equals(node.getParent().getTitle());
+                } else {
+                    return false;
+                }
             }
-        }
 
-        return true;
+            return true;
+        }
     }
 
     @Override
