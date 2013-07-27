@@ -1016,6 +1016,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             } else {
                 LOG.debug("Found existing node " + foundNodeEntity.getId());
 
+                // If the node was found remove it from the list of content spec nodes, so it can no longer be matched
+                contentSpecNodes.remove(foundNodeEntity);
+
                 if (childNode instanceof SpecTopic) {
                     final SpecTopic specTopic = (SpecTopic) childNode;
                     if (mergeTopic((SpecTopic) childNode, foundNodeEntity)) {
@@ -1042,9 +1045,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                         changed = true;
                     }
                 }
-
-                // If the node was found remove it from the list of content spec nodes, so it can no longer be matched
-                contentSpecNodes.remove(foundNodeEntity);
 
                 // Check if the parent node is different, if so then set it as moved
                 if (!doesParentMatch(parentNode, foundNodeEntity.getParent())) {
@@ -1380,7 +1380,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     protected void mergeTopicRelationship(final Map<SpecNode, CSNodeWrapper> nodeMapping, final SpecTopic specTopic,
             final CSNodeWrapper topicEntity, final CSNodeProvider nodeProvider) {
-        final UpdateableCollectionWrapper<CSRelatedNodeWrapper> updatedRelatedToNodes = topicEntity.getRelatedToNodes() == null ?
+        final UpdateableCollectionWrapper<CSRelatedNodeWrapper> relatedToNodes = topicEntity.getRelatedToNodes() == null ?
                 nodeProvider.newCSRelatedNodeCollection() : topicEntity.getRelatedToNodes();
         final List<CSRelatedNodeWrapper> existingRelationships = new ArrayList<CSRelatedNodeWrapper>(
                 topicEntity.getRelatedToNodes().getItems());
@@ -1414,7 +1414,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
                     // If the node was updated, set it's state in the collection to updated, otherwise just put it back in normally.
                     if (updated) {
-                        updatedRelatedToNodes.addUpdateItem(foundRelatedNode);
+                        relatedToNodes.remove(foundRelatedNode);
+                        relatedToNodes.addUpdateItem(foundRelatedNode);
                     }
                 } else {
                     LOG.debug("Creating new relationship");
@@ -1430,7 +1431,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     foundRelatedNode.setRelationshipType(RelationshipType.getRelationshipTypeId(relationship.getType()));
                     foundRelatedNode.setRelationshipSort(relationshipSortCount);
 
-                    updatedRelatedToNodes.addNewItem(foundRelatedNode);
+                    relatedToNodes.addNewItem(foundRelatedNode);
                 }
 
                 // increment the sort counter
@@ -1442,14 +1443,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         if (existingRelationships != null) {
             for (final CSRelatedNodeWrapper relatedNode : existingRelationships) {
                 LOG.debug("Removing relationship " + relatedNode.getRelationshipId());
-                updatedRelatedToNodes.addRemoveItem(relatedNode);
+                relatedToNodes.remove(relatedNode);
+                relatedToNodes.addRemoveItem(relatedNode);
             }
         }
 
         // Check if anything was changed, if so then set the changes
-        if (!updatedRelatedToNodes.getAddItems().isEmpty() || !updatedRelatedToNodes.getUpdateItems().isEmpty() || !updatedRelatedToNodes
+        if (!relatedToNodes.getAddItems().isEmpty() || !relatedToNodes.getUpdateItems().isEmpty() || !relatedToNodes
                 .getRemoveItems().isEmpty()) {
-            topicEntity.setRelatedToNodes(updatedRelatedToNodes);
+            topicEntity.setRelatedToNodes(relatedToNodes);
 
             // Make sure the node is in the updated state
             if (topicEntity.getParent() == null) {
