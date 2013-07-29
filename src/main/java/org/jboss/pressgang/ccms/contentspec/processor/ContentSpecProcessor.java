@@ -217,6 +217,114 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     }
 
     /**
+     * Saves the Content Specification and all of the topics in the content specification
+     *
+     * @param providerFactory
+     * @param contentSpec     The Content Specification to be saved.
+     * @param edit            Whether the content specification is being edited or created.
+     * @param username        The User who requested the Content Spec be saved.
+     * @param logMessage
+     * @return True if the topic saved successfully otherwise false.
+     */
+    protected boolean saveContentSpec(final DataProviderFactory providerFactory, final ContentSpec contentSpec, final boolean edit,
+            final String username, final LogMessageWrapper logMessage) {
+        final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
+
+        try {
+            // Create the new topic entities
+            final List<SpecTopic> specTopics = contentSpec.getSpecTopics();
+            for (final SpecTopic specTopic : specTopics) {
+
+                // Check if the app should be shutdown
+                if (isShuttingDown.get()) {
+                    shutdown.set(true);
+                    throw new ProcessingException("Shutdown Requested");
+                }
+
+                // Add topics to the TopicPool that need to be added or updated
+                if (specTopic.isTopicAClonedTopic() || specTopic.isTopicANewTopic()) {
+                    try {
+                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic);
+                        if (topic != null) {
+                            topics.addNewTopic(topic);
+                        }
+                    } catch (Exception e) {
+                        throw new ProcessingException("Failed to create topic: " + specTopic.getId(), e);
+                    }
+                } else if (specTopic.isTopicAnExistingTopic() && !specTopic.getTags(true).isEmpty() && specTopic.getRevision() == null) {
+                    try {
+                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic);
+                        if (topic != null) {
+                            topics.addUpdatedTopic(topic);
+                        }
+                    } catch (Exception e) {
+                        throw new ProcessingException("Failed to create topic: " + specTopic.getId(), e);
+                    }
+                }
+            }
+
+            // Check if the app should be shutdown
+            if (isShuttingDown.get()) {
+                shutdown.set(true);
+                throw new ProcessingException("Shutdown Requested");
+            }
+
+            // From here on the main saving happens so this shouldn't be interrupted
+
+            // Save the new topic entities
+            if (!topics.savePool()) {
+                log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
+                throw new ProcessingException("Failed to save the pool of topics.");
+            }
+
+            // Initialise the new and cloned topics using the populated topic pool
+            for (final SpecTopic specTopic : specTopics) {
+                topics.initialiseFromPool(specTopic);
+            }
+
+            // Sync the Duplicated Topics (ID = X<Number>)
+            syncDuplicatedTopics(specTopics);
+
+            // Save the content spec
+            mergeAndSaveContentSpec(contentSpec, providerFactory, !edit, username, logMessage);
+        } catch (ProcessingException e) {
+            LOG.debug(e);
+            if (providerFactory.isRollbackSupported()) {
+                providerFactory.rollback();
+            } else {
+                // Clean up the data that was created
+                if (contentSpec.getId() != null && !edit) {
+                    try {
+                        contentSpecProvider.deleteContentSpec(contentSpec.getId());
+                    } catch (Exception e1) {
+                        log.error("Unable to clean up the Content Specification from the database.", e);
+                    }
+                }
+                if (topics.isInitialised()) topics.rollbackPool();
+            }
+            return false;
+        } catch (Exception e) {
+            LOG.error("", e);
+            if (providerFactory.isRollbackSupported()) {
+                providerFactory.rollback();
+            } else {
+                // Clean up the data that was created
+                if (contentSpec.getId() != null && !edit) {
+                    try {
+                        contentSpecProvider.deleteContentSpec(contentSpec.getId());
+                    } catch (Exception e1) {
+                        log.error("Unable to clean up the Content Specification from the database.", e);
+                    }
+                }
+                if (topics.isInitialised()) topics.rollbackPool();
+            }
+            log.debug("", e);
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Creates an entity to be sent through the REST interface to create or update a DB entry.
      *
      * @param providerFactory
@@ -529,6 +637,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return
      */
     private boolean processExistingTopicTags(final TagProvider tagProvider, final TopicWrapper topic, final List<TagWrapper> addTags) {
+        // Check to make sure we have tags to add
+        if (addTags.isEmpty()) {
+            return false;
+        }
+
         boolean changed = false;
         // Finds tags that aren't already in the database and adds them
         final List<TagWrapper> topicTagList = topic.getTags() == null ? new ArrayList<TagWrapper>() : topic.getTags().getItems();
@@ -686,114 +799,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
             }
         }
-    }
-
-    /**
-     * Saves the Content Specification and all of the topics in the content specification
-     *
-     * @param providerFactory
-     * @param contentSpec     The Content Specification to be saved.
-     * @param edit            Whether the content specification is being edited or created.
-     * @param username        The User who requested the Content Spec be saved.
-     * @param logMessage
-     * @return True if the topic saved successfully otherwise false.
-     */
-    protected boolean saveContentSpec(final DataProviderFactory providerFactory, final ContentSpec contentSpec, final boolean edit,
-            final String username, final LogMessageWrapper logMessage) {
-        final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
-
-        try {
-            // Create the new topic entities
-            final List<SpecTopic> specTopics = contentSpec.getSpecTopics();
-            for (final SpecTopic specTopic : specTopics) {
-
-                // Check if the app should be shutdown
-                if (isShuttingDown.get()) {
-                    shutdown.set(true);
-                    throw new ProcessingException("Shutdown Requested");
-                }
-
-                // Add topics to the TopicPool that need to be added or updated
-                if (specTopic.isTopicAClonedTopic() || specTopic.isTopicANewTopic()) {
-                    try {
-                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic);
-                        if (topic != null) {
-                            topics.addNewTopic(topic);
-                        }
-                    } catch (Exception e) {
-                        throw new ProcessingException("Failed to create topic: " + specTopic.getId(), e);
-                    }
-                } else if (specTopic.isTopicAnExistingTopic() && !specTopic.getTags(true).isEmpty() && specTopic.getRevision() == null) {
-                    try {
-                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic);
-                        if (topic != null) {
-                            topics.addUpdatedTopic(topic);
-                        }
-                    } catch (Exception e) {
-                        throw new ProcessingException("Failed to create topic: " + specTopic.getId(), e);
-                    }
-                }
-            }
-
-            // Check if the app should be shutdown
-            if (isShuttingDown.get()) {
-                shutdown.set(true);
-                throw new ProcessingException("Shutdown Requested");
-            }
-
-            // From here on the main saving happens so this shouldn't be interrupted
-
-            // Save the new topic entities
-            if (!topics.savePool()) {
-                log.error(ProcessorConstants.ERROR_DATABASE_ERROR_MSG);
-                throw new ProcessingException("Failed to save the pool of topics.");
-            }
-
-            // Initialise the new and cloned topics using the populated topic pool
-            for (final SpecTopic specTopic : specTopics) {
-                topics.initialiseFromPool(specTopic);
-            }
-
-            // Sync the Duplicated Topics (ID = X<Number>)
-            syncDuplicatedTopics(specTopics);
-
-            // Save the content spec
-            mergeAndSaveContentSpec(contentSpec, providerFactory, !edit, username, logMessage);
-        } catch (ProcessingException e) {
-            if (providerFactory.isRollbackSupported()) {
-                providerFactory.rollback();
-            } else {
-                // Clean up the data that was created
-                if (contentSpec.getId() != null && !edit) {
-                    try {
-                        contentSpecProvider.deleteContentSpec(contentSpec.getId());
-                    } catch (Exception e1) {
-                        log.error("Unable to clean up the Content Specification from the database.", e);
-                    }
-                }
-                if (topics.isInitialised()) topics.rollbackPool();
-            }
-            log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
-            return false;
-        } catch (Exception e) {
-            LOG.error("", e);
-            if (providerFactory.isRollbackSupported()) {
-                providerFactory.rollback();
-            } else {
-                // Clean up the data that was created
-                if (contentSpec.getId() != null && !edit) {
-                    try {
-                        contentSpecProvider.deleteContentSpec(contentSpec.getId());
-                    } catch (Exception e1) {
-                        log.error("Unable to clean up the Content Specification from the database.", e);
-                    }
-                }
-                if (topics.isInitialised()) topics.rollbackPool();
-            }
-            log.debug("", e);
-            return false;
-        }
-        return true;
     }
 
     /**
