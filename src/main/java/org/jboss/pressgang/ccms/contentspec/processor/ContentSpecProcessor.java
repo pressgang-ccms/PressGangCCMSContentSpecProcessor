@@ -818,6 +818,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Get the providers
         final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
         final PropertyTagProvider propertyTagProvider = providerFactory.getProvider(PropertyTagProvider.class);
+        final TagProvider tagProvider = providerFactory.getProvider(TagProvider.class);
 
         // Create the temporary entity to store changes in and load the real entity if it exists.
         ContentSpecWrapper contentSpecEntity = null;
@@ -868,6 +869,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
         contentSpec.setId(contentSpecEntity.getId());
 
+        // Add any global book tags
+        mergeGlobalBookTags(contentSpecEntity, contentSpec.getTags(), tagProvider);
+
         // Get the list of transformable child nodes for processing
         final List<Node> nodes = getTransformableNodes(contentSpec.getNodes());
         nodes.addAll(getTransformableNodes(contentSpec.getBaseLevel().getChildNodes()));
@@ -904,6 +908,57 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         mergeTopicRelationships(nodeMapping, providerFactory);
 
         contentSpecProvider.updateContentSpec(contentSpecEntity, logMessage);
+    }
+
+    /**
+     * Merge a Content Spec entities global book tags with the tags defined in the processed content spec.
+     *
+     * @param contentSpecEntity The content spec entity to merge with.
+     * @param tags              The processed content spec tags.
+     * @param tagProvider
+     */
+    protected void mergeGlobalBookTags(final ContentSpecWrapper contentSpecEntity, final List<String> tags, final TagProvider tagProvider) {
+        final CollectionWrapper<TagWrapper> tagsCollection = contentSpecEntity.getBookTags() == null ? tagProvider.newTagCollection() :
+                contentSpecEntity.getBookTags();
+
+        // Check to make sure we have something to process
+        if (tags.isEmpty() && tagsCollection.isEmpty()) return;
+
+        final List<TagWrapper> existingTags = new ArrayList<TagWrapper>(tagsCollection.getItems());
+
+        // Add any new book tags
+        for (final String tagName : tags) {
+            final TagWrapper existingTag = findExistingBookTag(tagName, existingTags);
+            if (existingTag == null) {
+                LOG.debug("Adding global book tag {}", tagName);
+                final TagWrapper tag = tagProvider.getTagByName(tagName);
+                tagsCollection.addNewItem(tag);
+            }
+        }
+
+        // Remove any existing book tags that are no longer valid
+        if (!existingTags.isEmpty()) {
+            for (final TagWrapper relatedNode : existingTags) {
+                LOG.debug("Removing global book tag {}", relatedNode.getName());
+                tagsCollection.remove(relatedNode);
+                tagsCollection.addRemoveItem(relatedNode);
+            }
+        }
+
+        contentSpecEntity.setBookTags(tagsCollection);
+    }
+
+    protected TagWrapper findExistingBookTag(final String tagName, final List<TagWrapper> existingTags) {
+        if (existingTags != null) {
+            // Loop over the current nodes and see if any match
+            for (final TagWrapper tag : existingTags) {
+                if (tagName.equals(tag.getName())) {
+                    return tag;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -1386,10 +1441,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     protected void mergeTopicRelationship(final Map<SpecNode, CSNodeWrapper> nodeMapping, final SpecTopic specTopic,
             final CSNodeWrapper topicEntity, final CSNodeProvider nodeProvider) {
-        final UpdateableCollectionWrapper<CSRelatedNodeWrapper> relatedToNodes = topicEntity.getRelatedToNodes() == null ?
-                nodeProvider.newCSRelatedNodeCollection() : topicEntity.getRelatedToNodes();
-        final List<CSRelatedNodeWrapper> existingRelationships = new ArrayList<CSRelatedNodeWrapper>(
-                topicEntity.getRelatedToNodes().getItems());
+        final UpdateableCollectionWrapper<CSRelatedNodeWrapper> relatedToNodes = topicEntity.getRelatedToNodes() == null ? nodeProvider
+                .newCSRelatedNodeCollection() : topicEntity.getRelatedToNodes();
+        final List<CSRelatedNodeWrapper> existingRelationships = new ArrayList<CSRelatedNodeWrapper>(relatedToNodes.getItems());
 
         LOG.debug("Processing relationships for topic: {}", topicEntity.getEntityId());
 
@@ -1446,7 +1500,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // Remove any existing relationships that are no longer valid
-        if (existingRelationships != null) {
+        if (!existingRelationships.isEmpty()) {
             for (final CSRelatedNodeWrapper relatedNode : existingRelationships) {
                 LOG.debug("Removing relationship {}", relatedNode.getRelationshipId());
                 relatedToNodes.remove(relatedNode);
@@ -1455,8 +1509,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // Check if anything was changed, if so then set the changes
-        if (!relatedToNodes.getAddItems().isEmpty() || !relatedToNodes.getUpdateItems().isEmpty() || !relatedToNodes
-                .getRemoveItems().isEmpty()) {
+        if (!relatedToNodes.getAddItems().isEmpty() || !relatedToNodes.getUpdateItems().isEmpty() || !relatedToNodes.getRemoveItems()
+                .isEmpty()) {
             topicEntity.setRelatedToNodes(relatedToNodes);
 
             // Make sure the node is in the updated state
@@ -1488,25 +1542,22 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     protected CSRelatedNodeWrapper findExistingRelatedNode(final Relationship relationship,
             final List<CSRelatedNodeWrapper> topicRelatedNodes) {
-        CSRelatedNodeWrapper foundRelatedNode = null;
         if (topicRelatedNodes != null) {
             // Loop over the current nodes and see if any match
             for (final CSRelatedNodeWrapper relatedNode : topicRelatedNodes) {
                 if (relationship instanceof TargetRelationship) {
                     if (doesRelationshipMatch((TargetRelationship) relationship, relatedNode)) {
-                        foundRelatedNode = relatedNode;
-                        break;
+                        return relatedNode;
                     }
                 } else {
                     if (doesRelationshipMatch((TopicRelationship) relationship, relatedNode)) {
-                        foundRelatedNode = relatedNode;
-                        break;
+                        return relatedNode;
                     }
                 }
             }
         }
 
-        return foundRelatedNode;
+        return null;
     }
 
     /**
