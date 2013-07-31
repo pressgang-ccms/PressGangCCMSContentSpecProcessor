@@ -22,7 +22,6 @@
     <properties>
         <pressgang.ccms.version>1.1-SNAPSHOT</pressgang.ccms.version>
         <slf4j.version>1.6.4</slf4j.version>
-        <jsoup.version>1.7.2</jsoup.version>
         <ipsedixit.version>1.0.2</ipsedixit.version>
         <!-- Can't move to Mockito 1.9.5 and PowerMock 1.5 yet due to bug -->
         <mockito.version>1.9.0</mockito.version>
@@ -84,13 +83,6 @@
             <groupId>org.jboss.pressgang.ccms</groupId>
             <artifactId>pressgang-ccms-contentspec</artifactId>
             <version>${pressgang.ccms.version}</version>
-        </dependency>
-
-        <!-- HTML Parser -->
-        <dependency>
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
-            <version>${jsoup.version}</version>
         </dependency>
 
         <!-- Logging Libraries -->

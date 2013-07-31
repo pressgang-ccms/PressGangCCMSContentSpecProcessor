@@ -22,8 +22,12 @@ import org.jboss.pressgang.ccms.wrapper.TopicSourceURLWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.CollectionWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.UpdateableCollectionWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProcessorUtilities {
+    private static final Logger LOG = LoggerFactory.getLogger(ProcessorUtilities.class);
+
     private static final Pattern LEFT_SQUARE_BRACKET_PATTERN = Pattern.compile("\\\\\\[");
     private static final Pattern RIGHT_SQUARE_BRACKET_PATTERN = Pattern.compile("\\\\\\]");
     private static final Pattern LEFT_BRACKET_PATTERN = Pattern.compile("\\\\\\(");
@@ -129,6 +133,8 @@ public class ProcessorUtilities {
         int clonedId = Integer.parseInt(specTopic.getId().substring(1));
         final TopicWrapper originalTopic = topicProvider.getTopic(clonedId, null);
         final TopicWrapper cloneTopic = topicProvider.newTopic();
+
+        LOG.debug("Cloning existing topic " + originalTopic.getId());
 
         // Set the ID to null so a new ID will be created
         cloneTopic.setId(null);

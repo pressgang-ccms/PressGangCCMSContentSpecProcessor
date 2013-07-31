@@ -470,10 +470,8 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         // and the urls exist in the new state in the collection
         assertTrue(topicSourceURLCollection.getAddItems().contains(urlWrapper));
         assertTrue(topicSourceURLCollection.getAddItems().contains(urlWrapper2));
-        // check that a title and url was set for each url
-        verify(urlWrapper, times(1)).setTitle(anyString());
+        // check that a url was set for each url
         verify(urlWrapper, times(1)).setUrl(eq(url1));
-        verify(urlWrapper2, times(1)).setTitle(anyString());
         verify(urlWrapper2, times(1)).setUrl(eq(url2));
         // and only new source urls were set, as clones shouldn't have existing tags
         assertThat(topicSourceURLCollection.getRemoveItems().size(), is(0));

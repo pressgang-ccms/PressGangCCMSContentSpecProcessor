@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.log4j.Logger;
 import org.jboss.pressgang.ccms.contentspec.Comment;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
@@ -53,8 +52,8 @@ import org.jboss.pressgang.ccms.wrapper.TopicSourceURLWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.CollectionWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.UpdateableCollectionWrapper;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A class to fully process a Content Specification. It first parses the data using a ContentSpecParser,
@@ -65,7 +64,7 @@ import org.jsoup.nodes.Document;
  */
 @SuppressWarnings("rawtypes")
 public class ContentSpecProcessor implements ShutdownAbleApp {
-    private final Logger LOG = Logger.getLogger(ContentSpecProcessor.class.getPackage().getName() + ".CustomContentSpecProcessor");
+    private final Logger LOG = LoggerFactory.getLogger(ContentSpecProcessor.class.getPackage().getName() + ".CustomContentSpecProcessor");
 
     private static List<String> IGNORE_META_DATA = Arrays.asList(CSConstants.CHECKSUM_TITLE, CSConstants.ID_TITLE);
 
@@ -288,7 +287,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             // Save the content spec
             mergeAndSaveContentSpec(contentSpec, providerFactory, !edit, username, logMessage);
         } catch (ProcessingException e) {
-            LOG.debug(e);
+            LOG.debug("", e);
             if (providerFactory.isRollbackSupported()) {
                 providerFactory.rollback();
             } else {
@@ -334,6 +333,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     protected TopicWrapper createTopicEntity(final DataProviderFactory providerFactory,
             final SpecTopic specTopic) throws ProcessingException {
+        LOG.debug("Processing topic: {}", specTopic.getText());
+
         // Duplicates reference another new or cloned topic and should not have a different new/updated underlying topic
         if (specTopic.isTopicAClonedDuplicateTopic() || specTopic.isTopicADuplicateTopic()) return null;
 
@@ -425,6 +426,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return
      */
     private TopicWrapper getTopicForNewSpecTopic(final DataProviderFactory providerFactory, final SpecTopic specTopic) {
+        LOG.debug("Creating a new topic");
+
         final TopicProvider topicProvider = providerFactory.getProvider(TopicProvider.class);
         final TagProvider tagProvider = providerFactory.getProvider(TagProvider.class);
         final PropertyTagProvider propertyTagProvider = providerFactory.getProvider(PropertyTagProvider.class);
@@ -480,6 +483,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         // Get the current existing topic
         final TopicWrapper topic = topicProvider.getTopic(specTopic.getDBId(), null);
+        LOG.debug("Updating existing topic {}", topic.getId());
 
         // Update the CSP Property tag
         final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties;
@@ -526,6 +530,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if anything in the topic entity was changed, otherwise false.
      */
     protected boolean processTopicTags(final TagProvider tagProvider, final SpecTopic specTopic, final TopicWrapper topic) {
+        LOG.debug("Processing topic tags");
         boolean changed = false;
 
         // Get the tags for the topic
@@ -707,6 +712,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if anything in the topic entity was changed, otherwise false.
      */
     protected void processAssignedWriter(final TagProvider tagProvider, final SpecTopic specTopic, final TopicWrapper topic) {
+        LOG.debug("Processing assigned writer");
+
         // See if a new tag collection needs to be created
         if (topic.getTags() == null) {
             topic.setTags(tagProvider.newTagCollection());
@@ -730,6 +737,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     protected boolean processTopicSourceUrls(final TopicSourceURLProvider topicSourceURLProvider, final SpecTopic specTopic,
             final TopicWrapper topic) {
+        LOG.debug("Processing topic source urls");
+
         boolean changed = false;
         // Save the new Source Urls
         final List<String> urls = specTopic.getSourceUrls(true);
@@ -743,14 +752,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             for (final String url : urls) {
                 final TopicSourceURLWrapper sourceUrl = topicSourceURLProvider.newTopicSourceURL(topic);
                 sourceUrl.setUrl(url);
-
-                // Get the Source URL title from the URL
-                try {
-                    final Document doc = Jsoup.connect(url).get();
-                    sourceUrl.setTitle(doc.title());
-                } catch (Exception e) {
-                    // Do nothing if the HTML couldn't be parsed successfully.
-                }
 
                 sourceUrls.addNewItem(sourceUrl);
             }
@@ -878,7 +879,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Set the nodes that are no longer used for removal
         if (!contentSpecNodes.isEmpty()) {
             for (final CSNodeWrapper childNode : contentSpecNodes) {
-                LOG.debug("Removing entity " + childNode.getId());
+                LOG.debug("Removing entity {}", childNode.getId());
                 final UpdateableCollectionWrapper<CSNodeWrapper> children;
                 if (childNode.getParent() == null) {
                     children = childNode.getContentSpec().getChildren();
@@ -985,7 +986,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 continue;
             }
 
-            LOG.debug("Processing: " + childNode.getText());
+            LOG.debug("Processing: {}", childNode.getText());
 
             // Find the Entity Node that matches the Content Spec node, if one exists
             CSNodeWrapper foundNodeEntity = findExistingNode(parentNode, childNode, contentSpecNodes);
@@ -1019,7 +1020,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 foundNodeEntity = newCSNodeEntity;
                 newNode = true;
             } else {
-                LOG.debug("Found existing node " + foundNodeEntity.getId());
+                LOG.debug("Found existing node {}", foundNodeEntity.getId());
 
                 // If the node was found remove it from the list of content spec nodes, so it can no longer be matched
                 contentSpecNodes.remove(foundNodeEntity);
@@ -1053,7 +1054,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
                 // Check if the parent node is different, if so then set it as moved
                 if (!doesParentMatch(parentNode, foundNodeEntity.getParent())) {
-                    LOG.debug("Setting entity " + foundNodeEntity.getId() + " as moved");
+                    LOG.debug("Setting entity {} as moved", foundNodeEntity.getId());
                     changed = true;
                 }
             }
@@ -1390,7 +1391,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final List<CSRelatedNodeWrapper> existingRelationships = new ArrayList<CSRelatedNodeWrapper>(
                 topicEntity.getRelatedToNodes().getItems());
 
-        LOG.debug("Processing relationships for topic: " + topicEntity.getEntityId());
+        LOG.debug("Processing relationships for topic: {}", topicEntity.getEntityId());
 
         // Check to make sure that the spec topic has any relationships
         if (!specTopic.getRelationships().isEmpty()) {
@@ -1400,13 +1401,13 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 // All process relationships should not be stored
                 if (relationship instanceof ProcessRelationship) continue;
 
-                LOG.debug("Processing Relationship: " + relationship.getSecondaryRelationshipTopicId());
+                LOG.debug("Processing Relationship: {}", relationship.getSecondaryRelationshipTopicId());
 
                 // See if the related node already exists
                 CSRelatedNodeWrapper foundRelatedNode = findExistingRelatedNode(relationship, existingRelationships);
 
                 if (foundRelatedNode != null) {
-                    LOG.debug("Found existing related node " + foundRelatedNode.getRelationshipId());
+                    LOG.debug("Found existing related node {}", foundRelatedNode.getRelationshipId());
                     // Remove the related node from the list of existing nodes
                     existingRelationships.remove(foundRelatedNode);
 
@@ -1447,7 +1448,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Remove any existing relationships that are no longer valid
         if (existingRelationships != null) {
             for (final CSRelatedNodeWrapper relatedNode : existingRelationships) {
-                LOG.debug("Removing relationship " + relatedNode.getRelationshipId());
+                LOG.debug("Removing relationship {}", relatedNode.getRelationshipId());
                 relatedToNodes.remove(relatedNode);
                 relatedToNodes.addRemoveItem(relatedNode);
             }

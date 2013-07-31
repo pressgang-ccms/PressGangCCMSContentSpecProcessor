@@ -160,7 +160,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         // Setup the basic details
         setupBaseTopicMocks();
         // and the tag provider won't return a type
-        when(tagProvider.getTagsByName(eq(type))).thenReturn(null);
+        when(tagProvider.getTagByName(eq(type))).thenReturn(null);
 
         TopicWrapper topic = null;
         try {
