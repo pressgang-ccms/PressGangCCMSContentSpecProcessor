@@ -1178,7 +1178,8 @@ public class ContentSpecValidator<T extends RESTBaseTopicV1<T, ?, ?>> implements
             }
         }
 
-        if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.LEVEL) {
+        if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.FEEDBACK || specTopic.getTopicType() ==
+                TopicType.LEVEL) {
             // Check to make sure the topic is a normal topic and not a special case
             if (ComponentBaseTopicV1.hasTag(topic, CSConstants.LEGAL_NOTICE_TAG_ID) || ComponentBaseTopicV1.hasTag(topic,
                     CSConstants.REVISION_HISTORY_TAG_ID)) {
