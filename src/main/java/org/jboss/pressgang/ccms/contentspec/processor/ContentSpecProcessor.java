@@ -918,6 +918,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param tagProvider
      */
     protected void mergeGlobalOptions(final ContentSpecWrapper contentSpecEntity, final ContentSpec contentSpec, final TagProvider tagProvider) {
+        // make sure the condition matches
+        contentSpecEntity.setCondition(contentSpec.getBaseLevel().getConditionStatement());
+
         final List<String> tags = contentSpec.getTags();
         final CollectionWrapper<TagWrapper> tagsCollection = contentSpecEntity.getBookTags() == null ? tagProvider.newTagCollection() :
                 contentSpecEntity.getBookTags();
@@ -947,9 +950,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         contentSpecEntity.setBookTags(tagsCollection);
-
-        // make sure the condition matches
-        contentSpecEntity.setCondition(contentSpec.getBaseLevel().getConditionStatement());
     }
 
     protected TagWrapper findExistingBookTag(final String tagName, final List<TagWrapper> existingTags) {
