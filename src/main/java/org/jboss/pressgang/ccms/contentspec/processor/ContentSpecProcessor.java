@@ -870,7 +870,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         contentSpec.setId(contentSpecEntity.getId());
 
         // Add any global book tags
-        mergeGlobalBookTags(contentSpecEntity, contentSpec.getTags(), tagProvider);
+        mergeGlobalOptions(contentSpecEntity, contentSpec, tagProvider);
 
         // Get the list of transformable child nodes for processing
         final List<Node> nodes = getTransformableNodes(contentSpec.getNodes());
@@ -911,13 +911,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     }
 
     /**
-     * Merge a Content Spec entities global book tags with the tags defined in the processed content spec.
+     * Merge a Content Spec entities global options (book tags & condition) with the options defined in the processed content spec.
      *
      * @param contentSpecEntity The content spec entity to merge with.
-     * @param tags              The processed content spec tags.
+     * @param contentSpec The generic content spec object to merge from.
      * @param tagProvider
      */
-    protected void mergeGlobalBookTags(final ContentSpecWrapper contentSpecEntity, final List<String> tags, final TagProvider tagProvider) {
+    protected void mergeGlobalOptions(final ContentSpecWrapper contentSpecEntity, final ContentSpec contentSpec, final TagProvider tagProvider) {
+        final List<String> tags = contentSpec.getTags();
         final CollectionWrapper<TagWrapper> tagsCollection = contentSpecEntity.getBookTags() == null ? tagProvider.newTagCollection() :
                 contentSpecEntity.getBookTags();
 
@@ -946,6 +947,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         contentSpecEntity.setBookTags(tagsCollection);
+
+        // make sure the condition matches
+        contentSpecEntity.setCondition(contentSpec.getBaseLevel().getConditionStatement());
     }
 
     protected TagWrapper findExistingBookTag(final String tagName, final List<TagWrapper> existingTags) {
