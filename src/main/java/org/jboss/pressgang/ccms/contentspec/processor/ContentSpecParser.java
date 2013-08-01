@@ -745,7 +745,7 @@ public class ContentSpecParser {
         try {
             keyValue = ProcessorUtilities.getAndValidateKeyValuePair(line);
         } catch (InvalidKeyValueException e) {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineNumber, line));
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, lineNumber, line));
         }
 
         final String key = keyValue.getFirst();
@@ -845,8 +845,12 @@ public class ContentSpecParser {
             final SpecTopic specTopic = parseSpecTopicMetaData(value, key, lineNumber);
             contentSpec.appendKeyValueNode(new KeyValueNode<SpecTopic>(key, specTopic));
         } else {
-            final KeyValueNode<String> node = new KeyValueNode<String>(key, value);
-            contentSpec.appendKeyValueNode(node);
+            try {
+                final KeyValueNode<String> node = new KeyValueNode<String>(key, value);
+                contentSpec.appendKeyValueNode(node);
+            } catch (NumberFormatException e) {
+                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, lineNumber, line));
+            }
         }
     }
 

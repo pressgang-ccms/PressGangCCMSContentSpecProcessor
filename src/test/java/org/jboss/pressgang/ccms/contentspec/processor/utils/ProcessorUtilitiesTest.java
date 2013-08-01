@@ -37,9 +37,9 @@ public class ProcessorUtilitiesTest extends BaseUnitTest {
     }
 
     @Test
-    public void shouldThrowExceptionForKeyWithNoValue() {
+    public void shouldThrowExceptionForKeyOnly() {
         // Given a key value pair string with no value
-        final String metadata = key + " = ";
+        final String metadata = key;
 
         // When
         try {

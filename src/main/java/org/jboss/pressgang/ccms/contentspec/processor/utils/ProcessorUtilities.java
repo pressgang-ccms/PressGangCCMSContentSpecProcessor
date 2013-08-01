@@ -111,6 +111,8 @@ public class ProcessorUtilities {
         tempInput = CollectionUtilities.trimStringArray(tempInput);
         if (tempInput.length >= 2) {
             return new Pair<String, String>(tempInput[0], replaceEscapeChars(tempInput[1]));
+        } else if (tempInput.length >= 1 && keyValueString.contains("=")) {
+            return new Pair<String, String>(tempInput[0], "");
         } else {
             throw new InvalidKeyValueException();
         }

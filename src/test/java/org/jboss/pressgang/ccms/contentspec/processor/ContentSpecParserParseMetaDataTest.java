@@ -77,7 +77,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         } catch (ParsingException e) {
             // And it contains an error about the attribute format
             assertThat(e.getMessage(), containsString("Invalid Content Specification!"));
-            assertThat(e.getMessage(), containsString("Incorrect attribute format."));
+            assertThat(e.getMessage(), containsString("Incorrect metadata format."));
             // And the error message contains the line number
             assertThat(e.getMessage(), containsString(lineNumber.toString()));
         }

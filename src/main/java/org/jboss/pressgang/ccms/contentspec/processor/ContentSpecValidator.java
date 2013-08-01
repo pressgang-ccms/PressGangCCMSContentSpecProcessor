@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Node;
 import org.jboss.pressgang.ccms.contentspec.Process;
@@ -216,6 +217,25 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
         if (isNullOrEmpty(contentSpec.getAbstract())) {
             log.warn(ProcessorConstants.WARN_CS_NO_ABSTRACT_MSG);
+        }
+
+        // Check to make sure all key value nodes a valid (that is they have a key and value specified
+        for (final Node node : contentSpec.getChildNodes()) {
+            if (node instanceof KeyValueNode) {
+                final KeyValueNode keyValueNode = (KeyValueNode) node;
+                if (isNullOrEmpty(keyValueNode.getKey())) {
+                    valid = false;
+                    log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, keyValueNode.getLineNumber(), keyValueNode.getText()));
+                } else {
+                    final Object value = keyValueNode.getValue();
+                    if (value instanceof String && isNullOrEmpty((String) value)) {
+                        valid = false;
+                        log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, keyValueNode.getLineNumber(), keyValueNode.getText()));
+                    } else if (value == null) {
+                        log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, keyValueNode.getLineNumber(), keyValueNode.getText()));
+                    }
+                }
+            }
         }
 
         // Check that each level is valid
