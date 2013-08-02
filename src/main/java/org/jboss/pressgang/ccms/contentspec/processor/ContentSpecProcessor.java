@@ -921,35 +921,36 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // make sure the condition matches
         contentSpecEntity.setCondition(contentSpec.getBaseLevel().getConditionStatement());
 
+        // Merge the global tags
         final List<String> tags = contentSpec.getTags();
         final CollectionWrapper<TagWrapper> tagsCollection = contentSpecEntity.getBookTags() == null ? tagProvider.newTagCollection() :
                 contentSpecEntity.getBookTags();
 
         // Check to make sure we have something to process
-        if (tags.isEmpty() && tagsCollection.isEmpty()) return;
+        if (!(tags.isEmpty() && tagsCollection.isEmpty())) {
+            final List<TagWrapper> existingTags = new ArrayList<TagWrapper>(tagsCollection.getItems());
 
-        final List<TagWrapper> existingTags = new ArrayList<TagWrapper>(tagsCollection.getItems());
-
-        // Add any new book tags
-        for (final String tagName : tags) {
-            final TagWrapper existingTag = findExistingBookTag(tagName, existingTags);
-            if (existingTag == null) {
-                LOG.debug("Adding global book tag {}", tagName);
-                final TagWrapper tag = tagProvider.getTagByName(tagName);
-                tagsCollection.addNewItem(tag);
+            // Add any new book tags
+            for (final String tagName : tags) {
+                final TagWrapper existingTag = findExistingBookTag(tagName, existingTags);
+                if (existingTag == null) {
+                    LOG.debug("Adding global book tag {}", tagName);
+                    final TagWrapper tag = tagProvider.getTagByName(tagName);
+                    tagsCollection.addNewItem(tag);
+                }
             }
-        }
 
-        // Remove any existing book tags that are no longer valid
-        if (!existingTags.isEmpty()) {
-            for (final TagWrapper relatedNode : existingTags) {
-                LOG.debug("Removing global book tag {}", relatedNode.getName());
-                tagsCollection.remove(relatedNode);
-                tagsCollection.addRemoveItem(relatedNode);
+            // Remove any existing book tags that are no longer valid
+            if (!existingTags.isEmpty()) {
+                for (final TagWrapper relatedNode : existingTags) {
+                    LOG.debug("Removing global book tag {}", relatedNode.getName());
+                    tagsCollection.remove(relatedNode);
+                    tagsCollection.addRemoveItem(relatedNode);
+                }
             }
-        }
 
-        contentSpecEntity.setBookTags(tagsCollection);
+            contentSpecEntity.setBookTags(tagsCollection);
+        }
     }
 
     protected TagWrapper findExistingBookTag(final String tagName, final List<TagWrapper> existingTags) {
