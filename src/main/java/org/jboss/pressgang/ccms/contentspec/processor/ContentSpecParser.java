@@ -400,14 +400,17 @@ public class ContentSpecParser {
         lineCounter++;
         final String[] lineVars = CollectionUtilities.trimStringArray(StringUtilities.split(input, '='));
 
-        if (lineVars.length >= 2) {
+        if (lineVars.length >= 1) {
             if (lineVars[0].equalsIgnoreCase(CSConstants.TITLE_TITLE)) {
                 contentSpec.setTitle(ProcessorUtilities.replaceEscapeChars(lineVars[1]));
 
                 // Process the rest of the spec now that we know the start is correct
                 return processSpecContents(contentSpec, processProcesses);
-            } else {
+            } else if (lineVars.equals(CSConstants.CHECKSUM_TITLE)) {
                 log.error(ProcessorConstants.ERROR_INCORRECT_NEW_MODE_MSG);
+                return false;
+            } else {
+                log.error(ProcessorConstants.ERROR_INCORRECT_FILE_FORMAT_MSG);
                 return false;
             }
         } else {
