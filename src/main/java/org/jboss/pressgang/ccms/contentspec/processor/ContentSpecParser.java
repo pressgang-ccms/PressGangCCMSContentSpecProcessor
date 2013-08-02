@@ -484,15 +484,17 @@ public class ContentSpecParser {
      * @return True if the content spec was processed successfully otherwise false.
      */
     protected boolean processEitherSpec(final ContentSpec contentSpec, final boolean processProcesses) {
-        final String[] lineVars = CollectionUtilities.trimStringArray(StringUtilities.split(getLines().peek(), '='));
-        if (lineVars.length >= 2) {
-            if (lineVars[0].equals(CSConstants.CHECKSUM_TITLE)) {
+        try {
+            final Pair<String, String> keyValuePair = ProcessorUtilities.getAndValidateKeyValuePair(getLines().peek());
+            final String key = keyValuePair.getFirst();
+
+            if (key.equalsIgnoreCase(CSConstants.CHECKSUM_TITLE)) {
                 return processEditedSpec(contentSpec, processProcesses);
             } else {
                 return processNewSpec(contentSpec, processProcesses);
             }
-        } else {
-            log.error(ProcessorConstants.ERROR_INCORRECT_FILE_FORMAT_MSG);
+        } catch (InvalidKeyValueException e) {
+            log.error(ProcessorConstants.ERROR_INCORRECT_FILE_FORMAT_MSG, e);
             return false;
         }
     }
