@@ -169,8 +169,9 @@ public class ProcessorConstants {
             "Edited Content Specification.";
     public static final String ERROR_INVALID_CS_ID_MSG = "The Content Specification ID doesn't exist in the database." + CSLINE_MSG;
     public static final String ERROR_INVALID_CS_ID_FORMAT_MSG = "The Content Specification ID is not valid." + CSLINE_MSG;
-    public static final String ERROR_INCORRECT_FILE_FORMAT_MSG = INVALID_CS + " Incorrect file format. A Content Specification must start" +
-            " with either a Title or a CHECKSUM and ID.";
+    public static final String ERROR_INCORRECT_FILE_FORMAT_MSG = INVALID_CS + " Incorrect file format, " +
+            "a Content Specification must start with either a " + CSConstants.TITLE_TITLE + " or a " + CSConstants.CHECKSUM_TITLE +
+            " and " + CSConstants.ID_TITLE + ".";
     public static final String ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG = LINE + "Duplicated bracket types found." + CSLINE_MSG;
 
     public static final String INFO_VALID_CS_MSG = "The Content Specification is valid.";
