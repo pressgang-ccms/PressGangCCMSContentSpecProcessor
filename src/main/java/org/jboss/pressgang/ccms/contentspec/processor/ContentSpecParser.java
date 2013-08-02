@@ -398,23 +398,25 @@ public class ContentSpecParser {
         final String input = getLines().poll();
 
         lineCounter++;
-        final String[] lineVars = CollectionUtilities.trimStringArray(StringUtilities.split(input, '='));
+        try {
+            final Pair<String, String> keyValuePair = ProcessorUtilities.getAndValidateKeyValuePair(input);
+            final String key = keyValuePair.getFirst();
+            final String value = keyValuePair.getSecond();
 
-        if (lineVars.length >= 1) {
-            if (lineVars[0].equalsIgnoreCase(CSConstants.TITLE_TITLE)) {
-                contentSpec.setTitle(ProcessorUtilities.replaceEscapeChars(lineVars[1]));
+            if (key.equalsIgnoreCase(CSConstants.TITLE_TITLE)) {
+                contentSpec.setTitle(value);
 
                 // Process the rest of the spec now that we know the start is correct
                 return processSpecContents(contentSpec, processProcesses);
-            } else if (lineVars.equals(CSConstants.CHECKSUM_TITLE)) {
+            } else if (key.equalsIgnoreCase(CSConstants.CHECKSUM_TITLE)) {
                 log.error(ProcessorConstants.ERROR_INCORRECT_NEW_MODE_MSG);
                 return false;
             } else {
                 log.error(ProcessorConstants.ERROR_INCORRECT_FILE_FORMAT_MSG);
                 return false;
             }
-        } else {
-            log.error(ProcessorConstants.ERROR_INCORRECT_FILE_FORMAT_MSG);
+        } catch (InvalidKeyValueException e) {
+            log.error(ProcessorConstants.ERROR_INCORRECT_FILE_FORMAT_MSG, e);
             return false;
         }
     }
@@ -430,36 +432,34 @@ public class ContentSpecParser {
         final String input = getLines().poll();
 
         lineCounter++;
-        final String[] lineVars = CollectionUtilities.trimStringArray(StringUtilities.split(input, '='));
+        try {
+            final Pair<String, String> keyValuePair = ProcessorUtilities.getAndValidateKeyValuePair(input);
+            final String key = keyValuePair.getFirst();
+            final String value = keyValuePair.getSecond();
 
-        if (lineVars.length >= 2) {
-            if (lineVars[0].equals(CSConstants.CHECKSUM_TITLE)) {
-                String checksum = lineVars[1];
-                contentSpec.setChecksum(checksum);
+            if (key.equalsIgnoreCase(CSConstants.CHECKSUM_TITLE)) {
+                contentSpec.setChecksum(value);
 
                 // Read in the Content Spec ID
-                final String specId = getLines().poll();
+                final String specIdLine = getLines().poll();
                 lineCounter++;
-                if (specId != null) {
-                    final String[] specIdVars = CollectionUtilities.trimStringArray(StringUtilities.split(specId, '='));
-                    if (specIdVars.length >= 2) {
-                        if (specIdVars[0].equalsIgnoreCase(CSConstants.ID_TITLE)) {
-                            int contentSpecId;
-                            try {
-                                contentSpecId = Integer.parseInt(specIdVars[1].trim());
-                            } catch (NumberFormatException e) {
-                                log.error(format(ProcessorConstants.ERROR_INVALID_CS_ID_FORMAT_MSG, specId.trim()));
-                                return false;
-                            }
-                            contentSpec.setId(contentSpecId);
-
-                            return processSpecContents(contentSpec, processProcesses);
-                        } else {
-                            log.error(ProcessorConstants.ERROR_CS_NO_CHECKSUM_MSG);
+                if (specIdLine != null) {
+                    final Pair<String, String> specIdPair = ProcessorUtilities.getAndValidateKeyValuePair(specIdLine);
+                    final String specIdKey = specIdPair.getFirst();
+                    final String specIdValue = specIdPair.getSecond();
+                    if (specIdKey.equalsIgnoreCase(CSConstants.ID_TITLE)) {
+                        int contentSpecId;
+                        try {
+                            contentSpecId = Integer.parseInt(specIdValue);
+                        } catch (NumberFormatException e) {
+                            log.error(format(ProcessorConstants.ERROR_INVALID_CS_ID_FORMAT_MSG, specIdLine.trim()));
                             return false;
                         }
+                        contentSpec.setId(contentSpecId);
+
+                        return processSpecContents(contentSpec, processProcesses);
                     } else {
-                        log.error(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, getLineCount(), specId.trim()));
+                        log.error(ProcessorConstants.ERROR_CS_NO_CHECKSUM_MSG);
                         return false;
                     }
                 } else {
@@ -470,8 +470,8 @@ public class ContentSpecParser {
                 log.error(ProcessorConstants.ERROR_INCORRECT_EDIT_MODE_MSG);
                 return false;
             }
-        } else {
-            log.error(ProcessorConstants.ERROR_INCORRECT_FILE_FORMAT_MSG);
+        } catch (InvalidKeyValueException e) {
+            log.error(ProcessorConstants.ERROR_INCORRECT_FILE_FORMAT_MSG, e);
             return false;
         }
     }
