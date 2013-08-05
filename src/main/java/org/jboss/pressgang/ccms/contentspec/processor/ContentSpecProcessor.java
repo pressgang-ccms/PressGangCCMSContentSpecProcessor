@@ -1270,7 +1270,19 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the two match, otherwise false.
      */
     protected boolean doesParentMatch(final CSNodeWrapper parent, final CSNodeWrapper entityParent) {
-        return (parent != null && parent.getId().equals(entityParent.getId())) || (parent == null && entityParent == null);
+        if (parent != null && entityParent != null) {
+            if (parent.getId() != null && parent.getId().equals(entityParent.getId())) {
+                return true;
+            } else if (parent.getId() == null && entityParent.getId() == null && parent == entityParent) {
+                return true;
+            } else {
+                return false;
+            }
+        } else if (parent == null && entityParent == null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
