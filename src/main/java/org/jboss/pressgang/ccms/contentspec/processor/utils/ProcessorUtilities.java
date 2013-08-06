@@ -191,30 +191,16 @@ public class ProcessorUtilities {
             }
         }
 
+        // Copy all the existing property tags
         final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> newProperties = propertyTagProvider.newPropertyTagInTopicCollection(
                 cloneTopic);
         final List<PropertyTagInTopicWrapper> propertyItems = originalTopic.getProperties().getItems();
-        boolean cspPropertyFound = false;
         for (final PropertyTagInTopicWrapper property : propertyItems) {
             final PropertyTagInTopicWrapper clonedProperty = cloneTopicProperty(cloneTopic, propertyTagProvider, property);
-            // Ignore the CSP Property ID as we will add a new one
-            if (property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
-                cspPropertyFound = true;
-
-                clonedProperty.setValue(specTopic.getUniqueId());
-                newProperties.addNewItem(clonedProperty);
-            } else if (property.getId().equals(CSConstants.ADDED_BY_PROPERTY_TAG_ID)) {
-                // Ignore the added by property as we will add it later
-            } else {
+            // Ignore the CSP and Added By Property ID as we will add a new one later
+            if (!(property.getId().equals(CSConstants.CSP_PROPERTY_ID) || property.getId().equals(CSConstants.ADDED_BY_PROPERTY_TAG_ID))) {
                 newProperties.addNewItem(clonedProperty);
             }
-        }
-
-        if (!cspPropertyFound) {
-            final PropertyTagWrapper propertyTag = propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID);
-            final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic(propertyTag, cloneTopic);
-            cspProperty.setValue(specTopic.getUniqueId());
-            newProperties.addNewItem(cspProperty);
         }
 
         // Add the added by property tag

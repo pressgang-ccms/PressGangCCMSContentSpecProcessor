@@ -64,7 +64,7 @@ public class ProcessorConstants {
     public static final String SUCCESSFUL_PUSH_MSG = SUCCESSFUL_PUSH_ID_MSG + "\n" + SUCCESSFUL_PUSH_REV_MSG;
     public static final String ERROR_DATABASE_ERROR_MSG = "An error occurred when inserting into the database please try again.";
     public static final String ERROR_PROCESSING_ERROR_MSG = "An error occurred during processing please try again and if another failure " +
-            "occurs please file a bug.";
+            "occurs please log a bug.";
     public static final String WARN_EDIT_INFO_MSG = "Note: All descriptions, tags, source urls and writers will be ignored for existing "
             + "Topics.";
 

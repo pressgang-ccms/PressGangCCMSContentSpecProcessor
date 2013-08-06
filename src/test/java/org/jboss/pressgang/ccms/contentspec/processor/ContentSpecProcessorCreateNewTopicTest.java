@@ -11,6 +11,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -219,7 +220,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         // and the locale is set
         verify(topic, times(1)).setLocale(CommonConstants.DEFAULT_LOCALE);
         // and the topic had the properties set
-        verify(topic, times(1)).setProperties(eq(propertyTagCollection));
+        verify(topic, atLeast(1)).setProperties(eq(propertyTagCollection));
         // and the topic had the CSP property tag set
         verify(propertyTagCollection, times(1)).addNewItem(cspIdPropertyTagInTopic);
         verify(cspIdPropertyTagInTopic, times(1)).setValue("L-N");

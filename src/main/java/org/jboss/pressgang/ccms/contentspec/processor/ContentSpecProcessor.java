@@ -391,6 +391,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         if (changed) {
+            setCSPPropertyForTopic(topic, specTopic, providerFactory.getProvider(PropertyTagProvider.class));
+
             return topic;
         } else {
             return null;
@@ -453,14 +455,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         topic.setTags(tagProvider.newTagCollection());
         topic.getTags().addNewItem(tag);
 
-        // Create the unique ID for the property
-        topic.setProperties(propertyTagProvider.newPropertyTagInTopicCollection(topic));
-        final PropertyTagWrapper propertyTag = propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID);
-        final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic(propertyTag, topic);
-        cspProperty.setValue(specTopic.getUniqueId());
-        topic.getProperties().addNewItem(cspProperty);
-
         // Add the added by property tag
+        topic.setProperties(propertyTagProvider.newPropertyTagInTopicCollection(topic));
         final String assignedWriter = specTopic.getAssignedWriter(true);
         if (assignedWriter != null) {
             final PropertyTagWrapper addedByPropertyTag = propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
@@ -479,11 +475,17 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     private TopicWrapper getTopicForExistingSpecTopic(final DataProviderFactory providerFactory, final SpecTopic specTopic) {
         final TopicProvider topicProvider = providerFactory.getProvider(TopicProvider.class);
-        final PropertyTagProvider propertyTagProvider = providerFactory.getProvider(PropertyTagProvider.class);
 
         // Get the current existing topic
         final TopicWrapper topic = topicProvider.getTopic(specTopic.getDBId(), null);
         LOG.debug("Updating existing topic {}", topic.getId());
+
+        return topic;
+    }
+
+    protected void setCSPPropertyForTopic(final TopicWrapper topic, final SpecTopic specTopic,
+            final PropertyTagProvider propertyTagProvider) {
+        LOG.debug("Setting the CSP Property Tag for {}", topic.getId());
 
         // Update the CSP Property tag
         final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties;
@@ -517,8 +519,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         topic.setProperties(properties);
-
-        return topic;
     }
 
     /**
