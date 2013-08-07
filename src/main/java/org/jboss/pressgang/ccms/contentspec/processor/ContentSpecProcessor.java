@@ -1242,10 +1242,19 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     if (doesCommentMatch((Comment) childNode, nodeEntity, foundNodeEntity != null)) {
                         foundNodeEntity = nodeEntity;
                     }
+                } else if (childNode instanceof Level) {
+                    // Since levels might have other possible titles that are in the title threshold,
+                    // we need to keep looping to see if we can find something better
+                    if (doesLevelMatch((Level) childNode, nodeEntity, foundNodeEntity != null)) {
+                        foundNodeEntity = nodeEntity;
+                    }
+
+                    // stop looking if the parent matches otherwise keep looking to see if we can find a better match
+                    if (parent != null && foundNodeEntity != null && doesParentMatch(parent, foundNodeEntity.getParent())) {
+                        break;
+                    }
                 } else {
                     if (childNode instanceof SpecTopic && doesTopicMatch((SpecTopic) childNode, nodeEntity)) {
-                        foundNodeEntity = nodeEntity;
-                    } else if (childNode instanceof Level && doesLevelMatch((Level) childNode, nodeEntity)) {
                         foundNodeEntity = nodeEntity;
                     } else if (childNode instanceof KeyValueNode && doesMetaDataMatch((KeyValueNode<?>) childNode, nodeEntity)) {
                         foundNodeEntity = nodeEntity;
@@ -1637,9 +1646,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      *
      * @param level The ContentSpec level object.
      * @param node  The Content Spec Entity level.
+     * @param matchContent If the level title has to match exactly, otherwise it should match to a reasonable extent.
      * @return True if the level is determined to match otherwise false.
      */
-    protected boolean doesLevelMatch(final Level level, final CSNodeWrapper node) {
+    protected boolean doesLevelMatch(final Level level, final CSNodeWrapper node, boolean matchContent) {
         if (node.getNodeType().equals(CommonConstants.CS_NODE_COMMENT) || node.getNodeType().equals(CommonConstants.CS_NODE_TOPIC) ||
                 node.getNodeType().equals(CommonConstants.CS_NODE_INNER_TOPIC)) return false;
 
@@ -1655,7 +1665,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 return true;
             }
 
-            return StringUtilities.similarDamerauLevenshtein(level.getTitle(), node.getTitle()) >= ProcessorConstants.MIN_MATCH_SIMILARITY;
+            if (matchContent) {
+                return level.getTitle().equals(node.getTitle());
+            } else {
+                return StringUtilities.similarDamerauLevenshtein(level.getTitle(), node.getTitle()) >= ProcessorConstants.MIN_MATCH_SIMILARITY;
+            }
         }
     }
 
