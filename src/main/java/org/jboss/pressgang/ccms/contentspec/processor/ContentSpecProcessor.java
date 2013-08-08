@@ -886,7 +886,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 LOG.debug("Removing entity {}", childNode.getId());
                 final UpdateableCollectionWrapper<CSNodeWrapper> children;
                 if (childNode.getParent() == null) {
-                    children = childNode.getContentSpec().getChildren();
+                    children = contentSpecEntity.getChildren();
                 } else {
                     children = childNode.getParent().getChildren();
                 }
@@ -1249,8 +1249,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                         foundNodeEntity = nodeEntity;
                     }
 
-                    // stop looking if the parent matches otherwise keep looking to see if we can find a better match
-                    if (parent != null && foundNodeEntity != null && doesParentMatch(parent, foundNodeEntity.getParent())) {
+                    // stop looking if the parent and title matches otherwise keep looking to see if we can find a better match
+                    if (parent != null && foundNodeEntity != null && doesParentMatch(parent, foundNodeEntity.getParent())
+                            && foundNodeEntity.getTitle().equals(((Level) childNode).getTitle())) {
                         break;
                     }
                 } else {
