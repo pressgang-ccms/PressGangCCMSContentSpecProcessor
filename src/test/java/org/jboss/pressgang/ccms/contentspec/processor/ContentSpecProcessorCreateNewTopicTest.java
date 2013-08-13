@@ -54,7 +54,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
     @Mock PropertyTagInTopicWrapper addedByPropertyTagInTopic;
     @Mock CollectionWrapper<TagWrapper> tagCollection;
     @Mock UpdateableCollectionWrapper<PropertyTagInTopicWrapper> propertyTagCollection;
-    @Mock CollectionWrapper<TopicSourceURLWrapper> topicSourceURLCollection;
+    @Mock UpdateableCollectionWrapper<TopicSourceURLWrapper> topicSourceURLCollection;
     @Mock TagWrapper writerTag;
 
     @Test

@@ -120,6 +120,29 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
     }
 
     @Test
+    public void shouldAddGroupedConditionToNode() {
+        // Given a string that represents a global option to define the options
+        String options = "[condition = " + title + "[A-Z]]";
+        // and a content spec
+        final ContentSpec contentSpec = new ContentSpec();
+        // and the current level is the base content spec
+        parser.setCurrentLevel(contentSpec.getBaseLevel());
+
+        // When parsing the a line
+        Boolean result = null;
+        try {
+            result = parser.parseLine(contentSpec, options, lineNumber);
+        } catch (IndentationException e) {
+            fail("Indentation Exception should not have been thrown.");
+        }
+
+        // Then check that the content spec has the right data set
+        assertTrue(result);
+        assertThat(contentSpec.getBaseLevel().getConditionStatement(), is(title + "[A-Z]"));
+        assertThat(contentSpec.getNodes().size(), is(0));
+    }
+
+    @Test
     public void shouldAddWriterToNode() {
         // Given a string that represents a global option to define the options
         String options = "[Writer = " + title + "]";

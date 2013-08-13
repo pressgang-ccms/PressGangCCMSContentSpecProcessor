@@ -744,7 +744,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final List<String> urls = specTopic.getSourceUrls(true);
 
         if (urls != null && !urls.isEmpty()) {
-            final CollectionWrapper<TopicSourceURLWrapper> sourceUrls = topic.getSourceURLs() == null ? topicSourceURLProvider
+            final UpdateableCollectionWrapper<TopicSourceURLWrapper> sourceUrls = topic.getSourceURLs() == null ? topicSourceURLProvider
                     .newTopicSourceURLCollection(
                     topic) : topic.getSourceURLs();
 

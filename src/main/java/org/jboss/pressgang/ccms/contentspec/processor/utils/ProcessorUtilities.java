@@ -166,7 +166,8 @@ public class ProcessorUtilities {
 
         // SOURCE URLS
         if (originalTopic.getSourceURLs() != null && !originalTopic.getSourceURLs().isEmpty()) {
-            final CollectionWrapper<TopicSourceURLWrapper> cloneSourceUrls = topicSourceUrlProvider.newTopicSourceURLCollection(cloneTopic);
+            final UpdateableCollectionWrapper<TopicSourceURLWrapper> cloneSourceUrls = topicSourceUrlProvider.newTopicSourceURLCollection
+                    (cloneTopic);
             for (final TopicSourceURLWrapper sourceUrl : originalTopic.getSourceURLs().getItems()) {
                 final TopicSourceURLWrapper cloneSourceUrl = cloneTopicSourceUrl(topicSourceUrlProvider, sourceUrl, cloneTopic);
                 cloneSourceUrls.addNewItem(cloneSourceUrl);

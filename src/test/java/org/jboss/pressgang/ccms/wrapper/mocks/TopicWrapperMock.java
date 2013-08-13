@@ -23,7 +23,7 @@ public class TopicWrapperMock implements TopicWrapper {
     private String xml;
     private String locale;
     private CollectionWrapper<TagWrapper> tags;
-    private CollectionWrapper<TopicSourceURLWrapper> sourceUrls;
+    private UpdateableCollectionWrapper<TopicSourceURLWrapper> sourceUrls;
     private CollectionWrapper<TopicWrapper> incomingTopics;
     private CollectionWrapper<TopicWrapper> outgoingTopics;
     private CollectionWrapper<TranslatedTopicWrapper> translatedTopics;
@@ -161,12 +161,12 @@ public class TopicWrapperMock implements TopicWrapper {
     }
 
     @Override
-    public CollectionWrapper<TopicSourceURLWrapper> getSourceURLs() {
+    public UpdateableCollectionWrapper<TopicSourceURLWrapper> getSourceURLs() {
         return sourceUrls;
     }
 
     @Override
-    public void setSourceURLs(CollectionWrapper<TopicSourceURLWrapper> sourceURLs) {
+    public void setSourceURLs(UpdateableCollectionWrapper<TopicSourceURLWrapper> sourceURLs) {
         this.sourceUrls = sourceURLs;
     }
 

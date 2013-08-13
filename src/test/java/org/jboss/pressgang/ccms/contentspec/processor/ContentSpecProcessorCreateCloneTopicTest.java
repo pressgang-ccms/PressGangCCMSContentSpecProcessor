@@ -68,13 +68,13 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
     @Mock PropertyTagInTopicWrapper existingCspIdPropertyTagInTopic;
     @Mock PropertyTagInTopicWrapper existingAddedByPropertyTagInTopic;
     @Mock UpdateableCollectionWrapper<PropertyTagInTopicWrapper> existingTopicProperties;
-    @Mock CollectionWrapper<TopicSourceURLWrapper> existingTopicSourceURLCollection;
+    @Mock UpdateableCollectionWrapper<TopicSourceURLWrapper> existingTopicSourceURLCollection;
     @Mock CollectionWrapper<TagWrapper> existingTagCollection;
 
     private TopicWrapper newTopicWrapper;
     private CollectionWrapper<TagWrapper> tagCollection;
     private UpdateableCollectionWrapper<PropertyTagInTopicWrapper> propertyTagCollection;
-    private CollectionWrapper<TopicSourceURLWrapper> topicSourceURLCollection;
+    private UpdateableCollectionWrapper<TopicSourceURLWrapper> topicSourceURLCollection;
     private List<PropertyTagInTopicWrapper> existingProperties;
 
     @Before
@@ -82,7 +82,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         newTopicWrapper = new TopicWrapperMock();
         tagCollection = new CollectionWrapperMock<TagWrapper>();
         propertyTagCollection = new UpdateableCollectionWrapperMock<PropertyTagInTopicWrapper>();
-        topicSourceURLCollection = new CollectionWrapperMock<TopicSourceURLWrapper>();
+        topicSourceURLCollection = new UpdateableCollectionWrapperMock<TopicSourceURLWrapper>();
         existingProperties = new ArrayList<PropertyTagInTopicWrapper>();
     }
 

@@ -57,17 +57,17 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
     @Mock PropertyTagInTopicWrapper addedByPropertyTagInTopic;
     @Mock CollectionWrapper<TagWrapper> existingTagCollection;
     @Mock UpdateableCollectionWrapper<PropertyTagInTopicWrapper> existingTopicProperties;
-    @Mock CollectionWrapper<TopicSourceURLWrapper> existingTopicSourceURLCollection;
+    @Mock UpdateableCollectionWrapper<TopicSourceURLWrapper> existingTopicSourceURLCollection;
 
     private CollectionWrapper<TagWrapper> tagCollection;
     private UpdateableCollectionWrapper<PropertyTagInTopicWrapper> propertyTagCollection;
-    private CollectionWrapper<TopicSourceURLWrapper> topicSourceURLCollection;
+    private UpdateableCollectionWrapper<TopicSourceURLWrapper> topicSourceURLCollection;
 
     @Before
     public void setUpEntities() {
         tagCollection = new CollectionWrapperMock<TagWrapper>();
         propertyTagCollection = new UpdateableCollectionWrapperMock<PropertyTagInTopicWrapper>();
-        topicSourceURLCollection = new CollectionWrapperMock<TopicSourceURLWrapper>();
+        topicSourceURLCollection = new UpdateableCollectionWrapperMock<TopicSourceURLWrapper>();
         existingTopicProperties = new UpdateableCollectionWrapperMock<PropertyTagInTopicWrapper>();
     }
 
@@ -361,7 +361,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         // Then the topic should be unchanged and should be null
         assertNull(topic);
-        verify(topicWrapper, never()).setSourceURLs(any(CollectionWrapper.class));
+        verify(topicWrapper, never()).setSourceURLs(any(UpdateableCollectionWrapper.class));
     }
 
     protected void setupBaseTopicMocks() {
