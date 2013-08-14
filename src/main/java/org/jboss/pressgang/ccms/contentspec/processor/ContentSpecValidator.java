@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.File;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Node;
@@ -41,6 +42,7 @@ import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
+import org.jboss.pressgang.ccms.provider.FileProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.provider.exception.NotFoundException;
@@ -50,6 +52,7 @@ import org.jboss.pressgang.ccms.utils.common.XMLUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.CategoryInTagWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
+import org.jboss.pressgang.ccms.wrapper.FileWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.base.BaseTopicWrapper;
@@ -70,6 +73,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private final TopicProvider topicProvider;
     private final ContentSpecProvider contentSpecProvider;
     private final TagProvider tagProvider;
+    private final FileProvider fileProvider;
     private final ErrorLogger log;
     private final ProcessingOptions processingOptions;
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
@@ -100,6 +104,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         topicProvider = factory.getProvider(TopicProvider.class);
         tagProvider = factory.getProvider(TagProvider.class);
         contentSpecProvider = factory.getProvider(ContentSpecProvider.class);
+        fileProvider = factory.getProvider(FileProvider.class);
         log = loggerManager.getLogger(ContentSpecValidator.class);
         this.processingOptions = processingOptions;
         locale = CommonConstants.DEFAULT_LOCALE;
@@ -443,6 +448,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
+        // Validate that the files exist
+        if (contentSpec.getFiles() != null) {
+            if (!validateFiles(contentSpec)) {
+                valid = false;
+            }
+        }
+
         // Check that each level is valid
         if (!postValidateLevel(contentSpec.getBaseLevel())) {
             valid = false;
@@ -450,6 +462,40 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // reset the locale back to its default
         locale = CommonConstants.DEFAULT_LOCALE;
+
+        return valid;
+    }
+
+    /**
+     * Checks to make sure that the files specified in a content spec are valid and exist.
+     *
+     * @param contentSpec The content spec to check.
+     * @return True if all the files are valid, otherwise false.
+     */
+    protected boolean validateFiles(final ContentSpec contentSpec) {
+        final List<File> fileList = contentSpec.getFiles();
+        boolean valid = true;
+
+        if (!fileList.isEmpty()) {
+            for (final File file : fileList) {
+                FileWrapper fileWrapper = null;
+                try {
+                    fileWrapper = fileProvider.getFile(file.getId(), file.getRevision());
+                } catch (NotFoundException e) {
+                    log.debug("Could not find file for id " + file.getId());
+                }
+
+                if (fileWrapper == null) {
+                    log.error(String.format(ProcessorConstants.ERROR_TARGET_NONEXIST_MSG, file.getText()));
+                    valid = false;
+                } else {
+                    // Make sure the titles sync up.
+                    if (!fileWrapper.getFilename().equals(file.getTitle())) {
+                        file.setTitle(fileWrapper.getFilename());
+                    }
+                }
+            }
+        }
 
         return valid;
     }

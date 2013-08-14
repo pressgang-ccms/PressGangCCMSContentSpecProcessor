@@ -53,7 +53,7 @@ public class ProcessorConstants {
     public static final String AMBIGUOUS_RELATIONSHIP = "Ambiguous Relationship!";
     public static final String INVALID_FILE = "Invalid Additional File!";
     public static final String INVALID_PROCESS = "Invalid Process!";
-    public static final String GENERIC_INVALID_LEVEL = "Invalid Chapter/Section/Appendix!";
+    public static final String GENERIC_INVALID_LEVEL = "Invalid Chapter/Section/Appendix/Part/Preface!";
     public static final String NEW_LINE_SPACER = "\n       -> ";
     public static final String CSLINE_MSG = NEW_LINE_SPACER + "%s";
 
@@ -257,6 +257,9 @@ public class ProcessorConstants {
             "Notice Topic." + CSLINE_MSG;
     public static final String ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not a Revision " +
             "History Topic." + CSLINE_MSG;
+
+    // Files
+    public static final String ERROR_FILE_ID_NONEXIST_MSG = INVALID_FILE + " ID doesn't exist in the database." + CSLINE_MSG;
 
     // Warnings
     public static final String WARN_DESCRIPTION_IGNORE_MSG = LINE + "%s topics can't have a description, " +

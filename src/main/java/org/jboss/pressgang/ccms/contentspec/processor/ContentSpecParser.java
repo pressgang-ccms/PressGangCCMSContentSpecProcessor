@@ -1422,10 +1422,13 @@ public class ContentSpecParser {
                     String fixedString = splitString[1];
                     while (matcher.find()) {
                         final String replacement = matcher.group(CSConstants.BRACKET_CONTENTS);
-                        final String marker = "###" + i + "###";
-                        replacements.put(replacement, marker);
-                        fixedString = fixedString.replace(replacement, marker);
-                        i++;
+                        // If the content has already been replaced then skip it
+                        if (!replacements.containsKey(replacement)) {
+                            final String marker = "###" + i + "###";
+                            replacements.put(replacement, marker);
+                            fixedString = fixedString.replace(replacement, marker);
+                            i++;
+                        }
                     }
 
                     // Split the string and add the variables

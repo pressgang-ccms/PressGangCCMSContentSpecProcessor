@@ -37,7 +37,7 @@ public class ContentSpecParserParseLevelLineTest extends ContentSpecParserTest {
             // Then an exception is thrown with an appropriate error
             fail(MISSING_PARSING_EXCEPTION);
         } catch (ParsingException e) {
-            assertThat(e.getMessage(), containsString("Invalid Chapter/Section/Appendix! Incorrect format."));
+            assertThat(e.getMessage(), containsString("Invalid Chapter/Section/Appendix/Part/Preface! Incorrect format."));
             // And the line number is included
             assertThat(e.getMessage(), containsString(lineNumber.toString()));
         }
