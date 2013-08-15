@@ -143,11 +143,12 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         }
 
         // Then a updated node should exist in the updated collection
-        assertThat(updatedChildrenNodes.size(), is(1));
+        assertThat(updatedChildrenNodes.size(), is(2));
         assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
         assertSame(updatedChildrenNodes.getUpdateItems().get(0), foundCSNode);
         // and the other node should be set for removal, by still existing in the childrenNodes list
         assertThat(childrenNodes.size(), is(1));
+        assertThat(updatedChildrenNodes.getRemoveItems().size(), is(1));
         assertTrue(childrenNodes.contains(newCSNode));
         // and the value was set
         verify(foundCSNode, times(1)).setAdditionalText(value);

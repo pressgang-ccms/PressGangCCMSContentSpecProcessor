@@ -300,13 +300,18 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         final SpecTopic specTopic = make(
                 a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.uniqueId, id.toString()), with(SpecTopicMaker.id, topicId.toString()),
                         with(SpecTopicMaker.title, title), with(SpecTopicMaker.revision, (Integer) null)));
+        final SpecTopic specTopic2 = make(
+                a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.uniqueId, secondId.toString()), with(SpecTopicMaker.id, secondTopicId.toString()),
+                        with(SpecTopicMaker.title, title), with(SpecTopicMaker.revision, (Integer) null)));
         childNodes.add(specTopic);
+        childNodes.add(specTopic2);
         // And a matching child node exists in the database
         given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_TOPIC);
         given(foundCSNode.getTitle()).willReturn(title);
         given(foundCSNode.getEntityId()).willReturn(topicId);
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
+        given(foundCSNode.getNextNode()).willReturn(newCSNode);
         // And another non matching child node exists in the database
         given(newCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_TOPIC);
         given(newCSNode.getTitle()).willReturn(title);
@@ -330,8 +335,7 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         }
 
         // Then the other node should be set for removal, by still being in the "childrenNodes" list
-        assertThat(childrenNodes.size(), is(1));
-        assertTrue(childrenNodes.contains(newCSNode));
+        assertThat(childrenNodes.size(), is(0));
         // and the both nodes should be untouched
         assertThat(updatedChildrenNodes.size(), is(2));
         assertThat(updatedChildrenNodes.getUnchangedItems().size(), is(2));

@@ -856,7 +856,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             contentSpecEntity.setType(typeId);
         }
 
-        final List<CSNodeWrapper> contentSpecNodes = getAllNodes(contentSpecEntity);
+        final ArrayList<CSNodeWrapper> contentSpecNodes = new ArrayList<CSNodeWrapper>();
+        if (contentSpecEntity.getChildren() != null) {
+            contentSpecNodes.addAll(contentSpecEntity.getChildren().getItems());
+        }
 
         // Create the content spec entity so that we have a valid reference to add nodes to
         if (create) {
@@ -879,28 +882,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Merge the base level and comments
         final Map<SpecNode, CSNodeWrapper> nodeMapping = new HashMap<SpecNode, CSNodeWrapper>();
         mergeChildren(nodes, contentSpecNodes, providerFactory, null, contentSpecEntity, nodeMapping);
-
-        // Set the nodes that are no longer used for removal
-        if (!contentSpecNodes.isEmpty()) {
-            for (final CSNodeWrapper childNode : contentSpecNodes) {
-                LOG.debug("Removing entity {}", childNode.getId());
-                final UpdateableCollectionWrapper<CSNodeWrapper> children;
-                if (childNode.getParent() == null) {
-                    children = contentSpecEntity.getChildren();
-                } else {
-                    children = childNode.getParent().getChildren();
-                }
-                children.remove(childNode);
-                children.addRemoveItem(childNode);
-
-                // Set the children so it'll be updated
-                if (childNode.getParent() == null) {
-                    contentSpecEntity.setChildren(children);
-                } else {
-                    childNode.getParent().setChildren(children);
-                }
-            }
-        }
 
         contentSpecProvider.updateContentSpec(contentSpecEntity);
 
@@ -964,44 +945,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         return null;
-    }
-
-    /**
-     * Recursively find all of a Content Specs child nodes.
-     *
-     * @param contentSpec The content spec to get all the children nodes from.
-     * @return A list of children nodes that exist for the content spec.
-     */
-    protected List<CSNodeWrapper> getAllNodes(final ContentSpecWrapper contentSpec) {
-        final List<CSNodeWrapper> nodes = new LinkedList<CSNodeWrapper>();
-        if (contentSpec.getChildren() != null) {
-            final List<CSNodeWrapper> childrenNodes = contentSpec.getChildren().getItems();
-            for (final CSNodeWrapper childNode : childrenNodes) {
-                nodes.add(childNode);
-                nodes.addAll(getAllChildrenNodes(childNode));
-            }
-        }
-
-        return nodes;
-    }
-
-    /**
-     * Recursively find all of a Content Spec Nodes children.
-     *
-     * @param csNode The node to get all the children nodes from.
-     * @return A list of children nodes that exist for the node.
-     */
-    protected List<CSNodeWrapper> getAllChildrenNodes(final CSNodeWrapper csNode) {
-        final List<CSNodeWrapper> nodes = new LinkedList<CSNodeWrapper>();
-        if (csNode.getChildren() != null) {
-            final List<CSNodeWrapper> childrenNodes = csNode.getChildren().getItems();
-            for (final CSNodeWrapper childNode : childrenNodes) {
-                nodes.add(childNode);
-                nodes.addAll(getAllChildrenNodes(childNode));
-            }
-        }
-
-        return nodes;
     }
 
     /**
@@ -1128,7 +1071,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     children.add(level.getInnerTopic());
                 }
 
-                mergeChildren(getTransformableNodes(children), contentSpecNodes, providerFactory, foundNodeEntity, contentSpec,
+                final ArrayList<CSNodeWrapper> currentChildren = new ArrayList<CSNodeWrapper>();
+                if (foundNodeEntity.getChildren() != null) {
+                    currentChildren.addAll(foundNodeEntity.getChildren().getItems());
+                }
+
+                mergeChildren(getTransformableNodes(children), currentChildren, providerFactory, foundNodeEntity, contentSpec,
                         nodeMapping);
             }
 
@@ -1177,6 +1125,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 addContentSpecChild(contentSpec, levelChildren, prevNode);
             } else {
                 addChild(parentNode, levelChildren, prevNode);
+            }
+        }
+
+        // Set the nodes that are no longer used for removal
+        if (!contentSpecNodes.isEmpty()) {
+            for (final CSNodeWrapper childNode : contentSpecNodes) {
+                LOG.debug("Removing entity {} - {}", childNode.getId(), childNode.getTitle());
+                levelChildren.remove(childNode);
+                levelChildren.addRemoveItem(childNode);
             }
         }
 
@@ -1234,6 +1191,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         CSNodeWrapper foundNodeEntity = null;
         if (entityChildrenNodes != null && !entityChildrenNodes.isEmpty()) {
             for (final CSNodeWrapper nodeEntity : entityChildrenNodes) {
+                // ignore it if the parent doesn't match otherwise keep looking to see if we can find a better match
+                if (!doesParentMatch(parent, nodeEntity.getParent())) {
+                    continue;
+                }
+
                 if (childNode instanceof Comment) {
                     // Comments are handled differently to try and get the exact comment better, since its common for multiple comments
                     // to be on the same level
@@ -1247,9 +1209,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                         foundNodeEntity = nodeEntity;
                     }
 
-                    // stop looking if the parent and title matches otherwise keep looking to see if we can find a better match
-                    if (parent != null && foundNodeEntity != null && doesParentMatch(parent, foundNodeEntity.getParent())
-                            && foundNodeEntity.getTitle().equals(((Level) childNode).getTitle())) {
+                    // stop looking if the title matches otherwise keep looking to see if we can find a better match
+                    if (parent != null && foundNodeEntity != null && foundNodeEntity.getTitle().equals(((Level) childNode).getTitle())) {
                         break;
                     }
                 } else {
@@ -1257,11 +1218,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                         foundNodeEntity = nodeEntity;
                     } else if (childNode instanceof KeyValueNode && doesMetaDataMatch((KeyValueNode<?>) childNode, nodeEntity)) {
                         foundNodeEntity = nodeEntity;
-                    }
-
-                    // stop looking if the parent matches otherwise keep looking to see if we can find a better match
-                    if (foundNodeEntity != null && doesParentMatch(parent, foundNodeEntity.getParent())) {
-                        break;
                     }
                 }
             }

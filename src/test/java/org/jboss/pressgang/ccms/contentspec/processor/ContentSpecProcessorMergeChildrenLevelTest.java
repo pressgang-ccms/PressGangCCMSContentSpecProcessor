@@ -291,13 +291,16 @@ public class ContentSpecProcessorMergeChildrenLevelTest extends ContentSpecProce
         final List<Node> childNodes = new ArrayList<Node>();
         // Given a content spec level that was created from a DB entity
         final Level level = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.CHAPTER), with(LevelMaker.title, title)));
+        final Level level2 = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.CHAPTER), with(LevelMaker.title, secondTitle)));
         childNodes.add(level);
+        childNodes.add(level2);
         // And a matching child node exists in the database
         given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_CHAPTER);
         given(foundCSNode.getTitle()).willReturn(title);
         given(foundCSNode.getEntityId()).willReturn(null);
         given(foundCSNode.getId()).willReturn(id);
         given(foundCSNode.getEntityRevision()).willReturn(null);
+        given(foundCSNode.getNextNode()).willReturn(newCSNode);
         // And another non matching child node exists in the database
         given(newCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_CHAPTER);
         given(newCSNode.getTitle()).willReturn(secondTitle);
@@ -320,9 +323,8 @@ public class ContentSpecProcessorMergeChildrenLevelTest extends ContentSpecProce
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
         }
 
-        // Then the other node should be set for removal, by still being in the "childrenNodes" list
-        assertThat(childrenNodes.size(), is(1));
-        assertTrue(childrenNodes.contains(newCSNode));
+        // Then all the nodes should have been processed and none left for removal
+        assertThat(childrenNodes.size(), is(0));
         // and the both nodes should be untouched
         assertThat(updatedChildrenNodes.size(), is(2));
         assertThat(updatedChildrenNodes.getUnchangedItems().size(), is(2));
