@@ -1020,7 +1020,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             final DataProviderFactory providerFactory, final CSNodeWrapper parentNode, final ContentSpecWrapper contentSpec,
             final Map<SpecNode, CSNodeWrapper> nodeMapping) throws Exception {
         final CSNodeProvider nodeProvider = providerFactory.getProvider(CSNodeProvider.class);
-        final List<CSNodeWrapper> processedNodes = new ArrayList<CSNodeWrapper>();
 
         UpdateableCollectionWrapper<CSNodeWrapper> levelChildren;
         if (parentNode == null) {
@@ -1118,7 +1117,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     changed = true;
                 }
             }
-            processedNodes.add(foundNodeEntity);
 
             // If the node is a level than merge the children nodes as well
             if (childNode instanceof Level) {
