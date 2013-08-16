@@ -918,15 +918,17 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     LOG.debug("Adding global book tag {}", tagName);
                     final TagWrapper tag = tagProvider.getTagByName(tagName);
                     tagsCollection.addNewItem(tag);
+                } else {
+                    existingTags.remove(existingTag);
                 }
             }
 
             // Remove any existing book tags that are no longer valid
             if (!existingTags.isEmpty()) {
-                for (final TagWrapper relatedNode : existingTags) {
-                    LOG.debug("Removing global book tag {}", relatedNode.getName());
-                    tagsCollection.remove(relatedNode);
-                    tagsCollection.addRemoveItem(relatedNode);
+                for (final TagWrapper existingTag : existingTags) {
+                    LOG.debug("Removing global book tag {}", existingTag.getName());
+                    tagsCollection.remove(existingTag);
+                    tagsCollection.addRemoveItem(existingTag);
                 }
             }
 
