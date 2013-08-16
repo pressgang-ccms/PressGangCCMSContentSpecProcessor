@@ -35,7 +35,6 @@ import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstan
 import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptions;
 import org.jboss.pressgang.ccms.contentspec.sort.NullNumberSort;
 import org.jboss.pressgang.ccms.contentspec.sort.SpecTopicLineNumberComparator;
-import org.jboss.pressgang.ccms.contentspec.utils.CSTransformer;
 import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
@@ -375,24 +374,24 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // If editing then check that the ID exists & the CHECKSUM/SpecRevision match
         if (contentSpec.getId() != null) {
             ContentSpecWrapper contentSpecTopic = null;
+            String serverContentSpec = null;
             try {
                 contentSpecTopic = contentSpecProvider.getContentSpec(contentSpec.getId(), contentSpec.getRevision());
+                serverContentSpec = contentSpecProvider.getContentSpecAsString(contentSpec.getId(), contentSpec.getRevision());
             } catch (NotFoundException e) {
 
             }
-            if (contentSpecTopic == null) {
+            if (contentSpecTopic == null || serverContentSpec == null) {
                 log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
                 valid = false;
             } else {
-                final ContentSpec serverContentSpec = CSTransformer.transform(contentSpecTopic, factory);
-
                 // Set the revision the content spec is being validated for
                 contentSpec.setRevision(contentSpecTopic.getRevision());
 
                 // Check that the checksum is valid
                 if (!processingOptions.isIgnoreChecksum()) {
                     final String currentChecksum = HashUtilities.generateMD5(
-                            serverContentSpec.toString().replaceFirst("CHECKSUM[ ]*=.*(\r)?\n", ""));
+                            serverContentSpec.replaceFirst(CSConstants.CHECKSUM_TITLE + "[ ]*=.*(\r)?\n", ""));
                     if (contentSpec.getChecksum() != null) {
                         if (!contentSpec.getChecksum().equals(currentChecksum)) {
                             log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_CHECKSUM_MSG, contentSpec.getChecksum(),

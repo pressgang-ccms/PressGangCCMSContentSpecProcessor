@@ -1134,6 +1134,17 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 LOG.debug("Removing entity {} - {}", childNode.getId(), childNode.getTitle());
                 levelChildren.remove(childNode);
                 levelChildren.addRemoveItem(childNode);
+
+                // Remove any incoming relationships as well, since this node has been removed
+                if (childNode.getRelatedFromNodes() != null) {
+                    final UpdateableCollectionWrapper<CSRelatedNodeWrapper> relatedNodes = childNode.getRelatedFromNodes();
+                    for (final CSRelatedNodeWrapper relatedNode : relatedNodes.getItems()) {
+                        relatedNodes.remove(relatedNode);
+                        relatedNodes.addRemoveItem(relatedNode);
+                    }
+
+                    childNode.setRelatedFromNodes(relatedNodes);
+                }
             }
         }
 
