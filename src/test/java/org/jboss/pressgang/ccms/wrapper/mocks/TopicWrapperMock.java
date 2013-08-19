@@ -189,6 +189,12 @@ public class TopicWrapperMock implements TopicWrapper {
     }
 
     @Override
+    public List<PropertyTagInTopicWrapper> getProperties(int propertyId) {
+        // TODO
+        return null;
+    }
+
+    @Override
     public String getBugzillaBuildId() {
         // TODO
         return null;

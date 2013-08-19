@@ -3,6 +3,8 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
 
+import java.net.ConnectException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,6 +17,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.j2bugzilla.base.ConnectionException;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.File;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
@@ -24,12 +27,15 @@ import org.jboss.pressgang.ccms.contentspec.Process;
 import org.jboss.pressgang.ccms.contentspec.SpecNode;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
+import org.jboss.pressgang.ccms.contentspec.entities.BaseBugLinkOptions;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
 import org.jboss.pressgang.ccms.contentspec.enums.BookType;
+import org.jboss.pressgang.ccms.contentspec.enums.BugLinkType;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
 import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgang.ccms.contentspec.enums.TopicType;
+import org.jboss.pressgang.ccms.contentspec.exceptions.ValidationException;
 import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
 import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptions;
@@ -39,6 +45,9 @@ import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
+import org.jboss.pressgang.ccms.docbook.compiling.BugLinkStrategy;
+import org.jboss.pressgang.ccms.docbook.processing.BugzillaBugLinkStrategy;
+import org.jboss.pressgang.ccms.docbook.processing.JIRABugLinkStrategy;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.provider.FileProvider;
@@ -1425,5 +1434,69 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
         }
         return valid;
+    }
+
+    /**
+     * Validate the Bug Links MetaData for a Content Specification.
+     *
+     * @param contentSpec The Content Spec to validate.
+     * @param strict If strict validation should be performed (invalid matches throws an error instead of a warning)
+     * @return True if the links are valid, otherwise false.
+     */
+    public boolean validateBugLinks(final ContentSpec contentSpec, boolean strict) {
+        // If Bug Links are turned off then there isn't any need to validate them.
+        if (!contentSpec.isInjectBugLinks()) {
+            return true;
+        }
+
+        try {
+            final BugLinkStrategy bugLinkStrategy;
+            final BaseBugLinkOptions bugOptions;
+            if (contentSpec.getBugLinks().equals(BugLinkType.JIRA)) {
+                bugOptions = contentSpec.getJIRABugLinkOptions();
+                // Make sure a URL has been set
+                if (bugOptions.getBaseUrl() != null) {
+                    bugLinkStrategy = new JIRABugLinkStrategy(bugOptions.getBaseUrl());
+                } else {
+                    log.error("No JIRA server set.");
+                    return false;
+                }
+            } else {
+                bugOptions = contentSpec.getBugzillaBugLinkOptions();
+                // Make sure a URL has been set
+                if (bugOptions.getBaseUrl() != null) {
+                    try {
+                        bugLinkStrategy = new BugzillaBugLinkStrategy(bugOptions.getBaseUrl());
+                    } catch (ConnectionException e) {
+                        log.error("Unable to connect to the Bugzilla server specified.");
+                        return false;
+                    }
+                } else {
+                    log.error("No Bugzilla server set.");
+                    return false;
+                }
+            }
+
+            // Validate the content in the bug options using the appropriate bug link strategy
+            try {
+                bugLinkStrategy.validate(bugOptions);
+            } catch (ValidationException e) {
+                if (strict) {
+                    log.error(e.getMessage());
+                    return false;
+                } else {
+                    log.warn(e.getMessage());
+                }
+            }
+
+            return true;
+        } catch (Exception e) {
+            if (e.getCause() != null && e.getCause() instanceof ConnectException || e.getCause() instanceof MalformedURLException) {
+                log.error("Unable to connect to the server specified.");
+            } else {
+                log.error("Failed to validate the Bug Links. Error: " + e.getMessage());
+            }
+            return false;
+        }
     }
 }
