@@ -30,6 +30,7 @@ import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.entities.BaseBugLinkOptions;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
+import org.jboss.pressgang.ccms.contentspec.entities.TopicRelationship;
 import org.jboss.pressgang.ccms.contentspec.enums.BookType;
 import org.jboss.pressgang.ccms.contentspec.enums.BugLinkType;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
@@ -124,7 +125,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * wrapper to first call PreValidate and then PostValidate.
      *
      * @param contentSpec The content specification to be validated.
-     * @param username        The user who requested the content spec validation.
+     * @param username    The user who requested the content spec validation.
      * @return True if the content specification is valid, otherwise false.
      */
     public boolean validateContentSpec(final ContentSpec contentSpec, final String username) {
@@ -238,14 +239,17 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 final KeyValueNode keyValueNode = (KeyValueNode) node;
                 if (isNullOrEmpty(keyValueNode.getKey())) {
                     valid = false;
-                    log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, keyValueNode.getLineNumber(), keyValueNode.getText()));
+                    log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, keyValueNode.getLineNumber(),
+                            keyValueNode.getText()));
                 } else {
                     final Object value = keyValueNode.getValue();
                     if (value instanceof String && isNullOrEmpty((String) value)) {
                         valid = false;
-                        log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, keyValueNode.getLineNumber(), keyValueNode.getText()));
+                        log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, keyValueNode.getLineNumber(),
+                                keyValueNode.getText()));
                     } else if (value == null) {
-                        log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, keyValueNode.getLineNumber(), keyValueNode.getText()));
+                        log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, keyValueNode.getLineNumber(),
+                                keyValueNode.getText()));
                     }
                 }
             }
@@ -518,7 +522,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         boolean error = false;
 
         // Create the map of unique ids to spec topics
-        final Map<String, SpecTopic> specTopicMap = ContentSpecUtilities.getUniqueIdSpecTopicMap(contentSpec);
+        final Map<String, List<SpecTopic>> specTopicMap = ContentSpecUtilities.getIdSpecTopicMap(contentSpec);
 
         final Map<SpecTopic, List<Relationship>> relationships = contentSpec.getRelationships();
         for (final Entry<SpecTopic, List<Relationship>> relationshipEntry : relationships.entrySet()) {
@@ -578,91 +582,55 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 //                            }
 //                        }
                     }
-                    // The relationship isn't a target so it must point to a topic directly
-                } else {
-                    if (!CSConstants.NEW_TOPIC_ID_PATTERN.matcher(relatedId).matches()) {
-                        // The relationship isn't a unique new topic so it will contain the line number in front of the topic ID
-                        if (relatedId.startsWith("X")) {
-                            // Duplicated topics are never unique so throw an error straight away.
-                            log.error(String.format(ProcessorConstants.ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG, specTopic.getLineNumber(),
+                } else if (relationship instanceof TopicRelationship) {
+                    final SpecTopic relatedTopic = ((TopicRelationship) relationship).getSecondaryRelationship();
+                    final List<SpecTopic> relatedSpecTopics = specTopicMap.get(relatedTopic.getId());
+                    if (relatedId.startsWith("X")) {
+                        // Duplicated topics are never unique so throw an error straight away.
+                        log.error(String.format(ProcessorConstants.ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG, specTopic.getLineNumber(),
+                                specTopic.getText()));
+                        error = true;
+                    } else if (relatedSpecTopics == null) {
+                        log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
+                                specTopic.getText()));
+                        error = true;
+                    } else if (relatedSpecTopics.size() > 1) {
+                        // Check to make sure the topic isn't duplicated
+                        final List<SpecTopic> relatedTopics = specTopicMap.get(relatedTopic.getId());
+
+                        // Build up the line numbers message
+                        final StringBuilder lineNumbers = new StringBuilder();
+                        for (int i = 0; i < relatedTopics.size(); i++) {
+                            if (i == relatedTopics.size() - 1) {
+                                lineNumbers.append(" and ");
+                            } else if (lineNumbers.length() != 0) {
+                                lineNumbers.append(", ");
+                            }
+
+                            lineNumbers.append(relatedTopics.get(i).getLineNumber());
+                        }
+
+                        log.error(String.format(ProcessorConstants.ERROR_INVALID_RELATIONSHIP_MSG, specTopic.getLineNumber(),
+                                relatedId, lineNumbers.toString(), specTopic.getText()));
+                        error = true;
+                    } else {
+                        if (relatedTopic.getDBId() != null && relatedTopic.getDBId() < 0) {
+                            log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
+                                    specTopic.getText()));
+                            error = true;
+                        } else if (relatedTopic == specTopic) {
+                            // Check to make sure the topic doesn't relate to itself
+                            log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopic.getLineNumber(),
                                     specTopic.getText()));
                             error = true;
                         } else {
-                            int count = 0;
-                            final List<SpecTopic> relatedTopics = new ArrayList<SpecTopic>();
-                            // Get the related topic and count if more then one is found
-                            for (final Entry<String, SpecTopic> entry : specTopicMap.entrySet()) {
-                                final String specTopicId = entry.getKey();
-
-                                if (specTopicId.matches("^[\\w\\d]+-" + relatedId + "$")) {
-                                    relatedTopics.add(entry.getValue());
-                                    count++;
-                                }
-                            }
-
-                            if (count > 1) {
-                                // Build up the line numbers message
-                                final StringBuilder lineNumbers = new StringBuilder();
-                                for (int i = 0; i < relatedTopics.size(); i++) {
-                                    if (i == relatedTopics.size() - 1) {
-                                        lineNumbers.append(" and ");
-                                    } else if (lineNumbers.length() != 0) {
-                                        lineNumbers.append(", ");
-                                    }
-
-                                    lineNumbers.append(relatedTopics.get(i).getLineNumber());
-                                }
-
-                                log.error(String.format(ProcessorConstants.ERROR_INVALID_RELATIONSHIP_MSG, specTopic.getLineNumber(),
-                                        relatedId, lineNumbers.toString(), specTopic.getText()));
-                                error = true;
-                            } else if (count == 0) {
-                                log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(),
-                                        relatedId, specTopic.getText()));
-                                error = true;
-                            } else {
-                                // Check to make sure the topic doesn't relate to itself
-                                final SpecTopic relatedTopic = relatedTopics.get(0);
-                                if (relatedTopic == specTopic) {
-                                    log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopic.getLineNumber(),
-                                            specTopic.getText()));
-                                }
-
-                                // Check to ensure the title matches
-//                                if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals
-//                                        (relatedTopic.getTitle())) {
-//                                    if (!processingOptions.isPermissiveMode()) {
-//                                        log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
-//                                                specTopic.getLineNumber(), relationship.getRelationshipTitle(), relatedTopic.getTitle()));
-//                                        error = true;
-//                                    }
-//                                }
-                            }
-                        }
-                    } else {
-                        if (specTopicMap.containsKey(relatedId)) {
-                            final SpecTopic relatedTopic = specTopicMap.get(relatedId);
-
-                            // Check to make sure the topic doesn't relate to itself
-                            if (relatedTopic == specTopic) {
-                                log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopic.getLineNumber(),
-                                        specTopic.getText()));
-                            }
-                            // Check to ensure the title matches
-//                            else if (relationship.getRelationshipTitle() != null && relationship.getRelationshipTitle().equals
-//                                    (relatedTopic.getTitle())) {
-//                                if (!processingOptions.isPermissiveMode()) {
-//                                    log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
-// specTopic.getLineNumber(),
-//                                            relationship.getRelationshipTitle(), relatedTopic.getTitle()));
-//                                    error = true;
-//                                }
-//                            }
-                        } else {
-                            log.error(
-                                    String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
-                                            specTopic.getText()));
-                            error = true;
+    //                        if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(topic.getTitle())) {
+    //                            if (!processingOptions.isPermissiveMode()) {
+    //                                log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+    //                                        relationship.getRelationshipTitle(), topic.getTitle()));
+    //                                error = true;
+    //                            }
+    //                        }
                         }
                     }
                 }
@@ -1166,7 +1134,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             BaseTopicWrapper<?> topic = null;
             try {
                 if (processingOptions.isTranslation()) {
-                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()), specTopic.getRevision(), locale);
+                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()),
+                            specTopic.getRevision(), locale);
                 } else {
                     topic = topicProvider.getTopic(Integer.parseInt(specTopic.getId()), specTopic.getRevision());
                 }
@@ -1440,7 +1409,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * Validate the Bug Links MetaData for a Content Specification.
      *
      * @param contentSpec The Content Spec to validate.
-     * @param strict If strict validation should be performed (invalid matches throws an error instead of a warning)
+     * @param strict      If strict validation should be performed (invalid matches throws an error instead of a warning)
      * @return True if the links are valid, otherwise false.
      */
     public boolean validateBugLinks(final ContentSpec contentSpec, boolean strict) {
