@@ -1,7 +1,10 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -16,11 +19,13 @@ import org.jboss.pressgang.ccms.contentspec.Node;
 import org.jboss.pressgang.ccms.contentspec.SpecNode;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
+import org.jboss.pressgang.ccms.contentspec.entities.BaseBugLinkOptions;
 import org.jboss.pressgang.ccms.contentspec.entities.ProcessRelationship;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TopicRelationship;
 import org.jboss.pressgang.ccms.contentspec.enums.BookType;
+import org.jboss.pressgang.ccms.contentspec.enums.BugLinkType;
 import org.jboss.pressgang.ccms.contentspec.enums.RelationshipType;
 import org.jboss.pressgang.ccms.contentspec.enums.TopicType;
 import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
@@ -28,9 +33,13 @@ import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstan
 import org.jboss.pressgang.ccms.contentspec.processor.exceptions.ProcessingException;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptions;
 import org.jboss.pressgang.ccms.contentspec.processor.utils.ProcessorUtilities;
+import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.TopicPool;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
+import org.jboss.pressgang.ccms.docbook.compiling.BugLinkStrategy;
+import org.jboss.pressgang.ccms.docbook.processing.BugzillaBugLinkStrategy;
+import org.jboss.pressgang.ccms.docbook.processing.JIRABugLinkStrategy;
 import org.jboss.pressgang.ccms.provider.CSNodeProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
@@ -38,6 +47,7 @@ import org.jboss.pressgang.ccms.provider.PropertyTagProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.provider.TopicSourceURLProvider;
+import org.jboss.pressgang.ccms.provider.exception.ProviderException;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
@@ -65,8 +75,8 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("rawtypes")
 public class ContentSpecProcessor implements ShutdownAbleApp {
     private final Logger LOG = LoggerFactory.getLogger(ContentSpecProcessor.class.getPackage().getName() + ".CustomContentSpecProcessor");
-
-    private static List<String> IGNORE_META_DATA = Arrays.asList(CSConstants.CHECKSUM_TITLE, CSConstants.ID_TITLE);
+    private static final long DAY_MILLI_SECS = 24 * 60 * 60 * 1000;
+    private static final List<String> IGNORE_META_DATA = Arrays.asList(CSConstants.CHECKSUM_TITLE, CSConstants.ID_TITLE);
 
     private final ErrorLogger log;
     private final DataProviderFactory providerFactory;
@@ -152,8 +162,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             editing = true;
         }
 
-        // Set the user as the assigned writer
-        contentSpec.setAssignedWriter(username);
+        final ProcessorData processorData = new ProcessorData();
+        processorData.setContentSpec(contentSpec);
+        processorData.setUsername(username);
+        processorData.setLogMessage(logMessage);
+
+        // Set the username as the assigned writer if one doesn't exist
+        if (isNullOrEmpty(contentSpec.getAssignedWriter())) {
+            contentSpec.setAssignedWriter(username);
+        }
 
         // Change the locale if the overrideLocale isn't null
         if (overrideLocale != null) {
@@ -189,7 +206,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Validate the content specification now that we have most of the data from the REST API
         LOG.info("Starting second validation pass...");
 
-        if (!validator.postValidateContentSpec(contentSpec, username)) {
+        if (!postValidateContentSpec(processorData)) {
             log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
             return false;
         } else {
@@ -204,7 +221,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
 
                 LOG.info("Saving the Content Specification to the server...");
-                if (saveContentSpec(providerFactory, contentSpec, editing, username, logMessage)) {
+                if (saveContentSpec(providerFactory, contentSpec, editing, processorData)) {
                     log.info(ProcessorConstants.INFO_SUCCESSFUL_SAVE_MSG);
                 } else {
                     log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
@@ -213,6 +230,82 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
         }
         return true;
+    }
+
+    /**
+     * Does the post Validation step on a Content Spec and also re-validates the bug links if required.
+     *
+     * @param contentSpec The Content Specification to be saved.
+     * @param username    The User who requested the Content Spec be validated.
+     * @return True if the content spec is
+     */
+    protected boolean postValidateContentSpec(final ProcessorData processorData) {
+        final ContentSpec contentSpec = processorData.getContentSpec();
+        boolean valid = validator.postValidateContentSpec(contentSpec, processorData.getUsername());
+
+        // Find out if we should re-validate bug links
+        boolean reValidateBugLinks = true;
+        if (contentSpec.getId() != null) {
+            ContentSpecWrapper contentSpecEntity = null;
+            try {
+                contentSpecEntity = providerFactory.getProvider(ContentSpecProvider.class).getContentSpec(contentSpec.getId(),
+                        contentSpec.getRevision());
+            } catch (ProviderException e) {
+
+            }
+
+            // This shouldn't happen but if it does, then it'll be picked up in the postValidationContentSpec method
+            if (contentSpecEntity != null) {
+                final PropertyTagInContentSpecWrapper lastValidated = contentSpecEntity.getProperty(
+                        ProcessorConstants.BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG);
+                final Date now = new Date();
+                final long then;
+                if (lastValidated != null && lastValidated.getValue() != null && lastValidated.getValue().matches("^[0-9]+$")) {
+                    then = Long.parseLong(lastValidated.getValue());
+                } else {
+                    then = 0L;
+                }
+
+                // Check that a day has passed
+                if ((then + DAY_MILLI_SECS) > now.getTime()) {
+                    // A day hasn't passed so check to see if anything has changed
+                    boolean changed = false;
+                    if (EntityUtilities.hasContentSpecMetaDataChanged(CSConstants.BUG_LINKS_TITLE, contentSpec.getBugLinks().toString(),
+                            contentSpecEntity)) {
+                        changed = true;
+                    } else {
+                        BugLinkStrategy bugLinkStrategy = null;
+                        BaseBugLinkOptions bugOptions = null;
+                        if (contentSpec.getBugLinks() == BugLinkType.JIRA) {
+                            bugLinkStrategy = new JIRABugLinkStrategy(contentSpec.getJIRAServer());
+                            bugOptions = contentSpec.getJIRABugLinkOptions();
+                        } else if (contentSpec.getBugLinks() == BugLinkType.BUGZILLA) {
+                            bugLinkStrategy = new BugzillaBugLinkStrategy(contentSpec.getJIRAServer());
+                            bugOptions = contentSpec.getBugzillaBugLinkOptions();
+                        }
+
+                        if (bugLinkStrategy != null && bugLinkStrategy.hasValuesChanged(contentSpecEntity, bugOptions)) {
+                            changed = true;
+                        }
+                    }
+
+                    if (!changed) {
+                        reValidateBugLinks = false;
+                    }
+                }
+            }
+        }
+
+        // Validate the bug links
+        if (reValidateBugLinks) {
+            processorData.setBugLinksReValidated(reValidateBugLinks);
+            LOG.info("Starting bug link validation pass...");
+            if (!validator.validateBugLinks(contentSpec, false)) {
+                valid = false;
+            }
+        }
+
+        return valid;
     }
 
     /**
@@ -226,7 +319,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the topic saved successfully otherwise false.
      */
     protected boolean saveContentSpec(final DataProviderFactory providerFactory, final ContentSpec contentSpec, final boolean edit,
-            final String username, final LogMessageWrapper logMessage) {
+            final ProcessorData processorData) {
         final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
 
         try {
@@ -285,7 +378,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             syncDuplicatedTopics(specTopics);
 
             // Save the content spec
-            mergeAndSaveContentSpec(contentSpec, providerFactory, !edit, username, logMessage);
+            mergeAndSaveContentSpec(providerFactory, processorData, !edit);
         } catch (ProcessingException e) {
             LOG.debug("", e);
             if (providerFactory.isRollbackSupported()) {
@@ -806,21 +899,20 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * Merges a Content Spec object with it's Database counterpart if one exists, otherwise it will create a new Database Entity if
      * create is set to true.
      *
-     * @param contentSpec     The ContentSpec object to merge with the database entity.
      * @param providerFactory
+     * @param processorData   The data used for this processing action.
      * @param create          If a new Content Spec Entity should be created if one doesn't exist.
-     * @param username        The user who requested the save.
-     * @param logMessage
      * @throws Exception Thrown if a problem occurs saving to the database.
      */
-    protected void mergeAndSaveContentSpec(final ContentSpec contentSpec, final DataProviderFactory providerFactory, boolean create,
-            final String username, final LogMessageWrapper logMessage) throws Exception {
+    protected void mergeAndSaveContentSpec(final DataProviderFactory providerFactory, final ProcessorData processorData,
+            boolean create) throws Exception {
         // Get the providers
         final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
         final PropertyTagProvider propertyTagProvider = providerFactory.getProvider(PropertyTagProvider.class);
         final TagProvider tagProvider = providerFactory.getProvider(TagProvider.class);
 
         // Create the temporary entity to store changes in and load the real entity if it exists.
+        final ContentSpec contentSpec = processorData.getContentSpec();
         ContentSpecWrapper contentSpecEntity = null;
         if (contentSpec.getId() != null) {
             contentSpecEntity = contentSpecProvider.getContentSpec(contentSpec.getId());
@@ -830,7 +922,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             // setup the basic values
             contentSpecEntity.setLocale(CommonConstants.DEFAULT_LOCALE);
 
-            if (username != null) {
+            if (processorData.getUsername() != null) {
                 // Add the added by property tag
                 final UpdateableCollectionWrapper<PropertyTagInContentSpecWrapper> propertyTagCollection = propertyTagProvider
                         .newPropertyTagInContentSpecCollection(
@@ -840,7 +932,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 final PropertyTagWrapper addedByProperty = propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
                 final PropertyTagInContentSpecWrapper propertyTag = propertyTagProvider.newPropertyTagInContentSpec(addedByProperty,
                         contentSpecEntity);
-                propertyTag.setValue(username);
+                propertyTag.setValue(processorData.getUsername());
                 propertyTagCollection.addNewItem(propertyTag);
 
                 // Set the updated properties for the content spec
@@ -872,6 +964,37 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
         contentSpec.setId(contentSpecEntity.getId());
 
+        // Set the bug links last validated property
+        if (processorData.isBugLinksReValidated()) {
+            // Get the collection to use
+            final UpdateableCollectionWrapper<PropertyTagInContentSpecWrapper> propertyTagCollection = contentSpecEntity.getProperties()
+                    == null ? propertyTagProvider.newPropertyTagInContentSpecCollection(
+                    contentSpecEntity) : contentSpecEntity.getProperties();
+
+            // Check if the property already exists and if so update it, otherwise create a new one
+            boolean found = false;
+            for (final PropertyTagInContentSpecWrapper propertyTag : propertyTagCollection.getItems()) {
+                if (propertyTag.getId().equals(ProcessorConstants.BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG)) {
+                    propertyTag.setValue(Long.toString(new Date().getTime()));
+                    propertyTagCollection.remove(propertyTag);
+                    propertyTagCollection.addUpdateItem(propertyTag);
+                    found = true;
+                }
+            }
+
+            if (!found) {
+                final PropertyTagWrapper lastUpdatedProperty = propertyTagProvider.getPropertyTag(
+                        ProcessorConstants.BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG);
+                final PropertyTagInContentSpecWrapper propertyTag = propertyTagProvider.newPropertyTagInContentSpec(lastUpdatedProperty,
+                        contentSpecEntity);
+                propertyTag.setValue(Long.toString(new Date().getTime()));
+                propertyTagCollection.addNewItem(propertyTag);
+            }
+
+            // Set the updated properties for the content spec
+            contentSpecEntity.setProperties(propertyTagCollection);
+        }
+
         // Add any global book tags
         mergeGlobalOptions(contentSpecEntity, contentSpec, tagProvider);
 
@@ -888,17 +1011,18 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Merge the relationships now all spec topics have a mapping to a node
         mergeTopicRelationships(nodeMapping, providerFactory);
 
-        contentSpecProvider.updateContentSpec(contentSpecEntity, logMessage);
+        contentSpecProvider.updateContentSpec(contentSpecEntity, processorData.getLogMessage());
     }
 
     /**
      * Merge a Content Spec entities global options (book tags & condition) with the options defined in the processed content spec.
      *
      * @param contentSpecEntity The content spec entity to merge with.
-     * @param contentSpec The generic content spec object to merge from.
+     * @param contentSpec       The generic content spec object to merge from.
      * @param tagProvider
      */
-    protected void mergeGlobalOptions(final ContentSpecWrapper contentSpecEntity, final ContentSpec contentSpec, final TagProvider tagProvider) {
+    protected void mergeGlobalOptions(final ContentSpecWrapper contentSpecEntity, final ContentSpec contentSpec,
+            final TagProvider tagProvider) {
         // make sure the condition matches
         contentSpecEntity.setCondition(contentSpec.getBaseLevel().getConditionStatement());
 
@@ -1078,8 +1202,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     currentChildren.addAll(foundNodeEntity.getChildren().getItems());
                 }
 
-                mergeChildren(getTransformableNodes(children), currentChildren, providerFactory, foundNodeEntity, contentSpec,
-                        nodeMapping);
+                mergeChildren(getTransformableNodes(children), currentChildren, providerFactory, foundNodeEntity, contentSpec, nodeMapping);
             }
 
             // Set up the next node relationship for the previous node
@@ -1612,8 +1735,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     /**
      * Checks to see if a ContentSpec level matches a Content Spec Entity level.
      *
-     * @param level The ContentSpec level object.
-     * @param node  The Content Spec Entity level.
+     * @param level        The ContentSpec level object.
+     * @param node         The Content Spec Entity level.
      * @param matchContent If the level title has to match exactly, otherwise it should match to a reasonable extent.
      * @return True if the level is determined to match otherwise false.
      */
@@ -1636,7 +1759,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             if (matchContent) {
                 return level.getTitle().equals(node.getTitle());
             } else {
-                return StringUtilities.similarDamerauLevenshtein(level.getTitle(), node.getTitle()) >= ProcessorConstants.MIN_MATCH_SIMILARITY;
+                return StringUtilities.similarDamerauLevenshtein(level.getTitle(),
+                        node.getTitle()) >= ProcessorConstants.MIN_MATCH_SIMILARITY;
             }
         }
     }
@@ -1766,5 +1890,44 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     @Override
     public boolean isShutdown() {
         return shutdown.get();
+    }
+}
+
+class ProcessorData {
+    private ContentSpec contentSpec;
+    private String username;
+    private boolean bugLinksReValidated = false;
+    private LogMessageWrapper logMessage;
+
+    String getUsername() {
+        return username;
+    }
+
+    void setUsername(String username) {
+        this.username = username;
+    }
+
+    boolean isBugLinksReValidated() {
+        return bugLinksReValidated;
+    }
+
+    void setBugLinksReValidated(boolean bugLinksReValidated) {
+        this.bugLinksReValidated = bugLinksReValidated;
+    }
+
+    LogMessageWrapper getLogMessage() {
+        return logMessage;
+    }
+
+    void setLogMessage(LogMessageWrapper logMessage) {
+        this.logMessage = logMessage;
+    }
+
+    ContentSpec getContentSpec() {
+        return contentSpec;
+    }
+
+    void setContentSpec(ContentSpec contentSpec) {
+        this.contentSpec = contentSpec;
     }
 }

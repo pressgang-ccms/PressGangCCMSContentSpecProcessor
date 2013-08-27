@@ -11,6 +11,7 @@ public class ProcessorConstants {
     public static final String RELEASE_CATEGORY_NAME = "Release";
     public static final int ASSIGNED_WRITER_CATEGORY_ID = 12;
     public static final String ASSIGNED_WRITER_CATEGORY_NAME = "Assigned Writer";
+    public static final int BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG = 38;
 
     public static final String TOPIC_ID_CONTENTS = "TopicID";
     public static final String BRACKET_CONTENTS = "Brackets";
@@ -209,6 +210,7 @@ public class ProcessorConstants {
     public static final String ERROR_TOPIC_NO_TECH_OR_RELEASE_MSG = LINE + INVALID_TOPIC + " A Technology or Release tag has not been set" +
             "." + CSLINE_MSG;
     public static final String ERROR_TOPIC_TOO_MANY_CATS_MSG = LINE + INVALID_TOPIC + " Too many tags for the category: %s." + CSLINE_MSG;
+    public static final String ERROR_LEVEL_TOO_MANY_CATS_MSG = "Invalid %s! Too many tags for the category: %s." + CSLINE_MSG;
     public static final String ERROR_TOPIC_ID_NONEXIST_MSG = LINE + INVALID_TOPIC + " ID doesn't exist in the database." + CSLINE_MSG;
     public static final String ERROR_TOPIC_TITLES_NONMATCH_MSG = LINE + INVALID_TOPIC + " Existing topic title doesn't match." +
             CSLINE_MSG + CSLINE_MSG;
@@ -220,8 +222,10 @@ public class ProcessorConstants {
             "the clone is exclusively used inside a Content Specification." + CSLINE_MSG;
     public static final String ERROR_TOPIC_WRITER_AS_TAG_MSG = LINE + INVALID_TOPIC + " A writer cannot be specified as a tag." +
             CSLINE_MSG;
+    public static final String ERROR_LEVEL_WRITER_AS_TAG_MSG = "Invalid %s! A writer cannot be specified as a tag." + CSLINE_MSG;
     public static final String ERROR_TOPIC_TYPE_AS_TAG_MSG = LINE + INVALID_TOPIC + " A topic type cannot be specified as a tag." +
             CSLINE_MSG;
+    public static final String ERROR_LEVEL_TYPE_AS_TAG_MSG = "Invalid %s! A topic type cannot be specified as a tag." + CSLINE_MSG;
     public static final String ERROR_TOPIC_NEXT_PREV_MSG = LINE + INVALID_TOPIC + " Next and Previous relationships can't be used " +
             "directly. If you wish to use next/previous then please use a Process." + CSLINE_MSG;
     public static final String ERROR_TOPIC_BRANCH_OUTSIDE_PROCESS = LINE + INVALID_TOPIC + " A Branch cannot exist outside of a Process."
@@ -331,6 +335,12 @@ public class ProcessorConstants {
             "Relationship format";
     public static final String ERROR_INVALID_LINK_LIST_RELATIONSHIP = LINE + INVALID_RELATIONSHIP + " Invalid Link-List Relationship " +
             "format";
+
+    // Bug Link Errors
+    public static final String ERROR_BUG_LINKS_UNABLE_TO_CONNECT = "Unable to connect to the bug tracking server specified.";
+    public static final String ERROR_BUGZILLA_UNABLE_TO_CONNECT = "Unable to connect to the Bugzilla server specified.";
+    public static final String ERROR_BUG_LINKS_NO_SERVER_SET = "No %s server set.";
+    public static final String ERROR_BUG_LINKS_UNABLE_TO_VALIDATE = "Failed to validate the Bug Links. Error: %s";
 
     // Level Regex Constants
     public static final String CHAPTER_REGEX = "^CHAPTER[ ]*((:.*)|$)";

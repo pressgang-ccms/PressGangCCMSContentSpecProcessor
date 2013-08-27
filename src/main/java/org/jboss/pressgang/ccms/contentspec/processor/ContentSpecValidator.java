@@ -56,6 +56,7 @@ import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.provider.exception.NotFoundException;
 import org.jboss.pressgang.ccms.utils.common.DocBookUtilities;
+import org.jboss.pressgang.ccms.utils.common.ExceptionUtilities;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
 import org.jboss.pressgang.ccms.utils.common.XMLUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
@@ -610,13 +611,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             lineNumbers.append(relatedTopics.get(i).getLineNumber());
                         }
 
-                        log.error(String.format(ProcessorConstants.ERROR_INVALID_RELATIONSHIP_MSG, specTopic.getLineNumber(),
-                                relatedId, lineNumbers.toString(), specTopic.getText()));
+                        log.error(String.format(ProcessorConstants.ERROR_INVALID_RELATIONSHIP_MSG, specTopic.getLineNumber(), relatedId,
+                                lineNumbers.toString(), specTopic.getText()));
                         error = true;
                     } else {
                         if (relatedTopic.getDBId() != null && relatedTopic.getDBId() < 0) {
-                            log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
-                                    specTopic.getText()));
+                            log.error(
+                                    String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
+                                            specTopic.getText()));
                             error = true;
                         } else if (relatedTopic == specTopic) {
                             // Check to make sure the topic doesn't relate to itself
@@ -624,13 +626,15 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                                     specTopic.getText()));
                             error = true;
                         } else {
-    //                        if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(topic.getTitle())) {
-    //                            if (!processingOptions.isPermissiveMode()) {
-    //                                log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
-    //                                        relationship.getRelationshipTitle(), topic.getTitle()));
-    //                                error = true;
-    //                            }
-    //                        }
+                            //                        if (relationship.getRelationshipTitle() != null && !relationship
+                            // .getRelationshipTitle().equals(topic.getTitle())) {
+                            //                            if (!processingOptions.isPermissiveMode()) {
+                            //                                log.error(String.format(ProcessorConstants
+                            // .ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+                            //                                        relationship.getRelationshipTitle(), topic.getTitle()));
+                            //                                error = true;
+                            //                            }
+                            //                        }
                         }
                     }
                 }
@@ -1386,21 +1390,58 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
                 // Check that only one tag has been set if the category is mutually exclusive
                 if (cat.isMutuallyExclusive() && catTags.size() > 1) {
-                    log.error(String.format(ProcessorConstants.ERROR_TOPIC_TOO_MANY_CATS_MSG, specNode.getLineNumber(), cat.getName(),
-                            specNode.getText()));
+                    final String errorMsg;
+                    if (specNode instanceof Level) {
+                        final String baseErrorMsg = String.format(ProcessorConstants.ERROR_LEVEL_TOO_MANY_CATS_MSG,
+                                ((Level) specNode).getLevelType().getTitle(), cat.getName(), specNode.getText());
+                        if (((Level) specNode).getLevelType() == LevelType.BASE) {
+                            errorMsg = baseErrorMsg;
+                        } else {
+                            errorMsg = String.format(ProcessorConstants.LINE, specNode.getLineNumber()) + baseErrorMsg;
+                        }
+                    } else {
+                        errorMsg = String.format(ProcessorConstants.ERROR_TOPIC_TOO_MANY_CATS_MSG, specNode.getLineNumber(), cat.getName(),
+                                specNode.getText());
+                    }
+                    log.error(errorMsg);
                     valid = false;
                 }
 
                 // Check that the tag isn't a type or writer
                 if (cat.getId().equals(CSConstants.WRITER_CATEGORY_ID)) {
-                    log.error(
-                            String.format(ProcessorConstants.ERROR_TOPIC_WRITER_AS_TAG_MSG, specNode.getLineNumber(), specNode.getText()));
+                    final String errorMsg;
+                    if (specNode instanceof Level) {
+                        final String baseErrorMsg = String.format(ProcessorConstants.ERROR_LEVEL_WRITER_AS_TAG_MSG,
+                                ((Level) specNode).getLevelType().getTitle(), specNode.getText());
+                        if (((Level) specNode).getLevelType() == LevelType.BASE) {
+                            errorMsg = baseErrorMsg;
+                        } else {
+                            errorMsg = String.format(ProcessorConstants.LINE, specNode.getLineNumber()) + baseErrorMsg;
+                        }
+                    } else {
+                        errorMsg = String.format(ProcessorConstants.ERROR_TOPIC_WRITER_AS_TAG_MSG, specNode.getLineNumber(),
+                                specNode.getText());
+                    }
+                    log.error(errorMsg);
                     valid = false;
                 }
 
                 // Check that the tag isn't a topic type
                 if (cat.getId().equals(CSConstants.TYPE_CATEGORY_ID)) {
-                    log.error(String.format(ProcessorConstants.ERROR_TOPIC_TYPE_AS_TAG_MSG, specNode.getLineNumber(), specNode.getText()));
+                    final String errorMsg;
+                    if (specNode instanceof Level) {
+                        final String baseErrorMsg = String.format(ProcessorConstants.ERROR_LEVEL_TYPE_AS_TAG_MSG,
+                                ((Level) specNode).getLevelType().getTitle(), specNode.getText());
+                        if (((Level) specNode).getLevelType() == LevelType.BASE) {
+                            errorMsg = baseErrorMsg;
+                        } else {
+                            errorMsg = String.format(ProcessorConstants.LINE, specNode.getLineNumber()) + baseErrorMsg;
+                        }
+                    } else {
+                        errorMsg = String.format(ProcessorConstants.ERROR_TOPIC_TYPE_AS_TAG_MSG, specNode.getLineNumber(),
+                                specNode.getText());
+                    }
+                    log.error(errorMsg);
                     valid = false;
                 }
             }
@@ -1422,7 +1463,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         try {
-            final BugLinkStrategy bugLinkStrategy;
+            BugLinkStrategy bugLinkStrategy = null;
             final BaseBugLinkOptions bugOptions;
             if (contentSpec.getBugLinks().equals(BugLinkType.JIRA)) {
                 bugOptions = contentSpec.getJIRABugLinkOptions();
@@ -1430,45 +1471,58 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 if (bugOptions.getBaseUrl() != null) {
                     bugLinkStrategy = new JIRABugLinkStrategy(bugOptions.getBaseUrl());
                 } else {
-                    log.error("No JIRA server set.");
+                    log.error(String.format(ProcessorConstants.ERROR_BUG_LINKS_NO_SERVER_SET, "JIRA"));
                     return false;
                 }
             } else {
                 bugOptions = contentSpec.getBugzillaBugLinkOptions();
                 // Make sure a URL has been set
                 if (bugOptions.getBaseUrl() != null) {
-                    try {
-                        bugLinkStrategy = new BugzillaBugLinkStrategy(bugOptions.getBaseUrl());
-                    } catch (ConnectionException e) {
-                        log.error("Unable to connect to the Bugzilla server specified.");
-                        return false;
-                    }
+                    bugLinkStrategy = new BugzillaBugLinkStrategy(bugOptions.getBaseUrl());
                 } else {
-                    log.error("No Bugzilla server set.");
+                    log.error(String.format(ProcessorConstants.ERROR_BUG_LINKS_NO_SERVER_SET, "Bugzilla"));
                     return false;
                 }
             }
 
             // Validate the content in the bug options using the appropriate bug link strategy
             try {
-                bugLinkStrategy.validate(bugOptions);
+                if (bugLinkStrategy != null) {
+                    bugLinkStrategy.validate(bugOptions);
+                }
             } catch (ValidationException e) {
+                final Throwable cause = ExceptionUtilities.getRootCause(e);
                 if (strict) {
-                    log.error(e.getMessage());
+                    log.error(cause.getMessage());
                     return false;
                 } else {
-                    log.warn(e.getMessage());
+                    log.warn(cause.getMessage());
                 }
             }
 
             return true;
         } catch (Exception e) {
-            if (e.getCause() != null && e.getCause() instanceof ConnectException || e.getCause() instanceof MalformedURLException) {
-                log.error("Unable to connect to the server specified.");
+            if (e instanceof ConnectException || e instanceof MalformedURLException) {
+                if (strict) {
+                    log.error(ProcessorConstants.ERROR_BUG_LINKS_UNABLE_TO_CONNECT);
+                    return false;
+                } else {
+                    log.warn(ProcessorConstants.ERROR_BUG_LINKS_UNABLE_TO_CONNECT);
+                }
+            } else if (e.getCause() instanceof ConnectionException) {
+                if (strict) {
+                    log.error(ProcessorConstants.ERROR_BUGZILLA_UNABLE_TO_CONNECT);
+                    return false;
+                } else {
+                    log.warn(ProcessorConstants.ERROR_BUGZILLA_UNABLE_TO_CONNECT);
+                }
             } else {
-                log.error("Failed to validate the Bug Links. Error: " + e.getMessage());
+                log.error(String.format(ProcessorConstants.ERROR_BUG_LINKS_UNABLE_TO_VALIDATE,
+                        ExceptionUtilities.getRootCause(e).getMessage()));
+                return false;
             }
-            return false;
         }
+
+        return true;
     }
 }
