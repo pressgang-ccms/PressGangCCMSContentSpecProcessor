@@ -281,6 +281,8 @@ public class ProcessorConstants {
             "on this server" + CSLINE_MSG;
     public static final String WARN_LEVEL_TOPIC_TITLES_NONMATCH_MSG = LINE + "Possible Invalid %s! The topic title doesn't match." +
             CSLINE_MSG + CSLINE_MSG;
+    public static final String WARN_TOPIC_TITLES_NONMATCH_MSG = LINE + "Possible " + INVALID_TOPIC + " Existing topic title doesn't " +
+            "match." + CSLINE_MSG + CSLINE_MSG;
 
     // Process Errors
     public static final String ERROR_PROCESS_NONEXIST_MSG = LINE + INVALID_PROCESS + " Topic %s doesn't exist in the database." +

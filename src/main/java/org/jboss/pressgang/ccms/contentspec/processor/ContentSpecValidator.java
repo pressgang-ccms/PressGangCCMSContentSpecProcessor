@@ -1202,10 +1202,10 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             "Specified: " + specTopic.getTitle(), topicTitleMsg));
                     valid = false;
                 } else {
-                    specTopic.setTitle(topicTitle);
                     final String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topicTitle;
-                    log.warn(format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
+                    log.warn(format(ProcessorConstants.WARN_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
                             "Specified: " + specTopic.getTitle(), topicTitleMsg));
+                    specTopic.setTitle(topicTitle);
                 }
             }
         } else if (specTopic.getTopicType() == TopicType.LEVEL) {
@@ -1220,14 +1220,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             parent.getLevelType().getTitle(), "Specified: " + specTopic.getTitle(), topicTitleMsg));
                     valid = false;
                 } else {
+                    log.warn(format(ProcessorConstants.WARN_LEVEL_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
+                            parent.getLevelType().getTitle(), "Specified: " + specTopic.getTitle(), topicTitleMsg));
+
                     // Change the title
                     specTopic.setTitle(topicTitle);
                     if (specTopic.getTopicType() == TopicType.LEVEL) {
                         ((Level) specTopic.getParent()).setTitle(topicTitle);
                     }
-
-                    log.warn(format(ProcessorConstants.WARN_LEVEL_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
-                            parent.getLevelType().getTitle(), "Specified: " + specTopic.getTitle(), topicTitleMsg));
                 }
             }
         }
