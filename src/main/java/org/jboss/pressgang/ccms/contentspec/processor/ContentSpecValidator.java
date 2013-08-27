@@ -1193,38 +1193,41 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         boolean valid = true;
 
         if (specTopic.getTopicType() == TopicType.NORMAL) {
-            // Validate the title matches for normal topics if we aren't using permissive mode
+            // Validate the title matches for normal topics
             final String topicTitle = getTopicTitleWithConditions(specTopic, topic);
-            if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
-                String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topicTitle;
-                log.error(format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
-                        "Specified: " + specTopic.getTitle(), topicTitleMsg));
-                valid = false;
-            }
-            // If we are using permissive mode then change the title to the correct title
-            else if (processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
-                specTopic.setTitle(topicTitle);
+            if (!specTopic.getTitle().equals(topicTitle)) {
+                if (processingOptions.isStrictTitles()) {
+                    final String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topicTitle;
+                    log.error(format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
+                            "Specified: " + specTopic.getTitle(), topicTitleMsg));
+                    valid = false;
+                } else {
+                    specTopic.setTitle(topicTitle);
+                    final String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topicTitle;
+                    log.warn(format(ProcessorConstants.ERROR_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
+                            "Specified: " + specTopic.getTitle(), topicTitleMsg));
+                }
             }
         } else if (specTopic.getTopicType() == TopicType.LEVEL) {
             // Validate the title matches for inner level topics
             final Level parent = (Level) specTopic.getParent();
             final String topicTitle = getTopicTitleWithConditions(specTopic, topic);
-            if (!processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(topicTitle)) {
+            if (!specTopic.getTitle().equals(topicTitle)) {
+                // Add the warning message
                 String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topicTitle;
-                if (processingOptions.isStrictLevelTitles()) {
+                if (processingOptions.isStrictTitles()) {
                     log.error(format(ProcessorConstants.ERROR_LEVEL_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
                             parent.getLevelType().getTitle(), "Specified: " + specTopic.getTitle(), topicTitleMsg));
                     valid = false;
                 } else {
+                    // Change the title
+                    specTopic.setTitle(topicTitle);
+                    if (specTopic.getTopicType() == TopicType.LEVEL) {
+                        ((Level) specTopic.getParent()).setTitle(topicTitle);
+                    }
+
                     log.warn(format(ProcessorConstants.WARN_LEVEL_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
                             parent.getLevelType().getTitle(), "Specified: " + specTopic.getTitle(), topicTitleMsg));
-                }
-                // If we are using permissive mode then change the title to the correct title
-            } else if (processingOptions.isStrictLevelTitles() && processingOptions.isPermissiveMode() && !specTopic.getTitle().equals(
-                    topicTitle)) {
-                specTopic.setTitle(topicTitle);
-                if (specTopic.getTopicType() == TopicType.LEVEL) {
-                    ((Level) specTopic.getParent()).setTitle(topicTitle);
                 }
             }
         }

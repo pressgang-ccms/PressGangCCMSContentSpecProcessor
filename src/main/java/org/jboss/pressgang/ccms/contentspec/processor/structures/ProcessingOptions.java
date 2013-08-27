@@ -2,21 +2,12 @@ package org.jboss.pressgang.ccms.contentspec.processor.structures;
 
 public class ProcessingOptions {
 
-    private boolean permissiveMode = false;
     private boolean validate = false;
     private boolean ignoreChecksum = false;
     private boolean allowEmptyLevels = false;
     private boolean allowNewTopics = true;
-    private boolean strictLevelTitles = false;
+    private boolean strictTitles = false;
     private boolean translation = false;
-
-    public boolean isPermissiveMode() {
-        return permissiveMode;
-    }
-
-    public void setPermissiveMode(boolean permissiveMode) {
-        this.permissiveMode = permissiveMode;
-    }
 
     public boolean isValidating() {
         return validate;
@@ -50,12 +41,12 @@ public class ProcessingOptions {
         this.allowNewTopics = allowNewTopics;
     }
 
-    public boolean isStrictLevelTitles() {
-        return strictLevelTitles;
+    public boolean isStrictTitles() {
+        return strictTitles;
     }
 
-    public void setStrictLevelTitles(boolean strictLevelTitles) {
-        this.strictLevelTitles = strictLevelTitles;
+    public void setStrictTitles(boolean strictTitles) {
+        this.strictTitles = strictTitles;
     }
 
     public boolean isTranslation() {
