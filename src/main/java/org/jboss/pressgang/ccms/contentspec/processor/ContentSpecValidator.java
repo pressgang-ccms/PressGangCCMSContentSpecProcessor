@@ -555,10 +555,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             final SpecTopic targetTopic = (SpecTopic) node;
                             if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
                                     targetTopic.getTitle())) {
-                                log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
-                                        relationship.getRelationshipTitle(), targetTopic.getTitle()));
+                                final String errorMsg = String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
+                                        specTopic.getLineNumber(), relationship.getRelationshipTitle(), targetTopic.getTitle());
                                 if (processingOptions.isStrictTitles()) {
+                                    log.error(errorMsg);
                                     error = true;
+                                } else {
+                                    log.warn(errorMsg);
                                 }
                             }
                         }
@@ -574,10 +577,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             error = true;
                         } else if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
                                 targetLevel.getTitle())) {
-                            log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
-                                    relationship.getRelationshipTitle(), targetLevel.getTitle()));
+                            final String errorMsg = String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
+                                    specTopic.getLineNumber(), relationship.getRelationshipTitle(), targetLevel.getTitle());
                             if (processingOptions.isStrictTitles()) {
+                                log.error(errorMsg);
                                 error = true;
+                            } else {
+                                log.warn(errorMsg);
                             }
                         }
                     }
@@ -625,11 +631,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             error = true;
                         } else {
                             if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
-                                    specTopic.getTitle())) {
-                                log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
-                                        relationship.getRelationshipTitle(), specTopic.getTitle()));
+                                    relatedTopic.getTitle())) {
+                                final String errorMsg = String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
+                                        specTopic.getLineNumber(), relationship.getRelationshipTitle(), relatedTopic.getTitle());
                                 if (processingOptions.isStrictTitles()) {
+                                    log.error(errorMsg);
                                     error = true;
+                                } else {
+                                    log.warn(errorMsg);
                                 }
                             }
                         }
