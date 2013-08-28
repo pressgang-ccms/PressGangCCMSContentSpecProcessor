@@ -1064,8 +1064,10 @@ public class ContentSpecParser {
                 CSConstants.CLONED_TOPIC_ID_REGEX) || variables[0].matches(CSConstants.EXISTING_TOPIC_ID_REGEX)) {
             uniqueId = "L" + Integer.toString(lineNumber) + "-" + variables[0];
             getSpecTopics().put(uniqueId, tempTopic);
-        } else if (variables[0].startsWith("N")) {
+        } else if (variables[0].startsWith("N") && CSConstants.NEW_TOPIC_ID_PATTERN.matcher(variables[0]).matches()) {
             throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_ID_MSG, lineNumber, variables[0], line));
+        } else {
+            throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_INVALID_ID_MSG, lineNumber, line));
         }
         tempTopic.setUniqueId(uniqueId);
 

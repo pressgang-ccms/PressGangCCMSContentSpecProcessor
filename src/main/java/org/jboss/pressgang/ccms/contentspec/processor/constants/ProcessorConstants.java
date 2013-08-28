@@ -120,6 +120,7 @@ public class ProcessorConstants {
             CSLINE_MSG;
     public static final String ERROR_INVALID_INJECTION_TYPE_MSG = INVALID_CS + " The injection type \"%s\" doesn't exist or isn't a Type.";
     public static final String ERROR_DUPLICATE_ID_MSG = LINE + INVALID_CS + " Duplicate topic ID ( %s )." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_INVALID_ID_MSG = LINE + INVALID_TOPIC + " The Topic ID specified is not a valid ID." + CSLINE_MSG;
     public static final String ERROR_INVALID_BUG_LINKS_MSG = LINE + INVALID_CS + " The setting for bug links must be On or Off." +
             CSLINE_MSG;
     public static final String ERROR_INVALID_BUGZILLA_ASSIGNEE_MSG = LINE + INVALID_CS + " The setting for Bugzilla assignee must be On " +
