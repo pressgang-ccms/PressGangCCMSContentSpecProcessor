@@ -1476,13 +1476,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 }
             } else {
                 bugOptions = contentSpec.getBugzillaBugLinkOptions();
-                // Make sure a URL has been set
-                if (bugOptions.getBaseUrl() != null) {
-                    bugLinkStrategy = new BugzillaBugLinkStrategy(bugOptions.getBaseUrl());
-                } else {
-                    log.error(String.format(ProcessorConstants.ERROR_BUG_LINKS_NO_SERVER_SET, "Bugzilla"));
-                    return false;
-                }
+                // No need to check if a base url has been set as it will default to Red Hat Bugzilla anyways
+                bugLinkStrategy = new BugzillaBugLinkStrategy(bugOptions.getBaseUrl());
             }
 
             // Validate the content in the bug options using the appropriate bug link strategy

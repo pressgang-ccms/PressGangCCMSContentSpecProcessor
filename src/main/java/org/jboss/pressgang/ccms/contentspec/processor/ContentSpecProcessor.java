@@ -270,25 +270,29 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 if ((then + DAY_MILLI_SECS) > now.getTime()) {
                     // A day hasn't passed so check to see if anything has changed
                     boolean changed = false;
-                    if (EntityUtilities.hasContentSpecMetaDataChanged(CSConstants.BUG_LINKS_TITLE, contentSpec.getBugLinks().toString(),
-                            contentSpecEntity)) {
-                        changed = true;
-                    } else {
-                        BugLinkStrategy bugLinkStrategy = null;
-                        BaseBugLinkOptions bugOptions = null;
-                        if (contentSpec.getBugLinks() == BugLinkType.JIRA) {
-                            bugLinkStrategy = new JIRABugLinkStrategy(contentSpec.getJIRAServer());
-                            bugOptions = contentSpec.getJIRABugLinkOptions();
-                        } else if (contentSpec.getBugLinks() == BugLinkType.BUGZILLA) {
-                            bugLinkStrategy = new BugzillaBugLinkStrategy(contentSpec.getJIRAServer());
-                            bugOptions = contentSpec.getBugzillaBugLinkOptions();
-                        }
-
-                        if (bugLinkStrategy != null && bugLinkStrategy.hasValuesChanged(contentSpecEntity, bugOptions)) {
+                    if (contentSpec.isInjectBugLinks()) {
+                        final String bugLinksValue = contentSpec.getBugLinksActualValue() == null ? null : contentSpec
+                                .getBugLinksActualValue().toString();
+                        if (EntityUtilities.hasContentSpecMetaDataChanged(CSConstants.BUG_LINKS_TITLE, bugLinksValue, contentSpecEntity)) {
                             changed = true;
+                        } else {
+                            BugLinkStrategy bugLinkStrategy = null;
+                            BaseBugLinkOptions bugOptions = null;
+                            if (contentSpec.getBugLinks() == BugLinkType.JIRA) {
+                                bugLinkStrategy = new JIRABugLinkStrategy(contentSpec.getJIRAServer());
+                                bugOptions = contentSpec.getJIRABugLinkOptions();
+                            } else if (contentSpec.getBugLinks() == BugLinkType.BUGZILLA) {
+                                bugLinkStrategy = new BugzillaBugLinkStrategy(contentSpec.getBugzillaServer());
+                                bugOptions = contentSpec.getBugzillaBugLinkOptions();
+                            }
+
+                            if (bugLinkStrategy != null && bugLinkStrategy.hasValuesChanged(contentSpecEntity, bugOptions)) {
+                                changed = true;
+                            }
                         }
                     }
 
+                    // If the content hasn't changed then don't re-validate the bug links
                     if (!changed) {
                         reValidateBugLinks = false;
                     }
