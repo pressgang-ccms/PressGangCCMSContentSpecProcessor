@@ -1235,9 +1235,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
                     // Change the title
                     specTopic.setTitle(topicTitle);
-                    if (specTopic.getTopicType() == TopicType.LEVEL) {
-                        ((Level) specTopic.getParent()).setTitle(topicTitle);
-                    }
                 }
             }
         }
