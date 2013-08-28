@@ -76,7 +76,7 @@ import org.slf4j.LoggerFactory;
 public class ContentSpecProcessor implements ShutdownAbleApp {
     private final Logger LOG = LoggerFactory.getLogger(ContentSpecProcessor.class.getPackage().getName() + ".CustomContentSpecProcessor");
     private static final long DAY_MILLI_SECS = 24 * 60 * 60 * 1000;
-    private static final List<String> IGNORE_META_DATA = Arrays.asList(CSConstants.CHECKSUM_TITLE, CSConstants.ID_TITLE);
+    private static final List<String> IGNORE_META_DATA = Arrays.asList(CommonConstants.CS_CHECKSUM_TITLE, CommonConstants.CS_ID_TITLE);
 
     private final ErrorLogger log;
     private final DataProviderFactory providerFactory;
@@ -273,7 +273,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     if (contentSpec.isInjectBugLinks()) {
                         final String bugLinksValue = contentSpec.getBugLinksActualValue() == null ? null : contentSpec
                                 .getBugLinksActualValue().toString();
-                        if (EntityUtilities.hasContentSpecMetaDataChanged(CSConstants.BUG_LINKS_TITLE, bugLinksValue, contentSpecEntity)) {
+                        if (EntityUtilities.hasContentSpecMetaDataChanged(CommonConstants.CS_BUG_LINKS_TITLE, bugLinksValue, contentSpecEntity)) {
                             changed = true;
                         } else {
                             BugLinkStrategy bugLinkStrategy = null;
@@ -1724,7 +1724,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return metaData.getUniqueId().equals(Integer.toString(node.getId()));
         } else {
             // Allow for old abstract references.
-            if (metaData.getKey().equals(CSConstants.ABSTRACT_TITLE) && node.getTitle().equals(CSConstants.ABSTRACT_ALTERNATE_TITLE)) {
+            if (metaData.getKey().equals(CommonConstants.CS_ABSTRACT_TITLE) && node.getTitle().equals(CommonConstants.CS_ABSTRACT_ALTERNATE_TITLE)) {
                 return true;
             }
 

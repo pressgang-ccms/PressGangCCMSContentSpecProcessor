@@ -170,7 +170,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         if (!isNullOrEmpty(contentSpec.getVersion()) && !contentSpec.getVersion().matches(
                 ProcessorConstants.PRODUCT_VERSION_VALIDATE_REGEX)) {
-            log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, CSConstants.VERSION_TITLE));
+            log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, CommonConstants.CS_VERSION_TITLE));
             valid = false;
         }
 
@@ -203,12 +203,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // Check the version variables are all valid
         if (contentSpec.getBookVersion() != null && !contentSpec.getBookVersion().matches(ProcessorConstants.VERSION_VALIDATE_REGEX)) {
-            log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, CSConstants.BOOK_VERSION_TITLE));
+            log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, CommonConstants.CS_BOOK_VERSION_TITLE));
             valid = false;
         }
 
         if (contentSpec.getEdition() != null && !contentSpec.getEdition().matches(ProcessorConstants.VERSION_VALIDATE_REGEX)) {
-            log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, CSConstants.EDITION_TITLE));
+            log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, CommonConstants.CS_EDITION_TITLE));
             valid = false;
         }
 
@@ -405,7 +405,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 // Check that the checksum is valid
                 if (!processingOptions.isIgnoreChecksum()) {
                     final String currentChecksum = HashUtilities.generateMD5(
-                            serverContentSpec.replaceFirst(CSConstants.CHECKSUM_TITLE + "[ ]*=.*(\r)?\n", ""));
+                            serverContentSpec.replaceFirst(CommonConstants.CS_CHECKSUM_TITLE + "[ ]*=.*(\r)?\n", ""));
                     if (contentSpec.getChecksum() != null) {
                         if (!contentSpec.getChecksum().equals(currentChecksum)) {
                             log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_CHECKSUM_MSG, contentSpec.getChecksum(),

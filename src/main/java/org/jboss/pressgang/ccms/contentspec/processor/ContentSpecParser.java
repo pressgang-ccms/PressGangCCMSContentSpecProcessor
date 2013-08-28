@@ -48,6 +48,7 @@ import org.jboss.pressgang.ccms.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
+import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
 
 /**
@@ -403,12 +404,12 @@ public class ContentSpecParser {
             final String key = keyValuePair.getFirst();
             final String value = keyValuePair.getSecond();
 
-            if (key.equalsIgnoreCase(CSConstants.TITLE_TITLE)) {
+            if (key.equalsIgnoreCase(CommonConstants.CS_TITLE_TITLE)) {
                 contentSpec.setTitle(value);
 
                 // Process the rest of the spec now that we know the start is correct
                 return processSpecContents(contentSpec, processProcesses);
-            } else if (key.equalsIgnoreCase(CSConstants.CHECKSUM_TITLE)) {
+            } else if (key.equalsIgnoreCase(CommonConstants.CS_CHECKSUM_TITLE)) {
                 log.error(ProcessorConstants.ERROR_INCORRECT_NEW_MODE_MSG);
                 return false;
             } else {
@@ -437,7 +438,7 @@ public class ContentSpecParser {
             final String key = keyValuePair.getFirst();
             final String value = keyValuePair.getSecond();
 
-            if (key.equalsIgnoreCase(CSConstants.CHECKSUM_TITLE)) {
+            if (key.equalsIgnoreCase(CommonConstants.CS_CHECKSUM_TITLE)) {
                 contentSpec.setChecksum(value);
 
                 // Read in the Content Spec ID
@@ -447,7 +448,7 @@ public class ContentSpecParser {
                     final Pair<String, String> specIdPair = ProcessorUtilities.getAndValidateKeyValuePair(specIdLine);
                     final String specIdKey = specIdPair.getFirst();
                     final String specIdValue = specIdPair.getSecond();
-                    if (specIdKey.equalsIgnoreCase(CSConstants.ID_TITLE)) {
+                    if (specIdKey.equalsIgnoreCase(CommonConstants.CS_ID_TITLE)) {
                         int contentSpecId;
                         try {
                             contentSpecId = Integer.parseInt(specIdValue);
@@ -488,7 +489,7 @@ public class ContentSpecParser {
             final Pair<String, String> keyValuePair = ProcessorUtilities.getAndValidateKeyValuePair(getLines().peek());
             final String key = keyValuePair.getFirst();
 
-            if (key.equalsIgnoreCase(CSConstants.CHECKSUM_TITLE)) {
+            if (key.equalsIgnoreCase(CommonConstants.CS_CHECKSUM_TITLE)) {
                 return processEditedSpec(contentSpec, processProcesses);
             } else {
                 return processNewSpec(contentSpec, processProcesses);
@@ -777,7 +778,7 @@ public class ContentSpecParser {
             } else {
                 log.warn(ProcessorConstants.WARN_DEBUG_IGNORE_MSG);
             }
-        } else if (key.equalsIgnoreCase(CSConstants.PUBLICAN_CFG_TITLE)) {
+        } else if (key.equalsIgnoreCase(CommonConstants.CS_PUBLICAN_CFG_TITLE)) {
             int startingPos = StringUtilities.indexOf(value, '[');
             if (startingPos != -1) {
                 final StringBuilder cfg = new StringBuilder(value);
@@ -810,7 +811,7 @@ public class ContentSpecParser {
             } else {
                 throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber, line));
             }
-        } else if (key.equalsIgnoreCase(CSConstants.INLINE_INJECTION_TITLE)) {
+        } else if (key.equalsIgnoreCase(CommonConstants.CS_INLINE_INJECTION_TITLE)) {
             final InjectionOptions injectionOptions = new InjectionOptions();
             String[] types = null;
             if (StringUtilities.indexOf(value, '[') != -1) {
@@ -843,7 +844,7 @@ public class ContentSpecParser {
                 throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_INJECTION_MSG, lineNumber, line));
             }
             contentSpec.setInjectionOptions(injectionOptions);
-        } else if (key.equalsIgnoreCase(CSConstants.FILE_TITLE) || key.equalsIgnoreCase(CSConstants.FILE_SHORT_TITLE)) {
+        } else if (key.equalsIgnoreCase(CommonConstants.CS_FILE_TITLE) || key.equalsIgnoreCase(CommonConstants.CS_FILE_SHORT_TITLE)) {
             final List<File> files = parseFilesMetaData(value, lineNumber, line);
             contentSpec.setFiles(files);
         } else if (ContentSpecUtilities.isSpecTopicMetaData(key)) {

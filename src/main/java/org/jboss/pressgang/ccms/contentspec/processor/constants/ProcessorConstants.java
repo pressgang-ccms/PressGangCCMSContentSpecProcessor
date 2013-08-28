@@ -1,6 +1,6 @@
 package org.jboss.pressgang.ccms.contentspec.processor.constants;
 
-import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
+import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 
 public class ProcessorConstants {
     /**
@@ -160,8 +160,8 @@ public class ProcessorConstants {
             CSLINE_MSG;
 
     public static final String ERROR_INCORRECT_EDIT_MODE_MSG = "Invalid Operation! The Content Specification appears to be new " +
-            "and you cannot update a new Content Specification. Please make sure the " + CSConstants.CHECKSUM_TITLE + " and " + CSConstants
-            .ID_TITLE + " exists.";
+            "and you cannot update a new Content Specification. Please make sure the " + CommonConstants.CS_CHECKSUM_TITLE + " and " + CommonConstants
+            .CS_ID_TITLE + " exists.";
     public static final String ERROR_INCORRECT_NEW_MODE_MSG = "Invalid Operation! The Content Specification appears to be an existing " +
             "Content Specification and you cannot create a new Content Specification, from an exiting Content Specification.";
     public static final String ERROR_NONEXIST_CS_TYPE_MSG = "No processing type specified! Please specify whether to process as a " +
@@ -171,8 +171,8 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_CS_ID_MSG = "The Content Specification ID doesn't exist in the database." + CSLINE_MSG;
     public static final String ERROR_INVALID_CS_ID_FORMAT_MSG = "The Content Specification ID is not valid." + CSLINE_MSG;
     public static final String ERROR_INCORRECT_FILE_FORMAT_MSG = INVALID_CS + " Incorrect file format, " +
-            "a Content Specification must start with either a " + CSConstants.TITLE_TITLE + " or a " + CSConstants.CHECKSUM_TITLE +
-            " and " + CSConstants.ID_TITLE + ".";
+            "a Content Specification must start with either a " + CommonConstants.CS_TITLE_TITLE + " or a " + CommonConstants.CS_CHECKSUM_TITLE +
+            " and " + CommonConstants.CS_ID_TITLE + ".";
     public static final String ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG = LINE + "Duplicated bracket types found." + CSLINE_MSG;
 
     public static final String INFO_VALID_CS_MSG = "The Content Specification is valid.";
