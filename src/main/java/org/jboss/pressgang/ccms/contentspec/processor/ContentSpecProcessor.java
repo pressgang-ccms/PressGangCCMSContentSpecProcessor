@@ -975,25 +975,22 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     == null ? propertyTagProvider.newPropertyTagInContentSpecCollection(
                     contentSpecEntity) : contentSpecEntity.getProperties();
 
-            // Check if the property already exists and if so update it, otherwise create a new one
-            boolean found = false;
+            // Check if the property already exists and if so remove it, and then create a new one to ensure it a revision is created
             for (final PropertyTagInContentSpecWrapper propertyTag : propertyTagCollection.getItems()) {
                 if (propertyTag.getId().equals(ProcessorConstants.BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG)) {
                     propertyTag.setValue(Long.toString(new Date().getTime()));
                     propertyTagCollection.remove(propertyTag);
-                    propertyTagCollection.addUpdateItem(propertyTag);
-                    found = true;
+                    propertyTagCollection.addRemoveItem(propertyTag);
                 }
             }
 
-            if (!found) {
-                final PropertyTagWrapper lastUpdatedProperty = propertyTagProvider.getPropertyTag(
-                        ProcessorConstants.BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG);
-                final PropertyTagInContentSpecWrapper propertyTag = propertyTagProvider.newPropertyTagInContentSpec(lastUpdatedProperty,
-                        contentSpecEntity);
-                propertyTag.setValue(Long.toString(new Date().getTime()));
-                propertyTagCollection.addNewItem(propertyTag);
-            }
+            // Add the new tag
+            final PropertyTagWrapper lastUpdatedProperty = propertyTagProvider.getPropertyTag(
+                    ProcessorConstants.BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG);
+            final PropertyTagInContentSpecWrapper propertyTag = propertyTagProvider.newPropertyTagInContentSpec(lastUpdatedProperty,
+                    contentSpecEntity);
+            propertyTag.setValue(Long.toString(new Date().getTime()));
+            propertyTagCollection.addNewItem(propertyTag);
 
             // Set the updated properties for the content spec
             contentSpecEntity.setProperties(propertyTagCollection);
