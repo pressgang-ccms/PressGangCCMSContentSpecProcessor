@@ -249,7 +249,15 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                         log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, keyValueNode.getLineNumber(),
                                 keyValueNode.getText()));
                     } else if (value == null) {
+                        valid = false;
                         log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, keyValueNode.getLineNumber(),
+                                keyValueNode.getText()));
+                    }
+
+                    // Make sure the key is a valid meta data element
+                    if (!ProcessorConstants.VALID_METADATA_KEYS.contains(keyValueNode.getKey())) {
+                        valid = false;
+                        log.error(format(ProcessorConstants.ERROR_UNRECOGNISED_METADATA_MSG, keyValueNode.getLineNumber(),
                                 keyValueNode.getText()));
                     }
                 }

@@ -1,5 +1,9 @@
 package org.jboss.pressgang.ccms.contentspec.processor.constants;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 
 public class ProcessorConstants {
@@ -93,6 +97,7 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Incorrect tag attribute format." + CSLINE_MSG;
     public static final String ERROR_INVALID_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Incorrect attribute format." + CSLINE_MSG;
     public static final String ERROR_INVALID_METADATA_FORMAT_MSG = LINE + INVALID_CS + " Incorrect metadata format." + CSLINE_MSG;
+    public static final String ERROR_UNRECOGNISED_METADATA_MSG = LINE + INVALID_CS + " Unrecognised metadata element." + CSLINE_MSG;
     public static final String ERROR_MISSING_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Missing attribute detected." + CSLINE_MSG;
     public static final String ERROR_TAG_DUPLICATED_MSG = LINE + INVALID_CS + " Tag is duplicated." + CSLINE_MSG;
     public static final String ERROR_TAG_NONEXIST_MSG = LINE + INVALID_CS + " Tag \"%s\" doesn't exist." + CSLINE_MSG;
@@ -350,4 +355,50 @@ public class ProcessorConstants {
     public static final String PREFACE_REGEX = "^PREFACE[ ]*((:.*)|$)";
     public static final String PROCESS_REGEX = "^PROCESS[ ]*((:.*)|$)";
     public static final String LEVEL_REGEX = "^(CHAPTER|SECTION|APPENDIX|PART|PREFACE|PROCESS)[ ]*((:.*)|$)";
+
+    public static final List<String> VALID_METADATA_KEYS = Arrays.asList(
+            CommonConstants.CS_CHECKSUM_TITLE,
+            CommonConstants.CS_ID_TITLE,
+            CommonConstants.CS_TITLE_TITLE,
+            CommonConstants.CS_SUBTITLE_TITLE,
+            CommonConstants.CS_EDITION_TITLE,
+            CommonConstants.CS_BOOK_VERSION_TITLE,
+            CommonConstants.CS_PUBSNUMBER_TITLE,
+            CommonConstants.CS_PRODUCT_TITLE,
+            CommonConstants.CS_ABSTRACT_TITLE,
+            CommonConstants.CS_ABSTRACT_ALTERNATE_TITLE,
+            CommonConstants.CS_COPYRIGHT_HOLDER_TITLE,
+            CommonConstants.CS_COPYRIGHT_YEAR_TITLE,
+            CommonConstants.CS_VERSION_TITLE,
+            CommonConstants.CS_BRAND_TITLE,
+            CommonConstants.CS_BUG_LINKS_TITLE,
+            CommonConstants.CS_BUGZILLA_PRODUCT_TITLE,
+            CommonConstants.CS_BUGZILLA_COMPONENT_TITLE,
+            CommonConstants.CS_BUGZILLA_VERSION_TITLE,
+            CommonConstants.CS_BUGZILLA_KEYWORDS_TITLE,
+            CommonConstants.CS_BUGZILLA_SERVER_TITLE,
+            CommonConstants.CS_BUGZILLA_URL_TITLE,
+            CommonConstants.CS_BOOK_TYPE_TITLE,
+            CommonConstants.CS_BRAND_LOGO_TITLE,
+            CommonConstants.CS_PUBLICAN_CFG_TITLE,
+            CommonConstants.CS_INLINE_INJECTION_TITLE,
+            CommonConstants.CS_DTD_TITLE,
+            CommonConstants.CS_REV_HISTORY_TITLE,
+            CommonConstants.CS_FEEDBACK_TITLE,
+            CommonConstants.CS_LEGAL_NOTICE_TITLE,
+            CommonConstants.CS_BUGZILLA_ASSIGNEE_TITLE,
+            CommonConstants.CS_MAVEN_GROUP_ID_TITLE,
+            CommonConstants.CS_MAVEN_ARTIFACT_ID_TITLE,
+            CommonConstants.CS_FILE_TITLE,
+            CommonConstants.CS_FILE_SHORT_TITLE,
+            CommonConstants.CS_JIRA_PROJECT_TITLE,
+            CommonConstants.CS_JIRA_COMPONENT_TITLE,
+            CommonConstants.CS_JIRA_VERSION_TITLE,
+            CommonConstants.CS_JIRA_LABELS_TITLE,
+            CommonConstants.CS_JIRA_SERVER_TITLE,
+            CSConstants.SPACES_TITLE,
+            CSConstants.DEBUG_TITLE,
+            CSConstants.OUTPUT_STYLE_TITLE,
+            CSConstants.SURVEY_LINK_TITLE
+    );
 }
