@@ -552,19 +552,18 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                                     specTopic.getText()));
                             error = true;
                         } else {
-//                            final SpecTopic targetTopic = (SpecTopic) node;
-//                            if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
-//                                    targetTopic.getTitle())) {
-//                                if (!processingOptions.isPermissiveMode()) {
-//                                    log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
-// specTopic.getLineNumber(),
-//                                            relationship.getRelationshipTitle(), targetTopic.getTitle()));
-//                                    error = true;
-//                                }
-//                            }
+                            final SpecTopic targetTopic = (SpecTopic) node;
+                            if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
+                                    targetTopic.getTitle())) {
+                                log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+                                        relationship.getRelationshipTitle(), targetTopic.getTitle()));
+                                if (processingOptions.isStrictTitles()) {
+                                    error = true;
+                                }
+                            }
                         }
                     } else if (node instanceof Level) {
-//                        final Level targetLevel = (Level) node;
+                        final Level targetLevel = (Level) node;
                         if (relationship.getType() == RelationshipType.NEXT) {
                             log.error(String.format(ProcessorConstants.ERROR_NEXT_RELATED_LEVEL_MSG, specTopic.getLineNumber(),
                                     specTopic.getText()));
@@ -573,15 +572,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             log.error(String.format(ProcessorConstants.ERROR_PREV_RELATED_LEVEL_MSG, specTopic.getLineNumber(),
                                     specTopic.getText()));
                             error = true;
+                        } else if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
+                                targetLevel.getTitle())) {
+                            log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+                                    relationship.getRelationshipTitle(), targetLevel.getTitle()));
+                            if (processingOptions.isStrictTitles()) {
+                                error = true;
+                            }
                         }
-//                        else if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
-//                                targetLevel.getTitle())) {
-//                            if (!processingOptions.isPermissiveMode()) {
-//                                log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
-//                                        relationship.getRelationshipTitle(), targetLevel.getTitle()));
-//                                error = true;
-//                            }
-//                        }
                     }
                 } else if (relationship instanceof TopicRelationship) {
                     final SpecTopic relatedTopic = ((TopicRelationship) relationship).getSecondaryRelationship();
@@ -626,15 +624,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                                     specTopic.getText()));
                             error = true;
                         } else {
-                            //                        if (relationship.getRelationshipTitle() != null && !relationship
-                            // .getRelationshipTitle().equals(topic.getTitle())) {
-                            //                            if (!processingOptions.isPermissiveMode()) {
-                            //                                log.error(String.format(ProcessorConstants
-                            // .ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
-                            //                                        relationship.getRelationshipTitle(), topic.getTitle()));
-                            //                                error = true;
-                            //                            }
-                            //                        }
+                            if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
+                                    specTopic.getTitle())) {
+                                log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+                                        relationship.getRelationshipTitle(), specTopic.getTitle()));
+                                if (processingOptions.isStrictTitles()) {
+                                    error = true;
+                                }
+                            }
                         }
                     }
                 }
