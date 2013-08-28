@@ -28,6 +28,7 @@ import org.jboss.pressgang.ccms.contentspec.SpecNode;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.entities.BaseBugLinkOptions;
+import org.jboss.pressgang.ccms.contentspec.entities.JIRABugLinkOptions;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TopicRelationship;
@@ -1479,10 +1480,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             if (contentSpec.getBugLinks().equals(BugLinkType.JIRA)) {
                 bugOptions = contentSpec.getJIRABugLinkOptions();
                 // Make sure a URL has been set
-                if (bugOptions.getBaseUrl() != null) {
+                if (!isNullOrEmpty(bugOptions.getBaseUrl()) && !isNullOrEmpty(((JIRABugLinkOptions) bugOptions).getProject())) {
                     bugLinkStrategy = new JIRABugLinkStrategy(bugOptions.getBaseUrl());
-                } else {
+                } else if (isNullOrEmpty(bugOptions.getBaseUrl())) {
                     log.error(String.format(ProcessorConstants.ERROR_BUG_LINKS_NO_SERVER_SET, "JIRA"));
+                    return false;
+                } else {
+                    log.error(ProcessorConstants.ERROR_JIRA_BUG_LINKS_NO_PROJECT_SET);
                     return false;
                 }
             } else {

@@ -346,6 +346,8 @@ public class ProcessorConstants {
     public static final String ERROR_BUGZILLA_UNABLE_TO_CONNECT = "Unable to connect to the Bugzilla server specified.";
     public static final String ERROR_BUG_LINKS_NO_SERVER_SET = "No %s server set.";
     public static final String ERROR_BUG_LINKS_UNABLE_TO_VALIDATE = "Failed to validate the Bug Links. Error: %s";
+    public static final String ERROR_JIRA_BUG_LINKS_NO_PROJECT_SET = "No JIRA Project has been specified. A Project must be specified for" +
+            " all JIRA links.";
 
     // Level Regex Constants
     public static final String CHAPTER_REGEX = "^CHAPTER[ ]*((:.*)|$)";
