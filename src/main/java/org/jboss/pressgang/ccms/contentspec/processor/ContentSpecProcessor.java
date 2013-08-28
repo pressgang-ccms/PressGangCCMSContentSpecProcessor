@@ -327,8 +327,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
 
         try {
-            // Create the new topic entities
             final List<SpecTopic> specTopics = contentSpec.getSpecTopics();
+
+            // Create the duplicate topic map
+            final Map<SpecTopic, SpecTopic> duplicatedTopicMap = createDuplicatedTopicMap(specTopics);
+
+            // Create the new topic entities
             for (final SpecTopic specTopic : specTopics) {
 
                 // Check if the app should be shutdown
@@ -379,7 +383,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
 
             // Sync the Duplicated Topics (ID = X<Number>)
-            syncDuplicatedTopics(specTopics);
+            syncDuplicatedTopics(duplicatedTopicMap);
 
             // Save the content spec
             mergeAndSaveContentSpec(providerFactory, processorData, !edit);
@@ -860,12 +864,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         return changed;
     }
 
-    /**
-     * Syncs all duplicated topics with their real topic counterpart in the content specification.
-     *
-     * @param specTopics A HashMap of the all the topics in the Content Specification. The key is the Topics ID.
-     */
-    protected void syncDuplicatedTopics(final List<SpecTopic> specTopics) {
+    protected Map<SpecTopic, SpecTopic> createDuplicatedTopicMap(final List<SpecTopic> specTopics) {
+        final Map<SpecTopic, SpecTopic> mapping = new HashMap<SpecTopic, SpecTopic>();
         for (final SpecTopic topic : specTopics) {
             // Sync the normal duplicates first
             if (topic.isTopicADuplicateTopic()) {
@@ -879,7 +879,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                         break;
                     }
                 }
-                topic.setDBId(cloneTopic.getDBId());
+                mapping.put(topic, cloneTopic);
             }
             // Sync the duplicate cloned topics
             else if (topic.isTopicAClonedDuplicateTopic()) {
@@ -893,9 +893,25 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                         break;
                     }
                 }
-                topic.setDBId(cloneTopic.getDBId());
-
+                mapping.put(topic, cloneTopic);
             }
+        }
+
+        return mapping;
+    }
+
+    /**
+     * Syncs all duplicated topics with their real topic counterpart in the content specification.
+     *
+     * @param duplicatedTopics A Map of the all the duplicated topics in the Content Specification mapped to there bae topic.
+     */
+    protected void syncDuplicatedTopics(final Map<SpecTopic, SpecTopic> duplicatedTopics) {
+        for (final Map.Entry<SpecTopic, SpecTopic> topicEntry : duplicatedTopics.entrySet()) {
+            final SpecTopic topic = topicEntry.getKey();
+            final SpecTopic cloneTopic = topicEntry.getValue();
+
+            // Set the id
+            topic.setId(cloneTopic.getDBId() == null ? null : cloneTopic.getDBId().toString());
         }
     }
 
