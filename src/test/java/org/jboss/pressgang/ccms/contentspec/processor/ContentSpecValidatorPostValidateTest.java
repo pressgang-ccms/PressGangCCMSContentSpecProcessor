@@ -23,12 +23,14 @@ import org.jboss.pressgang.ccms.contentspec.entities.InjectionOptions;
 import org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
+import org.jboss.pressgang.ccms.provider.TextContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
+import org.jboss.pressgang.ccms.wrapper.TextContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.CollectionWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.UpdateableCollectionWrapper;
@@ -50,6 +52,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
     @ArbitraryString(type = StringType.ALPHA) String tagname;
     @Mock ContentSpecProvider contentSpecProvider;
     @Mock ContentSpecWrapper contentSpecWrapper;
+    @Mock TextContentSpecProvider textContentSpecProvider;
+    @Mock TextContentSpecWrapper textContentSpecWrapper;
     @Mock UpdateableCollectionWrapper<CSNodeWrapper> metaData;
     @Mock PropertyTagInContentSpecWrapper propertyTag;
     @Mock TagProvider tagProvider;
@@ -62,6 +66,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
     @Before
     public void setUp() {
         when(dataProviderFactory.getProvider(ContentSpecProvider.class)).thenReturn(contentSpecProvider);
+        when(dataProviderFactory.getProvider(TextContentSpecProvider.class)).thenReturn(textContentSpecProvider);
         when(dataProviderFactory.getProvider(TagProvider.class)).thenReturn(tagProvider);
         when(dataProviderFactory.getProvider(TopicProvider.class)).thenReturn(topicProvider);
         super.setUp();
@@ -88,7 +93,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
         // And a valid content spec wrapper for the id and revision specified
         given(contentSpecProvider.getContentSpec(anyInt(), anyInt())).willReturn(contentSpecWrapper);
-        given(contentSpecProvider.getContentSpecAsString(anyInt(), anyInt())).willReturn("");
+        given(textContentSpecProvider.getTextContentSpec(anyInt(), anyInt())).willReturn(textContentSpecWrapper);
+        given(textContentSpecWrapper.getText()).willReturn("");
         given(contentSpecWrapper.getChildren()).willReturn(metaData);
         given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
         // And that the checksum of the server content spec version matches the local one
@@ -126,7 +132,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
         // And a valid content spec wrapper for the id and revision specified
         given(contentSpecProvider.getContentSpec(anyInt(), anyInt())).willReturn(contentSpecWrapper);
-        given(contentSpecProvider.getContentSpecAsString(anyInt(), anyInt())).willReturn("CHECKSUM=" + username);
+        given(textContentSpecProvider.getTextContentSpec(anyInt(), anyInt())).willReturn(textContentSpecWrapper);
+        given(textContentSpecWrapper.getText()).willReturn("CHECKSUM=" + username);
         given(contentSpecWrapper.getChildren()).willReturn(metaData);
         given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
 
@@ -146,7 +153,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         contentSpec.setChecksum(null);
         // And a valid content spec wrapper for the id and revision specified
         given(contentSpecProvider.getContentSpec(anyInt(), anyInt())).willReturn(contentSpecWrapper);
-        given(contentSpecProvider.getContentSpecAsString(anyInt(), anyInt())).willReturn("");
+        given(textContentSpecProvider.getTextContentSpec(anyInt(), anyInt())).willReturn(textContentSpecWrapper);
+        given(textContentSpecWrapper.getText()).willReturn("");
         given(contentSpecWrapper.getChildren()).willReturn(metaData);
         given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
 
@@ -166,7 +174,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         contentSpec.setChecksum(null);
         // And a valid content spec wrapper for the id and revision specified
         given(contentSpecProvider.getContentSpec(anyInt(), anyInt())).willReturn(contentSpecWrapper);
-        given(contentSpecProvider.getContentSpecAsString(anyInt(), anyInt())).willReturn("");
+        given(textContentSpecProvider.getTextContentSpec(anyInt(), anyInt())).willReturn(textContentSpecWrapper);
+        given(textContentSpecWrapper.getText()).willReturn("");
         given(contentSpecWrapper.getChildren()).willReturn(metaData);
         given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
         // And the ignoreChecksum option is set
@@ -191,7 +200,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
         // And a valid content spec wrapper for the id and revision specified that specifies the spec is read-only
         given(contentSpecProvider.getContentSpec(anyInt(), anyInt())).willReturn(contentSpecWrapper);
-        given(contentSpecProvider.getContentSpecAsString(anyInt(), anyInt())).willReturn("");
+        given(textContentSpecProvider.getTextContentSpec(anyInt(), anyInt())).willReturn(textContentSpecWrapper);
+        given(textContentSpecWrapper.getText()).willReturn("");
         given(contentSpecWrapper.getChildren()).willReturn(metaData);
         given(contentSpecWrapper.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID)).willReturn(propertyTag);
         given(propertyTag.getValue()).willReturn("foo");
@@ -215,7 +225,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
         // And a valid content spec wrapper for the id and revision specified
         given(contentSpecProvider.getContentSpec(anyInt(), anyInt())).willReturn(contentSpecWrapper);
-        given(contentSpecProvider.getContentSpecAsString(anyInt(), anyInt())).willReturn("");
+        given(textContentSpecProvider.getTextContentSpec(anyInt(), anyInt())).willReturn(textContentSpecWrapper);
+        given(textContentSpecWrapper.getText()).willReturn("");
         given(contentSpecWrapper.getChildren()).willReturn(metaData);
         given(contentSpecWrapper.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID)).willReturn(propertyTag);
         given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
