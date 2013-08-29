@@ -50,6 +50,7 @@ import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
 import org.jboss.pressgang.ccms.docbook.compiling.BugLinkStrategy;
 import org.jboss.pressgang.ccms.docbook.processing.BugzillaBugLinkStrategy;
 import org.jboss.pressgang.ccms.docbook.processing.JIRABugLinkStrategy;
+import org.jboss.pressgang.ccms.provider.CategoryProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.provider.FileProvider;
@@ -62,7 +63,7 @@ import org.jboss.pressgang.ccms.utils.common.ExceptionUtilities;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
 import org.jboss.pressgang.ccms.utils.common.XMLUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
-import org.jboss.pressgang.ccms.wrapper.CategoryInTagWrapper;
+import org.jboss.pressgang.ccms.wrapper.CategoryWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.FileWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
@@ -87,6 +88,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private final ContentSpecProvider contentSpecProvider;
     private final TextContentSpecProvider textContentSpecProvider;
     private final TagProvider tagProvider;
+    private final CategoryProvider categoryProvider;
     private final FileProvider fileProvider;
     private final ErrorLogger log;
     private final ProcessingOptions processingOptions;
@@ -117,6 +119,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         this.factory = factory;
         topicProvider = factory.getProvider(TopicProvider.class);
         tagProvider = factory.getProvider(TagProvider.class);
+        categoryProvider = factory.getProvider(CategoryProvider.class);
         contentSpecProvider = factory.getProvider(ContentSpecProvider.class);
         textContentSpecProvider = factory.getProvider(TextContentSpecProvider.class);
         fileProvider = factory.getProvider(FileProvider.class);
@@ -1399,9 +1402,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
 
             // Check that the mutex value entered is correct
-            final Map<CategoryInTagWrapper, List<TagWrapper>> mapping = EntityUtilities.getCategoryMappingFromTagList(tags);
-            for (final Entry<CategoryInTagWrapper, List<TagWrapper>> catEntry : mapping.entrySet()) {
-                final CategoryInTagWrapper cat = catEntry.getKey();
+            final Map<Integer, List<TagWrapper>> mapping = EntityUtilities.getCategoryMappingFromTagList(tags);
+            for (final Entry<Integer, List<TagWrapper>> catEntry : mapping.entrySet()) {
+                final CategoryWrapper cat = categoryProvider.getCategory(catEntry.getKey());
                 final List<TagWrapper> catTags = catEntry.getValue();
 
                 // Check if the app should be shutdown
@@ -1508,9 +1511,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
 
             // Check that the mutex value entered is correct
-            final Map<CategoryInTagWrapper, List<TagWrapper>> mapping = EntityUtilities.getCategoryMappingFromTagList(tags);
-            for (final Entry<CategoryInTagWrapper, List<TagWrapper>> catEntry : mapping.entrySet()) {
-                final CategoryInTagWrapper cat = catEntry.getKey();
+            final Map<Integer, List<TagWrapper>> mapping = EntityUtilities.getCategoryMappingFromTagList(tags);
+            for (final Entry<Integer, List<TagWrapper>> catEntry : mapping.entrySet()) {
+                final CategoryWrapper cat = categoryProvider.getCategory(catEntry.getKey());
                 final List<TagWrapper> catTags = catEntry.getValue();
 
                 // Check if the app should be shutdown
