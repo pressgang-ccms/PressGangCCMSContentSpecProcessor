@@ -1195,7 +1195,8 @@ public class ContentSpecParser {
                     final String id = matcher.group("TopicID");
                     final String relationshipTitle = matcher.group("TopicTitle");
 
-                    topicRelationships.add(new Relationship(uniqueId, id, relationshipType, relationshipTitle.trim()));
+                    topicRelationships.add(new Relationship(uniqueId, id, relationshipType, ProcessorUtilities.replaceEscapeChars
+                            (relationshipTitle.trim())));
                 } else {
                     if (relationshipId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
                             ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
