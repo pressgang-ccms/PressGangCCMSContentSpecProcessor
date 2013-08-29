@@ -1282,6 +1282,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // Validate the tags
         if (!validateTopicTags(specTopic, specTopic.getTags(false))) {
             valid = false;
+        } else if (!validateExistingTopicTags(specTopic, topic)) {
+            valid = false;
         }
 
         return valid;
@@ -1462,6 +1464,65 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                                 specNode.getText());
                     }
                     log.error(errorMsg);
+                    valid = false;
+                }
+            }
+        }
+        return valid;
+    }
+
+    /**
+     * Checks that adding tags to existing topic won't cause problems
+     *
+     * @param specTopic The topic the tags below to.
+     * @return True if the tags are valid otherwise false.
+     */
+    private boolean validateExistingTopicTags(final SpecNode specTopic, final BaseTopicWrapper<?> topic) {
+        boolean valid = true;
+        final List<String> tagNames = specTopic.getTags(true);
+        if (!tagNames.isEmpty()) {
+            final Set<TagWrapper> tags = new HashSet<TagWrapper>();
+            for (final String tagName : tagNames) {
+                // Check if the app should be shutdown
+                if (isShuttingDown.get()) {
+                    shutdown.set(true);
+                    return false;
+                }
+                // Get the tag from the database
+                TagWrapper tag = null;
+                try {
+                    tag = tagProvider.getTagByName(tagName);
+                } catch (NotFoundException e) {
+
+                }
+
+                // Check that it exists
+                if (tag != null) {
+                    tags.add(tag);
+                }
+            }
+
+            // Add all the existing tags
+            if (topic.getTags() != null) {
+                tags.addAll(topic.getTags().getItems());
+            }
+
+            // Check that the mutex value entered is correct
+            final Map<CategoryInTagWrapper, List<TagWrapper>> mapping = EntityUtilities.getCategoryMappingFromTagList(tags);
+            for (final Entry<CategoryInTagWrapper, List<TagWrapper>> catEntry : mapping.entrySet()) {
+                final CategoryInTagWrapper cat = catEntry.getKey();
+                final List<TagWrapper> catTags = catEntry.getValue();
+
+                // Check if the app should be shutdown
+                if (isShuttingDown.get()) {
+                    shutdown.set(true);
+                    return false;
+                }
+
+                // Check that only one tag has been set if the category is mutually exclusive
+                if (cat.isMutuallyExclusive() && catTags.size() > 1) {
+                        log.error(String.format(ProcessorConstants.ERROR_TOPIC_TOO_MANY_CATS_MSG, specTopic.getLineNumber(),
+                                cat.getName(), specTopic.getText()));
                     valid = false;
                 }
             }

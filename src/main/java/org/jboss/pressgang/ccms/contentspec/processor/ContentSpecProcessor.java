@@ -221,7 +221,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 }
 
                 LOG.info("Saving the Content Specification to the server...");
-                if (saveContentSpec(providerFactory, contentSpec, editing, processorData)) {
+                if (saveContentSpec(providerFactory, processorData, editing)) {
                     log.info(ProcessorConstants.INFO_SUCCESSFUL_SAVE_MSG);
                 } else {
                     log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
@@ -316,18 +316,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * Saves the Content Specification and all of the topics in the content specification
      *
      * @param providerFactory
-     * @param contentSpec     The Content Specification to be saved.
+     * @param processorData   The data to be processed.
      * @param edit            Whether the content specification is being edited or created.
-     * @param username        The User who requested the Content Spec be saved.
-     * @param logMessage
      * @return True if the topic saved successfully otherwise false.
      */
-    protected boolean saveContentSpec(final DataProviderFactory providerFactory, final ContentSpec contentSpec, final boolean edit,
-            final ProcessorData processorData) {
+    protected boolean saveContentSpec(final DataProviderFactory providerFactory, final ProcessorData processorData, final boolean edit) {
         final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
 
         try {
-            final List<SpecTopic> specTopics = contentSpec.getSpecTopics();
+            final List<SpecTopic> specTopics = processorData.getContentSpec().getSpecTopics();
 
             // Create the duplicate topic map
             final Map<SpecTopic, SpecTopic> duplicatedTopicMap = createDuplicatedTopicMap(specTopics);
@@ -393,9 +390,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 providerFactory.rollback();
             } else {
                 // Clean up the data that was created
-                if (contentSpec.getId() != null && !edit) {
+                if (processorData.getContentSpec().getId() != null && !edit) {
                     try {
-                        contentSpecProvider.deleteContentSpec(contentSpec.getId());
+                        contentSpecProvider.deleteContentSpec(processorData.getContentSpec().getId());
                     } catch (Exception e1) {
                         log.error("Unable to clean up the Content Specification from the database.", e);
                     }
@@ -409,9 +406,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 providerFactory.rollback();
             } else {
                 // Clean up the data that was created
-                if (contentSpec.getId() != null && !edit) {
+                if (processorData.getContentSpec().getId() != null && !edit) {
                     try {
-                        contentSpecProvider.deleteContentSpec(contentSpec.getId());
+                        contentSpecProvider.deleteContentSpec(processorData.getContentSpec().getId());
                     } catch (Exception e1) {
                         log.error("Unable to clean up the Content Specification from the database.", e);
                     }
