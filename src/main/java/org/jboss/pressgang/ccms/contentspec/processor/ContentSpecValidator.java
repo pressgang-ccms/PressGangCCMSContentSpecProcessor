@@ -54,6 +54,7 @@ import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.provider.FileProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
+import org.jboss.pressgang.ccms.provider.TextContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.provider.exception.NotFoundException;
 import org.jboss.pressgang.ccms.utils.common.DocBookUtilities;
@@ -65,6 +66,7 @@ import org.jboss.pressgang.ccms.wrapper.CategoryInTagWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.FileWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
+import org.jboss.pressgang.ccms.wrapper.TextContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.base.BaseTopicWrapper;
 import org.w3c.dom.Document;
@@ -83,6 +85,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private final DataProviderFactory factory;
     private final TopicProvider topicProvider;
     private final ContentSpecProvider contentSpecProvider;
+    private final TextContentSpecProvider textContentSpecProvider;
     private final TagProvider tagProvider;
     private final FileProvider fileProvider;
     private final ErrorLogger log;
@@ -115,6 +118,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         topicProvider = factory.getProvider(TopicProvider.class);
         tagProvider = factory.getProvider(TagProvider.class);
         contentSpecProvider = factory.getProvider(ContentSpecProvider.class);
+        textContentSpecProvider = factory.getProvider(TextContentSpecProvider.class);
         fileProvider = factory.getProvider(FileProvider.class);
         log = loggerManager.getLogger(ContentSpecValidator.class);
         this.processingOptions = processingOptions;
@@ -396,20 +400,24 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // If editing then check that the ID exists & the CHECKSUM/SpecRevision match
         if (contentSpec.getId() != null) {
-            ContentSpecWrapper contentSpecTopic = null;
+            ContentSpecWrapper contentSpecEntity = null;
             String serverContentSpec = null;
             try {
-                contentSpecTopic = contentSpecProvider.getContentSpec(contentSpec.getId(), contentSpec.getRevision());
-                serverContentSpec = contentSpecProvider.getContentSpecAsString(contentSpec.getId(), contentSpec.getRevision());
+                contentSpecEntity = contentSpecProvider.getContentSpec(contentSpec.getId(), contentSpec.getRevision());
+                final TextContentSpecWrapper textContentSpecEntity = textContentSpecProvider.getTextContentSpec(contentSpec.getId(),
+                        contentSpec.getRevision());
+                if (textContentSpecEntity != null) {
+                    serverContentSpec = textContentSpecEntity.getText();
+                }
             } catch (NotFoundException e) {
 
             }
-            if (contentSpecTopic == null || serverContentSpec == null) {
+            if (contentSpecEntity == null || serverContentSpec == null) {
                 log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
                 valid = false;
             } else {
                 // Set the revision the content spec is being validated for
-                contentSpec.setRevision(contentSpecTopic.getRevision());
+                contentSpec.setRevision(contentSpecEntity.getRevision());
 
                 // Check that the checksum is valid
                 if (!processingOptions.isIgnoreChecksum()) {
@@ -428,8 +436,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 }
 
                 // Check that the Content Spec isn't read only
-                if (contentSpecTopic.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID) != null) {
-                    if (!contentSpecTopic.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID).getValue().matches(
+                if (contentSpecEntity.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID) != null) {
+                    if (!contentSpecEntity.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID).getValue().matches(
                             "(^|.*,)" + username + "(,.*|$)")) {
                         log.error(ProcessorConstants.ERROR_CS_READ_ONLY_MSG);
                         valid = false;
