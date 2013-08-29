@@ -28,7 +28,6 @@ import org.jboss.pressgang.ccms.contentspec.SpecNode;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.entities.BaseBugLinkOptions;
-import org.jboss.pressgang.ccms.contentspec.entities.JIRABugLinkOptions;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TopicRelationship;
@@ -1529,8 +1528,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
                 // Check that only one tag has been set if the category is mutually exclusive
                 if (cat.isMutuallyExclusive() && catTags.size() > 1) {
-                        log.error(String.format(ProcessorConstants.ERROR_TOPIC_TOO_MANY_CATS_MSG, specTopic.getLineNumber(),
-                                cat.getName(), specTopic.getText()));
+                    log.error(String.format(ProcessorConstants.ERROR_TOPIC_TOO_MANY_CATS_MSG, specTopic.getLineNumber(), cat.getName(),
+                            specTopic.getText()));
                     valid = false;
                 }
             }
@@ -1552,18 +1551,15 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         try {
-            BugLinkStrategy bugLinkStrategy = null;
+            final BugLinkStrategy bugLinkStrategy;
             final BaseBugLinkOptions bugOptions;
             if (contentSpec.getBugLinks().equals(BugLinkType.JIRA)) {
                 bugOptions = contentSpec.getJIRABugLinkOptions();
                 // Make sure a URL has been set
-                if (!isNullOrEmpty(bugOptions.getBaseUrl()) && !isNullOrEmpty(((JIRABugLinkOptions) bugOptions).getProject())) {
+                if (!isNullOrEmpty(bugOptions.getBaseUrl())) {
                     bugLinkStrategy = new JIRABugLinkStrategy(bugOptions.getBaseUrl());
-                } else if (isNullOrEmpty(bugOptions.getBaseUrl())) {
-                    log.error(String.format(ProcessorConstants.ERROR_BUG_LINKS_NO_SERVER_SET, "JIRA"));
-                    return false;
                 } else {
-                    log.error(ProcessorConstants.ERROR_JIRA_BUG_LINKS_NO_PROJECT_SET);
+                    log.error(String.format(ProcessorConstants.ERROR_BUG_LINKS_NO_SERVER_SET, "JIRA"));
                     return false;
                 }
             } else {
@@ -1574,9 +1570,15 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
             // Validate the content in the bug options using the appropriate bug link strategy
             try {
-                if (bugLinkStrategy != null) {
-                    bugLinkStrategy.validate(bugOptions);
-                }
+                bugLinkStrategy.checkValidValues(bugOptions);
+            } catch (ValidationException e) {
+                final Throwable cause = ExceptionUtilities.getRootCause(e);
+                log.error(cause.getMessage());
+                return false;
+            }
+            // Validate the content in the bug options against the external service using the appropriate bug link strategy
+            try {
+                bugLinkStrategy.validate(bugOptions);
             } catch (ValidationException e) {
                 final Throwable cause = ExceptionUtilities.getRootCause(e);
                 if (strict) {
