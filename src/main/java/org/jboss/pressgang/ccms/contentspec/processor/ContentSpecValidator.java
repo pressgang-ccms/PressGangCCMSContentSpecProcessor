@@ -1480,7 +1480,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @param specTopic The topic the tags below to.
      * @return True if the tags are valid otherwise false.
      */
-    private boolean validateExistingTopicTags(final SpecNode specTopic, final BaseTopicWrapper<?> topic) {
+    private boolean validateExistingTopicTags(final SpecTopic specTopic, final BaseTopicWrapper<?> topic) {
+        // Ignore validating revision topics
+        if (specTopic.getRevision() != null) {
+            return true;
+        }
+
         boolean valid = true;
         final List<String> tagNames = specTopic.getTags(true);
         if (!tagNames.isEmpty()) {
