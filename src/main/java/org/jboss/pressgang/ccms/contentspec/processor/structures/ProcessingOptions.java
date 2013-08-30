@@ -8,6 +8,7 @@ public class ProcessingOptions {
     private boolean allowNewTopics = true;
     private boolean strictTitles = false;
     private boolean strictBugLinks = false;
+    private boolean validateBugLinks = true;
     private boolean translation = false;
 
     public boolean isValidating() {
@@ -64,5 +65,13 @@ public class ProcessingOptions {
 
     public void setStrictBugLinks(boolean strictBugLinks) {
         this.strictBugLinks = strictBugLinks;
+    }
+
+    public boolean isValidateBugLinks() {
+        return validateBugLinks;
+    }
+
+    public void setValidateBugLinks(boolean validateBugLinks) {
+        this.validateBugLinks = validateBugLinks;
     }
 }

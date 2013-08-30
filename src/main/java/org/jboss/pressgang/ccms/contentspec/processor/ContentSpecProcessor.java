@@ -243,69 +243,71 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final ContentSpec contentSpec = processorData.getContentSpec();
         boolean valid = validator.postValidateContentSpec(contentSpec, processorData.getUsername());
 
-        // Find out if we should re-validate bug links
-        boolean reValidateBugLinks = true;
-        if (contentSpec.getId() != null) {
-            ContentSpecWrapper contentSpecEntity = null;
-            try {
-                contentSpecEntity = providerFactory.getProvider(ContentSpecProvider.class).getContentSpec(contentSpec.getId(),
-                        contentSpec.getRevision());
-            } catch (ProviderException e) {
+        if (processingOptions.isValidateBugLinks()) {
+            // Find out if we should re-validate bug links
+            boolean reValidateBugLinks = true;
+            if (contentSpec.getId() != null) {
+                ContentSpecWrapper contentSpecEntity = null;
+                try {
+                    contentSpecEntity = providerFactory.getProvider(ContentSpecProvider.class).getContentSpec(contentSpec.getId(),
+                            contentSpec.getRevision());
+                } catch (ProviderException e) {
 
-            }
-
-            // This shouldn't happen but if it does, then it'll be picked up in the postValidationContentSpec method
-            if (contentSpecEntity != null) {
-                final PropertyTagInContentSpecWrapper lastValidated = contentSpecEntity.getProperty(
-                        ProcessorConstants.BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG);
-                final Date now = new Date();
-                final long then;
-                if (lastValidated != null && lastValidated.getValue() != null && lastValidated.getValue().matches("^[0-9]+$")) {
-                    then = Long.parseLong(lastValidated.getValue());
-                } else {
-                    then = 0L;
                 }
 
-                // Check that a day has passed
-                if ((then + DAY_MILLI_SECS) > now.getTime()) {
-                    // A day hasn't passed so check to see if anything has changed
-                    boolean changed = false;
-                    if (contentSpec.isInjectBugLinks()) {
-                        final String bugLinksValue = contentSpec.getBugLinksActualValue() == null ? null : contentSpec
-                                .getBugLinksActualValue().toString();
-                        if (EntityUtilities.hasContentSpecMetaDataChanged(CommonConstants.CS_BUG_LINKS_TITLE, bugLinksValue, contentSpecEntity)) {
-                            changed = true;
-                        } else {
-                            BugLinkStrategy bugLinkStrategy = null;
-                            BaseBugLinkOptions bugOptions = null;
-                            if (contentSpec.getBugLinks() == BugLinkType.JIRA) {
-                                bugLinkStrategy = new JIRABugLinkStrategy(contentSpec.getJIRAServer());
-                                bugOptions = contentSpec.getJIRABugLinkOptions();
-                            } else if (contentSpec.getBugLinks() == BugLinkType.BUGZILLA) {
-                                bugLinkStrategy = new BugzillaBugLinkStrategy(contentSpec.getBugzillaServer());
-                                bugOptions = contentSpec.getBugzillaBugLinkOptions();
-                            }
+                // This shouldn't happen but if it does, then it'll be picked up in the postValidationContentSpec method
+                if (contentSpecEntity != null) {
+                    final PropertyTagInContentSpecWrapper lastValidated = contentSpecEntity.getProperty(
+                            ProcessorConstants.BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG);
+                    final Date now = new Date();
+                    final long then;
+                    if (lastValidated != null && lastValidated.getValue() != null && lastValidated.getValue().matches("^[0-9]+$")) {
+                        then = Long.parseLong(lastValidated.getValue());
+                    } else {
+                        then = 0L;
+                    }
 
-                            if (bugLinkStrategy != null && bugLinkStrategy.hasValuesChanged(contentSpecEntity, bugOptions)) {
+                    // Check that a day has passed
+                    if ((then + DAY_MILLI_SECS) > now.getTime()) {
+                        // A day hasn't passed so check to see if anything has changed
+                        boolean changed = false;
+                        if (contentSpec.isInjectBugLinks()) {
+                            final String bugLinksValue = contentSpec.getBugLinksActualValue() == null ? null : contentSpec
+                                    .getBugLinksActualValue().toString();
+                            if (EntityUtilities.hasContentSpecMetaDataChanged(CommonConstants.CS_BUG_LINKS_TITLE, bugLinksValue, contentSpecEntity)) {
                                 changed = true;
+                            } else {
+                                BugLinkStrategy bugLinkStrategy = null;
+                                BaseBugLinkOptions bugOptions = null;
+                                if (contentSpec.getBugLinks() == BugLinkType.JIRA) {
+                                    bugLinkStrategy = new JIRABugLinkStrategy(contentSpec.getJIRAServer());
+                                    bugOptions = contentSpec.getJIRABugLinkOptions();
+                                } else if (contentSpec.getBugLinks() == BugLinkType.BUGZILLA) {
+                                    bugLinkStrategy = new BugzillaBugLinkStrategy(contentSpec.getBugzillaServer());
+                                    bugOptions = contentSpec.getBugzillaBugLinkOptions();
+                                }
+
+                                if (bugLinkStrategy != null && bugLinkStrategy.hasValuesChanged(contentSpecEntity, bugOptions)) {
+                                    changed = true;
+                                }
                             }
                         }
-                    }
 
-                    // If the content hasn't changed then don't re-validate the bug links
-                    if (!changed) {
-                        reValidateBugLinks = false;
+                        // If the content hasn't changed then don't re-validate the bug links
+                        if (!changed) {
+                            reValidateBugLinks = false;
+                        }
                     }
                 }
             }
-        }
 
-        // Validate the bug links
-        if (reValidateBugLinks) {
-            processorData.setBugLinksReValidated(reValidateBugLinks);
-            LOG.info("Starting bug link validation pass...");
-            if (!validator.validateBugLinks(contentSpec, processingOptions.isStrictBugLinks())) {
-                valid = false;
+            // Validate the bug links
+            if (reValidateBugLinks) {
+                processorData.setBugLinksReValidated(reValidateBugLinks);
+                LOG.info("Starting bug link validation pass...");
+                if (!validator.validateBugLinks(contentSpec, processingOptions.isStrictBugLinks())) {
+                    valid = false;
+                }
             }
         }
 
