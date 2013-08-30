@@ -271,6 +271,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
         }
 
+        // Validate the basic bug link data
+        preValidateBugLinks(contentSpec);
+
         // Check that each level is valid
         if (!preValidateLevel(contentSpec.getBaseLevel(), specTopicMap, contentSpec.getAllowEmptyLevels(), contentSpec.getBookType())) {
             valid = false;
@@ -1538,13 +1541,54 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     }
 
     /**
+     * Validate the Bug Links MetaData for a Content Specification without doing any external calls.
+     *
+     * @param contentSpec The Content Spec to validate.
+     * @return True if the links values are valid, otherwise false.
+     */
+    public boolean preValidateBugLinks(final ContentSpec contentSpec) {
+        // If Bug Links are turned off then there isn't any need to validate them.
+        if (!contentSpec.isInjectBugLinks()) {
+            return true;
+        }
+
+        final BugLinkStrategy bugLinkStrategy;
+        final BaseBugLinkOptions bugOptions;
+        if (contentSpec.getBugLinks().equals(BugLinkType.JIRA)) {
+            bugOptions = contentSpec.getJIRABugLinkOptions();
+            // Make sure a URL has been set
+            if (!isNullOrEmpty(bugOptions.getBaseUrl())) {
+                bugLinkStrategy = new JIRABugLinkStrategy(bugOptions.getBaseUrl());
+            } else {
+                log.error(String.format(ProcessorConstants.ERROR_BUG_LINKS_NO_SERVER_SET, "JIRA"));
+                return false;
+            }
+        } else {
+            bugOptions = contentSpec.getBugzillaBugLinkOptions();
+            // No need to check if a base url has been set as it will default to Red Hat Bugzilla anyways
+            bugLinkStrategy = new BugzillaBugLinkStrategy(bugOptions.getBaseUrl());
+        }
+
+        // Validate the content in the bug options using the appropriate bug link strategy
+        try {
+            bugLinkStrategy.checkValidValues(bugOptions);
+        } catch (ValidationException e) {
+            final Throwable cause = ExceptionUtilities.getRootCause(e);
+            log.error(cause.getMessage());
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Validate the Bug Links MetaData for a Content Specification.
      *
      * @param contentSpec The Content Spec to validate.
      * @param strict      If strict validation should be performed (invalid matches throws an error instead of a warning)
      * @return True if the links are valid, otherwise false.
      */
-    public boolean validateBugLinks(final ContentSpec contentSpec, boolean strict) {
+    public boolean postValidateBugLinks(final ContentSpec contentSpec, boolean strict) {
         // If Bug Links are turned off then there isn't any need to validate them.
         if (!contentSpec.isInjectBugLinks()) {
             return true;
@@ -1568,14 +1612,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 bugLinkStrategy = new BugzillaBugLinkStrategy(bugOptions.getBaseUrl());
             }
 
-            // Validate the content in the bug options using the appropriate bug link strategy
+            // This step should have been performed by the preValidate method, so just make sure incase it hasn't been called.
             try {
                 bugLinkStrategy.checkValidValues(bugOptions);
             } catch (ValidationException e) {
-                final Throwable cause = ExceptionUtilities.getRootCause(e);
-                log.error(cause.getMessage());
                 return false;
             }
+
             // Validate the content in the bug options against the external service using the appropriate bug link strategy
             try {
                 bugLinkStrategy.validate(bugOptions);

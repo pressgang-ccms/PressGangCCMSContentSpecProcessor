@@ -305,7 +305,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             if (reValidateBugLinks) {
                 processorData.setBugLinksReValidated(reValidateBugLinks);
                 LOG.info("Starting bug link validation pass...");
-                if (!validator.validateBugLinks(contentSpec, processingOptions.isStrictBugLinks())) {
+                if (!validator.postValidateBugLinks(contentSpec, processingOptions.isStrictBugLinks())) {
                     valid = false;
                 }
             }
