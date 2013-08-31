@@ -274,7 +274,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                         if (contentSpec.isInjectBugLinks()) {
                             final String bugLinksValue = contentSpec.getBugLinksActualValue() == null ? null : contentSpec
                                     .getBugLinksActualValue().toString();
-                            if (EntityUtilities.hasContentSpecMetaDataChanged(CommonConstants.CS_BUG_LINKS_TITLE, bugLinksValue, contentSpecEntity)) {
+                            if (EntityUtilities.hasContentSpecMetaDataChanged(CommonConstants.CS_BUG_LINKS_TITLE, bugLinksValue,
+                                    contentSpecEntity)) {
                                 changed = true;
                             } else {
                                 BugLinkStrategy bugLinkStrategy = null;
@@ -379,6 +380,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             // Initialise the new and cloned topics using the populated topic pool
             for (final SpecTopic specTopic : specTopics) {
                 topics.initialiseFromPool(specTopic);
+                cleanSpecTopicWhenCreatedOrUpdated(specTopic);
             }
 
             // Sync the Duplicated Topics (ID = X<Number>)
@@ -421,6 +423,20 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Cleans a SpecTopic to reset any content that should be removed in a post processed content spec.
+     *
+     * @param specTopic
+     */
+    protected void cleanSpecTopicWhenCreatedOrUpdated(final SpecTopic specTopic) {
+        specTopic.setSourceUrls(new ArrayList<String>());
+        specTopic.setDescription(null);
+        specTopic.setTags(new ArrayList<String>());
+        specTopic.setRemoveTags(new ArrayList<String>());
+        specTopic.setAssignedWriter(null);
+        specTopic.setType(null);
     }
 
     /**
@@ -491,7 +507,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         if (changed) {
-            setCSPPropertyForTopic(topic, specTopic, providerFactory.getProvider(PropertyTagProvider.class));
+            // Set the CSP Property Tag ID for new/updated so that we can track the newly created topic
+            if (specTopic.isTopicAClonedTopic() || specTopic.isTopicANewTopic()) {
+                setCSPPropertyForTopic(topic, specTopic, providerFactory.getProvider(PropertyTagProvider.class));
+            }
 
             return topic;
         } else {
@@ -585,7 +604,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
     protected void setCSPPropertyForTopic(final TopicWrapper topic, final SpecTopic specTopic,
             final PropertyTagProvider propertyTagProvider) {
-        LOG.debug("Setting the CSP Property Tag for {}", topic.getId());
+        LOG.debug("Setting the CSP Property Tag for {}", specTopic.getId());
 
         // Update the CSP Property tag
         final UpdateableCollectionWrapper<PropertyTagInTopicWrapper> properties;
@@ -750,12 +769,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         boolean changed = false;
         // Finds tags that aren't already in the database and adds them
         final List<TagWrapper> topicTagList = topic.getTags() == null ? new ArrayList<TagWrapper>() : topic.getTags().getItems();
-
-        // Copy the current tags into the new tag list
-        final CollectionWrapper<TagWrapper> updatedTagCollection = tagProvider.newTagCollection();
-        for (final TagWrapper topicTag : topicTagList) {
-            updatedTagCollection.addItem(topicTag);
-        }
+        final CollectionWrapper<TagWrapper> updatedTagCollection = topic.getTags() == null ? tagProvider.newTagCollection() : topic
+                .getTags();
 
         // Add the new tags to the updated tag list if they don't already exist
         for (final TagWrapper addTag : addTags) {
@@ -1739,7 +1754,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return metaData.getUniqueId().equals(Integer.toString(node.getId()));
         } else {
             // Allow for old abstract references.
-            if (metaData.getKey().equals(CommonConstants.CS_ABSTRACT_TITLE) && node.getTitle().equals(CommonConstants.CS_ABSTRACT_ALTERNATE_TITLE)) {
+            if (metaData.getKey().equals(CommonConstants.CS_ABSTRACT_TITLE) && node.getTitle().equals(
+                    CommonConstants.CS_ABSTRACT_ALTERNATE_TITLE)) {
                 return true;
             }
 
