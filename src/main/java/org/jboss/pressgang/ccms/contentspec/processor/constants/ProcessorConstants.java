@@ -276,7 +276,7 @@ public class ProcessorConstants {
             "so the description will be ignored.";
     public static final String WARN_TYPE_IGNORE_MSG = LINE + "%s topics can't have a type, so the type will be ignored.";
     public static final String WARN_WRITER_IGNORE_MSG = LINE + "%s topics can't be assigned a new writer, so the writer will be ignored.";
-    public static final String WARN_TAGS_IGNORE_MSG = LINE + "%s topics can't have tags, so the tags will be ignored.";
+    public static final String WARN_TAGS_IGNORE_MSG = LINE + "%s topics can't have tags added, so the tags will be ignored.";
     public static final String WARN_DEBUG_IGNORE_MSG = "Invalid debug setting. Debug must be set to 0, " +
             "" + "1 or 2! So debug will be off by default.";
     public static final String WARN_IGNORE_INFO_MSG = LINE + "All descriptions, tags, source urls and writers will be ignored for " +
