@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.j2bugzilla.base.ConnectionException;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.File;
+import org.jboss.pressgang.ccms.contentspec.FileList;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Node;
@@ -508,11 +509,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @return True if all the files are valid, otherwise false.
      */
     protected boolean validateFiles(final ContentSpec contentSpec) {
-        final List<File> fileList = contentSpec.getFiles();
+        final FileList fileList = contentSpec.getFileList();
         boolean valid = true;
 
-        if (!fileList.isEmpty()) {
-            for (final File file : fileList) {
+        if (fileList != null && !fileList.getValue().isEmpty()) {
+            for (final File file : fileList.getValue()) {
                 FileWrapper fileWrapper = null;
                 try {
                     fileWrapper = fileProvider.getFile(file.getId(), file.getRevision());
@@ -521,12 +522,20 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 }
 
                 if (fileWrapper == null) {
-                    log.error(String.format(ProcessorConstants.ERROR_TARGET_NONEXIST_MSG, file.getText()));
+                    log.error(String.format(ProcessorConstants.ERROR_FILE_ID_NONEXIST_MSG, fileList.getLineNumber(), file.getText()));
                     valid = false;
                 } else {
                     // Make sure the titles sync up.
                     if (!fileWrapper.getFilename().equals(file.getTitle())) {
-                        file.setTitle(fileWrapper.getFilename());
+                        final String errorMsg = String.format(ProcessorConstants.ERROR_FILE_TITLE_NO_MATCH_MSG,
+                                fileList.getLineNumber(), file.getTitle(), fileWrapper.getFilename());
+                        if (processingOptions.isStrictTitles()) {
+                            log.error(errorMsg);
+                            valid = false;
+                        } else {
+                            log.warn(errorMsg);
+                            file.setTitle(fileWrapper.getFilename());
+                        }
                     }
                 }
             }
@@ -1011,8 +1020,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
 
             // Check that tags aren't trying to be added to a revision
-            if (specTopic.getRevision() != null && !specTopic.getRemoveTags(false).isEmpty()) {
-                log.error(String.format(ProcessorConstants.WARN_TAGS_IGNORE_MSG, "Revision", specTopic.getLineNumber(),
+            if (specTopic.getRevision() != null && !specTopic.getTags(false).isEmpty()) {
+                log.error(String.format(ProcessorConstants.WARN_TAGS_IGNORE_MSG, specTopic.getLineNumber(), "Revision",
                         specTopic.getText()));
                 valid = false;
             }
