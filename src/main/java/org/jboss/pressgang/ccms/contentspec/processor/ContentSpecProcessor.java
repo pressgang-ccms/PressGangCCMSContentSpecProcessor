@@ -75,7 +75,7 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("rawtypes")
 public class ContentSpecProcessor implements ShutdownAbleApp {
     private final Logger LOG = LoggerFactory.getLogger(ContentSpecProcessor.class.getPackage().getName() + ".CustomContentSpecProcessor");
-    private static final long DAY_MILLI_SECS = 24 * 60 * 60 * 1000;
+    private static final long WEEK_MILLI_SECS = 7 * 24 * 60 * 60 * 1000;
     private static final List<String> IGNORE_META_DATA = Arrays.asList(CommonConstants.CS_CHECKSUM_TITLE, CommonConstants.CS_ID_TITLE);
 
     private final ErrorLogger log;
@@ -268,7 +268,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     }
 
                     // Check that a day has passed
-                    if ((then + DAY_MILLI_SECS) > now.getTime()) {
+                    if ((then + WEEK_MILLI_SECS) > now.getTime()) {
                         // A day hasn't passed so check to see if anything has changed
                         boolean changed = false;
                         if (contentSpec.isInjectBugLinks()) {
