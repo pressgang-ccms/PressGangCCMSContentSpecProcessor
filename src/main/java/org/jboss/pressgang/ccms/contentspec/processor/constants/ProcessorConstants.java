@@ -33,7 +33,7 @@ public class ProcessorConstants {
     public static final String LINK_LIST_REGEX = "^(L|LINK-LIST)[ ]*:(.|(\r?\n))*$";
     public static final String NEXT_REGEX = "^NEXT[ ]*:(.|(\r?\n))*$";
     public static final String PREV_REGEX = "^PREV[ ]*:(.|(\r?\n))*$";
-    public static final String TARGET_BASE_REGEX = "T(([0-9]+)|(\\-[ ]*[A-Za-z0-9\\-_]+))";
+    public static final String TARGET_BASE_REGEX = "T(([0-9]+)|(\\-[ ]*[A-Za-z][A-Za-z0-9\\-_]*))";
     public static final String TARGET_REGEX = "^" + TARGET_BASE_REGEX + "$";
     public static final String EXTERNAL_TARGET_REGEX = "^E" + TARGET_BASE_REGEX + "$";
     public static final String EXTERNAL_CSP_REGEX = "^CS[0-9]+[ ]*(:[ ]*[0-9]+)?$";
