@@ -862,7 +862,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         if (urls != null && !urls.isEmpty()) {
             final UpdateableCollectionWrapper<TopicSourceURLWrapper> sourceUrls = topic.getSourceURLs() == null ? topicSourceURLProvider
-                    .newTopicSourceURLCollection(topic) : topic.getSourceURLs();
+                    .newTopicSourceURLCollection(
+                    topic) : topic.getSourceURLs();
 
             // Iterate over the spec topic urls and add them
             for (final String url : urls) {
@@ -960,7 +961,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             if (processorData.getUsername() != null) {
                 // Add the added by property tag
                 final UpdateableCollectionWrapper<PropertyTagInContentSpecWrapper> propertyTagCollection = propertyTagProvider
-                        .newPropertyTagInContentSpecCollection(contentSpecEntity);
+                        .newPropertyTagInContentSpecCollection(
+                        contentSpecEntity);
 
                 // Create the new property tag
                 final PropertyTagWrapper addedByProperty = propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
@@ -1200,9 +1202,13 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                             TopicType.LEVEL) && (foundNodeEntity.getNodeType() == null || !foundNodeEntity.getNodeType().equals(
                             CommonConstants.CS_NODE_INNER_TOPIC))) {
                         foundNodeEntity.setNodeType(CommonConstants.CS_NODE_INNER_TOPIC);
-                    } else if (foundNodeEntity.getNodeType() == null || !foundNodeEntity.getNodeType().equals(
-                            CommonConstants.CS_NODE_TOPIC)) {
+                        foundNodeEntity.setNextNode(null);
+                        changed = true;
+                    } else if (!specTopic.getTopicType().equals(
+                            TopicType.LEVEL) && (foundNodeEntity.getNodeType() == null || !foundNodeEntity.getNodeType().equals(
+                            CommonConstants.CS_NODE_TOPIC))) {
                         foundNodeEntity.setNodeType(CommonConstants.CS_NODE_TOPIC);
+                        changed = true;
                     }
                 } else if (childNode instanceof Level) {
                     if (mergeLevel((Level) childNode, foundNodeEntity)) {
@@ -1236,7 +1242,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 // Add the levels inner topic to the list of children if one exists
                 final LinkedList<Node> children = level.getChildNodes();
                 if (level.getInnerTopic() != null) {
-                    children.add(level.getInnerTopic());
+                    children.addFirst(level.getInnerTopic());
                 }
 
                 final ArrayList<CSNodeWrapper> currentChildren = new ArrayList<CSNodeWrapper>();
@@ -1407,7 +1413,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                         break;
                     }
                 } else {
-                    if (childNode instanceof SpecTopic && doesTopicMatch((SpecTopic) childNode, nodeEntity)) {
+                    if (childNode instanceof SpecTopic && doesTopicMatch((SpecTopic) childNode, nodeEntity, foundNodeEntity != null)) {
                         foundNodeEntity = nodeEntity;
                     } else if (childNode instanceof KeyValueNode && doesMetaDataMatch((KeyValueNode<?>) childNode, nodeEntity)) {
                         foundNodeEntity = nodeEntity;
@@ -1799,8 +1805,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         if (childNode instanceof KeyValueNode) {
             return !IGNORE_META_DATA.contains(((KeyValueNode) childNode).getKey());
         } else {
-            return childNode instanceof SpecNode || childNode instanceof Comment || childNode instanceof Level || childNode instanceof
-                    File;
+            return childNode instanceof SpecNode || childNode instanceof Comment || childNode instanceof Level || childNode instanceof File;
         }
     }
 
@@ -1826,8 +1831,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
 
             // Allow for alternate file references.
-            if (metaData.getKey().equals(CommonConstants.CS_FILE_TITLE) && node.getTitle().equals(
-                    CommonConstants.CS_FILE_SHORT_TITLE)) {
+            if (metaData.getKey().equals(CommonConstants.CS_FILE_TITLE) && node.getTitle().equals(CommonConstants.CS_FILE_SHORT_TITLE)) {
                 return true;
             }
 
@@ -1872,13 +1876,35 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     /**
      * Checks to see if a ContentSpec topic matches a Content Spec Entity topic.
      *
-     * @param specTopic The ContentSpec topic object.
-     * @param node      The Content Spec Entity topic.
+     * @param specTopic  The ContentSpec topic object.
+     * @param node       The Content Spec Entity topic.
+     * @param matchTypes If the node type has to match.
      * @return True if the topic is determined to match otherwise false.
      */
-    protected boolean doesTopicMatch(final SpecTopic specTopic, final CSNodeWrapper node) {
-        if (!EntityUtilities.isNodeATopic(node))
-            return false;
+    protected boolean doesTopicMatch(final SpecTopic specTopic, final CSNodeWrapper node, boolean matchTypes) {
+        if (!EntityUtilities.isNodeATopic(node)) return false;
+
+        // Check if the node/topic type matches
+        if (matchTypes) {
+            boolean matches = true;
+            switch (specTopic.getTopicType()) {
+                case LEVEL:
+                    matches = node.getNodeType().equals(CommonConstants.CS_NODE_INNER_TOPIC);
+                    break;
+                case NORMAL:
+                case FEEDBACK:
+                    matches = node.getNodeType().equals(CommonConstants.CS_NODE_TOPIC);
+                    break;
+                case LEGAL_NOTICE:
+                case REVISION_HISTORY:
+                    matches = node.getNodeType().equals(CommonConstants.CS_NODE_META_DATA_TOPIC);
+                    break;
+            }
+
+            if (!matches) {
+                return false;
+            }
+        }
 
         // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
         if (specTopic.getUniqueId() != null && specTopic.getUniqueId().matches("^\\d.*")) {
@@ -1904,8 +1930,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the file is determined to match otherwise false.
      */
     protected boolean doesFileMatch(final File file, final CSNodeWrapper node) {
-        if (!node.getNodeType().equals(CommonConstants.CS_NODE_FILE))
-            return false;
+        if (!node.getNodeType().equals(CommonConstants.CS_NODE_FILE)) return false;
 
         // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
         if (file.getUniqueId() != null && file.getUniqueId().matches("^\\d.*")) {
