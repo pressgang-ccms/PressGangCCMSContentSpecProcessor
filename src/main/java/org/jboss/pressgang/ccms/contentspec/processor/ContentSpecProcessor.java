@@ -13,6 +13,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.pressgang.ccms.contentspec.Comment;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.File;
+import org.jboss.pressgang.ccms.contentspec.FileList;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Node;
@@ -860,8 +862,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         if (urls != null && !urls.isEmpty()) {
             final UpdateableCollectionWrapper<TopicSourceURLWrapper> sourceUrls = topic.getSourceURLs() == null ? topicSourceURLProvider
-                    .newTopicSourceURLCollection(
-                    topic) : topic.getSourceURLs();
+                    .newTopicSourceURLCollection(topic) : topic.getSourceURLs();
 
             // Iterate over the spec topic urls and add them
             for (final String url : urls) {
@@ -959,8 +960,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             if (processorData.getUsername() != null) {
                 // Add the added by property tag
                 final UpdateableCollectionWrapper<PropertyTagInContentSpecWrapper> propertyTagCollection = propertyTagProvider
-                        .newPropertyTagInContentSpecCollection(
-                        contentSpecEntity);
+                        .newPropertyTagInContentSpecCollection(contentSpecEntity);
 
                 // Create the new property tag
                 final PropertyTagWrapper addedByProperty = propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
@@ -1170,9 +1170,16 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 } else if (childNode instanceof Comment) {
                     mergeComment((Comment) childNode, newCSNodeEntity);
                     newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_COMMENT);
+                } else if (childNode instanceof File) {
+                    mergeFile((File) childNode, newCSNodeEntity);
+                    newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_FILE);
                 } else {
                     mergeMetaData((KeyValueNode<?>) childNode, newCSNodeEntity);
-                    newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_META_DATA);
+                    if (((KeyValueNode<?>) childNode).getValue() instanceof SpecTopic) {
+                        newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_META_DATA_TOPIC);
+                    } else {
+                        newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_META_DATA);
+                    }
                 }
 
                 // set the content spec for the new entity
@@ -1205,6 +1212,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     if (mergeComment((Comment) childNode, foundNodeEntity)) {
                         changed = true;
                     }
+                } else if (childNode instanceof File) {
+                    if (mergeFile((File) childNode, foundNodeEntity)) {
+                        changed = true;
+                    }
                 } else {
                     if (mergeMetaData((KeyValueNode<?>) childNode, foundNodeEntity)) {
                         changed = true;
@@ -1226,6 +1237,21 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 final LinkedList<Node> children = level.getChildNodes();
                 if (level.getInnerTopic() != null) {
                     children.add(level.getInnerTopic());
+                }
+
+                final ArrayList<CSNodeWrapper> currentChildren = new ArrayList<CSNodeWrapper>();
+                if (foundNodeEntity.getChildren() != null) {
+                    currentChildren.addAll(foundNodeEntity.getChildren().getItems());
+                }
+
+                mergeChildren(getTransformableNodes(children), currentChildren, providerFactory, foundNodeEntity, contentSpec, nodeMapping);
+            } else if (childNode instanceof FileList) {
+                final FileList level = (FileList) childNode;
+
+                // Add the levels inner topic to the list of children if one exists
+                final LinkedList<Node> children = new LinkedList<Node>();
+                if (level.getValue() != null) {
+                    children.addAll(level.getValue());
                 }
 
                 final ArrayList<CSNodeWrapper> currentChildren = new ArrayList<CSNodeWrapper>();
@@ -1385,6 +1411,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                         foundNodeEntity = nodeEntity;
                     } else if (childNode instanceof KeyValueNode && doesMetaDataMatch((KeyValueNode<?>) childNode, nodeEntity)) {
                         foundNodeEntity = nodeEntity;
+                    } else if (childNode instanceof File && doesFileMatch((File) childNode, nodeEntity)) {
+                        foundNodeEntity = nodeEntity;
                     }
                 }
             }
@@ -1533,6 +1561,42 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             changed = true;
         } else if (specTopic.getRevision() == null && topicEntity.getEntityRevision() != null) {
             topicEntity.setEntityRevision(null);
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    /**
+     * @param file
+     * @param fileEntity
+     * @return True if a some value was changed, otherwise false.
+     */
+    protected boolean mergeFile(final File file, final CSNodeWrapper fileEntity) {
+        boolean changed = false;
+
+        // TITLE
+        if (file.getTitle() != null && !file.getTitle().equals(fileEntity.getTitle())) {
+            fileEntity.setTitle(file.getTitle());
+            changed = true;
+        } else if (file.getTitle() == null && fileEntity.getTitle() != null) {
+            fileEntity.setTitle(null);
+            changed = true;
+        }
+
+        // FILE ID
+        // No need to check if the file id should be set to null, as it is a mandatory field
+        if (file.getId() != null && !file.getId().equals(fileEntity.getEntityId())) {
+            fileEntity.setEntityId(file.getId());
+            changed = true;
+        }
+
+        // FILE REVISION
+        if (file.getRevision() != null && !file.getRevision().equals(fileEntity.getEntityRevision())) {
+            fileEntity.setEntityRevision(file.getRevision());
+            changed = true;
+        } else if (file.getRevision() == null && fileEntity.getEntityRevision() != null) {
+            fileEntity.setEntityRevision(null);
             changed = true;
         }
 
@@ -1735,7 +1799,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         if (childNode instanceof KeyValueNode) {
             return !IGNORE_META_DATA.contains(((KeyValueNode) childNode).getKey());
         } else {
-            return childNode instanceof SpecNode || childNode instanceof Comment || childNode instanceof Level;
+            return childNode instanceof SpecNode || childNode instanceof Comment || childNode instanceof Level || childNode instanceof
+                    File;
         }
     }
 
@@ -1747,7 +1812,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the meta data is determined to match otherwise false.
      */
     protected boolean doesMetaDataMatch(final KeyValueNode<?> metaData, final CSNodeWrapper node) {
-        if (!node.getNodeType().equals(CommonConstants.CS_NODE_META_DATA)) return false;
+        if (!(node.getNodeType().equals(CommonConstants.CS_NODE_META_DATA) || node.getNodeType().equals(
+                CommonConstants.CS_NODE_META_DATA_TOPIC))) return false;
 
         // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
         if (metaData.getUniqueId() != null && metaData.getUniqueId().matches("^\\d.*")) {
@@ -1756,6 +1822,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             // Allow for old abstract references.
             if (metaData.getKey().equals(CommonConstants.CS_ABSTRACT_TITLE) && node.getTitle().equals(
                     CommonConstants.CS_ABSTRACT_ALTERNATE_TITLE)) {
+                return true;
+            }
+
+            // Allow for alternate file references.
+            if (metaData.getKey().equals(CommonConstants.CS_FILE_TITLE) && node.getTitle().equals(
+                    CommonConstants.CS_FILE_SHORT_TITLE)) {
                 return true;
             }
 
@@ -1805,7 +1877,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the topic is determined to match otherwise false.
      */
     protected boolean doesTopicMatch(final SpecTopic specTopic, final CSNodeWrapper node) {
-        if (!node.getNodeType().equals(CommonConstants.CS_NODE_TOPIC) && !node.getNodeType().equals(CommonConstants.CS_NODE_INNER_TOPIC))
+        if (!EntityUtilities.isNodeATopic(node))
             return false;
 
         // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
@@ -1825,6 +1897,26 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     }
 
     /**
+     * Checks to see if a ContentSpec topic matches a Content Spec Entity file.
+     *
+     * @param file The ContentSpec file object.
+     * @param node The Content Spec Entity file.
+     * @return True if the file is determined to match otherwise false.
+     */
+    protected boolean doesFileMatch(final File file, final CSNodeWrapper node) {
+        if (!node.getNodeType().equals(CommonConstants.CS_NODE_FILE))
+            return false;
+
+        // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
+        if (file.getUniqueId() != null && file.getUniqueId().matches("^\\d.*")) {
+            return file.getUniqueId().equals(Integer.toString(node.getId()));
+        } else {
+            // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the files match
+            return file.getId().equals(node.getEntityId());
+        }
+    }
+
+    /**
      * Checks to see if a ContentSpec topic relationship matches a Content Spec Entity topic.
      *
      * @param relationship The ContentSpec topic relationship object.
@@ -1833,8 +1925,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      */
     protected boolean doesRelationshipMatch(final TopicRelationship relationship, final CSRelatedNodeWrapper relatedNode) {
         // If the relationship is a TopicRelationship, then the related node must be a topic or its not a match
-        if (!relatedNode.getNodeType().equals(CommonConstants.CS_NODE_TOPIC) && !relatedNode.getNodeType().equals(
-                CommonConstants.CS_NODE_INNER_TOPIC)) return false;
+        if (!EntityUtilities.isNodeATopic(relatedNode)) return false;
 
         // Check if the type matches first
         if (!RelationshipType.getRelationshipTypeId(relationship.getType()).equals(relatedNode.getRelationshipType())) return false;

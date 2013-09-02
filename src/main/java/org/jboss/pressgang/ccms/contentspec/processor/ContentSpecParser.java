@@ -22,6 +22,7 @@ import org.jboss.pressgang.ccms.contentspec.Appendix;
 import org.jboss.pressgang.ccms.contentspec.Chapter;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.File;
+import org.jboss.pressgang.ccms.contentspec.FileList;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Part;
@@ -845,8 +846,8 @@ public class ContentSpecParser {
             }
             contentSpec.setInjectionOptions(injectionOptions);
         } else if (key.equalsIgnoreCase(CommonConstants.CS_FILE_TITLE) || key.equalsIgnoreCase(CommonConstants.CS_FILE_SHORT_TITLE)) {
-            final List<File> files = parseFilesMetaData(value, lineNumber, line);
-            contentSpec.setFiles(files);
+            final FileList files = parseFilesMetaData(value, lineNumber, line);
+            contentSpec.appendKeyValueNode(files);
         } else if (ContentSpecUtilities.isSpecTopicMetaData(key)) {
             final SpecTopic specTopic = parseSpecTopicMetaData(value, key, lineNumber);
             contentSpec.appendKeyValueNode(new KeyValueNode<SpecTopic>(key, specTopic));
@@ -891,10 +892,10 @@ public class ContentSpecParser {
      * @return A list of parsed File objects.
      * @throws ParsingException Thrown if an error occurs during parsing.
      */
-    protected List<File> parseFilesMetaData(final String value, final int lineNumber, final String line) throws ParsingException {
+    protected FileList parseFilesMetaData(final String value, final int lineNumber, final String line) throws ParsingException {
         int startingPos = StringUtilities.indexOf(value, '[');
         if (startingPos != -1) {
-            final List<File> files = new ArrayList<File>();
+            final List<File> files = new LinkedList<File>();
             final HashMap<RelationshipType, String[]> variables = getLineVariables(value,lineNumber, '[', ']', ',', true);
             final String[] vars = variables.get(RelationshipType.NONE);
 
@@ -906,7 +907,7 @@ public class ContentSpecParser {
                 }
             }
 
-            return files;
+            return new FileList(CommonConstants.CS_FILE_TITLE, files, lineNumber);
         } else {
             throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_FILES_MSG, lineNumber, line));
         }

@@ -14,13 +14,11 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
-
 import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import org.hamcrest.Matchers;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
-import org.jboss.pressgang.ccms.contentspec.File;
+import org.jboss.pressgang.ccms.contentspec.FileList;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.entities.InjectionOptions;
@@ -474,11 +472,11 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         parser.parseMetaDataLine(contentSpec, line, lineNumber);
 
         // Then the files should be set
-        ArgumentCaptor<List> files = ArgumentCaptor.forClass(List.class);
-        Mockito.verify(contentSpec, times(1)).setFiles(files.capture());
-        assertThat(files.getValue().size(), is(1));
-        final List<File> fileList = files.getValue();
-        assertThat(fileList.get(0).getId(), is(id));
+        ArgumentCaptor<FileList> files = ArgumentCaptor.forClass(FileList.class);
+        Mockito.verify(contentSpec, times(1)).appendKeyValueNode(files.capture());
+        assertThat(files.getValue().getValue().size(), is(1));
+        final FileList fileList = files.getValue();
+        assertThat(fileList.getValue().get(0).getId(), is(id));
     }
 
     @Test
@@ -492,13 +490,13 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         parser.parseMetaDataLine(contentSpec, line, lineNumber);
 
         // Then the files should be set
-        ArgumentCaptor<List> files = ArgumentCaptor.forClass(List.class);
-        Mockito.verify(contentSpec, times(1)).setFiles(files.capture());
-        assertThat(files.getValue().size(), is(1));
-        final List<File> fileList = files.getValue();
-        assertThat(fileList.get(0).getId(), is(id));
-        assertThat(fileList.get(0).getTitle(), is(line));
-        assertThat(fileList.get(0).getRevision(), is(revision));
+        ArgumentCaptor<FileList> files = ArgumentCaptor.forClass(FileList.class);
+        Mockito.verify(contentSpec, times(1)).appendKeyValueNode(files.capture());
+        assertThat(files.getValue().getValue().size(), is(1));
+        final FileList fileList = files.getValue();
+        assertThat(fileList.getValue().get(0).getId(), is(id));
+        assertThat(fileList.getValue().get(0).getTitle(), is(line));
+        assertThat(fileList.getValue().get(0).getRevision(), is(revision));
     }
 
     @Test
@@ -560,13 +558,13 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         // Then the line count should be incremented
         assertThat(parser.getLineCount(), is(originalLineCount + 1));
         // And the files should be set
-        ArgumentCaptor<List> files = ArgumentCaptor.forClass(List.class);
-        Mockito.verify(contentSpec, times(1)).setFiles(files.capture());
-        assertThat(files.getValue().size(), is(2));
-        final List<File> fileList = files.getValue();
-        assertThat(fileList.get(0).getId(), is(id));
-        assertThat(fileList.get(0).getTitle(), is(line));
-        assertThat(fileList.get(1).getId(), is(revision));
-        assertThat(fileList.get(1).getTitle(), is(line2));
+        ArgumentCaptor<FileList> files = ArgumentCaptor.forClass(FileList.class);
+        Mockito.verify(contentSpec, times(1)).appendKeyValueNode(files.capture());
+        assertThat(files.getValue().getValue().size(), is(2));
+        final FileList fileList = files.getValue();
+        assertThat(fileList.getValue().get(0).getId(), is(id));
+        assertThat(fileList.getValue().get(0).getTitle(), is(line));
+        assertThat(fileList.getValue().get(1).getId(), is(revision));
+        assertThat(fileList.getValue().get(1).getTitle(), is(line2));
     }
 }
