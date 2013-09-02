@@ -220,6 +220,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
+        // Check for a negative pubsnumber
+        if (contentSpec.getPubsNumber() != null && contentSpec.getPubsNumber() < 0) {
+            log.error(ProcessorConstants.ERROR_INVALID_PUBSNUMBER_MSG);
+            valid = false;
+        }
+
         // Check that any metadata topics are valid
         if (contentSpec.getRevisionHistory() != null && !preValidateTopic(contentSpec.getRevisionHistory(), specTopicMap,
                 contentSpec.getBookType(), false)) {
