@@ -1021,9 +1021,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
             // Check that tags aren't trying to be added to a revision
             if (specTopic.getRevision() != null && !specTopic.getTags(false).isEmpty()) {
-                log.error(String.format(ProcessorConstants.WARN_TAGS_IGNORE_MSG, specTopic.getLineNumber(), "Revision",
+                log.warn(String.format(ProcessorConstants.WARN_TAGS_IGNORE_MSG, specTopic.getLineNumber(), "Revision",
                         specTopic.getText()));
-                valid = false;
             }
 
             // Check that urls aren't trying to be added
