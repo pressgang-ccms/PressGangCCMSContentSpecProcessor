@@ -641,7 +641,6 @@ public class ContentSpecParser {
     protected boolean isMetaDataLine(String line) {
         return getCurrentLevel().getLevelType() == LevelType.BASE && line.trim().matches("^\\w[\\w\\.\\s]+=.*");
     }
-
     /**
      * Checks to see if a line is a blank/empty line.
      *
@@ -1568,19 +1567,34 @@ public class ContentSpecParser {
                     if (temp[0].equalsIgnoreCase("URL")) {
                         node.addSourceUrl(ProcessorUtilities.replaceEscapeChars(temp[1]));
                     } else if (temp[0].equalsIgnoreCase("description")) {
-                        node.setDescription(ProcessorUtilities.replaceEscapeChars(temp[1]));
+                        if (node.getDescription(false) == null) {
+                            node.setDescription(ProcessorUtilities.replaceEscapeChars(temp[1]));
+                        } else {
+                           throw new ParsingException(String.format(ProcessorConstants.ERROR_DUPLICATE_ATTRIBUTE_MSG, lineNumber,
+                                   "Description", originalInput));
+                        }
                     } else if (temp[0].equalsIgnoreCase("Writer")) {
-                        node.setAssignedWriter(ProcessorUtilities.replaceEscapeChars(temp[1]));
+                        if (node.getAssignedWriter(false) == null) {
+                            node.setAssignedWriter(ProcessorUtilities.replaceEscapeChars(temp[1]));
+                        } else {
+                            throw new ParsingException(String.format(ProcessorConstants.ERROR_DUPLICATE_ATTRIBUTE_MSG, lineNumber,
+                                    "Writer", originalInput));
+                        }
                     } else if (temp[0].equalsIgnoreCase("condition")) {
-                        final String condition = temp[1];
-                        node.setConditionStatement(condition);
-                        try {
-                            Pattern.compile(condition);
-                        } catch (PatternSyntaxException exception) {
-                            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_CONDITION_MSG, lineNumber, originalInput));
+                        if (node.getConditionStatement() == null) {
+                            final String condition = temp[1];
+                            node.setConditionStatement(condition);
+                            try {
+                                Pattern.compile(condition);
+                            } catch (PatternSyntaxException exception) {
+                                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_CONDITION_MSG, lineNumber, originalInput));
+                            }
+                        } else {
+                            throw new ParsingException(String.format(ProcessorConstants.ERROR_DUPLICATE_ATTRIBUTE_MSG, lineNumber,
+                                    "condition", originalInput));
                         }
                     } else {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_OPTION_MSG, lineNumber, originalInput));
+                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIBUTE_MSG, lineNumber, originalInput));
                     }
                 } else {
                     throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineNumber, originalInput));

@@ -134,10 +134,11 @@ public class ProcessorConstants {
             "contain chapters or parts.";
     public static final String ERROR_CS_APPENDIX_STRUCTURE_MSG = LINE + INVALID_CS + " An Appendix must be at the end of the content " +
             "specification." + CSLINE_MSG;
-    public static final String ERROR_INVALID_OPTION_MSG = LINE + INVALID_CS + " Unknown metadata tag found. \"condition\", " +
-            "\"Description\", \"URL\" and \"Writer\" are currently the only supported metadata." + CSLINE_MSG;
+    public static final String ERROR_INVALID_ATTRIBUTE_MSG = LINE + INVALID_CS + " Unknown attribute found. \"condition\", " +
+            "\"Description\", \"URL\" and \"Writer\" are currently the only supported attributes." + CSLINE_MSG;
     public static final String ERROR_INVALID_CONDITION_MSG = LINE + INVALID_CS + " The condition statement must be a valid regular " +
             "expression string." + CSLINE_MSG;
+    public static final String ERROR_DUPLICATE_ATTRIBUTE_MSG = LINE + "Invalid attribute, \"%s\" has already been set." + CSLINE_MSG;
     public static final String ERROR_TOPIC_WITH_DIFFERENT_REVS_MSG = INVALID_CS + " Topic %d has two or more different revisions included" +
             " in the Content Specification. The topic is located at:";
     public static final String ERROR_TOPIC_WITH_DIFFERENT_REVS_REV_MSG = "Revision %s, lines(s) %s.";
