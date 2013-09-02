@@ -1492,6 +1492,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     protected boolean mergeLevel(final Level level, final CSNodeWrapper levelEntity) throws Exception {
         boolean changed = false;
 
+        // TYPE
+        if (level.getLevelType() != null && level.getLevelType().getId() != levelEntity.getNodeType()) {
+            levelEntity.setNodeType(level.getLevelType().getId());
+            changed = true;
+        }
+
         // TITLE
         if (level.getTitle() != null && !level.getTitle().equals(levelEntity.getTitle())) {
             levelEntity.setTitle(level.getTitle());
@@ -1856,15 +1862,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         if (level.getUniqueId() != null && level.getUniqueId().matches("^\\d.*")) {
             return level.getUniqueId().equals(Integer.toString(node.getId()));
         } else {
-            // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the level matches
-            if (node.getNodeType() != level.getLevelType().getId()) return false;
-
             // If the target ids match then the level should be the same
             if (level.getTargetId() != null && level.getTargetId() == node.getTargetId()) {
                 return true;
             }
 
             if (matchContent) {
+                // Make sure the level type matches
+                if (node.getNodeType() != level.getLevelType().getId()) return false;
+
                 return level.getTitle().equals(node.getTitle());
             } else {
                 return StringUtilities.similarDamerauLevenshtein(level.getTitle(),

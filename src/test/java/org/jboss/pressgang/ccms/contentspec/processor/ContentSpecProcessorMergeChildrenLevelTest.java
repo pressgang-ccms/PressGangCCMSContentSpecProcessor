@@ -12,6 +12,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -561,6 +562,89 @@ public class ContentSpecProcessorMergeChildrenLevelTest extends ContentSpecProce
         verify(foundCSNode, times(1)).setTargetId(null);
     }
 
+    @Test
+    public void shouldMergeLevelWithoutDBIdsWithLevelTypeChange() {
+        final List<Node> childNodes = new ArrayList<Node>();
+        // Given a content spec level that was created from a DB entity
+        final Level level = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.PREFACE), with(LevelMaker.title, title)));
+        childNodes.add(level);
+        // And a matching child node exists in the database
+        given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_CHAPTER);
+        given(foundCSNode.getTitle()).willReturn(title);
+        given(foundCSNode.getEntityId()).willReturn(null);
+        given(foundCSNode.getId()).willReturn(id);
+        given(foundCSNode.getEntityRevision()).willReturn(null);
+        // and is in the child nodes collection
+        childrenNodes.add(foundCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
+
+        // When merging the children nodes
+        try {
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
+        } catch (Exception e) {
+            fail("An Exception should not have been thrown. Message: " + e.getMessage());
+        }
+
+        // Then a updated node should exist in the updated collection, since the type was modified
+        assertThat(updatedChildrenNodes.size(), is(1));
+        assertThat(updatedChildrenNodes.getUpdateItems().size(), is(1));
+        assertSame(updatedChildrenNodes.getUpdateItems().get(0), foundCSNode);
+        // and the node type hasn't changed
+        verify(foundCSNode, times(1)).setNodeType(CommonConstants.CS_NODE_PREFACE);
+        // and the content spec wasn't changed
+        verify(foundCSNode, never()).setContentSpec(any(ContentSpecWrapper.class));
+        // and the node title wasn't changed
+        verify(foundCSNode, never()).setTitle(anyString());
+        // and the node level id wasn't set
+        verify(foundCSNode, never()).setEntityId(anyInt());
+        // and the level revision wasn't set
+        verify(foundCSNode, never()).setEntityRevision(anyInt());
+        // and the level condition was set to null
+        verify(foundCSNode, never()).setTargetId(anyString());
+    }
+
+    @Test
+    public void shouldMergeLevelWithoutDBIdsWithMultipleLevelsAndNoChanges() {
+        final List<Node> childNodes = new ArrayList<Node>();
+        // Given a content spec level that was created from a DB entity
+        final Level level = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.PREFACE), with(LevelMaker.title, title)));
+        final Level level2 = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.CHAPTER), with(LevelMaker.title, title)));
+        childNodes.add(level);
+        childNodes.add(level2);
+        // And a matching child node exists in the database
+        given(foundCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_CHAPTER);
+        given(foundCSNode.getTitle()).willReturn(title);
+        given(foundCSNode.getEntityId()).willReturn(null);
+        given(foundCSNode.getId()).willReturn(id);
+        given(foundCSNode.getEntityRevision()).willReturn(null);
+        // And a second matching child node exists in the database
+        given(newCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_PREFACE);
+        given(newCSNode.getTitle()).willReturn(title);
+        given(newCSNode.getEntityId()).willReturn(null);
+        given(newCSNode.getId()).willReturn(secondId);
+        given(newCSNode.getEntityRevision()).willReturn(null);
+        given(newCSNode.getNextNode()).willReturn(foundCSNode);
+        // and is in the child nodes collection (in the opposite order to test the right node will be selected)
+        childrenNodes.add(foundCSNode);
+        childrenNodes.add(newCSNode);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
+
+        // When merging the children nodes
+        try {
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
+        } catch (Exception e) {
+            fail("An Exception should not have been thrown. Message: " + e.getMessage());
+        }
+
+        // Then a updated node shouldn't exist since nothing was modified
+        assertThat(updatedChildrenNodes.size(), is(0));
+        // and the base level hasn't changed
+        verifyBaseExistingLevel(foundCSNode);
+        verifyBaseExistingLevel(newCSNode);
+    }
+
     protected void setUpNodeToReturnNulls(final CSNodeWrapper nodeMock) {
         when(nodeMock.getRevision()).thenReturn(null);
         when(nodeMock.getAdditionalText()).thenReturn(null);
@@ -573,7 +657,7 @@ public class ContentSpecProcessorMergeChildrenLevelTest extends ContentSpecProce
 
     protected void verifyBaseNewLevel(final CSNodeWrapper levelNode) {
         // and the node has the Spec Topic type set
-        verify(levelNode, times(1)).setNodeType(CommonConstants.CS_NODE_CHAPTER);
+        verify(levelNode, atLeast(1)).setNodeType(CommonConstants.CS_NODE_CHAPTER);
         // and the parent node should be null
         verify(levelNode, never()).setParent(any(CSNodeWrapper.class));
         // and the node had the title set
