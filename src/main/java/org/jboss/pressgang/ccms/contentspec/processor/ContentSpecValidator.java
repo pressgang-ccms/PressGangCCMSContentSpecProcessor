@@ -533,8 +533,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 } else {
                     // Make sure the titles sync up.
                     if (!fileWrapper.getFilename().equals(file.getTitle())) {
-                        final String errorMsg = String.format(ProcessorConstants.ERROR_FILE_TITLE_NO_MATCH_MSG,
-                                fileList.getLineNumber(), file.getTitle(), fileWrapper.getFilename());
+                        final String errorMsg = String.format(ProcessorConstants.ERROR_FILE_TITLE_NO_MATCH_MSG, fileList.getLineNumber(),
+                                file.getTitle(), fileWrapper.getFilename());
                         if (processingOptions.isStrictTitles()) {
                             log.error(errorMsg);
                             valid = false;
@@ -864,6 +864,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
         }
 
+        // Validate the tags
+        if (!level.getTags(false).isEmpty() && level.hasRevisionSpecTopics()) {
+            log.warn(String.format(ProcessorConstants.WARN_LEVEL_TAGS_IGNORE_MSG, level.getLineNumber(), level.getLevelType().getTitle(),
+                    "revision", level.getText()));
+        }
+
         return valid;
     }
 
@@ -1027,8 +1033,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
             // Check that tags aren't trying to be added to a revision
             if (specTopic.getRevision() != null && !specTopic.getTags(false).isEmpty()) {
-                log.warn(String.format(ProcessorConstants.WARN_TAGS_IGNORE_MSG, specTopic.getLineNumber(), "Revision",
-                        specTopic.getText()));
+                log.warn(
+                        String.format(ProcessorConstants.WARN_TAGS_IGNORE_MSG, specTopic.getLineNumber(), "revision",
+                                specTopic.getText()));
             }
 
             // Check that urls aren't trying to be added
