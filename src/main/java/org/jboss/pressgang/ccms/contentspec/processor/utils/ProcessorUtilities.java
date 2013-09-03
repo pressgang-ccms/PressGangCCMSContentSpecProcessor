@@ -54,7 +54,7 @@ public class ProcessorUtilities {
      */
     public static VariableSet findVariableSet(final String input, final char startDelim, final char endDelim, final int startPos) {
         final int startIndex = StringUtilities.indexOf(input, startDelim, startPos);
-        int endIndex = startIndex == -1 ? -1 : StringUtilities.indexOf(input, endDelim, startIndex);
+        int endIndex = StringUtilities.indexOf(input, endDelim, startIndex == -1 ? startPos : startIndex);
         int nextStartIndex = startIndex == -1 ? -1 : StringUtilities.indexOf(input, startDelim, startIndex + 1);
 
         /*
