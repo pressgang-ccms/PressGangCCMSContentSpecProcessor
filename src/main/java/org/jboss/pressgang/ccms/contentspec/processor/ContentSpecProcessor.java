@@ -1681,6 +1681,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
                 LOG.debug("Processing Relationship: {}", relationship.getSecondaryRelationshipTopicId());
 
+                // Determine the relationship mode
+                final Integer relationshipMode;
+                if (relationship instanceof TargetRelationship) {
+                    relationshipMode = CommonConstants.CS_RELATIONSHIP_MODE_TARGET;
+                } else {
+                    relationshipMode = CommonConstants.CS_RELATIONSHIP_MODE_ID;
+                }
+
+
                 // See if the related node already exists
                 CSRelatedNodeWrapper foundRelatedNode = findExistingRelatedNode(relationship, existingRelationships);
 
@@ -1693,6 +1702,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     boolean updated = false;
                     if (foundRelatedNode.getRelationshipSort() != relationshipSortCount) {
                         foundRelatedNode.setRelationshipSort(relationshipSortCount);
+                        updated = true;
+                    }
+
+                    // Make sure the modes still match
+                    if (!relationshipMode.equals(foundRelatedNode.getRelationshipMode())) {
+                        foundRelatedNode.setRelationshipMode(relationshipMode);
                         updated = true;
                     }
 
@@ -1714,6 +1729,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     foundRelatedNode = nodeProvider.newCSRelatedNode(relatedNode);
                     foundRelatedNode.setRelationshipType(RelationshipType.getRelationshipTypeId(relationship.getType()));
                     foundRelatedNode.setRelationshipSort(relationshipSortCount);
+                    foundRelatedNode.setRelationshipMode(relationshipMode);
 
                     relatedToNodes.addNewItem(foundRelatedNode);
                 }
