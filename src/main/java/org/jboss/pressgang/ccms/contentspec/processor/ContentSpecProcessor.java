@@ -1855,8 +1855,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if the level is determined to match otherwise false.
      */
     protected boolean doesLevelMatch(final Level level, final CSNodeWrapper node, boolean matchContent) {
-        if (node.getNodeType().equals(CommonConstants.CS_NODE_COMMENT) || node.getNodeType().equals(CommonConstants.CS_NODE_TOPIC) ||
-                node.getNodeType().equals(CommonConstants.CS_NODE_INNER_TOPIC)) return false;
+        if (!EntityUtilities.isNodeALevel(node)) return false;
 
         // If the unique id is not from the parser, than use the unique id to compare
         if (level.getUniqueId() != null && level.getUniqueId().matches("^\\d.*")) {
