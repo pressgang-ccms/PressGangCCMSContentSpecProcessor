@@ -1493,7 +1493,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         boolean changed = false;
 
         // TYPE
-        if (level.getLevelType() != null && level.getLevelType().getId() != levelEntity.getNodeType()) {
+        if (level.getLevelType() != null && !level.getLevelType().getId().equals(levelEntity.getNodeType())) {
             levelEntity.setNodeType(level.getLevelType().getId());
             changed = true;
         }
