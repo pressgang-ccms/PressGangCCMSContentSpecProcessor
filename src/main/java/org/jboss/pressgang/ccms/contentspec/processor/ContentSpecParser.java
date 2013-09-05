@@ -1327,9 +1327,20 @@ public class ContentSpecParser {
             if (variableMap.containsKey(RelationshipType.REFER_TO) || variableMap.containsKey(
                     RelationshipType.PREREQUISITE) || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(
                     RelationshipType.PREVIOUS) || variableMap.containsKey(RelationshipType.LINKLIST)) {
-                throw new ParsingException(
-                        format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineNumber, CSConstants.CHAPTER, CSConstants.CHAPTER,
-                                line));
+
+                // Check that no relationships were specified for the level
+                if (newLvl.getInnerTopic() == null) {
+                    throw new ParsingException(
+                            format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineNumber, CSConstants.CHAPTER, CSConstants.CHAPTER,
+                                    line));
+                } else {
+                    final HashMap<RelationshipType, String[]> flattenedVariableMap = new HashMap<RelationshipType, String[]>();
+                    for (final Map.Entry<RelationshipType, List<String[]>> lineVariable : variableMap.entrySet()) {
+                        flattenedVariableMap.put(lineVariable.getKey(), lineVariable.getValue().get(0));
+                    }
+
+                    processTopicRelationships(newLvl.getInnerTopic(), flattenedVariableMap, line, lineNumber);
+                }
             }
         }
         return newLvl;
