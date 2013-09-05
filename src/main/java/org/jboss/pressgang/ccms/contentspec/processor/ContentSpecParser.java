@@ -1326,7 +1326,7 @@ public class ContentSpecParser {
             // Check that no relationships were specified for the appendix
             if (variableMap.containsKey(RelationshipType.REFER_TO) || variableMap.containsKey(
                     RelationshipType.PREREQUISITE) || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(
-                    RelationshipType.PREVIOUS)) {
+                    RelationshipType.PREVIOUS) || variableMap.containsKey(RelationshipType.LINKLIST)) {
                 throw new ParsingException(
                         format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineNumber, CSConstants.CHAPTER, CSConstants.CHAPTER,
                                 line));
