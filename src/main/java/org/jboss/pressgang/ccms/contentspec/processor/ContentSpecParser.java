@@ -98,6 +98,7 @@ public class ContentSpecParser {
     private HashMap<String, SpecTopic> targetTopics = new HashMap<String, SpecTopic>();
     private HashMap<String, List<Relationship>> relationships = new HashMap<String, List<Relationship>>();
     private ArrayList<Process> processes = new ArrayList<Process>();
+    private Set<String> parsedMetaDataKeys = new HashSet<String>();
     private Level lvl = null;
     private int lineCounter = 0;
     private LinkedList<String> lines = new LinkedList<String>();
@@ -268,6 +269,7 @@ public class ContentSpecParser {
         relationships = new HashMap<String, List<Relationship>>();
         processes = new ArrayList<Process>();
         lines = new LinkedList<String>();
+        parsedMetaDataKeys = new HashSet<String>();
         lvl = null;
         lineCounter = 0;
     }
@@ -757,105 +759,111 @@ public class ContentSpecParser {
         final String key = keyValue.getFirst();
         final String value = keyValue.getSecond();
 
-        // first deal with metadata that is used by the parser or needs to be parsed further
-        if (key.equalsIgnoreCase(CSConstants.SPACES_TITLE)) {
-            // Read in the amount of spaces that were used for the content specification
-            try {
-                setIndentationSize(Integer.parseInt(value));
-                if (getIndentationSize() <= 0) {
-                    setIndentationSize(2);
-                }
-            } catch (Exception e) {
-                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineNumber, line));
-            }
-        } else if (key.equalsIgnoreCase(CSConstants.DEBUG_TITLE)) {
-            if (value.equals("1")) {
-                log.setVerboseDebug(1);
-            } else if (value.equals("2")) {
-                log.setVerboseDebug(2);
-            } else if (value.equals("0")) {
-                log.setVerboseDebug(0);
-            } else {
-                log.warn(ProcessorConstants.WARN_DEBUG_IGNORE_MSG);
-            }
-        } else if (key.equalsIgnoreCase(CommonConstants.CS_PUBLICAN_CFG_TITLE)) {
-            int startingPos = StringUtilities.indexOf(value, '[');
-            if (startingPos != -1) {
-                final StringBuilder cfg = new StringBuilder(value);
-                // If the ']' character isn't on this line try the next line
-                if (StringUtilities.indexOf(cfg.toString(), ']') == -1) {
-                    cfg.append("\n");
-
-                    // Read the next line and increment counters
-                    String newLine = getLines().poll();
-                    while (newLine != null) {
-                        cfg.append(newLine).append("\n");
-                        lineCounter++;
-                        // If the ']' character still isn't found keep trying
-                        if (StringUtilities.lastIndexOf(cfg.toString(), ']') == -1) {
-                            newLine = getLines().poll();
-                        } else {
-                            break;
-                        }
-                    }
-                }
-
-                // Check that the ']' character was found and that it was found before another '[' character
-                final String finalCfg = cfg.toString().trim();
-                if (StringUtilities.lastIndexOf(finalCfg, ']') == -1 || StringUtilities.lastIndexOf(finalCfg, '[') != startingPos) {
-                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber,
-                            key + " = " + finalCfg.replaceAll("\n", "\n          ")));
-                } else {
-                    contentSpec.setPublicanCfg(ProcessorUtilities.replaceEscapeChars(finalCfg).substring(1, finalCfg.length() - 1));
-                }
-            } else {
-                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber, line));
-            }
-        } else if (key.equalsIgnoreCase(CommonConstants.CS_INLINE_INJECTION_TITLE)) {
-            final InjectionOptions injectionOptions = new InjectionOptions();
-            String[] types = null;
-            if (StringUtilities.indexOf(value, '[') != -1) {
-                if (StringUtilities.indexOf(value, ']') != -1) {
-                    final Matcher matcher = SQUARE_BRACKET_PATTERN.matcher(value);
-
-                    // Find all of the variables inside of the brackets defined by the regex
-                    while (matcher.find()) {
-                        final String topicTypes = matcher.group(ProcessorConstants.BRACKET_CONTENTS);
-                        types = StringUtilities.split(topicTypes, ',');
-                        for (final String type : types) {
-                            injectionOptions.addStrictTopicType(type.trim());
-                        }
-                    }
-                } else {
-                    throw new ParsingException(
-                            format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG + ProcessorConstants.CSLINE_MSG, lineNumber, ']', line));
-                }
-            }
-            String injectionSetting = getTitle(value, '[');
-            if (injectionSetting.trim().equalsIgnoreCase("on")) {
-                if (types != null) {
-                    injectionOptions.setContentSpecType(InjectionOptions.UserType.STRICT);
-                } else {
-                    injectionOptions.setContentSpecType(InjectionOptions.UserType.ON);
-                }
-            } else if (injectionSetting.trim().equalsIgnoreCase("off")) {
-                injectionOptions.setContentSpecType(InjectionOptions.UserType.OFF);
-            } else {
-                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_INJECTION_MSG, lineNumber, line));
-            }
-            contentSpec.setInjectionOptions(injectionOptions);
-        } else if (key.equalsIgnoreCase(CommonConstants.CS_FILE_TITLE) || key.equalsIgnoreCase(CommonConstants.CS_FILE_SHORT_TITLE)) {
-            final FileList files = parseFilesMetaData(value, lineNumber, line);
-            contentSpec.appendKeyValueNode(files);
-        } else if (ContentSpecUtilities.isSpecTopicMetaData(key)) {
-            final SpecTopic specTopic = parseSpecTopicMetaData(value, key, lineNumber);
-            contentSpec.appendKeyValueNode(new KeyValueNode<SpecTopic>(key, specTopic));
+        if (parsedMetaDataKeys.contains(key)) {
+            throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_METADATA_FORMAT_MSG, lineNumber, key, line));
         } else {
-            try {
-                final KeyValueNode<String> node = new KeyValueNode<String>(key, value);
-                contentSpec.appendKeyValueNode(node);
-            } catch (NumberFormatException e) {
-                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, lineNumber, line));
+            parsedMetaDataKeys.add(key);
+
+            // first deal with metadata that is used by the parser or needs to be parsed further
+            if (key.equalsIgnoreCase(CSConstants.SPACES_TITLE)) {
+                // Read in the amount of spaces that were used for the content specification
+                try {
+                    setIndentationSize(Integer.parseInt(value));
+                    if (getIndentationSize() <= 0) {
+                        setIndentationSize(2);
+                    }
+                } catch (Exception e) {
+                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineNumber, line));
+                }
+            } else if (key.equalsIgnoreCase(CSConstants.DEBUG_TITLE)) {
+                if (value.equals("1")) {
+                    log.setVerboseDebug(1);
+                } else if (value.equals("2")) {
+                    log.setVerboseDebug(2);
+                } else if (value.equals("0")) {
+                    log.setVerboseDebug(0);
+                } else {
+                    log.warn(ProcessorConstants.WARN_DEBUG_IGNORE_MSG);
+                }
+            } else if (key.equalsIgnoreCase(CommonConstants.CS_PUBLICAN_CFG_TITLE)) {
+                int startingPos = StringUtilities.indexOf(value, '[');
+                if (startingPos != -1) {
+                    final StringBuilder cfg = new StringBuilder(value);
+                    // If the ']' character isn't on this line try the next line
+                    if (StringUtilities.indexOf(cfg.toString(), ']') == -1) {
+                        cfg.append("\n");
+
+                        // Read the next line and increment counters
+                        String newLine = getLines().poll();
+                        while (newLine != null) {
+                            cfg.append(newLine).append("\n");
+                            lineCounter++;
+                            // If the ']' character still isn't found keep trying
+                            if (StringUtilities.lastIndexOf(cfg.toString(), ']') == -1) {
+                                newLine = getLines().poll();
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+
+                    // Check that the ']' character was found and that it was found before another '[' character
+                    final String finalCfg = cfg.toString().trim();
+                    if (StringUtilities.lastIndexOf(finalCfg, ']') == -1 || StringUtilities.lastIndexOf(finalCfg, '[') != startingPos) {
+                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber,
+                                key + " = " + finalCfg.replaceAll("\n", "\n          ")));
+                    } else {
+                        contentSpec.setPublicanCfg(ProcessorUtilities.replaceEscapeChars(finalCfg).substring(1, finalCfg.length() - 1));
+                    }
+                } else {
+                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber, line));
+                }
+            } else if (key.equalsIgnoreCase(CommonConstants.CS_INLINE_INJECTION_TITLE)) {
+                final InjectionOptions injectionOptions = new InjectionOptions();
+                String[] types = null;
+                if (StringUtilities.indexOf(value, '[') != -1) {
+                    if (StringUtilities.indexOf(value, ']') != -1) {
+                        final Matcher matcher = SQUARE_BRACKET_PATTERN.matcher(value);
+
+                        // Find all of the variables inside of the brackets defined by the regex
+                        while (matcher.find()) {
+                            final String topicTypes = matcher.group(ProcessorConstants.BRACKET_CONTENTS);
+                            types = StringUtilities.split(topicTypes, ',');
+                            for (final String type : types) {
+                                injectionOptions.addStrictTopicType(type.trim());
+                            }
+                        }
+                    } else {
+                        throw new ParsingException(
+                                format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG + ProcessorConstants.CSLINE_MSG, lineNumber, ']', line));
+                    }
+                }
+                String injectionSetting = getTitle(value, '[');
+                if (injectionSetting.trim().equalsIgnoreCase("on")) {
+                    if (types != null) {
+                        injectionOptions.setContentSpecType(InjectionOptions.UserType.STRICT);
+                    } else {
+                        injectionOptions.setContentSpecType(InjectionOptions.UserType.ON);
+                    }
+                } else if (injectionSetting.trim().equalsIgnoreCase("off")) {
+                    injectionOptions.setContentSpecType(InjectionOptions.UserType.OFF);
+                } else {
+                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_INJECTION_MSG, lineNumber, line));
+                }
+                contentSpec.setInjectionOptions(injectionOptions);
+            } else if (key.equalsIgnoreCase(CommonConstants.CS_FILE_TITLE) || key.equalsIgnoreCase(CommonConstants.CS_FILE_SHORT_TITLE)) {
+                final FileList files = parseFilesMetaData(value, lineNumber, line);
+                contentSpec.appendKeyValueNode(files);
+            } else if (ContentSpecUtilities.isSpecTopicMetaData(key)) {
+                final SpecTopic specTopic = parseSpecTopicMetaData(value, key, lineNumber);
+                contentSpec.appendKeyValueNode(new KeyValueNode<SpecTopic>(key, specTopic));
+            } else {
+                try {
+                    final KeyValueNode<String> node = new KeyValueNode<String>(key, value);
+                    contentSpec.appendKeyValueNode(node);
+                } catch (NumberFormatException e) {
+                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, lineNumber, line));
+                }
             }
         }
     }

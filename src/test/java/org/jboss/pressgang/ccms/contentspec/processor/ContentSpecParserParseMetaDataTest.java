@@ -40,6 +40,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
     @Arbitrary Integer lineNumber;
+    @Arbitrary Integer lineNumber2;
     @Arbitrary Integer id;
     @Arbitrary Integer revision;
     @ArbitraryString(type = ALPHANUMERIC) String line;
@@ -566,5 +567,25 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         assertThat(fileList.getValue().get(0).getTitle(), is(line));
         assertThat(fileList.getValue().get(1).getId(), is(revision));
         assertThat(fileList.getValue().get(1).getTitle(), is(line2));
+    }
+
+    @Test
+    public void shouldThrowExceptionWhenDuplicateMetaData() {
+        // Given twos lines that are duplicate metadata
+        keyValuePair.setFirst("Title");
+        keyValuePair.setSecond(line);
+
+        try {
+            parser.parseMetaDataLine(contentSpec, line, lineNumber);
+            parser.parseMetaDataLine(contentSpec, line, lineNumber2);
+
+            // Then an exception is thrown
+            fail(MISSING_PARSING_EXCEPTION);
+        } catch (ParsingException e) {
+            // And it contains an error about the duplicate entry
+            assertThat(e.getMessage(), containsString("Invalid metadata, \"Title\" has already been defined."));
+            // And the error message contains the line number
+            assertThat(e.getMessage(), containsString(lineNumber2.toString()));
+        }
     }
 }

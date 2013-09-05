@@ -97,6 +97,8 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Incorrect tag attribute format." + CSLINE_MSG;
     public static final String ERROR_INVALID_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Incorrect attribute format." + CSLINE_MSG;
     public static final String ERROR_INVALID_METADATA_FORMAT_MSG = LINE + INVALID_CS + " Incorrect metadata format." + CSLINE_MSG;
+    public static final String ERROR_DUPLICATE_METADATA_FORMAT_MSG = LINE + INVALID_CS + " Invalid metadata, " +
+            "\"%s\" has already been defined." + CSLINE_MSG;
     public static final String ERROR_UNRECOGNISED_METADATA_MSG = LINE + INVALID_CS + " Unrecognised metadata element." + CSLINE_MSG;
     public static final String ERROR_MISSING_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Missing attribute detected." + CSLINE_MSG;
     public static final String ERROR_TAG_DUPLICATED_MSG = LINE + INVALID_CS + " Tag is duplicated." + CSLINE_MSG;
@@ -138,7 +140,7 @@ public class ProcessorConstants {
             "\"Description\", \"URL\" and \"Writer\" are currently the only supported attributes." + CSLINE_MSG;
     public static final String ERROR_INVALID_CONDITION_MSG = LINE + INVALID_CS + " The condition statement must be a valid regular " +
             "expression string." + CSLINE_MSG;
-    public static final String ERROR_DUPLICATE_ATTRIBUTE_MSG = LINE + "Invalid attribute, \"%s\" has already been set." + CSLINE_MSG;
+    public static final String ERROR_DUPLICATE_ATTRIBUTE_MSG = LINE + "Invalid attribute, \"%s\" has already been defined." + CSLINE_MSG;
     public static final String ERROR_TOPIC_WITH_DIFFERENT_REVS_MSG = INVALID_CS + " Topic %d has two or more different revisions included" +
             " in the Content Specification. The topic is located at:";
     public static final String ERROR_TOPIC_WITH_DIFFERENT_REVS_REV_MSG = "Revision %s, lines(s) %s.";
