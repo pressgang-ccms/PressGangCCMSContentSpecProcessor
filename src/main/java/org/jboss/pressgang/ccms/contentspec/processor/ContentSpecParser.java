@@ -856,10 +856,10 @@ public class ContentSpecParser {
                 contentSpec.appendKeyValueNode(files);
             } else if (ContentSpecUtilities.isSpecTopicMetaData(key)) {
                 final SpecTopic specTopic = parseSpecTopicMetaData(value, key, lineNumber);
-                contentSpec.appendKeyValueNode(new KeyValueNode<SpecTopic>(key, specTopic));
+                contentSpec.appendKeyValueNode(new KeyValueNode<SpecTopic>(key, specTopic, lineNumber));
             } else {
                 try {
-                    final KeyValueNode<String> node = new KeyValueNode<String>(key, value);
+                    final KeyValueNode<String> node = new KeyValueNode<String>(key, value, lineNumber);
                     contentSpec.appendKeyValueNode(node);
                 } catch (NumberFormatException e) {
                     throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, lineNumber, line));

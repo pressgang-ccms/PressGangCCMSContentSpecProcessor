@@ -299,6 +299,8 @@ public class ProcessorConstants {
             CSLINE_MSG + CSLINE_MSG;
     public static final String WARN_TOPIC_TITLES_NONMATCH_MSG = LINE + "Possible " + INVALID_TOPIC + " Existing topic title doesn't " +
             "match." + CSLINE_MSG + CSLINE_MSG;
+    public static final String WARN_REVISION_NOT_EXIST_USING_X_MSG = LINE + "The Topic revision specified doesn't exist. " +
+            "So revision %d is being used instead, as it is the closest match." + CSLINE_MSG;
 
     // Process Errors
     public static final String ERROR_PROCESS_NONEXIST_MSG = LINE + INVALID_PROCESS + " Topic %s doesn't exist in the database." +
