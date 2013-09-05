@@ -433,8 +433,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
                 // Check that the checksum is valid
                 if (!processingOptions.isIgnoreChecksum()) {
-                    final String currentChecksum = HashUtilities.generateMD5(
-                            serverContentSpec.replaceFirst(CommonConstants.CS_CHECKSUM_TITLE + "[ ]*=.*(\r)?\n", ""));
+                    final String currentChecksum = HashUtilities.generateMD5(ContentSpecUtilities.removeChecksum(serverContentSpec));
                     if (contentSpec.getChecksum() != null) {
                         if (!contentSpec.getChecksum().equals(currentChecksum)) {
                             log.error(String.format(ProcessorConstants.ERROR_CS_NONMATCH_CHECKSUM_MSG, contentSpec.getChecksum(),
