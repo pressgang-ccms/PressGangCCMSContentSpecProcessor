@@ -470,6 +470,17 @@ public class ContentSpecParser {
                     log.error(ProcessorConstants.ERROR_INCORRECT_FILE_FORMAT_MSG);
                     return false;
                 }
+            } else if (key.equalsIgnoreCase(CommonConstants.CS_ID_TITLE)) {
+                int contentSpecId;
+                try {
+                    contentSpecId = Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                    log.error(format(ProcessorConstants.ERROR_INVALID_CS_ID_FORMAT_MSG, input.trim()));
+                    return false;
+                }
+                contentSpec.setId(contentSpecId);
+
+                return processSpecContents(contentSpec, processProcesses);
             } else {
                 log.error(ProcessorConstants.ERROR_INCORRECT_EDIT_MODE_MSG);
                 return false;
