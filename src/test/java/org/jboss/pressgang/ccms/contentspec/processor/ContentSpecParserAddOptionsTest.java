@@ -486,6 +486,6 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
         // and an error message should exist
         assertThat(logger.getLogMessages().size(), is(1));
         assertThat(logger.getLogMessages().get(0).toString(),
-                containsString("Line " + lineNumber + ": Invalid attribute, \"condition\" has already been set."));
+                containsString("Line " + lineNumber + ": Invalid attribute, \"condition\" has already been defined."));
     }
 }

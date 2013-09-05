@@ -1314,7 +1314,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // Check the revision
         if (specTopic.getRevision() != null && !specTopic.getRevision().equals(topic.getRevision())) {
-            log.warn(format(ProcessorConstants.WARN_REVISION_NOT_EXIST_USING_X_MSG, specTopic.getLineNumber(), specTopic.getText()));
+            log.warn(format(ProcessorConstants.WARN_REVISION_NOT_EXIST_USING_X_MSG, specTopic.getLineNumber(), topic.getRevision(),
+                    specTopic.getText()));
         }
 
         // Validate the tags

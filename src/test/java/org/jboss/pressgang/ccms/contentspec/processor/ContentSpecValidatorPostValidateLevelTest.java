@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.List;
 
+import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
 import org.jboss.pressgang.ccms.contentspec.Level;
@@ -35,6 +36,7 @@ import org.xml.sax.SAXException;
  * @author kamiller@redhat.com (Katie Miller)
  */
 public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValidatorTest {
+    @Arbitrary Integer rev;
     @ArbitraryString(type = StringType.ALPHA) String tagname;
     @ArbitraryString String title;
     @Mock TagProvider tagProvider;
@@ -84,10 +86,11 @@ public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValida
     public void shouldSucceedIfValidLevelAndHasValidChildSpecTopic() throws SAXException {
         // Given a valid level with a valid child spec topic
         Level level = make(a(LevelMaker.Level));
-        level.appendChild(make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.title, title))));
+        level.appendChild(make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.title, title), with(SpecTopicMaker.revision, rev))));
         // And the topic exists
         given(topicProvider.getTopic(anyInt(), anyInt())).willReturn(topicWrapper);
         given(topicWrapper.getTitle()).willReturn(title);
+        given(topicWrapper.getRevision()).willReturn(rev);
 
         // When the level is postvalidated
         boolean result = validator.postValidateLevel(level);
