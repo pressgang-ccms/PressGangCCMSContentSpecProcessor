@@ -1194,7 +1194,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
             // Check that the topic actually exists
             if (topic == null) {
-                log.error(String.format(ProcessorConstants.ERROR_TOPIC_ID_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
+                log.error(String.format(ProcessorConstants.ERROR_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             } else {
                 specTopic.setTopic(topic);
@@ -1214,7 +1214,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             int topicId = Integer.parseInt(specTopic.getId().substring(1));
             TopicWrapper topic = null;
             try {
-                topic = topicProvider.getTopic(topicId, null);
+                topic = topicProvider.getTopic(topicId, specTopic.getRevision());
             } catch (NotFoundException e) {
                 log.debug("Could not find topic for id " + topicId);
             }

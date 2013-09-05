@@ -223,11 +223,11 @@ public class ProcessorConstants {
             "." + CSLINE_MSG;
     public static final String ERROR_TOPIC_TOO_MANY_CATS_MSG = LINE + INVALID_TOPIC + " Too many tags for the category: %s." + CSLINE_MSG;
     public static final String ERROR_LEVEL_TOO_MANY_CATS_MSG = "Invalid %s! Too many tags for the category: %s." + CSLINE_MSG;
-    public static final String ERROR_TOPIC_ID_NONEXIST_MSG = LINE + INVALID_TOPIC + " ID doesn't exist in the database." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_NONEXIST_MSG = LINE + INVALID_TOPIC + " The topic specified doesn't exist in the database."
+            + CSLINE_MSG;
     public static final String ERROR_TOPIC_TITLES_NONMATCH_MSG = LINE + INVALID_TOPIC + " Existing topic title doesn't match." +
             CSLINE_MSG + CSLINE_MSG;
     public static final String ERROR_TOPIC_TYPE_NONMATCH_MSG = LINE + INVALID_TOPIC + " Existing topic type doesn't match." + CSLINE_MSG;
-    public static final String ERROR_TOPIC_NONEXIST_MSG = LINE + INVALID_TOPIC + " Existing topic specified doesn't exist." + CSLINE_MSG;
     public static final String ERROR_TOPIC_OUTSIDE_CHAPTER_MSG = LINE + INVALID_TOPIC + " A topic must be inside of another element, " +
             "it can't be at the base level." + CSLINE_MSG;
     public static final String ERROR_TOPIC_DUPLICATE_CLONES_MSG = LINE + INVALID_TOPIC + " A Duplicate clone topic can only be used when " +
