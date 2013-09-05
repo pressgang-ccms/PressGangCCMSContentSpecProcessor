@@ -69,7 +69,7 @@ public class ProcessorConstants {
     public static final String SUCCESSFUL_PUSH_MSG = SUCCESSFUL_PUSH_ID_MSG + "\n" + SUCCESSFUL_PUSH_REV_MSG;
     public static final String ERROR_DATABASE_ERROR_MSG = "An error occurred when inserting into the database please try again.";
     public static final String ERROR_PROCESSING_ERROR_MSG = "An error occurred during processing please try again and if another failure " +
-            "occurs please log a bug.";
+            "" + "occurs please log a bug.";
     public static final String WARN_EDIT_INFO_MSG = "Note: All descriptions, tags, source urls and writers will be ignored for existing "
             + "Topics.";
 
@@ -122,7 +122,8 @@ public class ProcessorConstants {
             CSLINE_MSG;
     public static final String ERROR_INVALID_INJECTION_TYPE_MSG = INVALID_CS + " The injection type \"%s\" doesn't exist or isn't a Type.";
     public static final String ERROR_DUPLICATE_ID_MSG = LINE + INVALID_CS + " Duplicate topic ID ( %s )." + CSLINE_MSG;
-    public static final String ERROR_TOPIC_INVALID_ID_MSG = LINE + INVALID_TOPIC + " The Topic ID specified is not a valid ID." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_INVALID_ID_MSG = LINE + INVALID_TOPIC + " The Topic ID specified is not a valid ID." +
+            CSLINE_MSG;
     public static final String ERROR_INVALID_BUG_LINKS_MSG = LINE + INVALID_CS + " The setting for bug links must be On or Off." +
             CSLINE_MSG;
     public static final String ERROR_INVALID_BUGZILLA_ASSIGNEE_MSG = LINE + INVALID_CS + " The setting for Bugzilla assignee must be On " +
@@ -170,18 +171,19 @@ public class ProcessorConstants {
             CSLINE_MSG;
 
     public static final String ERROR_INCORRECT_EDIT_MODE_MSG = "Invalid Operation! The Content Specification appears to be new " +
-            "and you cannot update a new Content Specification. Please make sure the " + CommonConstants.CS_CHECKSUM_TITLE + " and " + CommonConstants
-            .CS_ID_TITLE + " exists.";
+            "and you cannot update a new Content Specification. Please make sure the " + CommonConstants.CS_CHECKSUM_TITLE + " and " +
+            CommonConstants.CS_ID_TITLE + " exists.";
     public static final String ERROR_INCORRECT_NEW_MODE_MSG = "Invalid Operation! The Content Specification appears to be an existing " +
             "Content Specification and you cannot create a new Content Specification, from an exiting Content Specification.";
     public static final String ERROR_NONEXIST_CS_TYPE_MSG = "No processing type specified! Please specify whether to process as a " +
             "Content Specification or a Setup Processor.";
     public static final String ERROR_NONEXIST_CS_MODE_MSG = "No processing mode specified! Please specify whether to process as a New or " +
-            "Edited Content Specification.";
+            "" + "Edited Content Specification.";
     public static final String ERROR_INVALID_CS_ID_MSG = "The Content Specification ID doesn't exist in the database." + CSLINE_MSG;
     public static final String ERROR_INVALID_CS_ID_FORMAT_MSG = "The Content Specification ID is not valid." + CSLINE_MSG;
     public static final String ERROR_INCORRECT_FILE_FORMAT_MSG = INVALID_CS + " Incorrect file format, " +
-            "a Content Specification must start with either a " + CommonConstants.CS_TITLE_TITLE + " or a " + CommonConstants.CS_CHECKSUM_TITLE +
+            "a Content Specification must start with either a " + CommonConstants.CS_TITLE_TITLE + " or a " + CommonConstants
+            .CS_CHECKSUM_TITLE +
             " and " + CommonConstants.CS_ID_TITLE + ".";
     public static final String ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG = LINE + "Duplicated bracket types found." + CSLINE_MSG;
 
@@ -246,6 +248,8 @@ public class ProcessorConstants {
             " have source urls added." + CSLINE_MSG;
     public static final String ERROR_TOPIC_EXISTING_BAD_OPTIONS = LINE + INVALID_TOPIC + " An Existing topic cannot have a new Writer, " +
             "Description or Source URLs." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_CLONED_BAD_OPTIONS = LINE + INVALID_TOPIC + " A Cloned topic cannot have a new Description or " +
+            "Type." + CSLINE_MSG;
     public static final String ERROR_TOPIC_INLINE_TOPIC_MUST_BE_FIRST = LINE + INVALID_TOPIC + " An inline topic must be the first topic " +
             "in a Chapter/Section/Appendix." + CSLINE_MSG;
     public static final String ERROR_TOPIC_INLINE_RELATIONSHIPS = LINE + INVALID_TOPIC + " An inline topic can't have any relationships."
@@ -357,7 +361,8 @@ public class ProcessorConstants {
     public static final String ERROR_BUG_LINKS_UNABLE_TO_CONNECT = "Unable to connect to the bug tracking server specified.";
     public static final String ERROR_BUGZILLA_UNABLE_TO_CONNECT = "Unable to connect to the Bugzilla server specified.";
     public static final String ERROR_BUG_LINKS_NO_SERVER_SET = "No %s server set.";
-    public static final String ERROR_BUG_LINKS_UNABLE_TO_VALIDATE = "Failed to validate the Bug Links due to an unknown error. Please ensure that the server url is correct correct and if the problem persists please file a bug.";
+    public static final String ERROR_BUG_LINKS_UNABLE_TO_VALIDATE = "Failed to validate the Bug Links due to an unknown error. Please " +
+            "ensure that the server url is correct correct and if the problem persists please file a bug.";
 
     // Level Regex Constants
     public static final String CHAPTER_REGEX = "^CHAPTER[ ]*((:.*)|$)";
@@ -368,49 +373,19 @@ public class ProcessorConstants {
     public static final String PROCESS_REGEX = "^PROCESS[ ]*((:.*)|$)";
     public static final String LEVEL_REGEX = "^(CHAPTER|SECTION|APPENDIX|PART|PREFACE|PROCESS)[ ]*((:.*)|$)";
 
-    public static final List<String> VALID_METADATA_KEYS = Arrays.asList(
-            CommonConstants.CS_CHECKSUM_TITLE,
-            CommonConstants.CS_ID_TITLE,
-            CommonConstants.CS_TITLE_TITLE,
-            CommonConstants.CS_SUBTITLE_TITLE,
-            CommonConstants.CS_EDITION_TITLE,
-            CommonConstants.CS_BOOK_VERSION_TITLE,
-            CommonConstants.CS_PUBSNUMBER_TITLE,
-            CommonConstants.CS_PRODUCT_TITLE,
-            CommonConstants.CS_ABSTRACT_TITLE,
-            CommonConstants.CS_ABSTRACT_ALTERNATE_TITLE,
-            CommonConstants.CS_COPYRIGHT_HOLDER_TITLE,
-            CommonConstants.CS_COPYRIGHT_YEAR_TITLE,
-            CommonConstants.CS_VERSION_TITLE,
-            CommonConstants.CS_BRAND_TITLE,
-            CommonConstants.CS_BUG_LINKS_TITLE,
-            CommonConstants.CS_BUGZILLA_PRODUCT_TITLE,
-            CommonConstants.CS_BUGZILLA_COMPONENT_TITLE,
-            CommonConstants.CS_BUGZILLA_VERSION_TITLE,
-            CommonConstants.CS_BUGZILLA_KEYWORDS_TITLE,
-            CommonConstants.CS_BUGZILLA_SERVER_TITLE,
-            CommonConstants.CS_BUGZILLA_URL_TITLE,
-            CommonConstants.CS_BOOK_TYPE_TITLE,
-            CommonConstants.CS_BRAND_LOGO_TITLE,
-            CommonConstants.CS_PUBLICAN_CFG_TITLE,
-            CommonConstants.CS_INLINE_INJECTION_TITLE,
-            CommonConstants.CS_DTD_TITLE,
-            CommonConstants.CS_REV_HISTORY_TITLE,
-            CommonConstants.CS_FEEDBACK_TITLE,
-            CommonConstants.CS_LEGAL_NOTICE_TITLE,
-            CommonConstants.CS_BUGZILLA_ASSIGNEE_TITLE,
-            CommonConstants.CS_MAVEN_GROUP_ID_TITLE,
-            CommonConstants.CS_MAVEN_ARTIFACT_ID_TITLE,
-            CommonConstants.CS_FILE_TITLE,
-            CommonConstants.CS_FILE_SHORT_TITLE,
-            CommonConstants.CS_JIRA_PROJECT_TITLE,
-            CommonConstants.CS_JIRA_COMPONENT_TITLE,
-            CommonConstants.CS_JIRA_VERSION_TITLE,
-            CommonConstants.CS_JIRA_LABELS_TITLE,
-            CommonConstants.CS_JIRA_SERVER_TITLE,
-            CSConstants.SPACES_TITLE,
-            CSConstants.DEBUG_TITLE,
-            CSConstants.OUTPUT_STYLE_TITLE,
-            CSConstants.SURVEY_LINK_TITLE
-    );
+    public static final List<String> VALID_METADATA_KEYS = Arrays.asList(CommonConstants.CS_CHECKSUM_TITLE, CommonConstants.CS_ID_TITLE,
+            CommonConstants.CS_TITLE_TITLE, CommonConstants.CS_SUBTITLE_TITLE, CommonConstants.CS_EDITION_TITLE,
+            CommonConstants.CS_BOOK_VERSION_TITLE, CommonConstants.CS_PUBSNUMBER_TITLE, CommonConstants.CS_PRODUCT_TITLE,
+            CommonConstants.CS_ABSTRACT_TITLE, CommonConstants.CS_ABSTRACT_ALTERNATE_TITLE, CommonConstants.CS_COPYRIGHT_HOLDER_TITLE,
+            CommonConstants.CS_COPYRIGHT_YEAR_TITLE, CommonConstants.CS_VERSION_TITLE, CommonConstants.CS_BRAND_TITLE,
+            CommonConstants.CS_BUG_LINKS_TITLE, CommonConstants.CS_BUGZILLA_PRODUCT_TITLE, CommonConstants.CS_BUGZILLA_COMPONENT_TITLE,
+            CommonConstants.CS_BUGZILLA_VERSION_TITLE, CommonConstants.CS_BUGZILLA_KEYWORDS_TITLE, CommonConstants.CS_BUGZILLA_SERVER_TITLE,
+            CommonConstants.CS_BUGZILLA_URL_TITLE, CommonConstants.CS_BOOK_TYPE_TITLE, CommonConstants.CS_BRAND_LOGO_TITLE,
+            CommonConstants.CS_PUBLICAN_CFG_TITLE, CommonConstants.CS_INLINE_INJECTION_TITLE, CommonConstants.CS_DTD_TITLE,
+            CommonConstants.CS_REV_HISTORY_TITLE, CommonConstants.CS_FEEDBACK_TITLE, CommonConstants.CS_LEGAL_NOTICE_TITLE,
+            CommonConstants.CS_BUGZILLA_ASSIGNEE_TITLE, CommonConstants.CS_MAVEN_GROUP_ID_TITLE, CommonConstants.CS_MAVEN_ARTIFACT_ID_TITLE,
+            CommonConstants.CS_FILE_TITLE, CommonConstants.CS_FILE_SHORT_TITLE, CommonConstants.CS_JIRA_PROJECT_TITLE,
+            CommonConstants.CS_JIRA_COMPONENT_TITLE, CommonConstants.CS_JIRA_VERSION_TITLE, CommonConstants.CS_JIRA_LABELS_TITLE,
+            CommonConstants.CS_JIRA_SERVER_TITLE, CSConstants.SPACES_TITLE, CSConstants.DEBUG_TITLE, CSConstants.OUTPUT_STYLE_TITLE,
+            CSConstants.SURVEY_LINK_TITLE);
 }

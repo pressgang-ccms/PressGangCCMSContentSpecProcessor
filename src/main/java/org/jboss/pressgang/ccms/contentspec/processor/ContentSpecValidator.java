@@ -1078,22 +1078,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
             // Cloned Topics
         } else if (specTopic.isTopicAClonedTopic()) {
-            // Check if a description or type exists. If one does then generate a warning.
+            // Check if a description or type exists. If one does then generate an error.
             if ((specTopic.getType() != null && !specTopic.getType().equals("")) || (specTopic.getDescription(
                     false) != null && !specTopic.getDescription(false).equals(""))) {
-                String format = "";
-                if (!isNullOrEmpty(specTopic.getType())) {
-                    format += String.format(ProcessorConstants.WARN_TYPE_IGNORE_MSG, specTopic.getLineNumber(), "Cloned");
-                }
-
-                if (!isNullOrEmpty(specTopic.getDescription(false))) {
-                    if (!format.equals("")) {
-                        format += "\n       ";
-                    }
-                    format += String.format(ProcessorConstants.WARN_DESCRIPTION_IGNORE_MSG, specTopic.getLineNumber(), "Cloned");
-                }
-
-                log.warn(String.format("%s" + ProcessorConstants.CSLINE_MSG, format, specTopic.getText()));
+                log.error(String.format(ProcessorConstants.ERROR_TOPIC_CLONED_BAD_OPTIONS, specTopic.getLineNumber(), specTopic.getText()));
+                valid = false;
             }
             // Duplicated Cloned Topics
         } else if (specTopic.isTopicAClonedDuplicateTopic()) {

@@ -1084,7 +1084,7 @@ public class ContentSpecParser {
                 ")|(" + CSConstants.EXISTING_TOPIC_ID_REGEX + ")")) {
             addOptions(tempTopic, variables, varStartPos, line, lineNumber);
         } else if (variables.length > varStartPos) {
-            // Display warnings if options are specified for existing or duplicated topics
+            // Display warnings if options are specified for duplicated topics
             if (variables[0].matches(CSConstants.DUPLICATE_TOPIC_ID_REGEX) || variables[0].matches(
                     CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX)) {
                 log.warn(format(ProcessorConstants.WARN_IGNORE_DUP_INFO_MSG, lineNumber, line));
