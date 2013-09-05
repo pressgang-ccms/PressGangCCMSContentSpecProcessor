@@ -503,7 +503,7 @@ public class ContentSpecParser {
             final Pair<String, String> keyValuePair = ProcessorUtilities.getAndValidateKeyValuePair(getLines().peek());
             final String key = keyValuePair.getFirst();
 
-            if (key.equalsIgnoreCase(CommonConstants.CS_CHECKSUM_TITLE)) {
+            if (key.equalsIgnoreCase(CommonConstants.CS_CHECKSUM_TITLE) || key.equalsIgnoreCase(CommonConstants.CS_ID_TITLE)) {
                 return processEditedSpec(contentSpec, processProcesses);
             } else {
                 return processNewSpec(contentSpec, processProcesses);
