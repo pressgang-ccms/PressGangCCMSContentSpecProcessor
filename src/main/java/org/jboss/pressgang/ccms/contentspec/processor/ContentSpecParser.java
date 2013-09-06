@@ -1755,7 +1755,7 @@ public class ContentSpecParser {
                              * and the related topic isn't the current topic. This is so it shows up in the
                              * output.
                              */
-                            if (count > 0 && relatedTopic != specTopic) {
+                            if (count > 0) {
                                 specTopic.addRelationshipToTopic(relatedTopic, relationship.getType(), relationship.getRelationshipTitle());
                             } else {
                                 final SpecTopic dummyTopic = new SpecTopic(-1, "");
