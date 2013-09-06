@@ -249,7 +249,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check to make sure all key value nodes a valid (that is they have a key and value specified
-        for (final Node node : contentSpec.getChildNodes()) {
+        for (final Node node : contentSpec.getNodes()) {
             if (node instanceof KeyValueNode) {
                 final KeyValueNode keyValueNode = (KeyValueNode) node;
                 if (isNullOrEmpty(keyValueNode.getKey())) {
