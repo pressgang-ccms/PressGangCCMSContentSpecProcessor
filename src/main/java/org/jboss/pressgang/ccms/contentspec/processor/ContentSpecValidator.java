@@ -599,13 +599,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             error = true;
                         } else if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
                                 targetLevel.getTitle())) {
-                            final String errorMsg = String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
-                                    specTopic.getLineNumber(), relationship.getRelationshipTitle(), targetLevel.getTitle());
                             if (processingOptions.isStrictTitles()) {
-                                log.error(errorMsg);
+                                log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
+                                        specTopic.getLineNumber(), relationship.getRelationshipTitle(), targetLevel.getTitle()));
                                 error = true;
                             } else {
-                                log.warn(errorMsg);
+                                log.warn(String.format(ProcessorConstants.WARN_RELATED_TITLE_NO_MATCH_MSG,
+                                        specTopic.getLineNumber(), relationship.getRelationshipTitle(), targetLevel.getTitle()));
                             }
                         }
                     }
@@ -674,13 +674,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     relatedTopic.getTopicType()) && relatedTopic.getParent() instanceof Level ? ((Level) relatedTopic.getParent())
                     .getTitle() : relatedTopic.getTitle();
             if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(relatedTitle)) {
-                final String errorMsg = String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
-                        relationship.getRelationshipTitle(), relatedTitle);
                 if (processingOptions.isStrictTitles()) {
-                    log.error(errorMsg);
+                    log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+                            relationship.getRelationshipTitle(), relatedTitle));
                     return false;
                 } else {
-                    log.warn(errorMsg);
+                    log.warn(String.format(ProcessorConstants.WARN_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+                            relationship.getRelationshipTitle(), relatedTitle));
                 }
             }
         }
