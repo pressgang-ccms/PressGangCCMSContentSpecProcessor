@@ -651,16 +651,24 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         return !error;
     }
 
+    /**
+     *
+     * @param relationship
+     * @param specTopic
+     * @param relatedId
+     * @param relatedTopic
+     * @return True if the topic relationship is valid, otherwise false.
+     */
     private boolean validateTopicRelationship(final Relationship relationship, final SpecTopic specTopic, final String relatedId,
             final SpecTopic relatedTopic) {
         if (relatedTopic.getDBId() != null && relatedTopic.getDBId() < 0) {
             log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
                     specTopic.getText()));
-            return true;
+            return false;
         } else if (relatedTopic == specTopic) {
             // Check to make sure the topic doesn't relate to itself
             log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopic.getLineNumber(), specTopic.getText()));
-            return true;
+            return false;
         } else {
             final String relatedTitle = TopicType.LEVEL.equals(
                     relatedTopic.getTopicType()) && relatedTopic.getParent() instanceof Level ? ((Level) relatedTopic.getParent())
@@ -670,14 +678,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                         relationship.getRelationshipTitle(), relatedTitle);
                 if (processingOptions.isStrictTitles()) {
                     log.error(errorMsg);
-                    return true;
+                    return false;
                 } else {
                     log.warn(errorMsg);
                 }
             }
         }
 
-        return false;
+        return true;
     }
 
     /**
