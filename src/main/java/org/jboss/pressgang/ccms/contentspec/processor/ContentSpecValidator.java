@@ -654,20 +654,20 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private boolean validateTopicRelationship(final Relationship relationship, final SpecTopic specTopic, final String relatedId,
             final SpecTopic relatedTopic) {
         if (relatedTopic.getDBId() != null && relatedTopic.getDBId() < 0) {
-            log.error(
-                    String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
-                            specTopic.getText()));
+            log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
+                    specTopic.getText()));
             return true;
         } else if (relatedTopic == specTopic) {
             // Check to make sure the topic doesn't relate to itself
-            log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopic.getLineNumber(),
-                    specTopic.getText()));
+            log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopic.getLineNumber(), specTopic.getText()));
             return true;
         } else {
-            if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
-                    relatedTopic.getTitle())) {
-                final String errorMsg = String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
-                        specTopic.getLineNumber(), relationship.getRelationshipTitle(), relatedTopic.getTitle());
+            final String relatedTitle = TopicType.LEVEL.equals(
+                    relatedTopic.getTopicType()) && relatedTopic.getParent() instanceof Level ? ((Level) relatedTopic.getParent())
+                    .getTitle() : relatedTopic.getTitle();
+            if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(relatedTitle)) {
+                final String errorMsg = String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+                        relationship.getRelationshipTitle(), relatedTitle);
                 if (processingOptions.isStrictTitles()) {
                     log.error(errorMsg);
                     return true;
@@ -1028,8 +1028,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             // Check that tags aren't trying to be added to a revision
             if (specTopic.getRevision() != null && !specTopic.getTags(false).isEmpty()) {
                 log.warn(
-                        String.format(ProcessorConstants.WARN_TAGS_IGNORE_MSG, specTopic.getLineNumber(), "revision",
-                                specTopic.getText()));
+                        String.format(ProcessorConstants.WARN_TAGS_IGNORE_MSG, specTopic.getLineNumber(), "revision", specTopic.getText()));
             }
 
             // Check that urls aren't trying to be added
