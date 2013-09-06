@@ -3,6 +3,7 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Node;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
@@ -55,6 +56,16 @@ public class SnapshotProcessor implements ShutdownAbleApp {
      */
     public void processContentSpec(final ContentSpec contentSpec, final SnapshotOptions processingOptions) {
         locale = contentSpec.getLocale() == null ? locale : contentSpec.getLocale();
+
+        // Process the metadata for any spec topic metadata
+        for (final Node node : contentSpec.getNodes()) {
+            if (node instanceof KeyValueNode) {
+                final KeyValueNode keyValueNode = ((KeyValueNode) node);
+                if (keyValueNode.getValue() != null && keyValueNode.getValue() instanceof SpecTopic) {
+                    processTopic((SpecTopic) keyValueNode.getValue(), processingOptions);
+                }
+            }
+        }
 
         processLevel(contentSpec.getBaseLevel(), processingOptions);
 
