@@ -583,23 +583,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 if (relationship instanceof TargetRelationship) {
                     final SpecNode node = ((TargetRelationship) relationship).getSecondaryRelationship();
                     if (node instanceof SpecTopic) {
-                        if (((SpecTopic) node).getDBId() != null && ((SpecTopic) node).getDBId() < 0) {
-                            log.error(String.format(ProcessorConstants.ERROR_TARGET_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
-                                    specTopic.getText()));
+                        final SpecTopic targetTopic = (SpecTopic) node;
+                        if (!validateTopicRelationship(relationship, specTopic, relatedId, targetTopic)) {
                             error = true;
-                        } else {
-                            final SpecTopic targetTopic = (SpecTopic) node;
-                            if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
-                                    targetTopic.getTitle())) {
-                                final String errorMsg = String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
-                                        specTopic.getLineNumber(), relationship.getRelationshipTitle(), targetTopic.getTitle());
-                                if (processingOptions.isStrictTitles()) {
-                                    log.error(errorMsg);
-                                    error = true;
-                                } else {
-                                    log.warn(errorMsg);
-                                }
-                            }
                         }
                     } else if (node instanceof Level) {
                         final Level targetLevel = (Level) node;
@@ -655,34 +641,43 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                                 lineNumbers.toString(), specTopic.getText()));
                         error = true;
                     } else {
-                        if (relatedTopic.getDBId() != null && relatedTopic.getDBId() < 0) {
-                            log.error(
-                                    String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
-                                            specTopic.getText()));
+                        if (!validateTopicRelationship(relationship, specTopic, relatedId, relatedTopic)) {
                             error = true;
-                        } else if (relatedTopic == specTopic) {
-                            // Check to make sure the topic doesn't relate to itself
-                            log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopic.getLineNumber(),
-                                    specTopic.getText()));
-                            error = true;
-                        } else {
-                            if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
-                                    relatedTopic.getTitle())) {
-                                final String errorMsg = String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
-                                        specTopic.getLineNumber(), relationship.getRelationshipTitle(), relatedTopic.getTitle());
-                                if (processingOptions.isStrictTitles()) {
-                                    log.error(errorMsg);
-                                    error = true;
-                                } else {
-                                    log.warn(errorMsg);
-                                }
-                            }
                         }
                     }
                 }
             }
         }
         return !error;
+    }
+
+    private boolean validateTopicRelationship(final Relationship relationship, final SpecTopic specTopic, final String relatedId,
+            final SpecTopic relatedTopic) {
+        if (relatedTopic.getDBId() != null && relatedTopic.getDBId() < 0) {
+            log.error(
+                    String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
+                            specTopic.getText()));
+            return true;
+        } else if (relatedTopic == specTopic) {
+            // Check to make sure the topic doesn't relate to itself
+            log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopic.getLineNumber(),
+                    specTopic.getText()));
+            return true;
+        } else {
+            if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
+                    relatedTopic.getTitle())) {
+                final String errorMsg = String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
+                        specTopic.getLineNumber(), relationship.getRelationshipTitle(), relatedTopic.getTitle());
+                if (processingOptions.isStrictTitles()) {
+                    log.error(errorMsg);
+                    return true;
+                } else {
+                    log.warn(errorMsg);
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
