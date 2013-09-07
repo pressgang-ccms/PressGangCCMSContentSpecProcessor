@@ -770,10 +770,10 @@ public class ContentSpecParser {
         final String key = keyValue.getFirst();
         final String value = keyValue.getSecond();
 
-        if (parsedMetaDataKeys.contains(key)) {
+        if (parsedMetaDataKeys.contains(key.toLowerCase())) {
             throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_METADATA_FORMAT_MSG, lineNumber, key, line));
         } else {
-            parsedMetaDataKeys.add(key);
+            parsedMetaDataKeys.add(key.toLowerCase());
 
             // first deal with metadata that is used by the parser or needs to be parsed further
             if (key.equalsIgnoreCase(CSConstants.SPACES_TITLE)) {
