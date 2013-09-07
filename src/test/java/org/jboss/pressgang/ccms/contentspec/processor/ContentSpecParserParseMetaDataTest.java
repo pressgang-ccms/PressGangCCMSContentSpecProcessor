@@ -50,11 +50,12 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
     @Mock ContentSpec contentSpec;
     protected Pair<String, String> keyValuePair = Pair.newPair(null, null);
+    protected Pair<String, String> keyValuePair2 = Pair.newPair(null, null);
 
     @Before
     public void setUp() throws Exception {
         PowerMockito.mockStatic(ProcessorUtilities.class);
-        when(ProcessorUtilities.getAndValidateKeyValuePair(anyString())).thenReturn(keyValuePair);
+        when(ProcessorUtilities.getAndValidateKeyValuePair(anyString())).thenReturn(keyValuePair, keyValuePair2);
         when(ProcessorUtilities.replaceEscapeChars(anyString())).thenCallRealMethod();
         when(ProcessorUtilities.findVariableSet(anyString(), anyChar(), anyChar(), anyInt())).thenCallRealMethod();
         line = line.replace("[", "\\[");
@@ -188,6 +189,22 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         ArgumentCaptor<String> publicanConfig = ArgumentCaptor.forClass(String.class);
         Mockito.verify(contentSpec, times(1)).setPublicanCfg(publicanConfig.capture());
         assertThat(publicanConfig.getValue(), is(line));
+    }
+
+    @Test
+    public void shouldSetPublicanConfigWithEmptyData() throws Exception {
+        // Given a line produces a key-value pair with a publican.cfg key
+        keyValuePair.setFirst("publican.cfg");
+        // And a value containing both an opening and closing bracket
+        keyValuePair.setSecond("[]");
+
+        // When the metadata line is processed
+        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+
+        // Then the publican config should be set
+        ArgumentCaptor<String> publicanConfig = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(contentSpec, times(1)).setPublicanCfg(publicanConfig.capture());
+        assertThat(publicanConfig.getValue(), is(""));
     }
 
     @Test
@@ -574,6 +591,8 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         // Given twos lines that are duplicate metadata
         keyValuePair.setFirst("Title");
         keyValuePair.setSecond(line);
+        keyValuePair2.setFirst("TITLE");
+        keyValuePair2.setSecond(line);
 
         try {
             parser.parseMetaDataLine(contentSpec, line, lineNumber);
@@ -583,7 +602,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
             fail(MISSING_PARSING_EXCEPTION);
         } catch (ParsingException e) {
             // And it contains an error about the duplicate entry
-            assertThat(e.getMessage(), containsString("Invalid metadata, \"Title\" has already been defined."));
+            assertThat(e.getMessage(), containsString("Invalid metadata, \"TITLE\" has already been defined."));
             // And the error message contains the line number
             assertThat(e.getMessage(), containsString(lineNumber2.toString()));
         }

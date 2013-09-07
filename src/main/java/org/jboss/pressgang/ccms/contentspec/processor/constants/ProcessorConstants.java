@@ -97,6 +97,8 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Incorrect tag attribute format." + CSLINE_MSG;
     public static final String ERROR_INVALID_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Incorrect attribute format." + CSLINE_MSG;
     public static final String ERROR_INVALID_METADATA_FORMAT_MSG = LINE + INVALID_CS + " Incorrect metadata format." + CSLINE_MSG;
+    public static final String ERROR_INVALID_METADATA_NO_VALUE_MSG = LINE + INVALID_CS + " Value must be specified for metadata." +
+            CSLINE_MSG;
     public static final String ERROR_DUPLICATE_METADATA_FORMAT_MSG = LINE + INVALID_CS + " Invalid metadata, " +
             "\"%s\" has already been defined." + CSLINE_MSG;
     public static final String ERROR_UNRECOGNISED_METADATA_MSG = LINE + INVALID_CS + " Unrecognised metadata element." + CSLINE_MSG;

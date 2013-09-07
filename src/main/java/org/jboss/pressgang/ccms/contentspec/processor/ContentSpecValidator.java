@@ -260,11 +260,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     final Object value = keyValueNode.getValue();
                     if (value instanceof String && isNullOrEmpty((String) value)) {
                         valid = false;
-                        log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, keyValueNode.getLineNumber(),
+                        log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_NO_VALUE_MSG, keyValueNode.getLineNumber(),
                                 keyValueNode.getText()));
                     } else if (value == null) {
                         valid = false;
-                        log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, keyValueNode.getLineNumber(),
+                        log.error(format(ProcessorConstants.ERROR_INVALID_METADATA_NO_VALUE_MSG, keyValueNode.getLineNumber(),
                                 keyValueNode.getText()));
                     }
 
