@@ -279,7 +279,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Validate the basic bug link data
-        preValidateBugLinks(contentSpec);
+        if (!preValidateBugLinks(contentSpec)) {
+            valid = false;
+        }
 
         // Check that each level is valid
         if (!preValidateLevel(contentSpec.getBaseLevel(), specTopicMap, contentSpec.getAllowEmptyLevels(), contentSpec.getBookType())) {
