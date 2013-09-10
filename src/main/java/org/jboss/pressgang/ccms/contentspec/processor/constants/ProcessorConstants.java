@@ -367,7 +367,7 @@ public class ProcessorConstants {
     public static final String ERROR_BUGZILLA_UNABLE_TO_CONNECT = "Unable to connect to the Bugzilla server specified.";
     public static final String ERROR_BUG_LINKS_NO_SERVER_SET = "No %s server set.";
     public static final String ERROR_BUG_LINKS_UNABLE_TO_VALIDATE = "Failed to validate the Bug Links due to an unknown error. Please " +
-            "ensure that the server url is correct correct and if the problem persists please file a bug.";
+            "ensure that the server url is correct and if the problem persists please file a bug.";
 
     // Level Regex Constants
     public static final String CHAPTER_REGEX = "^CHAPTER[ ]*((:.*)|$)";

@@ -20,8 +20,10 @@ import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Node;
 import org.jboss.pressgang.ccms.contentspec.SpecNode;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.contentspec.buglinks.BaseBugLinkStrategy;
+import org.jboss.pressgang.ccms.contentspec.buglinks.BugLinkOptions;
+import org.jboss.pressgang.ccms.contentspec.buglinks.BugLinkStrategyFactory;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
-import org.jboss.pressgang.ccms.contentspec.entities.BaseBugLinkOptions;
 import org.jboss.pressgang.ccms.contentspec.entities.ProcessRelationship;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
@@ -39,9 +41,6 @@ import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.TopicPool;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
-import org.jboss.pressgang.ccms.docbook.compiling.BugLinkStrategy;
-import org.jboss.pressgang.ccms.docbook.processing.BugzillaBugLinkStrategy;
-import org.jboss.pressgang.ccms.docbook.processing.JIRABugLinkStrategy;
 import org.jboss.pressgang.ccms.provider.CSNodeProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
@@ -280,17 +279,19 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                                     contentSpecEntity)) {
                                 changed = true;
                             } else {
-                                BugLinkStrategy bugLinkStrategy = null;
-                                BaseBugLinkOptions bugOptions = null;
+                                BugLinkType bugLinkType = null;
+                                BugLinkOptions bugOptions = null;
                                 if (contentSpec.getBugLinks() == BugLinkType.JIRA) {
-                                    bugLinkStrategy = new JIRABugLinkStrategy(contentSpec.getJIRAServer());
+                                    bugLinkType = BugLinkType.JIRA;
                                     bugOptions = contentSpec.getJIRABugLinkOptions();
-                                } else if (contentSpec.getBugLinks() == BugLinkType.BUGZILLA) {
-                                    bugLinkStrategy = new BugzillaBugLinkStrategy(contentSpec.getBugzillaServer());
+                                } else {
+                                    bugLinkType = BugLinkType.BUGZILLA;
                                     bugOptions = contentSpec.getBugzillaBugLinkOptions();
                                 }
+                                final BaseBugLinkStrategy bugLinkStrategy = BugLinkStrategyFactory.getInstance().create(bugLinkType,
+                                        bugOptions.getBaseUrl());
 
-                                if (bugLinkStrategy != null && bugLinkStrategy.hasValuesChanged(contentSpecEntity, bugOptions)) {
+                                if (bugLinkType != null && bugLinkStrategy.hasValuesChanged(contentSpecEntity, bugOptions)) {
                                     changed = true;
                                 }
                             }
