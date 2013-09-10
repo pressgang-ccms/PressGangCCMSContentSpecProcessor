@@ -10,7 +10,7 @@
 
     <groupId>org.jboss.pressgang.ccms.contentspec</groupId>
     <artifactId>processor</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.1-SNAPSHOT</version>
     <name>PressGang CCMS Content Specification Processor</name>
 
     <scm>
@@ -21,6 +21,7 @@
 
     <properties>
         <pressgang.ccms.version>1.1-SNAPSHOT</pressgang.ccms.version>
+        <pressgang.ccms.contentspec.version>1.1.1-SNAPSHOT</pressgang.ccms.contentspec.version>
         <slf4j.version>1.6.4</slf4j.version>
         <ipsedixit.version>1.0.2</ipsedixit.version>
         <!-- Can't move to Mockito 1.9.5 and PowerMock 1.5 yet due to bug -->
@@ -82,7 +83,7 @@
         <dependency>
             <groupId>org.jboss.pressgang.ccms</groupId>
             <artifactId>pressgang-ccms-contentspec</artifactId>
-            <version>${pressgang.ccms.version}</version>
+            <version>${pressgang.ccms.contentspec.version}</version>
         </dependency>
 
         <!-- Logging Libraries -->

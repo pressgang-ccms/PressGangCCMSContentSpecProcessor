@@ -27,8 +27,10 @@ import org.jboss.pressgang.ccms.contentspec.Node;
 import org.jboss.pressgang.ccms.contentspec.Process;
 import org.jboss.pressgang.ccms.contentspec.SpecNode;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.contentspec.buglinks.BaseBugLinkStrategy;
+import org.jboss.pressgang.ccms.contentspec.buglinks.BugLinkOptions;
+import org.jboss.pressgang.ccms.contentspec.buglinks.BugLinkStrategyFactory;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
-import org.jboss.pressgang.ccms.contentspec.entities.BaseBugLinkOptions;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TopicRelationship;
@@ -47,9 +49,6 @@ import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
-import org.jboss.pressgang.ccms.docbook.compiling.BugLinkStrategy;
-import org.jboss.pressgang.ccms.docbook.processing.BugzillaBugLinkStrategy;
-import org.jboss.pressgang.ccms.docbook.processing.JIRABugLinkStrategy;
 import org.jboss.pressgang.ccms.provider.CategoryProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
@@ -1578,22 +1577,16 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             return true;
         }
 
-        final BugLinkStrategy bugLinkStrategy;
-        final BaseBugLinkOptions bugOptions;
+        final BugLinkOptions bugOptions;
+        final BugLinkType type;
         if (contentSpec.getBugLinks().equals(BugLinkType.JIRA)) {
+            type = BugLinkType.JIRA;
             bugOptions = contentSpec.getJIRABugLinkOptions();
-            // Make sure a URL has been set
-            if (!isNullOrEmpty(bugOptions.getBaseUrl())) {
-                bugLinkStrategy = new JIRABugLinkStrategy(bugOptions.getBaseUrl());
-            } else {
-                log.error(String.format(ProcessorConstants.ERROR_BUG_LINKS_NO_SERVER_SET, "JIRA"));
-                return false;
-            }
         } else {
+            type = BugLinkType.BUGZILLA;
             bugOptions = contentSpec.getBugzillaBugLinkOptions();
-            // No need to check if a base url has been set as it will default to Red Hat Bugzilla anyways
-            bugLinkStrategy = new BugzillaBugLinkStrategy(bugOptions.getBaseUrl());
         }
+        final BaseBugLinkStrategy bugLinkStrategy = BugLinkStrategyFactory.getInstance().create(type, bugOptions.getBaseUrl());
 
         // Validate the content in the bug options using the appropriate bug link strategy
         try {
@@ -1621,22 +1614,16 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         try {
-            final BugLinkStrategy bugLinkStrategy;
-            final BaseBugLinkOptions bugOptions;
+            final BugLinkOptions bugOptions;
+            final BugLinkType type;
             if (contentSpec.getBugLinks().equals(BugLinkType.JIRA)) {
+                type = BugLinkType.JIRA;
                 bugOptions = contentSpec.getJIRABugLinkOptions();
-                // Make sure a URL has been set
-                if (!isNullOrEmpty(bugOptions.getBaseUrl())) {
-                    bugLinkStrategy = new JIRABugLinkStrategy(bugOptions.getBaseUrl());
-                } else {
-                    log.error(String.format(ProcessorConstants.ERROR_BUG_LINKS_NO_SERVER_SET, "JIRA"));
-                    return false;
-                }
             } else {
+                type = BugLinkType.BUGZILLA;
                 bugOptions = contentSpec.getBugzillaBugLinkOptions();
-                // No need to check if a base url has been set as it will default to Red Hat Bugzilla anyways
-                bugLinkStrategy = new BugzillaBugLinkStrategy(bugOptions.getBaseUrl());
             }
+            final BaseBugLinkStrategy bugLinkStrategy = BugLinkStrategyFactory.getInstance().create(type, bugOptions.getBaseUrl());
 
             // This step should have been performed by the preValidate method, so just make sure incase it hasn't been called.
             try {
