@@ -18,6 +18,7 @@ import java.util.List;
 import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
+import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker;
@@ -45,6 +46,7 @@ public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValida
     @Mock List<TagWrapper> tagWrapperList;
     @Mock TagWrapper tagWrapper;
     @Mock TopicWrapper topicWrapper;
+    @Mock ContentSpec contentSpec;
 
     @Before
     public void setUp() {
@@ -59,7 +61,7 @@ public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValida
         Level level = make(a(LevelMaker.Level));
 
         // When the level is postvalidated
-        boolean result = validator.postValidateLevel(level);
+        boolean result = validator.postValidateLevel(contentSpec, level);
 
         // Then the result should be success
         assertThat(result, is(true));
@@ -74,7 +76,7 @@ public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValida
         level.appendChild(make(a(LevelMaker.Level)));
 
         // When the level is postvalidated
-        boolean result = validator.postValidateLevel(level);
+        boolean result = validator.postValidateLevel(contentSpec, level);
 
         // Then the result should be success
         assertThat(result, is(true));
@@ -93,7 +95,7 @@ public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValida
         given(topicWrapper.getRevision()).willReturn(rev);
 
         // When the level is postvalidated
-        boolean result = validator.postValidateLevel(level);
+        boolean result = validator.postValidateLevel(contentSpec, level);
 
         // Then the result should be success
         assertThat(result, is(true));
@@ -107,7 +109,7 @@ public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValida
         Level level = createLevelWithInvalidTag();
 
         // When the level is postvalidated
-        boolean result = validator.postValidateLevel(level);
+        boolean result = validator.postValidateLevel(contentSpec, level);
 
         // Then the result should be a failure
         assertThat(result, is(false));
@@ -123,7 +125,7 @@ public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValida
         level.appendChild(createLevelWithInvalidTag());
 
         // When the level is postvalidated
-        boolean result = validator.postValidateLevel(level);
+        boolean result = validator.postValidateLevel(contentSpec, level);
 
         // Then the result should be a failure
         assertThat(result, is(false));
@@ -143,7 +145,7 @@ public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValida
         given(tagProvider.getTagByName(specTopic.getAssignedWriter(false))).willReturn(tagWrapper);
 
         // When the level is postvalidated
-        boolean result = validator.postValidateLevel(level);
+        boolean result = validator.postValidateLevel(contentSpec, level);
 
         // Then the result should be a failure
         assertThat(result, is(false));

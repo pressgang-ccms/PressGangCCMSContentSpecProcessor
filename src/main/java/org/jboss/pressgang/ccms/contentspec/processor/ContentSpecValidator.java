@@ -429,9 +429,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
                 valid = false;
             } else {
-                // Set the revision the content spec is being validated for
-                contentSpec.setRevision(contentSpecEntity.getRevision());
-
                 // Check that the checksum is valid
                 if (!processingOptions.isIgnoreChecksum()) {
                     final String currentChecksum = HashUtilities.generateMD5(ContentSpecUtilities.removeChecksum(serverContentSpec));
@@ -480,13 +477,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that any metadata topics are valid
-        if (contentSpec.getRevisionHistory() != null && !postValidateTopic(contentSpec.getRevisionHistory())) {
+        if (contentSpec.getRevisionHistory() != null && !postValidateTopic(contentSpec, contentSpec.getRevisionHistory())) {
             valid = false;
         }
-        if (contentSpec.getFeedback() != null && !postValidateTopic(contentSpec.getFeedback())) {
+        if (contentSpec.getFeedback() != null && !postValidateTopic(contentSpec, contentSpec.getFeedback())) {
             valid = false;
         }
-        if (contentSpec.getLegalNotice() != null && !postValidateTopic(contentSpec.getLegalNotice())) {
+        if (contentSpec.getLegalNotice() != null && !postValidateTopic(contentSpec, contentSpec.getLegalNotice())) {
             valid = false;
         }
 
@@ -498,7 +495,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that each level is valid
-        if (!postValidateLevel(contentSpec.getBaseLevel())) {
+        if (!postValidateLevel(contentSpec, contentSpec.getBaseLevel())) {
             valid = false;
         }
 
@@ -879,10 +876,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     /**
      * Validates a level to ensure its format and child levels/topics are valid.
      *
+     *
+     * @param contentSpec
      * @param level The level to be validated.
      * @return True if the level is valid otherwise false.
      */
-    public boolean postValidateLevel(final Level level) {
+    public boolean postValidateLevel(final ContentSpec contentSpec, final Level level) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -897,18 +896,18 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Validate the topics level
-        if (level.getInnerTopic() != null && !postValidateTopic(level.getInnerTopic())) {
+        if (level.getInnerTopic() != null && !postValidateTopic(contentSpec, level.getInnerTopic())) {
             valid = false;
         }
 
         // Validate the sub levels and topics
         for (final Node childNode : level.getChildNodes()) {
             if (childNode instanceof Level) {
-                if (!postValidateLevel((Level) childNode)) {
+                if (!postValidateLevel(contentSpec, (Level) childNode)) {
                     valid = false;
                 }
             } else if (childNode instanceof SpecTopic) {
-                if (!postValidateTopic((SpecTopic) childNode)) {
+                if (!postValidateTopic(contentSpec, (SpecTopic) childNode)) {
                     valid = false;
                 }
             }
@@ -1134,11 +1133,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     /**
      * Validates a topic against the database and for formatting issues.
      *
+     *
+     * @param contentSpec
      * @param specTopic The topic to be validated.
      * @return True if the topic is valid otherwise false.
      */
     @SuppressWarnings("unchecked")
-    public boolean postValidateTopic(final SpecTopic specTopic) {
+    public boolean postValidateTopic(final ContentSpec contentSpec, final SpecTopic specTopic) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -1181,14 +1182,22 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
         // Existing Topics
         else if (specTopic.isTopicAnExistingTopic()) {
+            // Calculate the revision for the topic
+            final Integer revision;
+            if (specTopic.getRevision() == null && contentSpec.getRevision() != null) {
+                revision = contentSpec.getRevision();
+            } else {
+                revision = specTopic.getRevision();
+            }
+
             // Check that the id actually exists
             BaseTopicWrapper<?> topic = null;
             try {
                 if (processingOptions.isTranslation()) {
                     topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()),
-                            specTopic.getRevision(), locale);
+                            revision, locale);
                 } else {
-                    topic = topicProvider.getTopic(Integer.parseInt(specTopic.getId()), specTopic.getRevision());
+                    topic = topicProvider.getTopic(Integer.parseInt(specTopic.getId()), revision);
                 }
             } catch (NotFoundException e) {
                 log.debug("Could not find topic for id " + specTopic.getDBId());
