@@ -477,13 +477,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that any metadata topics are valid
-        if (contentSpec.getRevisionHistory() != null && !postValidateTopic(contentSpec, contentSpec.getRevisionHistory())) {
+        if (contentSpec.getRevisionHistory() != null && !postValidateTopic(contentSpec.getRevisionHistory())) {
             valid = false;
         }
-        if (contentSpec.getFeedback() != null && !postValidateTopic(contentSpec, contentSpec.getFeedback())) {
+        if (contentSpec.getFeedback() != null && !postValidateTopic(contentSpec.getFeedback())) {
             valid = false;
         }
-        if (contentSpec.getLegalNotice() != null && !postValidateTopic(contentSpec, contentSpec.getLegalNotice())) {
+        if (contentSpec.getLegalNotice() != null && !postValidateTopic(contentSpec.getLegalNotice())) {
             valid = false;
         }
 
@@ -495,7 +495,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that each level is valid
-        if (!postValidateLevel(contentSpec, contentSpec.getBaseLevel())) {
+        if (!postValidateLevel(contentSpec.getBaseLevel())) {
             valid = false;
         }
 
@@ -877,11 +877,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * Validates a level to ensure its format and child levels/topics are valid.
      *
      *
-     * @param contentSpec
+     *
      * @param level The level to be validated.
      * @return True if the level is valid otherwise false.
      */
-    public boolean postValidateLevel(final ContentSpec contentSpec, final Level level) {
+    public boolean postValidateLevel(final Level level) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -896,18 +896,18 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Validate the topics level
-        if (level.getInnerTopic() != null && !postValidateTopic(contentSpec, level.getInnerTopic())) {
+        if (level.getInnerTopic() != null && !postValidateTopic(level.getInnerTopic())) {
             valid = false;
         }
 
         // Validate the sub levels and topics
         for (final Node childNode : level.getChildNodes()) {
             if (childNode instanceof Level) {
-                if (!postValidateLevel(contentSpec, (Level) childNode)) {
+                if (!postValidateLevel((Level) childNode)) {
                     valid = false;
                 }
             } else if (childNode instanceof SpecTopic) {
-                if (!postValidateTopic(contentSpec, (SpecTopic) childNode)) {
+                if (!postValidateTopic((SpecTopic) childNode)) {
                     valid = false;
                 }
             }
@@ -1134,12 +1134,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * Validates a topic against the database and for formatting issues.
      *
      *
-     * @param contentSpec
+     *
      * @param specTopic The topic to be validated.
      * @return True if the topic is valid otherwise false.
      */
     @SuppressWarnings("unchecked")
-    public boolean postValidateTopic(final ContentSpec contentSpec, final SpecTopic specTopic) {
+    public boolean postValidateTopic(final SpecTopic specTopic) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -1184,8 +1184,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         else if (specTopic.isTopicAnExistingTopic()) {
             // Calculate the revision for the topic
             final Integer revision;
-            if (specTopic.getRevision() == null && contentSpec.getRevision() != null) {
-                revision = contentSpec.getRevision();
+            if (specTopic.getRevision() == null && processingOptions.getMaxRevision() != null) {
+                revision = processingOptions.getMaxRevision();
             } else {
                 revision = specTopic.getRevision();
             }

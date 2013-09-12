@@ -10,6 +10,7 @@ public class ProcessingOptions {
     private boolean strictBugLinks = false;
     private boolean validateBugLinks = true;
     private boolean translation = false;
+    private Integer maxRevision = null;
 
     public boolean isValidating() {
         return validate;
@@ -73,5 +74,13 @@ public class ProcessingOptions {
 
     public void setValidateBugLinks(boolean validateBugLinks) {
         this.validateBugLinks = validateBugLinks;
+    }
+
+    public Integer getMaxRevision() {
+        return maxRevision;
+    }
+
+    public void setMaxRevision(Integer maxRevision) {
+        this.maxRevision = maxRevision;
     }
 }
