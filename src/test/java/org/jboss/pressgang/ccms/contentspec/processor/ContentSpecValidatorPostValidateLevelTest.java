@@ -18,6 +18,7 @@ import java.util.List;
 import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
+import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker;
@@ -45,6 +46,7 @@ public class ContentSpecValidatorPostValidateLevelTest extends ContentSpecValida
     @Mock List<TagWrapper> tagWrapperList;
     @Mock TagWrapper tagWrapper;
     @Mock TopicWrapper topicWrapper;
+    @Mock ContentSpec contentSpec;
 
     @Before
     public void setUp() {

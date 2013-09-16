@@ -429,9 +429,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
                 valid = false;
             } else {
-                // Set the revision the content spec is being validated for
-                contentSpec.setRevision(contentSpecEntity.getRevision());
-
                 // Check that the checksum is valid
                 if (!processingOptions.isIgnoreChecksum()) {
                     final String currentChecksum = HashUtilities.generateMD5(ContentSpecUtilities.removeChecksum(serverContentSpec));
@@ -879,6 +876,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     /**
      * Validates a level to ensure its format and child levels/topics are valid.
      *
+     *
+     *
      * @param level The level to be validated.
      * @return True if the level is valid otherwise false.
      */
@@ -1134,6 +1133,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     /**
      * Validates a topic against the database and for formatting issues.
      *
+     *
+     *
      * @param specTopic The topic to be validated.
      * @return True if the topic is valid otherwise false.
      */
@@ -1181,14 +1182,22 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
         // Existing Topics
         else if (specTopic.isTopicAnExistingTopic()) {
+            // Calculate the revision for the topic
+            final Integer revision;
+            if (specTopic.getRevision() == null && processingOptions.getMaxRevision() != null) {
+                revision = processingOptions.getMaxRevision();
+            } else {
+                revision = specTopic.getRevision();
+            }
+
             // Check that the id actually exists
             BaseTopicWrapper<?> topic = null;
             try {
                 if (processingOptions.isTranslation()) {
                     topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()),
-                            specTopic.getRevision(), locale);
+                            revision, locale);
                 } else {
-                    topic = topicProvider.getTopic(Integer.parseInt(specTopic.getId()), specTopic.getRevision());
+                    topic = topicProvider.getTopic(Integer.parseInt(specTopic.getId()), revision);
                 }
             } catch (NotFoundException e) {
                 log.debug("Could not find topic for id " + specTopic.getDBId());
