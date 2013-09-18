@@ -303,8 +303,8 @@ public class ProcessorConstants {
             "on this server" + CSLINE_MSG;
     public static final String WARN_LEVEL_TOPIC_TITLES_NONMATCH_MSG = LINE + "Possible Invalid %s! The topic title doesn't match." +
             CSLINE_MSG + CSLINE_MSG;
-    public static final String WARN_TOPIC_TITLES_NONMATCH_MSG = LINE + "Possible " + INVALID_TOPIC + " Existing topic title doesn't " +
-            "match." + CSLINE_MSG + CSLINE_MSG;
+    public static final String WARN_TOPIC_TITLES_NONMATCH_MSG = LINE + "Possible " + INVALID_TOPIC + " The specified topic title doesn't " +
+            "match, so it was replaced. Please verify that the topic used was correct." + CSLINE_MSG + CSLINE_MSG;
     public static final String WARN_REVISION_NOT_EXIST_USING_X_MSG = LINE + "The Topic revision specified doesn't exist. " +
             "So revision %d is being used instead, as it is the closest match." + CSLINE_MSG;
 
@@ -356,8 +356,8 @@ public class ProcessorConstants {
             "relationship title specified doesn't match the actual topic/target title." + NEW_LINE_SPACER + "Specified: %s" +
             NEW_LINE_SPACER + "Actual:    %s";
     public static final String WARN_RELATED_TITLE_NO_MATCH_MSG = LINE + "Possible " + INVALID_RELATIONSHIP + " The topic/target " +
-            "relationship title specified doesn't match the actual topic/target title." + NEW_LINE_SPACER + "Specified: %s" +
-            NEW_LINE_SPACER + "Actual:    %s";
+            "relationship title specified doesn't match the actual topic/target title, so it was replaced. Please verify that the " +
+            "topic/target used was correct." + NEW_LINE_SPACER + "Specified: %s" + NEW_LINE_SPACER + "Actual:    %s";
     public static final String ERROR_FILE_TITLE_NO_MATCH_MSG = LINE + INVALID_FILE + " The file name " +
             "specified doesn't match the actual files name." + NEW_LINE_SPACER + "Specified: %s" + NEW_LINE_SPACER + "Actual:    " +
             "%s";
