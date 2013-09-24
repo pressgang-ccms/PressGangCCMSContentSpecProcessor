@@ -214,7 +214,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
-        if (contentSpec.getEdition() != null && !contentSpec.getEdition().matches(ProcessorConstants.VERSION_VALIDATE_REGEX)) {
+        if (contentSpec.getEdition() != null && !contentSpec.getEdition().matches(ProcessorConstants.PRODUCT_VERSION_VALIDATE_REGEX)) {
             log.error(format(ProcessorConstants.ERROR_INVALID_VERSION_NUMBER_MSG, CommonConstants.CS_EDITION_TITLE));
             valid = false;
         }
