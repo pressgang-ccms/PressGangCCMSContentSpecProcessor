@@ -270,7 +270,7 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     }
 
     @Test
-    public void shouldFailAndLogErrorWhenInvalidFeedbackHistory() {
+    public void shouldFailAndLogErrorWhenInvalidFeedback() {
         // Given an invalid content spec because of an invalid feedback
         ContentSpec contentSpec = make(a(ContentSpec));
         contentSpec.setFeedback(new SpecTopic(0, null));
@@ -287,10 +287,27 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     }
 
     @Test
-    public void shouldFailAndLogErrorWhenInvalidLegalNoticeHistory() {
+    public void shouldFailAndLogErrorWhenInvalidLegalNotice() {
         // Given an invalid content spec because of an invalid legal notice
         ContentSpec contentSpec = make(a(ContentSpec));
         contentSpec.setLegalNotice(new SpecTopic(0, null));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When the spec is prevalidated
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Topic!"));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenInvalidAuthorGroup() {
+        // Given an invalid content spec because of an invalid feedback
+        ContentSpec contentSpec = make(a(ContentSpec));
+        contentSpec.setAuthorGroup(new SpecTopic(0, null));
         // with a level and spec topic
         addLevelAndTopicToContentSpec(contentSpec);
 

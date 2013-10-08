@@ -238,6 +238,10 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 false)) {
             valid = false;
         }
+        if (contentSpec.getAuthorGroup() != null && !preValidateTopic(contentSpec.getAuthorGroup(), specTopicMap, contentSpec.getBookType(),
+                false)) {
+            valid = false;
+        }
 
         // Print Warnings for content that maybe important
         if (isNullOrEmpty(contentSpec.getSubtitle())) {
@@ -486,6 +490,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         if (contentSpec.getLegalNotice() != null && !postValidateTopic(contentSpec.getLegalNotice())) {
             valid = false;
         }
+        if (contentSpec.getAuthorGroup() != null && !postValidateTopic(contentSpec.getAuthorGroup())) {
+            valid = false;
+        }
 
         // Validate that the files exist
         if (contentSpec.getFiles() != null) {
@@ -598,12 +605,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                         } else if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
                                 targetLevel.getTitle())) {
                             if (processingOptions.isStrictTitles()) {
-                                log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG,
-                                        specTopic.getLineNumber(), relationship.getRelationshipTitle(), targetLevel.getTitle()));
+                                log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+                                        relationship.getRelationshipTitle(), targetLevel.getTitle()));
                                 error = true;
                             } else {
-                                log.warn(String.format(ProcessorConstants.WARN_RELATED_TITLE_NO_MATCH_MSG,
-                                        specTopic.getLineNumber(), relationship.getRelationshipTitle(), targetLevel.getTitle()));
+                                log.warn(String.format(ProcessorConstants.WARN_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+                                        relationship.getRelationshipTitle(), targetLevel.getTitle()));
                             }
                         }
                     }
@@ -650,7 +657,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     }
 
     /**
-     *
      * @param relationship
      * @param specTopic
      * @param relatedId
@@ -875,8 +881,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
     /**
      * Validates a level to ensure its format and child levels/topics are valid.
-     *
-     *
      *
      * @param level The level to be validated.
      * @return True if the level is valid otherwise false.
@@ -1133,8 +1137,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     /**
      * Validates a topic against the database and for formatting issues.
      *
-     *
-     *
      * @param specTopic The topic to be validated.
      * @return True if the topic is valid otherwise false.
      */
@@ -1168,6 +1170,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     CSConstants.REVISION_HISTORY_TAG_ID)) {
                 log.error(format(ProcessorConstants.ERROR_INVALID_TYPE_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
+            } else if (specTopic.getTopicType() == TopicType.AUTHOR_GROUP && !type.getId().equals(CSConstants.AUTHOR_GROUP_TAG_ID)) {
+                log.error(format(ProcessorConstants.ERROR_INVALID_TYPE_MSG, specTopic.getLineNumber(), specTopic.getText()));
+                valid = false;
             }
 
             // Validate the tags
@@ -1194,8 +1199,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             BaseTopicWrapper<?> topic = null;
             try {
                 if (processingOptions.isTranslation()) {
-                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()),
-                            revision, locale);
+                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()), revision, locale);
                 } else {
                     topic = topicProvider.getTopic(Integer.parseInt(specTopic.getId()), revision);
                 }
@@ -1292,7 +1296,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.FEEDBACK || specTopic.getTopicType() ==
                 TopicType.LEVEL) {
             // Check to make sure the topic is a normal topic and not a special case
-            if (topic.hasTag(CSConstants.LEGAL_NOTICE_TAG_ID) || topic.hasTag(CSConstants.REVISION_HISTORY_TAG_ID)) {
+            if (topic.hasTag(CSConstants.LEGAL_NOTICE_TAG_ID) || topic.hasTag(CSConstants.REVISION_HISTORY_TAG_ID) || topic.hasTag(
+                    CSConstants.AUTHOR_GROUP_TAG_ID)) {
                 log.error(format(ProcessorConstants.ERROR_TOPIC_NOT_ALLOWED_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
@@ -1308,6 +1313,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             if (!topic.hasTag(CSConstants.REVISION_HISTORY_TAG_ID)) {
                 log.error(
                         format(ProcessorConstants.ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(), specTopic.getText()));
+                valid = false;
+            }
+        } else if (specTopic.getTopicType() == TopicType.AUTHOR_GROUP) {
+            // Check to make sure the topic is a author group topic
+            if (!topic.hasTag(CSConstants.AUTHOR_GROUP_TAG_ID)) {
+                log.error(
+                        format(ProcessorConstants.ERROR_AUTHOR_GROUP_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
         }

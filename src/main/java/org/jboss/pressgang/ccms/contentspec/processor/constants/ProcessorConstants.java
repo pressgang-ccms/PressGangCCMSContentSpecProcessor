@@ -23,7 +23,7 @@ public class ProcessorConstants {
     public static final String BRACKET_PATTERN = "(?<!\\\\)\\%c((.|\n)*?)(?<!\\\\)\\%c";
     public static final String BRACKET_VALIDATE_REGEX = ".*%s[ ]*$"; // ".*%s(([ ]*$)|([ ]*#.*$))" For use to allow comments at the end
     // of a line
-    public static final String PRODUCT_VERSION_VALIDATE_REGEX = "(([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+))([ \\" +
+    public static final String PRODUCT_VERSION_VALIDATE_REGEX = "(([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+))([ \\" + "" +
             ".\\-]?[A-Za-z0-9]+)?";
     public static final String VERSION_VALIDATE_REGEX = "([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+)";
     public static final String VERSION_EPOCH_VALIDATE_REGEX = "(" + VERSION_VALIDATE_REGEX + ")(-[0-9\\.]+)?";
@@ -185,8 +185,8 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_CS_ID_MSG = "The Content Specification ID doesn't exist in the database." + CSLINE_MSG;
     public static final String ERROR_INVALID_CS_ID_FORMAT_MSG = "The Content Specification ID is not valid." + CSLINE_MSG;
     public static final String ERROR_INCORRECT_FILE_FORMAT_MSG = INVALID_CS + " Incorrect file format, " +
-            "a Content Specification must start with either a " + CommonConstants.CS_TITLE_TITLE + ", a " + CommonConstants
-            .CS_CHECKSUM_TITLE +
+            "a Content Specification must start with either a " + CommonConstants.CS_TITLE_TITLE + ", " +
+            "a " + CommonConstants.CS_CHECKSUM_TITLE +
             " or a " + CommonConstants.CS_ID_TITLE + ".";
     public static final String ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG = LINE + "Duplicated bracket types found." + CSLINE_MSG;
 
@@ -226,8 +226,8 @@ public class ProcessorConstants {
             "." + CSLINE_MSG;
     public static final String ERROR_TOPIC_TOO_MANY_CATS_MSG = LINE + INVALID_TOPIC + " Too many tags for the category: %s." + CSLINE_MSG;
     public static final String ERROR_LEVEL_TOO_MANY_CATS_MSG = "Invalid %s! Too many tags for the category: %s." + CSLINE_MSG;
-    public static final String ERROR_TOPIC_NONEXIST_MSG = LINE + INVALID_TOPIC + " The topic specified doesn't exist in the database."
-            + CSLINE_MSG;
+    public static final String ERROR_TOPIC_NONEXIST_MSG = LINE + INVALID_TOPIC + " The topic specified doesn't exist in the database." +
+            CSLINE_MSG;
     public static final String ERROR_TOPIC_TITLES_NONMATCH_MSG = LINE + INVALID_TOPIC + " Existing topic title doesn't match." +
             CSLINE_MSG + CSLINE_MSG;
     public static final String ERROR_TOPIC_TYPE_NONMATCH_MSG = LINE + INVALID_TOPIC + " Existing topic type doesn't match." + CSLINE_MSG;
@@ -278,6 +278,8 @@ public class ProcessorConstants {
             "Notice Topic." + CSLINE_MSG;
     public static final String ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not a Revision " +
             "History Topic." + CSLINE_MSG;
+    public static final String ERROR_AUTHOR_GROUP_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not a Author " +
+            "Group Topic." + CSLINE_MSG;
 
     // Files
     public static final String ERROR_FILE_ID_NONEXIST_MSG = LINE + INVALID_FILE + " ID doesn't exist in the database." + CSLINE_MSG;
@@ -389,9 +391,9 @@ public class ProcessorConstants {
             CommonConstants.CS_BUGZILLA_URL_TITLE, CommonConstants.CS_BOOK_TYPE_TITLE, CommonConstants.CS_BRAND_LOGO_TITLE,
             CommonConstants.CS_PUBLICAN_CFG_TITLE, CommonConstants.CS_INLINE_INJECTION_TITLE, CommonConstants.CS_DTD_TITLE,
             CommonConstants.CS_REV_HISTORY_TITLE, CommonConstants.CS_FEEDBACK_TITLE, CommonConstants.CS_LEGAL_NOTICE_TITLE,
-            CommonConstants.CS_BUGZILLA_ASSIGNEE_TITLE, CommonConstants.CS_MAVEN_GROUP_ID_TITLE, CommonConstants.CS_MAVEN_ARTIFACT_ID_TITLE,
-            CommonConstants.CS_FILE_TITLE, CommonConstants.CS_FILE_SHORT_TITLE, CommonConstants.CS_JIRA_PROJECT_TITLE,
-            CommonConstants.CS_JIRA_COMPONENT_TITLE, CommonConstants.CS_JIRA_VERSION_TITLE, CommonConstants.CS_JIRA_LABELS_TITLE,
-            CommonConstants.CS_JIRA_SERVER_TITLE, CSConstants.SPACES_TITLE, CSConstants.DEBUG_TITLE, CSConstants.OUTPUT_STYLE_TITLE,
-            CSConstants.SURVEY_LINK_TITLE);
+            CommonConstants.CS_AUTHOR_GROUP_TITLE, CommonConstants.CS_BUGZILLA_ASSIGNEE_TITLE, CommonConstants.CS_MAVEN_GROUP_ID_TITLE,
+            CommonConstants.CS_MAVEN_ARTIFACT_ID_TITLE, CommonConstants.CS_FILE_TITLE, CommonConstants.CS_FILE_SHORT_TITLE,
+            CommonConstants.CS_JIRA_PROJECT_TITLE, CommonConstants.CS_JIRA_COMPONENT_TITLE, CommonConstants.CS_JIRA_VERSION_TITLE,
+            CommonConstants.CS_JIRA_LABELS_TITLE, CommonConstants.CS_JIRA_SERVER_TITLE, CSConstants.SPACES_TITLE, CSConstants.DEBUG_TITLE,
+            CSConstants.OUTPUT_STYLE_TITLE, CSConstants.SURVEY_LINK_TITLE);
 }

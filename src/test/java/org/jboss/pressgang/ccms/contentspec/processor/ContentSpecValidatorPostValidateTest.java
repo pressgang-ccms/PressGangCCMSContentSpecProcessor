@@ -357,4 +357,22 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         // And an error message should be output
         assertThat(logger.getLogMessages().toString(), containsString("Invalid Topic!"));
     }
+
+    @Test
+    public void shouldLogErrorAndFailIfAuthorGroupInvalid() {
+        // Given a valid content spec that has no id set
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setId(null);
+        // And has an invalid Author Group
+        contentSpec.setAuthorGroup(new SpecTopic(0, "Author Group"));
+        given(topicProvider.getTopic(anyInt(), anyInt())).willReturn(null);
+
+        // When the spec is postvalidated
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Topic!"));
+    }
 }

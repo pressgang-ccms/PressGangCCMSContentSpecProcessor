@@ -1914,11 +1914,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     matches = node.getNodeType().equals(CommonConstants.CS_NODE_INNER_TOPIC);
                     break;
                 case NORMAL:
-                case FEEDBACK:
                     matches = node.getNodeType().equals(CommonConstants.CS_NODE_TOPIC);
                     break;
+                case FEEDBACK:
                 case LEGAL_NOTICE:
                 case REVISION_HISTORY:
+                case AUTHOR_GROUP:
                     matches = node.getNodeType().equals(CommonConstants.CS_NODE_META_DATA_TOPIC);
                     break;
             }
