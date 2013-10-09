@@ -16,6 +16,7 @@ import org.jboss.pressgang.ccms.provider.StringConstantProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.provider.TopicSourceURLProvider;
+import org.jboss.pressgang.ccms.provider.exception.ProviderException;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
@@ -287,7 +288,14 @@ public class ProcessorUtilities {
         return MINUS_PATTERN.matcher(retValue).replaceAll("-");
     }
 
-    public static List<String> loadValidXMLEntities(final DataProviderFactory providerFactory) {
+    /**
+     * Loads the Valid XML Entities string constant from the server and parses it into a list of valid XML entity names.
+     *
+     * @param providerFactory The provider factory to get the providers needed to load the constant from the server.
+     * @return A list of valid XML entity names, or null if the string constant doesn't exist.
+     * @throws ProviderException Thrown if an error occurs looking up the string constant.
+     */
+    public static List<String> loadValidXMLEntities(final DataProviderFactory providerFactory) throws ProviderException {
         final StringConstantProvider stringConstantProvider = providerFactory.getProvider(StringConstantProvider.class);
         final StringConstantWrapper validXMLEntitiesConstant = stringConstantProvider.getStringConstant(CSConstants
                 .VALID_ENTITIES_STRING_CONSTANT_ID);
