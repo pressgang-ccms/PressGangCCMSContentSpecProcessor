@@ -94,7 +94,8 @@ public class ProcessorConstants {
             "Local Checksum: %s" + NEW_LINE_SPACER + "Server Checksum: %s\n";
     public static final String ERROR_CS_INVALID_CHECKSUM_MSG = LINE + INVALID_CS + " Checksum attribute is present, " +
             "and is not allowed when pushing a new Content Specification.";
-    public static final String ERROR_INVALID_PUBLICAN_CFG_MSG = LINE + INVALID_CS + " Incorrect publican.cfg input." + CSLINE_MSG;
+    public static final String ERROR_INVALID_MULTILINE_METADATA_MSG = LINE + INVALID_CS + " Incorrect multiple line metadata format." +
+            CSLINE_MSG;
     public static final String ERROR_INVALID_TAG_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Incorrect tag attribute format." + CSLINE_MSG;
     public static final String ERROR_INVALID_ATTRIB_FORMAT_MSG = LINE + INVALID_CS + " Incorrect attribute format." + CSLINE_MSG;
     public static final String ERROR_INVALID_METADATA_FORMAT_MSG = LINE + INVALID_CS + " Incorrect metadata format." + CSLINE_MSG;
@@ -151,7 +152,12 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_VERSION_NUMBER_MSG = "Invalid %s specified. The value must be a valid version.";
     public static final String ERROR_INVALID_PUBSNUMBER_MSG = "Invalid Pubsnumber specified. The value must be a positive number.";
     public static final String ERROR_INVALID_FILES_MSG = LINE + INVALID_CS + " Incorrect additional files input." + CSLINE_MSG;
-    public static final String ERROR_INVALID_FILE = LINE + INVALID_FILE + " Invalid format.";
+    public static final String ERROR_INVALID_FILE_MSG = LINE + INVALID_FILE + " Invalid format.";
+    public static final String ERROR_INVALID_ENTITIES_MSG = INVALID_CS + " Invalid XML Entities. XML Error Message: %s" + CSLINE_MSG;
+    public static final String ERROR_CUSTOM_ENTITIES_SINGLE_DEFINED_MSG = INVALID_CS + " Invalid XML Entities. %s is a custom entity " +
+            "and cannot be defined. Only overrides to the default XML entities can be defined." + CSLINE_MSG;
+    public static final String ERROR_CUSTOM_ENTITIES_DEFINED_MSG = INVALID_CS + " Invalid XML Entities. %s are custom entities and cannot" +
+            " be defined. Only overrides to the default XML entities can be defined." + CSLINE_MSG;
 
     // Article based level errors
     public static final String ERROR_ARTICLE_CHAPTER_MSG = LINE + INVALID_CS + " Chapters can't be used in Articles." + CSLINE_MSG;
@@ -394,6 +400,6 @@ public class ProcessorConstants {
             CommonConstants.CS_AUTHOR_GROUP_TITLE, CommonConstants.CS_BUGZILLA_ASSIGNEE_TITLE, CommonConstants.CS_MAVEN_GROUP_ID_TITLE,
             CommonConstants.CS_MAVEN_ARTIFACT_ID_TITLE, CommonConstants.CS_FILE_TITLE, CommonConstants.CS_FILE_SHORT_TITLE,
             CommonConstants.CS_JIRA_PROJECT_TITLE, CommonConstants.CS_JIRA_COMPONENT_TITLE, CommonConstants.CS_JIRA_VERSION_TITLE,
-            CommonConstants.CS_JIRA_LABELS_TITLE, CommonConstants.CS_JIRA_SERVER_TITLE, CSConstants.SPACES_TITLE, CSConstants.DEBUG_TITLE,
-            CSConstants.OUTPUT_STYLE_TITLE, CSConstants.SURVEY_LINK_TITLE);
+            CommonConstants.CS_JIRA_LABELS_TITLE, CommonConstants.CS_JIRA_SERVER_TITLE, CommonConstants.CS_SPACES_TITLE,
+            CommonConstants.CS_ENTITIES_TITLE, CSConstants.DEBUG_TITLE, CSConstants.OUTPUT_STYLE_TITLE, CSConstants.SURVEY_LINK_TITLE);
 }

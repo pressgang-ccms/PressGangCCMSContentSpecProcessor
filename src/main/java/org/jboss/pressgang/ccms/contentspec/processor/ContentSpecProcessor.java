@@ -2062,43 +2062,43 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     public boolean isShutdown() {
         return shutdown.get();
     }
-}
 
-class ProcessorData {
-    private ContentSpec contentSpec;
-    private String username;
-    private boolean bugLinksReValidated = false;
-    private LogMessageWrapper logMessage;
+    private static class ProcessorData {
+        private ContentSpec contentSpec;
+        private String username;
+        private boolean bugLinksReValidated = false;
+        private LogMessageWrapper logMessage;
 
-    String getUsername() {
-        return username;
-    }
+        String getUsername() {
+            return username;
+        }
 
-    void setUsername(String username) {
-        this.username = username;
-    }
+        void setUsername(String username) {
+            this.username = username;
+        }
 
-    boolean isBugLinksReValidated() {
-        return bugLinksReValidated;
-    }
+        boolean isBugLinksReValidated() {
+            return bugLinksReValidated;
+        }
 
-    void setBugLinksReValidated(boolean bugLinksReValidated) {
-        this.bugLinksReValidated = bugLinksReValidated;
-    }
+        void setBugLinksReValidated(boolean bugLinksReValidated) {
+            this.bugLinksReValidated = bugLinksReValidated;
+        }
 
-    LogMessageWrapper getLogMessage() {
-        return logMessage;
-    }
+        LogMessageWrapper getLogMessage() {
+            return logMessage;
+        }
 
-    void setLogMessage(LogMessageWrapper logMessage) {
-        this.logMessage = logMessage;
-    }
+        void setLogMessage(LogMessageWrapper logMessage) {
+            this.logMessage = logMessage;
+        }
 
-    ContentSpec getContentSpec() {
-        return contentSpec;
-    }
+        ContentSpec getContentSpec() {
+            return contentSpec;
+        }
 
-    void setContentSpec(ContentSpec contentSpec) {
-        this.contentSpec = contentSpec;
+        void setContentSpec(ContentSpec contentSpec) {
+            this.contentSpec = contentSpec;
+        }
     }
 }

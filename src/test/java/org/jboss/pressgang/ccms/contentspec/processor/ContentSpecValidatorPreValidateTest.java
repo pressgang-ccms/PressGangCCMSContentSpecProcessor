@@ -17,24 +17,46 @@ import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.Content
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.product;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.title;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.version;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
 import net.sf.ipsedixit.annotation.Arbitrary;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.enums.BookType;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
+import org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker;
+import org.jboss.pressgang.ccms.provider.StringConstantProvider;
+import org.jboss.pressgang.ccms.wrapper.StringConstantWrapper;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 /**
  * @author kamiller@redhat.com (Katie Miller)
  */
+@PowerMockIgnore({"javax.xml.parsers.*", "org.apache.xerces.jaxp.*", "org.xml.sax.*", "org.w3c.dom.*"})
 public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTest {
     @Arbitrary Integer randomInt;
     @Arbitrary String randomString;
+    @Mock StringConstantProvider stringConstantProvider;
+    @Mock StringConstantWrapper stringConstantWrapper;
+
+    @Override
+    @Before
+    public void setUp() {
+        super.setUp();
+        when(dataProviderFactory.getProvider(StringConstantProvider.class)).thenReturn(stringConstantProvider);
+        when(stringConstantProvider.getStringConstant(CSConstants.VALID_ENTITIES_STRING_CONSTANT_ID)).thenReturn(stringConstantWrapper);
+        when(stringConstantWrapper.getValue()).thenReturn("BZURL\nPRODUCT");
+    }
 
     @Test
     public void shouldPreValidateValidContentSpec() {
@@ -318,6 +340,102 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
         assertThat(result, is(false));
         // And an error message should be output
         assertThat(logger.getLogMessages().toString(), containsString("Invalid Topic!"));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenInvalidPubsnumber() {
+        // Given an otherwise valid content spec with an invalid pubsnumber
+        ContentSpec contentSpec = make(a(ContentSpec));
+        contentSpec.setPubsNumber(-1);
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When the spec is prevalidated
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Pubsnumber specified. The value must be a positive number."));
+    }
+
+    @Test
+    public void shouldFailWhenEntitiesIsInvalid() {
+        // Given an invalid XML entity declaration
+        final String entities = "<!ENTITY test \"http://example.com/query?word+with%20spaces\">";
+        // and a content spec to store the entity
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setEntities(entities);
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the entities
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be false and should have a useful error message
+        assertFalse(result);
+        assertThat(logger.getLogMessages().toString(),
+                containsString("Invalid Content Specification! Invalid XML Entities. XML Error " + "Message: "));
+    }
+
+    @Test
+    public void shouldFailWhenCustomEntityUsed() {
+        // Given an invalid XML entity declaration
+        final String entities = "<!ENTITY test \"http://example.com/query?word+with+spaces\">";
+        // and a content spec to store the entity
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setEntities(entities);
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the entities
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be false and should have a useful error message
+        assertFalse(result);
+        assertThat(logger.getLogMessages().toString(), containsString(
+                "Invalid Content Specification! Invalid XML Entities. test is a custom entity and cannot be defined. Only overrides to "
+                        + "the default XML entities can be defined."));
+    }
+
+    @Test
+    public void shouldFailWhenMultipleCustomEntitiesUsed() {
+        // Given an invalid XML entity declaration
+        final String entities = "<!ENTITY test \"http://example.com/query?word+with+spaces\">\n" +
+                "<!ENTITY test2 \"&test;\">\n" +
+                "<!ENTITY test3 \"&test;\">";
+        // and a content spec to store the entity
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setEntities(entities);
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the entities
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be false and should have a useful error message
+        assertFalse(result);
+        assertThat(logger.getLogMessages().toString(), containsString(
+                "Invalid Content Specification! Invalid XML Entities. test, test2 and test3 are custom entities and cannot be defined. " +
+                        "Only overrides to the default XML entities can be defined."));
+    }
+
+    @Test
+    public void shouldSucceedWithValidEntities() {
+        // Given a valid XML entity declaration
+        final String entities = "<!ENTITY BZURL \"http://example.com/query?word+with+spaces\">\n" +
+                "<!ENTITY PRODUCT \"&test;\">";
+        // and a content spec to store the entity
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setEntities(entities);
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the entities
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be true
+        assertTrue(result);
     }
 
     private void addLevelAndTopicToContentSpec(final ContentSpec contentSpec) {

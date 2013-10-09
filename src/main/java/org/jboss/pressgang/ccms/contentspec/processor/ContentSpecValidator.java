@@ -43,6 +43,7 @@ import org.jboss.pressgang.ccms.contentspec.exceptions.ValidationException;
 import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
 import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptions;
+import org.jboss.pressgang.ccms.contentspec.processor.utils.ProcessorUtilities;
 import org.jboss.pressgang.ccms.contentspec.sort.NullNumberSort;
 import org.jboss.pressgang.ccms.contentspec.sort.SpecTopicLineNumberComparator;
 import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
@@ -70,6 +71,7 @@ import org.jboss.pressgang.ccms.wrapper.TextContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.base.BaseTopicWrapper;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 
 /**
  * A class that is used to validate a Content Specification and the objects within a Content Specification. It
@@ -281,6 +283,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
         }
 
+        // Validate the custom entities
+        if (!validateEntities(contentSpec)) {
+            valid = false;
+        }
+
         // Validate the basic bug link data
         if (!preValidateBugLinks(contentSpec)) {
             valid = false;
@@ -302,6 +309,67 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // reset the locale back to its default
         locale = CommonConstants.DEFAULT_LOCALE;
+
+        return valid;
+    }
+
+    /**
+     * Validates the custom entities to ensure that only the defaults are overridden and that the content is valid XML.
+     *
+     * @param contentSpec The content spec that contains the custom entities to be validated.
+     * @return True if the custom entities are valid and don't contain additional custom values, otherwise false.
+     */
+    protected boolean validateEntities(final ContentSpec contentSpec) {
+        final String entities = contentSpec.getEntities();
+        if (isNullOrEmpty(entities)) return true;
+
+        boolean valid = true;
+
+        // Make sure the input is valid XML.
+        final String wrappedEntities = "<!DOCTYPE section [" + entities + "]><section></section>";
+        Document doc = null;
+        try {
+            doc = XMLUtilities.convertStringToDocument(wrappedEntities);
+        } catch (Exception e) {
+            final String line = CommonConstants.CS_ENTITIES_TITLE + " = [" + entities + "]";
+            log.error(String.format(ProcessorConstants.ERROR_INVALID_ENTITIES_MSG, e.getMessage(), line));
+            valid = false;
+        }
+
+        // Check that no custom entities are defined.
+        if (doc != null) {
+            final List<String> invalidEntities = new ArrayList<String>();
+            final List<String> validEntities = ProcessorUtilities.loadValidXMLEntities(factory);
+            final NamedNodeMap entityNodes = doc.getDoctype().getEntities();
+            for (int i = 0; i < entityNodes.getLength(); i++) {
+                final org.w3c.dom.Node entityNode = entityNodes.item(i);
+                if (!validEntities.contains(entityNode.getNodeName())) {
+                    invalidEntities.add(entityNode.getNodeName());
+                }
+            }
+
+            if (!invalidEntities.isEmpty()) {
+                final StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < invalidEntities.size(); i++) {
+                    if (i != 0) {
+                        if (i == invalidEntities.size() - 1) {
+                            builder.append(" and ");
+                        } else {
+                            builder.append(", ");
+                        }
+                    }
+                    builder.append(invalidEntities.get(i));
+                }
+
+                final String line = CommonConstants.CS_ENTITIES_TITLE + " = [" + entities + "]";
+                if (invalidEntities.size() == 1) {
+                    log.error(String.format(ProcessorConstants.ERROR_CUSTOM_ENTITIES_SINGLE_DEFINED_MSG, builder.toString(), line));
+                } else {
+                    log.error(String.format(ProcessorConstants.ERROR_CUSTOM_ENTITIES_DEFINED_MSG, builder.toString(), line));
+                }
+                valid = false;
+            }
+        }
 
         return valid;
     }

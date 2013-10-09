@@ -654,6 +654,7 @@ public class ContentSpecParser {
     protected boolean isMetaDataLine(String line) {
         return getCurrentLevel().getLevelType() == LevelType.BASE && line.trim().matches("^\\w[\\w\\.\\s]+=.*");
     }
+
     /**
      * Checks to see if a line is a blank/empty line.
      *
@@ -757,6 +758,7 @@ public class ContentSpecParser {
      *
      * @param contentSpec The content spec object to add the meta data to.
      * @param line        The line to be processed.
+     * @throws ParsingException
      */
     protected void parseMetaDataLine(final ContentSpec contentSpec, final String line, int lineNumber) throws ParsingException {
         // Parse the line and break it up into the key/value pair
@@ -776,7 +778,7 @@ public class ContentSpecParser {
             parsedMetaDataKeys.add(key.toLowerCase());
 
             // first deal with metadata that is used by the parser or needs to be parsed further
-            if (key.equalsIgnoreCase(CSConstants.SPACES_TITLE)) {
+            if (key.equalsIgnoreCase(CommonConstants.CS_SPACES_TITLE)) {
                 // Read in the amount of spaces that were used for the content specification
                 try {
                     setIndentationSize(Integer.parseInt(value));
@@ -797,38 +799,11 @@ public class ContentSpecParser {
                     log.warn(ProcessorConstants.WARN_DEBUG_IGNORE_MSG);
                 }
             } else if (key.equalsIgnoreCase(CommonConstants.CS_PUBLICAN_CFG_TITLE)) {
-                int startingPos = StringUtilities.indexOf(value, '[');
-                if (startingPos != -1) {
-                    final StringBuilder cfg = new StringBuilder(value);
-                    // If the ']' character isn't on this line try the next line
-                    if (StringUtilities.indexOf(cfg.toString(), ']') == -1) {
-                        cfg.append("\n");
-
-                        // Read the next line and increment counters
-                        String newLine = getLines().poll();
-                        while (newLine != null) {
-                            cfg.append(newLine).append("\n");
-                            lineCounter++;
-                            // If the ']' character still isn't found keep trying
-                            if (StringUtilities.lastIndexOf(cfg.toString(), ']') == -1) {
-                                newLine = getLines().poll();
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-
-                    // Check that the ']' character was found and that it was found before another '[' character
-                    final String finalCfg = cfg.toString().trim();
-                    if (StringUtilities.lastIndexOf(finalCfg, ']') == -1 || StringUtilities.lastIndexOf(finalCfg, '[') != startingPos) {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber,
-                                key + " = " + finalCfg.replaceAll("\n", "\n          ")));
-                    } else {
-                        contentSpec.setPublicanCfg(ProcessorUtilities.replaceEscapeChars(finalCfg).substring(1, finalCfg.length() - 1));
-                    }
-                } else {
-                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_PUBLICAN_CFG_MSG, lineNumber, line));
-                }
+                final String publicanCfg = ProcessorUtilities.replaceEscapeChars(parseMultiLineMetaData(key, value, line, lineNumber));
+                contentSpec.setPublicanCfg(publicanCfg);
+            } else if (key.equalsIgnoreCase(CommonConstants.CS_ENTITIES_TITLE)) {
+                final String entities = parseMultiLineMetaData(key, value, line, lineNumber);
+                contentSpec.setEntities(entities);
             } else if (key.equalsIgnoreCase(CommonConstants.CS_INLINE_INJECTION_TITLE)) {
                 final InjectionOptions injectionOptions = new InjectionOptions();
                 String[] types = null;
@@ -846,7 +821,8 @@ public class ContentSpecParser {
                         }
                     } else {
                         throw new ParsingException(
-                                format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG + ProcessorConstants.CSLINE_MSG, lineNumber, ']', line));
+                                format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG + ProcessorConstants.CSLINE_MSG, lineNumber, ']',
+                                        line));
                     }
                 }
                 String injectionSetting = getTitle(value, '[');
@@ -880,6 +856,51 @@ public class ContentSpecParser {
     }
 
     /**
+     * Parses a multiple line metadata element.
+     *
+     * @param key The metadata key.
+     * @param value The value on the metadata line.
+     * @param line The initial line.
+     * @param lineNumber The initial line number.
+     * @return The parsed multiple line value for the metadata element.
+     * @throws ParsingException
+     */
+    private String parseMultiLineMetaData(final String key, final String value, final String line, final int lineNumber) throws ParsingException {
+        int startingPos = StringUtilities.indexOf(value, '[');
+        if (startingPos != -1) {
+            final StringBuilder multiLineValue = new StringBuilder(value);
+            // If the ']' character isn't on this line try the next line
+            if (StringUtilities.indexOf(value, ']') == -1) {
+                multiLineValue.append("\n");
+
+                // Read the next line and increment counters
+                String newLine = getLines().poll();
+                while (newLine != null) {
+                    multiLineValue.append(newLine).append("\n");
+                    lineCounter++;
+                    // If the ']' character still isn't found keep trying
+                    if (StringUtilities.lastIndexOf(multiLineValue.toString(), ']') == -1) {
+                        newLine = getLines().poll();
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            // Check that the ']' character was found and that it was found before another '[' character
+            final String finalMultiLineValue = multiLineValue.toString().trim();
+            if (StringUtilities.lastIndexOf(finalMultiLineValue, ']') == -1 || StringUtilities.lastIndexOf(finalMultiLineValue, '[') != startingPos) {
+                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_MULTILINE_METADATA_MSG, lineNumber,
+                        key + " = " + finalMultiLineValue.replaceAll("\n", "\n          ")));
+            } else {
+                return finalMultiLineValue.substring(1, finalMultiLineValue.length() - 1);
+            }
+        } else {
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_MULTILINE_METADATA_MSG, lineNumber, line));
+        }
+    }
+
+    /**
      * TODO
      *
      * @param value
@@ -904,9 +925,9 @@ public class ContentSpecParser {
     /**
      * Parse an "Additional Files" metadata component into a List of {@link org.jboss.pressgang.ccms.contentspec.File} objects.
      *
-     * @param value The value of the key value pair
+     * @param value      The value of the key value pair
      * @param lineNumber The line number of the additional files key
-     * @param line The full line of the key value pair
+     * @param line       The full line of the key value pair
      * @return A list of parsed File objects.
      * @throws ParsingException Thrown if an error occurs during parsing.
      */
@@ -914,7 +935,7 @@ public class ContentSpecParser {
         int startingPos = StringUtilities.indexOf(value, '[');
         if (startingPos != -1) {
             final List<File> files = new LinkedList<File>();
-            final HashMap<RelationshipType, String[]> variables = getLineVariables(value,lineNumber, '[', ']', ',', true);
+            final HashMap<RelationshipType, String[]> variables = getLineVariables(value, lineNumber, '[', ']', ',', true);
             final String[] vars = variables.get(RelationshipType.NONE);
 
             // Loop over each file found and parse it
@@ -934,7 +955,7 @@ public class ContentSpecParser {
     /**
      * Parse a File MetaData component into a {@link org.jboss.pressgang.ccms.contentspec.File} object.
      *
-     * @param line The line to be parsed.
+     * @param line       The line to be parsed.
      * @param lineNumber The line number of the line being parsed.
      * @return A file object initialised with the data from the line.
      * @throws ParsingException Thrown if the line contains invalid content and couldn't be parsed.
@@ -956,7 +977,7 @@ public class ContentSpecParser {
                 file.setRevision(Integer.parseInt(rev));
             }
         } else {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_FILE, lineNumber));
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_FILE_MSG, lineNumber));
         }
 
         return file;
@@ -1214,8 +1235,8 @@ public class ContentSpecParser {
                     final String id = matcher.group("TopicID");
                     final String relationshipTitle = matcher.group("TopicTitle");
 
-                    topicRelationships.add(new Relationship(uniqueId, id, relationshipType, ProcessorUtilities.replaceEscapeChars
-                            (relationshipTitle.trim())));
+                    topicRelationships.add(new Relationship(uniqueId, id, relationshipType,
+                            ProcessorUtilities.replaceEscapeChars(relationshipTitle.trim())));
                 } else {
                     if (relationshipId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
                             ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
@@ -1600,15 +1621,16 @@ public class ContentSpecParser {
                         if (node.getDescription(false) == null) {
                             node.setDescription(ProcessorUtilities.replaceEscapeChars(temp[1]));
                         } else {
-                           throw new ParsingException(String.format(ProcessorConstants.ERROR_DUPLICATE_ATTRIBUTE_MSG, lineNumber,
-                                   "Description", originalInput));
+                            throw new ParsingException(
+                                    String.format(ProcessorConstants.ERROR_DUPLICATE_ATTRIBUTE_MSG, lineNumber, "Description",
+                                            originalInput));
                         }
                     } else if (temp[0].equalsIgnoreCase("Writer")) {
                         if (node.getAssignedWriter(false) == null) {
                             node.setAssignedWriter(ProcessorUtilities.replaceEscapeChars(temp[1]));
                         } else {
-                            throw new ParsingException(String.format(ProcessorConstants.ERROR_DUPLICATE_ATTRIBUTE_MSG, lineNumber,
-                                    "Writer", originalInput));
+                            throw new ParsingException(
+                                    String.format(ProcessorConstants.ERROR_DUPLICATE_ATTRIBUTE_MSG, lineNumber, "Writer", originalInput));
                         }
                     } else if (temp[0].equalsIgnoreCase("condition")) {
                         if (node.getConditionStatement() == null) {
@@ -1617,11 +1639,13 @@ public class ContentSpecParser {
                             try {
                                 Pattern.compile(condition);
                             } catch (PatternSyntaxException exception) {
-                                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_CONDITION_MSG, lineNumber, originalInput));
+                                throw new ParsingException(
+                                        format(ProcessorConstants.ERROR_INVALID_CONDITION_MSG, lineNumber, originalInput));
                             }
                         } else {
-                            throw new ParsingException(String.format(ProcessorConstants.ERROR_DUPLICATE_ATTRIBUTE_MSG, lineNumber,
-                                    "condition", originalInput));
+                            throw new ParsingException(
+                                    String.format(ProcessorConstants.ERROR_DUPLICATE_ATTRIBUTE_MSG, lineNumber, "condition",
+                                            originalInput));
                         }
                     } else {
                         throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIBUTE_MSG, lineNumber, originalInput));

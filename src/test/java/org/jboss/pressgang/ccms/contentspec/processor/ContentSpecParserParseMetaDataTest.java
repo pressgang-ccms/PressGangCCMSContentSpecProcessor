@@ -169,7 +169,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
             fail(MISSING_PARSING_EXCEPTION);
         } catch (ParsingException e) {
             // And it contains an error about the config
-            assertThat(e.getMessage(), containsString("Invalid Content Specification! Incorrect publican.cfg input."));
+            assertThat(e.getMessage(), containsString("Invalid Content Specification! Incorrect multiple line metadata format."));
             // And the error message contains the line number
             assertThat(e.getMessage(), containsString(lineNumber.toString()));
         }
@@ -244,7 +244,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
             fail(MISSING_PARSING_EXCEPTION);
         } catch (ParsingException e) {
             // And it contains an error about the config
-            assertThat(e.getMessage(), containsString("Invalid Content Specification! Incorrect publican.cfg input."));
+            assertThat(e.getMessage(), containsString("Invalid Content Specification! Incorrect multiple line metadata format."));
             // And the error message contains the line number
             assertThat(e.getMessage(), containsString(lineNumber.toString()));
         }
@@ -265,7 +265,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
             fail(MISSING_PARSING_EXCEPTION);
         } catch (ParsingException e) {
             // And it contains an error about the config
-            assertThat(e.getMessage(), containsString("Invalid Content Specification! Incorrect publican.cfg input."));
+            assertThat(e.getMessage(), containsString("Invalid Content Specification! Incorrect multiple line metadata format."));
             // And the error message contains the line number
             assertThat(e.getMessage(), containsString(lineNumber.toString()));
         }
