@@ -9,6 +9,7 @@ public class ProcessingOptions {
     private boolean strictTitles = false;
     private boolean strictBugLinks = false;
     private boolean validateBugLinks = true;
+    private boolean doBugLinkLastValidateCheck = true;
     private boolean translation = false;
     private Integer maxRevision = null;
 
@@ -82,5 +83,13 @@ public class ProcessingOptions {
 
     public void setMaxRevision(Integer maxRevision) {
         this.maxRevision = maxRevision;
+    }
+
+    public boolean isDoBugLinkLastValidateCheck() {
+        return doBugLinkLastValidateCheck;
+    }
+
+    public void setDoBugLinkLastValidateCheck(boolean doBugLinkLastValidateCheck) {
+        this.doBugLinkLastValidateCheck = doBugLinkLastValidateCheck;
     }
 }

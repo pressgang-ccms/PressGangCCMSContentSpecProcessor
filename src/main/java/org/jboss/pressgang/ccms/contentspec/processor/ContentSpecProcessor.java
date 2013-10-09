@@ -236,8 +236,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     /**
      * Does the post Validation step on a Content Spec and also re-validates the bug links if required.
      *
-     * @param contentSpec The Content Specification to be saved.
-     * @param username    The User who requested the Content Spec be validated.
+     * @param processorData The data to be used during processing.
      * @return True if the content spec is
      */
     protected boolean postValidateContentSpec(final ProcessorData processorData) {
@@ -258,19 +257,26 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
                 // This shouldn't happen but if it does, then it'll be picked up in the postValidationContentSpec method
                 if (contentSpecEntity != null) {
-                    final PropertyTagInContentSpecWrapper lastValidated = contentSpecEntity.getProperty(
-                            ProcessorConstants.BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG);
-                    final Date now = new Date();
-                    final long then;
-                    if (lastValidated != null && lastValidated.getValue() != null && lastValidated.getValue().matches("^[0-9]+$")) {
-                        then = Long.parseLong(lastValidated.getValue());
+                    boolean weekPassed = false;
+                    if (processingOptions.isDoBugLinkLastValidateCheck()) {
+                        final PropertyTagInContentSpecWrapper lastValidated = contentSpecEntity.getProperty(
+                                ProcessorConstants.BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG);
+                        final Date now = new Date();
+                        final long then;
+                        if (lastValidated != null && lastValidated.getValue() != null && lastValidated.getValue().matches("^[0-9]+$")) {
+                            then = Long.parseLong(lastValidated.getValue());
+                        } else {
+                            then = 0L;
+                        }
+
+                        // Check that a week has passed
+                        weekPassed = (then + WEEK_MILLI_SECS) <= now.getTime();
                     } else {
-                        then = 0L;
+                        weekPassed = true;
                     }
 
-                    // Check that a day has passed
-                    if ((then + WEEK_MILLI_SECS) > now.getTime()) {
-                        // A day hasn't passed so check to see if anything has changed
+                    if (!weekPassed) {
+                        // A week hasn't passed so check to see if anything has changed
                         boolean changed = false;
                         if (contentSpec.isInjectBugLinks()) {
                             final String bugLinksValue = contentSpec.getBugLinksActualValue() == null ? null : contentSpec
