@@ -70,7 +70,7 @@ public class ProcessorConstants {
     public static final String SUCCESSFUL_PUSH_MSG = SUCCESSFUL_PUSH_ID_MSG + "\n" + SUCCESSFUL_PUSH_REV_MSG;
     public static final String ERROR_DATABASE_ERROR_MSG = "An error occurred when inserting into the database please try again.";
     public static final String ERROR_PROCESSING_ERROR_MSG = "An error occurred during processing please try again and if another failure " +
-            "" + "occurs please log a bug.";
+            "occurs please log a bug.";
     public static final String WARN_EDIT_INFO_MSG = "Note: All descriptions, tags, source urls and writers will be ignored for existing "
             + "Topics.";
 
@@ -158,6 +158,8 @@ public class ProcessorConstants {
             "and cannot be defined. Only overrides to the default XML entities can be defined." + CSLINE_MSG;
     public static final String ERROR_CUSTOM_ENTITIES_DEFINED_MSG = INVALID_CS + " Invalid XML Entities. %s are custom entities and cannot" +
             " be defined. Only overrides to the default XML entities can be defined." + CSLINE_MSG;
+    public static final String ERROR_INVALID_DEFAULT_PUBLICAN_CFG_MSG = INVALID_CS + " Invalid " + CommonConstants
+            .CS_DEFAULT_PUBLICAN_CFG_TITLE + " name. The \"%s\" configuration doesn't exist in the Content Specification.";
 
     // Article based level errors
     public static final String ERROR_ARTICLE_CHAPTER_MSG = LINE + INVALID_CS + " Chapters can't be used in Articles." + CSLINE_MSG;
@@ -401,5 +403,6 @@ public class ProcessorConstants {
             CommonConstants.CS_MAVEN_ARTIFACT_ID_TITLE, CommonConstants.CS_FILE_TITLE, CommonConstants.CS_FILE_SHORT_TITLE,
             CommonConstants.CS_JIRA_PROJECT_TITLE, CommonConstants.CS_JIRA_COMPONENT_TITLE, CommonConstants.CS_JIRA_VERSION_TITLE,
             CommonConstants.CS_JIRA_LABELS_TITLE, CommonConstants.CS_JIRA_SERVER_TITLE, CommonConstants.CS_SPACES_TITLE,
-            CommonConstants.CS_ENTITIES_TITLE, CSConstants.DEBUG_TITLE, CSConstants.OUTPUT_STYLE_TITLE, CSConstants.SURVEY_LINK_TITLE);
+            CommonConstants.CS_ENTITIES_TITLE, CommonConstants.CS_DEFAULT_PUBLICAN_CFG_TITLE, CSConstants.DEBUG_TITLE,
+            CSConstants.OUTPUT_STYLE_TITLE, CSConstants.SURVEY_LINK_TITLE);
 }

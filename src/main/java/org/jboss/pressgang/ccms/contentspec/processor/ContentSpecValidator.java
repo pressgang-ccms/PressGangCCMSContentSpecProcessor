@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
 
 import com.j2bugzilla.base.ConnectionException;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
@@ -227,6 +228,17 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
+        // Check that the default publican.cfg exists
+        if (!contentSpec.getDefaultPublicanCfg().equals(CommonConstants.CS_PUBLICAN_CFG_TITLE)) {
+            final String name = contentSpec.getDefaultPublicanCfg();
+            final Matcher matcher = CSConstants.CUSTOM_PUBLICAN_CFG_PATTERN.matcher(name);
+            final String fixedName = matcher.find() ? matcher.group(1) : name;
+            if (contentSpec.getAdditionalPublicanCfg(fixedName) == null) {
+                log.error(String.format(ProcessorConstants.ERROR_INVALID_DEFAULT_PUBLICAN_CFG_MSG, name));
+                valid = false;
+            }
+        }
+
         // Check that any metadata topics are valid
         if (contentSpec.getRevisionHistory() != null && !preValidateTopic(contentSpec.getRevisionHistory(), specTopicMap,
                 contentSpec.getBookType(), false)) {
@@ -274,7 +286,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     }
 
                     // Make sure the key is a valid meta data element
-                    if (!ProcessorConstants.VALID_METADATA_KEYS.contains(keyValueNode.getKey())) {
+                    if (!ProcessorConstants.VALID_METADATA_KEYS.contains(keyValueNode.getKey()) && !CSConstants
+                            .CUSTOM_PUBLICAN_CFG_PATTERN.matcher(keyValueNode.getKey()).matches()) {
                         valid = false;
                         log.error(format(ProcessorConstants.ERROR_UNRECOGNISED_METADATA_MSG, keyValueNode.getLineNumber(),
                                 keyValueNode.getText()));

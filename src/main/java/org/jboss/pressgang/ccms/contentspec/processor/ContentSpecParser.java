@@ -652,7 +652,7 @@ public class ContentSpecParser {
      * @return True if the line is meta data, otherwise false.
      */
     protected boolean isMetaDataLine(String line) {
-        return getCurrentLevel().getLevelType() == LevelType.BASE && line.trim().matches("^\\w[\\w\\.\\s]+=.*");
+        return getCurrentLevel().getLevelType() == LevelType.BASE && line.trim().matches("^\\w[\\w\\.\\s-]+=.*");
     }
 
     /**
@@ -785,7 +785,7 @@ public class ContentSpecParser {
                     if (getIndentationSize() <= 0) {
                         setIndentationSize(2);
                     }
-                } catch (Exception e) {
+                } catch (NumberFormatException e) {
                     throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_NUMBER_MSG, lineNumber, line));
                 }
             } else if (key.equalsIgnoreCase(CSConstants.DEBUG_TITLE)) {
@@ -798,12 +798,6 @@ public class ContentSpecParser {
                 } else {
                     log.warn(ProcessorConstants.WARN_DEBUG_IGNORE_MSG);
                 }
-            } else if (key.equalsIgnoreCase(CommonConstants.CS_PUBLICAN_CFG_TITLE)) {
-                final String publicanCfg = ProcessorUtilities.replaceEscapeChars(parseMultiLineMetaData(key, value, line, lineNumber));
-                contentSpec.setPublicanCfg(publicanCfg);
-            } else if (key.equalsIgnoreCase(CommonConstants.CS_ENTITIES_TITLE)) {
-                final String entities = parseMultiLineMetaData(key, value, line, lineNumber);
-                contentSpec.setEntities(entities);
             } else if (key.equalsIgnoreCase(CommonConstants.CS_INLINE_INJECTION_TITLE)) {
                 final InjectionOptions injectionOptions = new InjectionOptions();
                 String[] types = null;
@@ -846,7 +840,12 @@ public class ContentSpecParser {
                 contentSpec.appendKeyValueNode(new KeyValueNode<SpecTopic>(key, specTopic, lineNumber));
             } else {
                 try {
-                    final KeyValueNode<String> node = new KeyValueNode<String>(key, value, lineNumber);
+                    final KeyValueNode<String> node;
+                    if (ContentSpecUtilities.isMetaDataMultiLine(key)) {
+                        node = parseMultiLineMetaData(key, value, line, lineNumber);
+                    } else {
+                        node = new KeyValueNode<String>(key, value, lineNumber);
+                    }
                     contentSpec.appendKeyValueNode(node);
                 } catch (NumberFormatException e) {
                     throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, lineNumber, line));
@@ -858,14 +857,15 @@ public class ContentSpecParser {
     /**
      * Parses a multiple line metadata element.
      *
-     * @param key The metadata key.
-     * @param value The value on the metadata line.
-     * @param line The initial line.
+     * @param key        The metadata key.
+     * @param value      The value on the metadata line.
+     * @param line       The initial line.
      * @param lineNumber The initial line number.
      * @return The parsed multiple line value for the metadata element.
      * @throws ParsingException
      */
-    private String parseMultiLineMetaData(final String key, final String value, final String line, final int lineNumber) throws ParsingException {
+    private KeyValueNode<String> parseMultiLineMetaData(final String key, final String value, final String line,
+            final int lineNumber) throws ParsingException {
         int startingPos = StringUtilities.indexOf(value, '[');
         if (startingPos != -1) {
             final StringBuilder multiLineValue = new StringBuilder(value);
@@ -889,11 +889,13 @@ public class ContentSpecParser {
 
             // Check that the ']' character was found and that it was found before another '[' character
             final String finalMultiLineValue = multiLineValue.toString().trim();
-            if (StringUtilities.lastIndexOf(finalMultiLineValue, ']') == -1 || StringUtilities.lastIndexOf(finalMultiLineValue, '[') != startingPos) {
+            if (StringUtilities.lastIndexOf(finalMultiLineValue, ']') == -1 || StringUtilities.lastIndexOf(finalMultiLineValue,
+                    '[') != startingPos) {
                 throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_MULTILINE_METADATA_MSG, lineNumber,
                         key + " = " + finalMultiLineValue.replaceAll("\n", "\n          ")));
             } else {
-                return finalMultiLineValue.substring(1, finalMultiLineValue.length() - 1);
+                final String finalValue = finalMultiLineValue.substring(1, finalMultiLineValue.length() - 1);
+                return new KeyValueNode<String>(key, finalValue);
             }
         } else {
             throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_MULTILINE_METADATA_MSG, lineNumber, line));
