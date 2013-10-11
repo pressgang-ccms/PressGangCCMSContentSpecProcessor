@@ -213,12 +213,6 @@ public class TopicWrapperMock implements TopicWrapper {
     }
 
     @Override
-    public String getInternalURL() {
-        // TODO
-        return null;
-    }
-
-    @Override
     public String getErrorXRefId() {
         // TODO
         return null;
