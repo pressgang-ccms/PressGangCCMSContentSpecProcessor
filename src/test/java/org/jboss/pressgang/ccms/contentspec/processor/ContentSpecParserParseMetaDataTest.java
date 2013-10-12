@@ -186,9 +186,9 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         parser.parseMetaDataLine(contentSpec, line, lineNumber);
 
         // Then the publican config should be set
-        ArgumentCaptor<String> publicanConfig = ArgumentCaptor.forClass(String.class);
-        Mockito.verify(contentSpec, times(1)).setPublicanCfg(publicanConfig.capture());
-        assertThat(publicanConfig.getValue(), is(line));
+        ArgumentCaptor<KeyValueNode> publicanConfig = ArgumentCaptor.forClass(KeyValueNode.class);
+        Mockito.verify(contentSpec, times(1)).appendKeyValueNode(publicanConfig.capture());
+        assertThat((String) publicanConfig.getValue().getValue(), is(line));
     }
 
     @Test
@@ -202,9 +202,9 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         parser.parseMetaDataLine(contentSpec, line, lineNumber);
 
         // Then the publican config should be set
-        ArgumentCaptor<String> publicanConfig = ArgumentCaptor.forClass(String.class);
-        Mockito.verify(contentSpec, times(1)).setPublicanCfg(publicanConfig.capture());
-        assertThat(publicanConfig.getValue(), is(""));
+        ArgumentCaptor<KeyValueNode> publicanConfig = ArgumentCaptor.forClass(KeyValueNode.class);
+        Mockito.verify(contentSpec, times(1)).appendKeyValueNode(publicanConfig.capture());
+        assertThat((String) publicanConfig.getValue().getValue(), is(""));
     }
 
     @Test
@@ -224,9 +224,9 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         // Then the line count should be incremented
         assertThat(parser.getLineCount(), is(originalLineCount + 1));
         // And the publican config should be set
-        ArgumentCaptor<String> publicanConfig = ArgumentCaptor.forClass(String.class);
-        Mockito.verify(contentSpec, times(1)).setPublicanCfg(publicanConfig.capture());
-        assertThat(publicanConfig.getValue(), is(line + "\n" + line2));
+        ArgumentCaptor<KeyValueNode> publicanConfig = ArgumentCaptor.forClass(KeyValueNode.class);
+        Mockito.verify(contentSpec, times(1)).appendKeyValueNode(publicanConfig.capture());
+        assertThat((String) publicanConfig.getValue().getValue(), is(line + "\n" + line2));
     }
 
     @Test
