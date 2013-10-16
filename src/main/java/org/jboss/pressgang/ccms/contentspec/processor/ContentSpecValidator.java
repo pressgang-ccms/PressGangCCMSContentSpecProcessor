@@ -1443,7 +1443,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 log.debug(e.getMessage());
             }
 
-            return "";
+            return topic.getTitle();
         } else {
             return topic.getTitle();
         }
