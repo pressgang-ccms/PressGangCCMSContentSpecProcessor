@@ -1764,8 +1764,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     log.warn(ProcessorConstants.ERROR_BUGZILLA_UNABLE_TO_CONNECT);
                 }
             } else {
-                log.error(ProcessorConstants.ERROR_BUG_LINKS_UNABLE_TO_VALIDATE);
-                return false;
+                if (strict) {
+                    log.error(ProcessorConstants.ERROR_BUG_LINKS_UNABLE_TO_VALIDATE);
+                    return false;
+                } else {
+                    log.warn(ProcessorConstants.ERROR_BUG_LINKS_UNABLE_TO_VALIDATE);
+                }
             }
         }
 
