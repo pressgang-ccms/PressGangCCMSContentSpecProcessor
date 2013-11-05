@@ -160,6 +160,9 @@ public class ProcessorConstants {
             " be defined. Only overrides to the default XML entities can be defined." + CSLINE_MSG;
     public static final String ERROR_INVALID_DEFAULT_PUBLICAN_CFG_MSG = INVALID_CS + " Invalid " + CommonConstants
             .CS_DEFAULT_PUBLICAN_CFG_TITLE + " name. The \"%s\" configuration doesn't exist in the Content Specification.";
+    public static final String ERROR_INVALID_ABSTRACT_MSG = INVALID_CS + " The abstract is not valid XML. Error Message:" +
+            " %s" + CSLINE_MSG;
+    public static final String ERROR_INVALID_ABSTRACT_NO_ERROR_MSG = INVALID_CS + " The abstract is not valid XML." + CSLINE_MSG;
 
     // Article based level errors
     public static final String ERROR_ARTICLE_CHAPTER_MSG = LINE + INVALID_CS + " Chapters can't be used in Articles." + CSLINE_MSG;

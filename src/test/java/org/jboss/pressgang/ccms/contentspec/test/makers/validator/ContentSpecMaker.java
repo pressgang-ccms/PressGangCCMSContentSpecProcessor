@@ -35,8 +35,8 @@ public class ContentSpecMaker {
             ContentSpec contentSpec = new ContentSpec(lookup.valueOf(title, randomAlphanumeric(10)));
             contentSpec.setProduct(lookup.valueOf(product, randomAlphanumeric(10)));
             contentSpec.setVersion(lookup.valueOf(version, "1-A"));
-            contentSpec.setSubtitle(lookup.valueOf(product, randomAlphanumeric(10)));
-            contentSpec.setAbstract(lookup.valueOf(product, randomAlphanumeric(10)));
+            contentSpec.setSubtitle(lookup.valueOf(subtitle, (String) null));
+            contentSpec.setAbstract(lookup.valueOf(description, (String) null));
             contentSpec.setCopyrightHolder(lookup.valueOf(copyrightHolder, randomAlphanumeric(10)));
             contentSpec.setCopyrightYear(lookup.valueOf(copyrightYear, (String) null));
             contentSpec.setDtd(lookup.valueOf(dtd, "Docbook 4.5"));

@@ -21,6 +21,7 @@ import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.entities.InjectionOptions;
 import org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker;
+import org.jboss.pressgang.ccms.provider.BlobConstantProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TextContentSpecProvider;
@@ -54,6 +55,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
     @Mock ContentSpecWrapper contentSpecWrapper;
     @Mock TextContentSpecProvider textContentSpecProvider;
     @Mock TextContentSpecWrapper textContentSpecWrapper;
+    @Mock BlobConstantProvider blobConstantProvider;
     @Mock UpdateableCollectionWrapper<CSNodeWrapper> metaData;
     @Mock PropertyTagInContentSpecWrapper propertyTag;
     @Mock TagProvider tagProvider;
@@ -69,6 +71,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         when(dataProviderFactory.getProvider(TextContentSpecProvider.class)).thenReturn(textContentSpecProvider);
         when(dataProviderFactory.getProvider(TagProvider.class)).thenReturn(tagProvider);
         when(dataProviderFactory.getProvider(TopicProvider.class)).thenReturn(topicProvider);
+        when(dataProviderFactory.getProvider(BlobConstantProvider.class)).thenReturn(blobConstantProvider);
         super.setUp();
     }
 

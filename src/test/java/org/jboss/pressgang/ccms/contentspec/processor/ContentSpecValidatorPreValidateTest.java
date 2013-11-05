@@ -12,9 +12,11 @@ import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.Content
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.bookVersion;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.copyrightHolder;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.copyrightYear;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.description;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.dtd;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.edition;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.product;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.subtitle;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.title;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.version;
 import static org.junit.Assert.assertFalse;
@@ -61,7 +63,7 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     @Test
     public void shouldPreValidateValidContentSpec() {
         // Given a valid content spec
-        ContentSpec contentSpec = make(a(ContentSpec));
+        ContentSpec contentSpec = make(a(ContentSpec, with(subtitle, randomString), with(description, "Some Description")));
         // with a level and spec topic
         addLevelAndTopicToContentSpec(contentSpec);
 

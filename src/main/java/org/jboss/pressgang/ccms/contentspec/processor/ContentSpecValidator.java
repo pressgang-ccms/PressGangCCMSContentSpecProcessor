@@ -51,6 +51,7 @@ import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
+import org.jboss.pressgang.ccms.provider.BlobConstantProvider;
 import org.jboss.pressgang.ccms.provider.CategoryProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
@@ -62,8 +63,10 @@ import org.jboss.pressgang.ccms.provider.exception.NotFoundException;
 import org.jboss.pressgang.ccms.utils.common.DocBookUtilities;
 import org.jboss.pressgang.ccms.utils.common.ExceptionUtilities;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
+import org.jboss.pressgang.ccms.utils.common.SAXXMLValidator;
 import org.jboss.pressgang.ccms.utils.common.XMLUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
+import org.jboss.pressgang.ccms.wrapper.BlobConstantWrapper;
 import org.jboss.pressgang.ccms.wrapper.CategoryWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.FileWrapper;
@@ -92,6 +95,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private final TagProvider tagProvider;
     private final CategoryProvider categoryProvider;
     private final FileProvider fileProvider;
+    private final BlobConstantProvider blobConstantProvider;
     private final ErrorLogger log;
     private final ProcessingOptions processingOptions;
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
@@ -125,6 +129,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         contentSpecProvider = factory.getProvider(ContentSpecProvider.class);
         textContentSpecProvider = factory.getProvider(TextContentSpecProvider.class);
         fileProvider = factory.getProvider(FileProvider.class);
+        blobConstantProvider = factory.getProvider(BlobConstantProvider.class);
         log = loggerManager.getLogger(ContentSpecValidator.class);
         this.processingOptions = processingOptions;
         locale = CommonConstants.DEFAULT_LOCALE;
@@ -263,6 +268,28 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
         if (isNullOrEmpty(contentSpec.getAbstract())) {
             log.warn(ProcessorConstants.WARN_CS_NO_ABSTRACT_MSG);
+        } else {
+            // Check to make sure the abstract is at least valid XML
+            final String wrappedAbstract = "<para>" + contentSpec.getAbstract() + "</para>";
+            Document doc = null;
+
+            String errorMsg = null;
+            try {
+                doc = XMLUtilities.convertStringToDocument(wrappedAbstract);
+            } catch (Exception e) {
+                errorMsg = e.getMessage();
+            }
+
+            // If the doc variable is null then an error occurred somewhere
+            if (doc == null) {
+                valid = false;
+                final String line = CommonConstants.CS_ABSTRACT_TITLE + " = " + contentSpec.getAbstract();
+                if (errorMsg != null) {
+                    log.error(String.format(ProcessorConstants.ERROR_INVALID_ABSTRACT_MSG, errorMsg, line));
+                } else {
+                    log.error(String.format(ProcessorConstants.ERROR_INVALID_ABSTRACT_NO_ERROR_MSG, line));
+                }
+            }
         }
 
         // Check to make sure all key value nodes a valid (that is they have a key and value specified
@@ -579,6 +606,22 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         if (contentSpec.getFiles() != null) {
             if (!validateFiles(contentSpec)) {
                 valid = false;
+            }
+        }
+
+        // Make sure that the abstract is valid docbook xml
+        if (!isNullOrEmpty(contentSpec.getAbstract())) {
+            final String wrappedAbstract = "<para>" + contentSpec.getAbstract() + "</para>";
+
+            // Get the docbook DTD
+            final BlobConstantWrapper rocbookDtd = blobConstantProvider.getBlobConstant(CommonConstants.ROCBOOK_DTD_BLOB_ID);
+
+            // Validate the XML content against the dtd
+            final SAXXMLValidator validator = new SAXXMLValidator(false);
+            if (!validator.validateXML(wrappedAbstract, "rocbook.dtd", rocbookDtd.getValue(), "para")) {
+                valid = false;
+                final String line = CommonConstants.CS_ABSTRACT_TITLE + " = " + contentSpec.getAbstract();
+                log.error(String.format(ProcessorConstants.ERROR_INVALID_ABSTRACT_MSG, validator.getErrorText(), line));
             }
         }
 
