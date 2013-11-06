@@ -246,19 +246,19 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // Check that any metadata topics are valid
         if (contentSpec.getRevisionHistory() != null && !preValidateTopic(contentSpec.getRevisionHistory(), specTopicMap,
-                contentSpec.getBookType(), false)) {
+                contentSpec.getBookType(), false, contentSpec)) {
             valid = false;
         }
         if (contentSpec.getFeedback() != null && !preValidateTopic(contentSpec.getFeedback(), specTopicMap, contentSpec.getBookType(),
-                false)) {
+                false, contentSpec)) {
             valid = false;
         }
         if (contentSpec.getLegalNotice() != null && !preValidateTopic(contentSpec.getLegalNotice(), specTopicMap, contentSpec.getBookType(),
-                false)) {
+                false, contentSpec)) {
             valid = false;
         }
         if (contentSpec.getAuthorGroup() != null && !preValidateTopic(contentSpec.getAuthorGroup(), specTopicMap, contentSpec.getBookType(),
-                false)) {
+                false, contentSpec)) {
             valid = false;
         }
 
@@ -313,8 +313,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     }
 
                     // Make sure the key is a valid meta data element
-                    if (!ProcessorConstants.VALID_METADATA_KEYS.contains(keyValueNode.getKey()) && !CSConstants
-                            .CUSTOM_PUBLICAN_CFG_PATTERN.matcher(keyValueNode.getKey()).matches()) {
+                    if (!ProcessorConstants.VALID_METADATA_KEYS.contains(
+                            keyValueNode.getKey()) && !CSConstants.CUSTOM_PUBLICAN_CFG_PATTERN.matcher(keyValueNode.getKey()).matches()) {
                         valid = false;
                         log.error(format(ProcessorConstants.ERROR_UNRECOGNISED_METADATA_MSG, keyValueNode.getLineNumber(),
                                 keyValueNode.getText()));
@@ -334,7 +334,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that each level is valid
-        if (!preValidateLevel(contentSpec.getBaseLevel(), specTopicMap, contentSpec.getAllowEmptyLevels(), contentSpec.getBookType())) {
+        if (!preValidateLevel(contentSpec.getBaseLevel(), specTopicMap, contentSpec.getAllowEmptyLevels(), contentSpec.getBookType(),
+                contentSpec)) {
             valid = false;
         }
 
@@ -351,6 +352,33 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         locale = CommonConstants.DEFAULT_LOCALE;
 
         return valid;
+    }
+
+    /**
+     * Check if the condition on a node will conflict with a condition in the defined publican.cfg file.
+     *
+     * @param node        The node to be checked.
+     * @param contentSpec The content spec the node belongs to.
+     */
+    protected void checkForConflictingCondition(final SpecNode node, final ContentSpec contentSpec) {
+        if (!isNullOrEmpty(node.getConditionStatement())) {
+            final String publicanCfg;
+            if (!contentSpec.getDefaultPublicanCfg().equals(CommonConstants.CS_PUBLICAN_CFG_TITLE)) {
+                final String name = contentSpec.getDefaultPublicanCfg();
+                final Matcher matcher = CSConstants.CUSTOM_PUBLICAN_CFG_PATTERN.matcher(name);
+                final String fixedName = matcher.find() ? matcher.group(1) : name;
+                publicanCfg = contentSpec.getAdditionalPublicanCfg(fixedName);
+            } else {
+                publicanCfg = contentSpec.getPublicanCfg();
+            }
+
+            // Make sure a publican.cfg is defined before doing any checks
+            if (!isNullOrEmpty(publicanCfg)) {
+                if (publicanCfg.contains("condition:")) {
+                    log.warn(String.format(ProcessorConstants.WARN_CONDITION_IGNORED_MSG, node.getLineNumber(), node.getText()));
+                }
+            }
+        }
     }
 
     /**
@@ -823,10 +851,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @param specTopics         The list of topics that exist within the content specification.
      * @param csAllowEmptyLevels If the "Allow Empty Levels" bit is set in a content specification.
      * @param bookType           The type of book the level should be validated for.
+     * @param contentSpec        The content spec the level belongs to.
      * @return True if the level is valid otherwise false.
      */
     public boolean preValidateLevel(final Level level, final Map<String, SpecTopic> specTopics, final boolean csAllowEmptyLevels,
-            final BookType bookType) {
+            final BookType bookType, final ContentSpec contentSpec) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -868,18 +897,18 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Validate the topics level
-        if (level.getInnerTopic() != null && !preValidateTopic(level.getInnerTopic(), specTopics, bookType)) {
+        if (level.getInnerTopic() != null && !preValidateTopic(level.getInnerTopic(), specTopics, bookType, contentSpec)) {
             valid = false;
         }
 
         // Validate the sub levels and topics
         for (final Node childNode : level.getChildNodes()) {
             if (childNode instanceof Level) {
-                if (!preValidateLevel((Level) childNode, specTopics, csAllowEmptyLevels, bookType)) {
+                if (!preValidateLevel((Level) childNode, specTopics, csAllowEmptyLevels, bookType, contentSpec)) {
                     valid = false;
                 }
             } else if (childNode instanceof SpecTopic) {
-                if (!preValidateTopic((SpecTopic) childNode, specTopics, bookType)) {
+                if (!preValidateTopic((SpecTopic) childNode, specTopics, bookType, contentSpec)) {
                     valid = false;
                 }
             }
@@ -1000,6 +1029,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     "revision", level.getText()));
         }
 
+        // Check for conflicting conditions
+        checkForConflictingCondition(level, contentSpec);
+
         return valid;
     }
 
@@ -1047,25 +1079,28 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     /**
      * Validates a topic against the database and for formatting issues.
      *
-     * @param specTopic  The topic to be validated.
-     * @param specTopics The list of topics that exist within the content specification.
-     * @param bookType   The type of book the topic is to be validated against.
+     * @param specTopic   The topic to be validated.
+     * @param specTopics  The list of topics that exist within the content specification.
+     * @param bookType    The type of book the topic is to be validated against.
+     * @param contentSpec The content spec the topic belongs to.
      * @return True if the topic is valid otherwise false.
      */
-    public boolean preValidateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics, final BookType bookType) {
-        return preValidateTopic(specTopic, specTopics, bookType, true);
+    public boolean preValidateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics, final BookType bookType,
+            final ContentSpec contentSpec) {
+        return preValidateTopic(specTopic, specTopics, bookType, true, contentSpec);
     }
 
     /**
      * Validates a topic against the database and for formatting issues.
      *
-     * @param specTopic  The topic to be validated.
-     * @param specTopics The list of topics that exist within the content specification.
-     * @param bookType   The type of book the topic is to be validated against.
+     * @param specTopic   The topic to be validated.
+     * @param specTopics  The list of topics that exist within the content specification.
+     * @param bookType    The type of book the topic is to be validated against.
+     * @param contentSpec The content spec the topic belongs to.
      * @return True if the topic is valid otherwise false.
      */
     public boolean preValidateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics, final BookType bookType,
-            boolean allowRelationships) {
+            boolean allowRelationships, final ContentSpec contentSpec) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -1254,6 +1289,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             log.error(format(ProcessorConstants.ERROR_TOPIC_HAS_RELATIONSHIPS_MSG, specTopic.getLineNumber(), specTopic.getText()));
             valid = false;
         }
+
+        // Check for conflicting conditions
+        checkForConflictingCondition(specTopic, contentSpec);
 
         return valid;
     }

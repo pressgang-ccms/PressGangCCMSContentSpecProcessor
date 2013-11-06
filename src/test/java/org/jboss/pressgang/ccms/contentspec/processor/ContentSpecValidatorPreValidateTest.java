@@ -440,6 +440,62 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
         assertTrue(result);
     }
 
+    @Test
+    public void shouldPrintErrorWithInvalidAbstract() {
+        // Given a content spec with an invalid abstract
+        ContentSpec contentSpec = make(a(ContentSpec, with(description, "<blah>" + randomInt)));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the abstract
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be false
+        assertFalse(result);
+        // and an error should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString(
+                "Invalid Content Specification! The abstract is not valid XML. Error Message: "));
+    }
+
+    @Test
+    public void shouldPrintWarningWhenConflictingConditions() {
+        // Given a content spec with conflicting conditions
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.getBaseLevel().setConditionStatement(randomString);
+        contentSpec.setPublicanCfg("condition: " + randomString);
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the conflicting conditions
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be true
+        assertTrue(result);
+        // and a warning should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString(
+                "A condition has been defined in publican.cfg and as such the condition will be ignored."));
+    }
+
+    @Test
+    public void shouldPrintWarningWhenConflictingConditionsInCustomCfg() {
+        // Given a content spec with conflicting conditions
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.getBaseLevel().setConditionStatement(randomString);
+        contentSpec.setAdditionalPublicanCfg("beta", "condition: " + randomString);
+        contentSpec.setDefaultPublicanCfg("beta");
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the conflicting conditions
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be true
+        assertTrue(result);
+        // and a warning should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString(
+                "A condition has been defined in publican.cfg and as such the condition will be ignored."));
+    }
+
     private void addLevelAndTopicToContentSpec(final ContentSpec contentSpec) {
         // with a level and spec topic
         Level childLevel = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.APPENDIX)));

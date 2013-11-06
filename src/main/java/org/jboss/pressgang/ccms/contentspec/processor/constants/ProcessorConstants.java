@@ -70,7 +70,7 @@ public class ProcessorConstants {
     public static final String SUCCESSFUL_PUSH_MSG = SUCCESSFUL_PUSH_ID_MSG + "\n" + SUCCESSFUL_PUSH_REV_MSG;
     public static final String ERROR_DATABASE_ERROR_MSG = "An error occurred when inserting into the database please try again.";
     public static final String ERROR_PROCESSING_ERROR_MSG = "An error occurred during processing please try again and if another failure " +
-            "occurs please log a bug.";
+            "" + "occurs please log a bug.";
     public static final String WARN_EDIT_INFO_MSG = "Note: All descriptions, tags, source urls and writers will be ignored for existing "
             + "Topics.";
 
@@ -321,6 +321,8 @@ public class ProcessorConstants {
             "match, so it was replaced. Please verify that the topic used was correct." + CSLINE_MSG + CSLINE_MSG;
     public static final String WARN_REVISION_NOT_EXIST_USING_X_MSG = LINE + "The Topic revision specified doesn't exist. " +
             "So revision %d is being used instead, as it is the closest match." + CSLINE_MSG;
+    public static final String WARN_CONDITION_IGNORED_MSG = LINE + "A condition has been defined in publican.cfg and as such the " +
+            "condition will be ignored." + CSLINE_MSG;
 
     // Process Errors
     public static final String ERROR_PROCESS_NONEXIST_MSG = LINE + INVALID_PROCESS + " Topic %s doesn't exist in the database." +
