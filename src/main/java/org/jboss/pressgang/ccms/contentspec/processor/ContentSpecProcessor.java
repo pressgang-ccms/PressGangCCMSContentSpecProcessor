@@ -189,28 +189,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return false;
         }
 
-        // Validate the content specification before doing any rest calls
-        LOG.info("Starting first validation pass...");
-
-        // Validate the relationships
-        if (!validator.preValidateRelationships(contentSpec) || !validator.preValidateContentSpec(contentSpec)) {
-            log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
-            return false;
-        }
-
-        // Check if the app should be shutdown
-        if (isShuttingDown.get()) {
-            shutdown.set(true);
-            return false;
-        }
-
-        // Validate the content specification now that we have most of the data from the REST API
-        LOG.info("Starting second validation pass...");
-
-        if (!postValidateContentSpec(processorData)) {
-            log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
-            return false;
-        } else {
+        // Check that the content spec is valid and if it is then continue to processing the content spec.
+        if (doValidationPass(processorData)) {
             log.info(ProcessorConstants.INFO_VALID_CS_MSG);
 
             // If we aren't validating then save the content specification
@@ -229,20 +209,81 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     return false;
                 }
             }
+
+            return true;
+        } else {
+            return false;
         }
+    }
+
+    /**
+     * Does a validation pass before processing any data.
+     *
+     * @param processorData The data to be used during processing.
+     * @return True if the content spec is valid, otherwise false.
+     */
+    protected boolean doValidationPass(final ProcessorData processorData) {
+        // Validate the content specification before doing any rest calls
+        if (!doFirstValidationPass(processorData)) {
+            return false;
+        }
+
+        // Check if the app should be shutdown
+        if (isShuttingDown.get()) {
+            shutdown.set(true);
+            return false;
+        }
+
+        // Validate the content specification bug links before doing the post validation as it is a costly operation
+        if (!doBugLinkValidationPass(processorData)) {
+            log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
+            return false;
+        }
+
+        // Check if the app should be shutdown
+        if (isShuttingDown.get()) {
+            shutdown.set(true);
+            return false;
+        }
+
+        // Validate the content specification now that we have most of the data from the REST API
+        if (!doSecondValidationPass(processorData)) {
+            log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
+            return false;
+        }
+
         return true;
     }
 
     /**
-     * Does the post Validation step on a Content Spec and also re-validates the bug links if required.
+     * Does the first validation pass on the content spec, which does the core validation without doing any rest calls.
      *
      * @param processorData The data to be used during processing.
-     * @return True if the content spec is
+     * @return True if the content spec is valid without doing any rest calls, otherwise false.
      */
-    protected boolean postValidateContentSpec(final ProcessorData processorData) {
+    protected boolean doFirstValidationPass(final ProcessorData processorData) {
         final ContentSpec contentSpec = processorData.getContentSpec();
-        boolean valid = validator.postValidateContentSpec(contentSpec, processorData.getUsername());
 
+        LOG.info("Starting first validation pass...");
+
+        // Validate the relationships
+        if (!validator.preValidateRelationships(contentSpec) || !validator.preValidateContentSpec(contentSpec)) {
+            log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks if bug links should be validated and performs the validation if required.
+     *
+     * @param processorData The data to be used during processing.
+     * @return True if the content spec bug links are valid, otherwise false.
+     */
+    protected boolean doBugLinkValidationPass(final ProcessorData processorData) {
+        final ContentSpec contentSpec = processorData.getContentSpec();
+        boolean valid = true;
         if (processingOptions.isValidateBugLinks()) {
             // Find out if we should re-validate bug links
             boolean reValidateBugLinks = true;
@@ -322,6 +363,20 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         return valid;
+    }
+
+    /**
+     * Does the post Validation step on a Content Spec.
+     *
+     * @param processorData The data to be used during processing.
+     * @return True if the content spec is valid.
+     */
+    protected boolean doSecondValidationPass(final ProcessorData processorData) {
+        // Validate the content specification now that we have most of the data from the REST API
+        LOG.info("Starting second validation pass...");
+
+        final ContentSpec contentSpec = processorData.getContentSpec();
+        return validator.postValidateContentSpec(contentSpec, processorData.getUsername());
     }
 
     /**
@@ -2069,41 +2124,41 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         return shutdown.get();
     }
 
-    private static class ProcessorData {
+    protected static class ProcessorData {
         private ContentSpec contentSpec;
         private String username;
         private boolean bugLinksReValidated = false;
         private LogMessageWrapper logMessage;
 
-        String getUsername() {
+        public String getUsername() {
             return username;
         }
 
-        void setUsername(String username) {
+        public void setUsername(String username) {
             this.username = username;
         }
 
-        boolean isBugLinksReValidated() {
+        public boolean isBugLinksReValidated() {
             return bugLinksReValidated;
         }
 
-        void setBugLinksReValidated(boolean bugLinksReValidated) {
+        public void setBugLinksReValidated(boolean bugLinksReValidated) {
             this.bugLinksReValidated = bugLinksReValidated;
         }
 
-        LogMessageWrapper getLogMessage() {
+        public LogMessageWrapper getLogMessage() {
             return logMessage;
         }
 
-        void setLogMessage(LogMessageWrapper logMessage) {
+        public void setLogMessage(LogMessageWrapper logMessage) {
             this.logMessage = logMessage;
         }
 
-        ContentSpec getContentSpec() {
+        public ContentSpec getContentSpec() {
             return contentSpec;
         }
 
-        void setContentSpec(ContentSpec contentSpec) {
+        public void setContentSpec(ContentSpec contentSpec) {
             this.contentSpec = contentSpec;
         }
     }
