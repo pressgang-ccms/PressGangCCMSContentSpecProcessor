@@ -270,7 +270,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             log.warn(ProcessorConstants.WARN_CS_NO_ABSTRACT_MSG);
         } else {
             // Check to make sure the abstract is at least valid XML
-            final String wrappedAbstract = "<para>" + contentSpec.getAbstract() + "</para>";
+            String wrappedAbstract = contentSpec.getAbstract();
+            if (!contentSpec.getAbstract().matches("^<(formal|sim)?para>(.|\\s)*")) {
+                wrappedAbstract = "<para>" + contentSpec.getAbstract() + "</para>";
+            }
+            wrappedAbstract = "<abstract>" + wrappedAbstract + "</abstract>";
+
             Document doc = null;
 
             String errorMsg = null;
@@ -639,14 +644,18 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // Make sure that the abstract is valid docbook xml
         if (!isNullOrEmpty(contentSpec.getAbstract())) {
-            final String wrappedAbstract = "<para>" + contentSpec.getAbstract() + "</para>";
+            String wrappedAbstract = contentSpec.getAbstract();
+            if (!contentSpec.getAbstract().matches("^<(formal|sim)?para>(.|\\s)*")) {
+                wrappedAbstract = "<para>" + contentSpec.getAbstract() + "</para>";
+            }
+            wrappedAbstract = "<abstract>" + wrappedAbstract + "</abstract>";
 
             // Get the docbook DTD
             final BlobConstantWrapper rocbookDtd = blobConstantProvider.getBlobConstant(CommonConstants.ROCBOOK_DTD_BLOB_ID);
 
             // Validate the XML content against the dtd
             final SAXXMLValidator validator = new SAXXMLValidator(false);
-            if (!validator.validateXML(wrappedAbstract, "rocbook.dtd", rocbookDtd.getValue(), "para")) {
+            if (!validator.validateXML(wrappedAbstract, "rocbook.dtd", rocbookDtd.getValue(), "abstract")) {
                 valid = false;
                 final String line = CommonConstants.CS_ABSTRACT_TITLE + " = " + contentSpec.getAbstract();
                 log.error(String.format(ProcessorConstants.ERROR_INVALID_ABSTRACT_MSG, validator.getErrorText(), line));

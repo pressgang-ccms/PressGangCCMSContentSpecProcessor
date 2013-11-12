@@ -842,7 +842,7 @@ public class ContentSpecParser {
                 try {
                     final KeyValueNode<String> node;
                     if (ContentSpecUtilities.isMetaDataMultiLine(key)) {
-                        node = parseMultiLineMetaData(key, value, line, lineNumber);
+                        node = parseMultiLineMetaData(key, value, lineNumber);
                     } else {
                         node = new KeyValueNode<String>(key, value, lineNumber);
                     }
@@ -859,13 +859,13 @@ public class ContentSpecParser {
      *
      * @param key        The metadata key.
      * @param value      The value on the metadata line.
-     * @param line       The initial line.
      * @param lineNumber The initial line number.
      * @return The parsed multiple line value for the metadata element.
      * @throws ParsingException
      */
-    private KeyValueNode<String> parseMultiLineMetaData(final String key, final String value, final String line,
+    private KeyValueNode<String> parseMultiLineMetaData(final String key, final String value,
             final int lineNumber) throws ParsingException {
+        // Check if the starting brace is found, if not then assume that there is only one line.
         int startingPos = StringUtilities.indexOf(value, '[');
         if (startingPos != -1) {
             final StringBuilder multiLineValue = new StringBuilder(value);
@@ -898,7 +898,7 @@ public class ContentSpecParser {
                 return new KeyValueNode<String>(key, finalValue);
             }
         } else {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_MULTILINE_METADATA_MSG, lineNumber, line));
+            return new KeyValueNode<String>(key, value, lineNumber);
         }
     }
 
