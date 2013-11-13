@@ -835,7 +835,7 @@ public class ContentSpecParser {
             } else if (key.equalsIgnoreCase(CommonConstants.CS_FILE_TITLE) || key.equalsIgnoreCase(CommonConstants.CS_FILE_SHORT_TITLE)) {
                 final FileList files = parseFilesMetaData(value, lineNumber, line);
                 contentSpec.appendKeyValueNode(files);
-            } else if (ContentSpecUtilities.isSpecTopicMetaData(key)) {
+            } else if (isSpecTopicMetaData(key, value)) {
                 final SpecTopic specTopic = parseSpecTopicMetaData(value, key, lineNumber);
                 contentSpec.appendKeyValueNode(new KeyValueNode<SpecTopic>(key, specTopic, lineNumber));
             } else {
@@ -851,6 +851,27 @@ public class ContentSpecParser {
                     throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_METADATA_FORMAT_MSG, lineNumber, line));
                 }
             }
+        }
+    }
+
+    /**
+     * Checks if a metadata line is a spec topic.
+     *
+     * @param key   The metadata key.
+     * @param value The metadata value.
+     * @return True if the line is a spec topic metadata element, otherwise false.
+     */
+    private boolean isSpecTopicMetaData(final String key, final String value) {
+        if (ContentSpecUtilities.isSpecTopicMetaData(key)) {
+            // Abstracts can be plain text so check an opening bracket exists
+            if (key.equalsIgnoreCase(CommonConstants.CS_ABSTRACT_TITLE) || key.equalsIgnoreCase(
+                    CommonConstants.CS_ABSTRACT_ALTERNATE_TITLE)) {
+                return value.trim().startsWith("[");
+            } else {
+                return true;
+            }
+        } else {
+            return false;
         }
     }
 

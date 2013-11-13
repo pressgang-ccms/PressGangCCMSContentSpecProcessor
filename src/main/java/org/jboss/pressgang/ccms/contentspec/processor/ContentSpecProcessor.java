@@ -1981,6 +1981,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 case LEGAL_NOTICE:
                 case REVISION_HISTORY:
                 case AUTHOR_GROUP:
+                case ABSTRACT:
                     matches = node.getNodeType().equals(CommonConstants.CS_NODE_META_DATA_TOPIC);
                     break;
             }

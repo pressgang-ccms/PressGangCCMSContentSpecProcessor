@@ -261,14 +261,18 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 false, contentSpec)) {
             valid = false;
         }
+        if (contentSpec.getAbstractTopic() != null && !preValidateTopic(contentSpec.getAbstractTopic(), specTopicMap, contentSpec.getBookType(),
+                false, contentSpec)) {
+            valid = false;
+        }
 
         // Print Warnings for content that maybe important
         if (isNullOrEmpty(contentSpec.getSubtitle())) {
             log.warn(ProcessorConstants.WARN_CS_NO_SUBTITLE_MSG);
         }
-        if (isNullOrEmpty(contentSpec.getAbstract())) {
+        if (isNullOrEmpty(contentSpec.getAbstract()) && contentSpec.getAbstractTopic() == null) {
             log.warn(ProcessorConstants.WARN_CS_NO_ABSTRACT_MSG);
-        } else {
+        } else if (!isNullOrEmpty(contentSpec.getAbstract())) {
             // Check to make sure the abstract is at least valid XML
             String wrappedAbstract = contentSpec.getAbstract();
             if (!contentSpec.getAbstract().matches("^<(formal|sim)?para>(.|\\s)*")) {
@@ -632,6 +636,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
         if (contentSpec.getAuthorGroup() != null && !postValidateTopic(contentSpec.getAuthorGroup())) {
+            valid = false;
+        }
+        if (contentSpec.getAbstractTopic() != null && !postValidateTopic(contentSpec.getAbstractTopic())) {
             valid = false;
         }
 
@@ -1487,10 +1494,17 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 valid = false;
             }
         } else if (specTopic.getTopicType() == TopicType.AUTHOR_GROUP) {
-            // Check to make sure the topic is a author group topic
+            // Check to make sure the topic is an author group topic
             if (!topic.hasTag(CSConstants.AUTHOR_GROUP_TAG_ID)) {
                 log.error(
                         format(ProcessorConstants.ERROR_AUTHOR_GROUP_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(), specTopic.getText()));
+                valid = false;
+            }
+        } else if (specTopic.getTopicType() == TopicType.ABSTRACT) {
+            // Check to make sure the topic is an abstract topic
+            if (!topic.hasTag(CSConstants.ABSTRACT_TAG_ID)) {
+                log.error(
+                        format(ProcessorConstants.ERROR_ABSTRACT_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
         }

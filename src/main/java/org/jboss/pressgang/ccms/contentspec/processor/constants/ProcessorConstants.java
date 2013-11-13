@@ -289,8 +289,10 @@ public class ProcessorConstants {
             "Notice Topic." + CSLINE_MSG;
     public static final String ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not a Revision " +
             "History Topic." + CSLINE_MSG;
-    public static final String ERROR_AUTHOR_GROUP_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not a Author " +
+    public static final String ERROR_AUTHOR_GROUP_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not an Author " +
             "Group Topic." + CSLINE_MSG;
+    public static final String ERROR_ABSTRACT_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not an Abstract " +
+            "Topic." + CSLINE_MSG;
 
     // Files
     public static final String ERROR_FILE_ID_NONEXIST_MSG = LINE + INVALID_FILE + " ID doesn't exist in the database." + CSLINE_MSG;
