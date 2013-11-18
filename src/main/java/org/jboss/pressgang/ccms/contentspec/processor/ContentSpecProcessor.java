@@ -23,7 +23,6 @@ import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.buglinks.BaseBugLinkStrategy;
 import org.jboss.pressgang.ccms.contentspec.buglinks.BugLinkOptions;
 import org.jboss.pressgang.ccms.contentspec.buglinks.BugLinkStrategyFactory;
-import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.entities.ProcessRelationship;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
 import org.jboss.pressgang.ccms.contentspec.entities.TargetRelationship;
@@ -45,6 +44,7 @@ import org.jboss.pressgang.ccms.provider.CSNodeProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.provider.PropertyTagProvider;
+import org.jboss.pressgang.ccms.provider.ServerSettingsProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.provider.TopicSourceURLProvider;
@@ -58,6 +58,8 @@ import org.jboss.pressgang.ccms.wrapper.LogMessageWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInTopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagWrapper;
+import org.jboss.pressgang.ccms.wrapper.ServerEntitiesWrapper;
+import org.jboss.pressgang.ccms.wrapper.ServerSettingsWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicSourceURLWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
@@ -81,6 +83,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
     private final ErrorLogger log;
     private final DataProviderFactory providerFactory;
+    private final ServerSettingsWrapper serverSettings;
+    private final ServerEntitiesWrapper serverEntities;
 
     private final ProcessingOptions processingOptions;
     private ContentSpecValidator validator;
@@ -99,6 +103,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             final ProcessingOptions processingOptions) {
 
         providerFactory = factory;
+        serverSettings = providerFactory.getProvider(ServerSettingsProvider.class).getServerSettings();
+        serverEntities = serverSettings.getEntities();
 
         log = loggerManager.getLogger(ContentSpecProcessor.class);
         topics = new TopicPool(factory);
@@ -180,7 +186,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         // Set the log details user if one isn't set
         if (logMessage != null && username != null && logMessage.getUser() == null) {
-            logMessage.setUser(CSConstants.UNKNOWN_USER_ID.toString());
+            logMessage.setUser(serverEntities.getUnknownUserId().toString());
         }
 
         // Check if the app should be shutdown
@@ -301,7 +307,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     boolean weekPassed = false;
                     if (processingOptions.isDoBugLinkLastValidateCheck()) {
                         final PropertyTagInContentSpecWrapper lastValidated = contentSpecEntity.getProperty(
-                                ProcessorConstants.BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG);
+                                serverEntities.getBugLinksLastValidatedPropertyTagId());
                         final Date now = new Date();
                         final long then;
                         if (lastValidated != null && lastValidated.getValue() != null && lastValidated.getValue().matches("^[0-9]+$")) {
@@ -595,7 +601,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         if (specTopic.isTopicANewTopic()) {
             topic = getTopicForNewSpecTopic(providerFactory, specTopic);
         } else if (specTopic.isTopicAClonedTopic()) {
-            topic = ProcessorUtilities.cloneTopic(providerFactory, specTopic);
+            topic = ProcessorUtilities.cloneTopic(providerFactory, specTopic, serverEntities);
         } else if (specTopic.isTopicAnExistingTopic()) {
             topic = getTopicForExistingSpecTopic(providerFactory, specTopic);
         }
@@ -625,7 +631,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         topic.setDescription(specTopic.getDescription(true));
         topic.setXml("");
         topic.setXmlDoctype(CommonConstants.DOCBOOK_45);
-        topic.setLocale(CommonConstants.DEFAULT_LOCALE);
+        topic.setLocale(serverSettings.getDefaultLocale());
 
         // Write the type
         final TagWrapper tag = tagProvider.getTagByName(specTopic.getType());
@@ -642,7 +648,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         topic.setProperties(propertyTagProvider.newPropertyTagInTopicCollection(topic));
         final String assignedWriter = specTopic.getAssignedWriter(true);
         if (assignedWriter != null) {
-            final PropertyTagWrapper addedByPropertyTag = propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
+            final PropertyTagWrapper addedByPropertyTag = propertyTagProvider.getPropertyTag(serverEntities.getAddedByPropertyTagId());
             final PropertyTagInTopicWrapper addedByProperty = propertyTagProvider.newPropertyTagInTopic(addedByPropertyTag, topic);
             addedByProperty.setValue(assignedWriter);
             topic.getProperties().addNewItem(addedByProperty);
@@ -681,7 +687,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         boolean cspPropertyFound = false;
         for (final PropertyTagInTopicWrapper property : propertyItems) {
             // Update the CSP Property Tag if it exists, otherwise add a new one
-            if (property.getId().equals(CSConstants.CSP_PROPERTY_ID)) {
+            if (property.getId().equals(serverEntities.getCspIdPropertyTagId())) {
                 cspPropertyFound = true;
 
                 // Remove the current property
@@ -694,10 +700,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         if (!cspPropertyFound) {
-            final PropertyTagWrapper cspPropertyTag = propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID);
+            final PropertyTagWrapper cspPropertyTag = propertyTagProvider.getPropertyTag(serverEntities.getCspIdPropertyTagId());
             final PropertyTagInTopicWrapper cspProperty = propertyTagProvider.newPropertyTagInTopic(cspPropertyTag, topic);
             cspProperty.setValue(specTopic.getUniqueId());
-            cspProperty.setId(CSConstants.CSP_PROPERTY_ID);
+            cspProperty.setId(serverEntities.getCspIdPropertyTagId());
             properties.addNewItem(cspProperty);
         }
 
@@ -1018,7 +1024,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             contentSpecEntity = contentSpecProvider.newContentSpec();
 
             // setup the basic values
-            contentSpecEntity.setLocale(CommonConstants.DEFAULT_LOCALE);
+            contentSpecEntity.setLocale(serverSettings.getDefaultLocale());
 
             if (processorData.getUsername() != null) {
                 // Add the added by property tag
@@ -1027,7 +1033,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                         contentSpecEntity);
 
                 // Create the new property tag
-                final PropertyTagWrapper addedByProperty = propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
+                final PropertyTagWrapper addedByProperty = propertyTagProvider.getPropertyTag(serverEntities.getAddedByPropertyTagId());
                 final PropertyTagInContentSpecWrapper propertyTag = propertyTagProvider.newPropertyTagInContentSpec(addedByProperty,
                         contentSpecEntity);
                 propertyTag.setValue(processorData.getUsername());
@@ -1071,7 +1077,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
             // Check if the property already exists and if so remove it, and then create a new one to ensure it a revision is created
             for (final PropertyTagInContentSpecWrapper propertyTag : propertyTagCollection.getItems()) {
-                if (propertyTag.getId().equals(ProcessorConstants.BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG)) {
+                if (propertyTag.getId().equals(serverEntities.getBugLinksLastValidatedPropertyTagId())) {
                     propertyTag.setValue(Long.toString(new Date().getTime()));
                     propertyTagCollection.remove(propertyTag);
                     propertyTagCollection.addRemoveItem(propertyTag);
@@ -1080,7 +1086,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
             // Add the new tag
             final PropertyTagWrapper lastUpdatedProperty = propertyTagProvider.getPropertyTag(
-                    ProcessorConstants.BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG);
+                    serverEntities.getBugLinksLastValidatedPropertyTagId());
             final PropertyTagInContentSpecWrapper propertyTag = propertyTagProvider.newPropertyTagInContentSpec(lastUpdatedProperty,
                     contentSpecEntity);
             propertyTag.setValue(Long.toString(new Date().getTime()));

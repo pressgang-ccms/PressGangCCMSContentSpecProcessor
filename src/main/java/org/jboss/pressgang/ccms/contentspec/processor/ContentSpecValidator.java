@@ -56,6 +56,7 @@ import org.jboss.pressgang.ccms.provider.CategoryProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.provider.FileProvider;
+import org.jboss.pressgang.ccms.provider.ServerSettingsProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TextContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
@@ -70,6 +71,8 @@ import org.jboss.pressgang.ccms.wrapper.BlobConstantWrapper;
 import org.jboss.pressgang.ccms.wrapper.CategoryWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.FileWrapper;
+import org.jboss.pressgang.ccms.wrapper.ServerEntitiesWrapper;
+import org.jboss.pressgang.ccms.wrapper.ServerSettingsWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.wrapper.TextContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
@@ -89,6 +92,8 @@ import org.w3c.dom.NamedNodeMap;
 public class ContentSpecValidator implements ShutdownAbleApp {
 
     private final DataProviderFactory factory;
+    private final ServerSettingsWrapper serverSettings;
+    private final ServerEntitiesWrapper serverEntities;
     private final TopicProvider topicProvider;
     private final ContentSpecProvider contentSpecProvider;
     private final TextContentSpecProvider textContentSpecProvider;
@@ -132,7 +137,10 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         blobConstantProvider = factory.getProvider(BlobConstantProvider.class);
         log = loggerManager.getLogger(ContentSpecValidator.class);
         this.processingOptions = processingOptions;
-        locale = CommonConstants.DEFAULT_LOCALE;
+
+        serverSettings = factory.getProvider(ServerSettingsProvider.class).getServerSettings();
+        serverEntities = serverSettings.getEntities();
+        locale = serverSettings.getDefaultLocale();
     }
 
     /**
@@ -261,8 +269,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 false, contentSpec)) {
             valid = false;
         }
-        if (contentSpec.getAbstractTopic() != null && !preValidateTopic(contentSpec.getAbstractTopic(), specTopicMap, contentSpec.getBookType(),
-                false, contentSpec)) {
+        if (contentSpec.getAbstractTopic() != null && !preValidateTopic(contentSpec.getAbstractTopic(), specTopicMap,
+                contentSpec.getBookType(), false, contentSpec)) {
             valid = false;
         }
 
@@ -358,7 +366,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // reset the locale back to its default
-        locale = CommonConstants.DEFAULT_LOCALE;
+        locale = serverSettings.getDefaultLocale();
 
         return valid;
     }
@@ -594,8 +602,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 }
 
                 // Check that the Content Spec isn't read only
-                if (contentSpecEntity.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID) != null) {
-                    if (!contentSpecEntity.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID).getValue().matches(
+                if (contentSpecEntity.getProperty(serverEntities.getReadOnlyPropertyTagId()) != null) {
+                    if (!contentSpecEntity.getProperty(serverEntities.getReadOnlyPropertyTagId()).getValue().matches(
                             "(^|.*,)" + username + "(,.*|$)")) {
                         log.error(ProcessorConstants.ERROR_CS_READ_ONLY_MSG);
                         valid = false;
@@ -614,7 +622,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
                 }
                 if (tag != null) {
-                    if (!tag.containedInCategory(CSConstants.TYPE_CATEGORY_ID)) {
+                    if (!tag.containedInCategory(serverEntities.getTypeCategoryId())) {
                         log.error(String.format(ProcessorConstants.ERROR_INVALID_INJECTION_TYPE_MSG, injectionType));
                         valid = false;
                     }
@@ -658,7 +666,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             wrappedAbstract = "<abstract>" + wrappedAbstract + "</abstract>";
 
             // Get the docbook DTD
-            final BlobConstantWrapper rocbookDtd = blobConstantProvider.getBlobConstant(CommonConstants.ROCBOOK_DTD_BLOB_ID);
+            final BlobConstantWrapper rocbookDtd = blobConstantProvider.getBlobConstant(serverEntities.getRocBookDTDBlobConstantId());
 
             // Validate the XML content against the dtd
             final SAXXMLValidator validator = new SAXXMLValidator(false);
@@ -675,7 +683,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // reset the locale back to its default
-        locale = CommonConstants.DEFAULT_LOCALE;
+        locale = serverSettings.getDefaultLocale();
 
         return valid;
     }
@@ -1338,17 +1346,20 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
             }
 
-            if (type == null || !type.containedInCategory(CSConstants.TYPE_CATEGORY_ID)) {
+            if (type == null || !type.containedInCategory(serverEntities.getTypeCategoryId())) {
                 log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
-            } else if (specTopic.getTopicType() == TopicType.LEGAL_NOTICE && !type.getId().equals(CSConstants.LEGAL_NOTICE_TAG_ID)) {
+            } else if (specTopic.getTopicType() == TopicType.LEGAL_NOTICE && !type.getId().equals(serverEntities.getLegalNoticeTagId())) {
                 log.error(format(ProcessorConstants.ERROR_INVALID_TYPE_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             } else if (specTopic.getTopicType() == TopicType.REVISION_HISTORY && !type.getId().equals(
-                    CSConstants.REVISION_HISTORY_TAG_ID)) {
+                    serverEntities.getRevisionHistoryTagId())) {
                 log.error(format(ProcessorConstants.ERROR_INVALID_TYPE_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
-            } else if (specTopic.getTopicType() == TopicType.AUTHOR_GROUP && !type.getId().equals(CSConstants.AUTHOR_GROUP_TAG_ID)) {
+            } else if (specTopic.getTopicType() == TopicType.AUTHOR_GROUP && !type.getId().equals(serverEntities.getAuthorGroupTagId())) {
+                log.error(format(ProcessorConstants.ERROR_INVALID_TYPE_MSG, specTopic.getLineNumber(), specTopic.getText()));
+                valid = false;
+            } else if (specTopic.getTopicType() == TopicType.ABSTRACT && !type.getId().equals(serverEntities.getAbstractTagId())) {
                 log.error(format(ProcessorConstants.ERROR_INVALID_TYPE_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
@@ -1393,7 +1404,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 specTopic.setTopic(topic);
 
                 // Check to see if the topic contains the "Internal-Only" tag
-                if (topic.hasTag(CSConstants.RH_INTERNAL_TAG_ID)) {
+                if (serverEntities.getInternalOnlyTagId() != null && topic.hasTag(serverEntities.getInternalOnlyTagId())) {
                     log.warn(String.format(ProcessorConstants.WARN_INTERNAL_TOPIC_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 }
 
@@ -1474,37 +1485,37 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.FEEDBACK || specTopic.getTopicType() ==
                 TopicType.LEVEL) {
             // Check to make sure the topic is a normal topic and not a special case
-            if (topic.hasTag(CSConstants.LEGAL_NOTICE_TAG_ID) || topic.hasTag(CSConstants.REVISION_HISTORY_TAG_ID) || topic.hasTag(
-                    CSConstants.AUTHOR_GROUP_TAG_ID)) {
+            if (topic.hasTag(serverEntities.getLegalNoticeTagId()) || topic.hasTag(
+                    serverEntities.getRevisionHistoryTagId()) || topic.hasTag(serverEntities.getAuthorGroupTagId()) || topic.hasTag(
+                    serverEntities.getAbstractTagId())) {
                 log.error(format(ProcessorConstants.ERROR_TOPIC_NOT_ALLOWED_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
         } else if (specTopic.getTopicType() == TopicType.LEGAL_NOTICE) {
             // Check to make sure the topic is a legal notice topic
-            if (!topic.hasTag(CSConstants.LEGAL_NOTICE_TAG_ID)) {
+            if (!topic.hasTag(serverEntities.getLegalNoticeTagId())) {
                 log.error(
                         format(ProcessorConstants.ERROR_LEGAL_NOTICE_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
         } else if (specTopic.getTopicType() == TopicType.REVISION_HISTORY) {
             // Check to make sure the topic is a revision history topic
-            if (!topic.hasTag(CSConstants.REVISION_HISTORY_TAG_ID)) {
+            if (!topic.hasTag(serverEntities.getRevisionHistoryTagId())) {
                 log.error(
                         format(ProcessorConstants.ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
         } else if (specTopic.getTopicType() == TopicType.AUTHOR_GROUP) {
             // Check to make sure the topic is an author group topic
-            if (!topic.hasTag(CSConstants.AUTHOR_GROUP_TAG_ID)) {
+            if (!topic.hasTag(serverEntities.getAuthorGroupTagId())) {
                 log.error(
                         format(ProcessorConstants.ERROR_AUTHOR_GROUP_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
         } else if (specTopic.getTopicType() == TopicType.ABSTRACT) {
             // Check to make sure the topic is an abstract topic
-            if (!topic.hasTag(CSConstants.ABSTRACT_TAG_ID)) {
-                log.error(
-                        format(ProcessorConstants.ERROR_ABSTRACT_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(), specTopic.getText()));
+            if (!topic.hasTag(serverEntities.getAbstractTagId())) {
+                log.error(format(ProcessorConstants.ERROR_ABSTRACT_TOPIC_TYPE_INCORRECT, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
         }
@@ -1591,7 +1602,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that the writer tag is actually part of the Assigned Writer category
-        if (!tag.containedInCategory(CSConstants.WRITER_CATEGORY_ID)) {
+        if (!tag.containedInCategory(serverEntities.getWriterCategoryId())) {
             log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getLineNumber(), topic.getText()));
             return false;
         }
@@ -1666,7 +1677,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 }
 
                 // Check that the tag isn't a type or writer
-                if (cat.getId().equals(CSConstants.WRITER_CATEGORY_ID)) {
+                if (cat.getId().equals(serverEntities.getWriterCategoryId())) {
                     final String errorMsg;
                     if (specNode instanceof Level) {
                         final String baseErrorMsg = String.format(ProcessorConstants.ERROR_LEVEL_WRITER_AS_TAG_MSG,
@@ -1685,7 +1696,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 }
 
                 // Check that the tag isn't a topic type
-                if (cat.getId().equals(CSConstants.TYPE_CATEGORY_ID)) {
+                if (cat.getId().equals(serverEntities.getTypeCategoryId())) {
                     final String errorMsg;
                     if (specNode instanceof Level) {
                         final String baseErrorMsg = String.format(ProcessorConstants.ERROR_LEVEL_TYPE_AS_TAG_MSG,

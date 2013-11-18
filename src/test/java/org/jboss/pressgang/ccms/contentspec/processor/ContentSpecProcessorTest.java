@@ -14,9 +14,12 @@ import org.jboss.pressgang.ccms.provider.CSNodeProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.provider.PropertyTagProvider;
+import org.jboss.pressgang.ccms.provider.ServerSettingsProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.provider.TopicSourceURLProvider;
+import org.jboss.pressgang.ccms.wrapper.ServerEntitiesWrapper;
+import org.jboss.pressgang.ccms.wrapper.ServerSettingsWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.CollectionWrapper;
 import org.junit.Before;
@@ -27,9 +30,17 @@ import org.powermock.modules.junit4.rule.PowerMockRule;
 
 @Ignore
 public class ContentSpecProcessorTest extends BaseUnitTest {
+    protected static String DEFAULT_LOCALE = "en-US";
+    protected static Integer ADDED_BY_PROPERTY_TAG_ID = 14;
+    protected static Integer CSP_PROPERTY_ID = 15;
+    protected static Integer WRITER_CATEGORY_ID = 12;
+
     @Rule public PowerMockRule rule = new PowerMockRule();
 
     @Mock DataProviderFactory providerFactory;
+    @Mock ServerSettingsProvider serverSettingsProvider;
+    @Mock ServerSettingsWrapper serverSettings;
+    @Mock ServerEntitiesWrapper serverEntities;
     @Mock ErrorLoggerManager loggerManager;
     @Mock ProcessingOptions processingOptions;
     @Mock TopicProvider topicProvider;
@@ -53,6 +64,14 @@ public class ContentSpecProcessorTest extends BaseUnitTest {
         when(providerFactory.getProvider(TagProvider.class)).thenReturn(tagProvider);
         when(providerFactory.getProvider(ContentSpecProvider.class)).thenReturn(contentSpecProvider);
         when(providerFactory.getProvider(CSNodeProvider.class)).thenReturn(contentSpecNodeProvider);
+
+        when(providerFactory.getProvider(ServerSettingsProvider.class)).thenReturn(serverSettingsProvider);
+        when(serverSettingsProvider.getServerSettings()).thenReturn(serverSettings);
+        when(serverSettings.getEntities()).thenReturn(serverEntities);
+        when(serverSettings.getDefaultLocale()).thenReturn(DEFAULT_LOCALE);
+        when(serverEntities.getCspIdPropertyTagId()).thenReturn(CSP_PROPERTY_ID);
+        when(serverEntities.getAddedByPropertyTagId()).thenReturn(ADDED_BY_PROPERTY_TAG_ID);
+        when(serverEntities.getWriterCategoryId()).thenReturn(WRITER_CATEGORY_ID);
 
         this.processor = new ContentSpecProcessor(providerFactory, loggerManager, processingOptions);
     }

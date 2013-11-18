@@ -18,7 +18,6 @@ import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
-import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.entities.InjectionOptions;
 import org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker;
 import org.jboss.pressgang.ccms.provider.BlobConstantProvider;
@@ -206,7 +205,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(textContentSpecProvider.getTextContentSpec(anyInt(), anyInt())).willReturn(textContentSpecWrapper);
         given(textContentSpecWrapper.getText()).willReturn("");
         given(contentSpecWrapper.getChildren()).willReturn(metaData);
-        given(contentSpecWrapper.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID)).willReturn(propertyTag);
+        given(contentSpecWrapper.getProperty(READ_ONLY_PROPERTY_TAG_ID)).willReturn(propertyTag);
         given(propertyTag.getValue()).willReturn("foo");
         given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
         // And the ignoreChecksum option is set
@@ -231,7 +230,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         given(textContentSpecProvider.getTextContentSpec(anyInt(), anyInt())).willReturn(textContentSpecWrapper);
         given(textContentSpecWrapper.getText()).willReturn("");
         given(contentSpecWrapper.getChildren()).willReturn(metaData);
-        given(contentSpecWrapper.getProperty(CSConstants.CSP_READ_ONLY_PROPERTY_TAG_ID)).willReturn(propertyTag);
+        given(contentSpecWrapper.getProperty(READ_ONLY_PROPERTY_TAG_ID)).willReturn(propertyTag);
         given(metaData.getItems()).willReturn(new ArrayList<CSNodeWrapper>());
         // And the wrapper has the read-only tag set but it contains the username
         given(propertyTag.getValue()).willReturn(username);
@@ -276,7 +275,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         contentSpec.setInjectionOptions(new InjectionOptions("[" + strictTopicType + "]"));
         // And a tag wrapper will be returned but it's not a type tag
         given(tagProvider.getTagByName(strictTopicType)).willReturn(tagWrapper);
-        given(tagWrapper.containedInCategory(CSConstants.TYPE_CATEGORY_ID)).willReturn(false);
+        given(tagWrapper.containedInCategory(TYPE_CATEGORY_ID)).willReturn(false);
 
         // When the spec is postvalidated
         boolean result = validator.postValidateContentSpec(contentSpec, username);

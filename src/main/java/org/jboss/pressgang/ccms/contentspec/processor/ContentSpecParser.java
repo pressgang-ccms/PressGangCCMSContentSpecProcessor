@@ -46,6 +46,7 @@ import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
+import org.jboss.pressgang.ccms.provider.ServerSettingsProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
@@ -86,6 +87,7 @@ public class ContentSpecParser {
 
     private final DataProviderFactory providerFactory;
     private final TopicProvider topicProvider;
+    private final ServerSettingsProvider serverSettingsProvider;
     private final ErrorLogger log;
     private final ErrorLoggerManager loggerManager;
 
@@ -112,6 +114,7 @@ public class ContentSpecParser {
     public ContentSpecParser(final DataProviderFactory providerFactory, final ErrorLoggerManager loggerManager) {
         this.providerFactory = providerFactory;
         topicProvider = providerFactory.getProvider(TopicProvider.class);
+        serverSettingsProvider = providerFactory.getProvider(ServerSettingsProvider.class);
         this.loggerManager = loggerManager;
         log = loggerManager.getLogger(ContentSpecParser.class);
     }
@@ -541,7 +544,7 @@ public class ContentSpecParser {
         // relationships and targets are created
         if (processProcesses) {
             for (final Process process : getProcesses()) {
-                process.processTopics(getSpecTopics(), getTargetTopics(), topicProvider);
+                process.processTopics(getSpecTopics(), getTargetTopics(), topicProvider, serverSettingsProvider);
             }
         }
 

@@ -13,9 +13,7 @@ public class ProcessorConstants {
     public static final double MIN_MATCH_SIMILARITY = 0.8;
 
     public static final String RELEASE_CATEGORY_NAME = "Release";
-    public static final int ASSIGNED_WRITER_CATEGORY_ID = 12;
     public static final String ASSIGNED_WRITER_CATEGORY_NAME = "Assigned Writer";
-    public static final int BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG = 38;
 
     public static final String TOPIC_ID_CONTENTS = "TopicID";
     public static final String BRACKET_CONTENTS = "Brackets";

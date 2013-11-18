@@ -22,6 +22,7 @@ import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInTopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagWrapper;
+import org.jboss.pressgang.ccms.wrapper.ServerEntitiesWrapper;
 import org.jboss.pressgang.ccms.wrapper.StringConstantWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicSourceURLWrapper;
@@ -132,10 +133,12 @@ public class ProcessorUtilities {
      * Clones a Topic, resets the Added By and CSP ID properties and ignores assigned writers when cloning.
      *
      * @param providerFactory
-     * @param specTopic       The SpecTopic object that represents a topic.
+     * @param specTopic        The SpecTopic object that represents a topic.
+     * @param serverEntities
      * @return The cloned topic wrapper entity.
      */
-    public static TopicWrapper cloneTopic(final DataProviderFactory providerFactory, final SpecTopic specTopic) {
+    public static TopicWrapper cloneTopic(final DataProviderFactory providerFactory, final SpecTopic specTopic,
+            final ServerEntitiesWrapper serverEntities) {
         final TopicProvider topicProvider = providerFactory.getProvider(TopicProvider.class);
         final TopicSourceURLProvider topicSourceUrlProvider = providerFactory.getProvider(TopicSourceURLProvider.class);
         final TagProvider tagProvider = providerFactory.getProvider(TagProvider.class);
@@ -176,8 +179,8 @@ public class ProcessorUtilities {
 
         // SOURCE URLS
         if (originalTopic.getSourceURLs() != null && !originalTopic.getSourceURLs().isEmpty()) {
-            final UpdateableCollectionWrapper<TopicSourceURLWrapper> cloneSourceUrls = topicSourceUrlProvider.newTopicSourceURLCollection
-                    (cloneTopic);
+            final UpdateableCollectionWrapper<TopicSourceURLWrapper> cloneSourceUrls = topicSourceUrlProvider.newTopicSourceURLCollection(
+                    cloneTopic);
             for (final TopicSourceURLWrapper sourceUrl : originalTopic.getSourceURLs().getItems()) {
                 final TopicSourceURLWrapper cloneSourceUrl = cloneTopicSourceUrl(topicSourceUrlProvider, sourceUrl, cloneTopic);
                 cloneSourceUrls.addNewItem(cloneSourceUrl);
@@ -191,7 +194,7 @@ public class ProcessorUtilities {
             final List<TagWrapper> tags = originalTopic.getTags().getItems();
             for (final TagWrapper tag : tags) {
                 // Remove the old writer tag as it will get replaced
-                if (!tag.containedInCategory(CSConstants.WRITER_CATEGORY_ID)) {
+                if (!tag.containedInCategory(serverEntities.getWriterCategoryId())) {
                     newTags.addNewItem(tag);
                 }
             }
@@ -209,7 +212,7 @@ public class ProcessorUtilities {
         for (final PropertyTagInTopicWrapper property : propertyItems) {
             final PropertyTagInTopicWrapper clonedProperty = cloneTopicProperty(cloneTopic, propertyTagProvider, property);
             // Ignore the CSP and Added By Property ID as we will add a new one later
-            if (!(property.getId().equals(CSConstants.CSP_PROPERTY_ID) || property.getId().equals(CSConstants.ADDED_BY_PROPERTY_TAG_ID))) {
+            if (!(property.getId().equals(serverEntities.getCspIdPropertyTagId()) || property.getId().equals(serverEntities.getAddedByPropertyTagId()))) {
                 newProperties.addNewItem(clonedProperty);
             }
         }
@@ -217,7 +220,7 @@ public class ProcessorUtilities {
         // Add the added by property tag
         final String assignedWriter = specTopic.getAssignedWriter(true);
         if (assignedWriter != null) {
-            final PropertyTagWrapper addedByPropertyTag = propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
+            final PropertyTagWrapper addedByPropertyTag = propertyTagProvider.getPropertyTag(serverEntities.getAddedByPropertyTagId());
             final PropertyTagInTopicWrapper addedByProperty = propertyTagProvider.newPropertyTagInTopic(addedByPropertyTag, cloneTopic);
             addedByProperty.setValue(assignedWriter);
             newProperties.addNewItem(addedByProperty);
@@ -297,8 +300,8 @@ public class ProcessorUtilities {
      */
     public static List<String> loadValidXMLEntities(final DataProviderFactory providerFactory) throws ProviderException {
         final StringConstantProvider stringConstantProvider = providerFactory.getProvider(StringConstantProvider.class);
-        final StringConstantWrapper validXMLEntitiesConstant = stringConstantProvider.getStringConstant(CSConstants
-                .VALID_ENTITIES_STRING_CONSTANT_ID);
+        final StringConstantWrapper validXMLEntitiesConstant = stringConstantProvider.getStringConstant(
+                CSConstants.VALID_ENTITIES_STRING_CONSTANT_ID);
         if (validXMLEntitiesConstant != null) {
             final List<String> validXMLEntities = new ArrayList<String>();
 

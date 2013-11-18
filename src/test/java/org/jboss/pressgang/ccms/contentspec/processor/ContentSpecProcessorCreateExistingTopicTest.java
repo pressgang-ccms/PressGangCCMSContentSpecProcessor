@@ -27,7 +27,6 @@ import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
-import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInTopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagWrapper;
@@ -377,13 +376,13 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
         when(propertyTagProvider.newPropertyTagInTopicCollection(any(TopicWrapper.class))).thenReturn(propertyTagCollection);
         when(topicWrapper.getProperties()).thenReturn(existingTopicProperties);
         // and the property tag provider will return a property tag
-        when(propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID)).thenReturn(cspIdPropertyTag);
+        when(propertyTagProvider.getPropertyTag(CSP_PROPERTY_ID)).thenReturn(cspIdPropertyTag);
         // and the topic source url provider will return a new topic source url collection
         when(topicSourceURLProvider.newTopicSourceURLCollection(eq(topicWrapper))).thenReturn(topicSourceURLCollection);
         when(topicWrapper.getSourceURLs()).thenReturn(existingTopicSourceURLCollection);
         // and the property tag collection already has the added by tag
         existingTopicProperties.addItem(addedByPropertyTagInTopic);
-        when(addedByPropertyTagInTopic.getId()).thenReturn(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
+        when(addedByPropertyTagInTopic.getId()).thenReturn(ADDED_BY_PROPERTY_TAG_ID);
         when(addedByPropertyTagInTopic.getValue()).thenReturn(username);
     }
 
