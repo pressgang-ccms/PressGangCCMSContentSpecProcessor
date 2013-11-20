@@ -381,48 +381,6 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     }
 
     @Test
-    public void shouldFailWhenCustomEntityUsed() {
-        // Given an invalid XML entity declaration
-        final String entities = "<!ENTITY test \"http://example.com/query?word+with+spaces\">";
-        // and a content spec to store the entity
-        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
-        contentSpec.setEntities(entities);
-        // with a level and spec topic
-        addLevelAndTopicToContentSpec(contentSpec);
-
-        // When validating the entities
-        boolean result = validator.preValidateContentSpec(contentSpec);
-
-        // Then the result should be false and should have a useful error message
-        assertFalse(result);
-        assertThat(logger.getLogMessages().toString(), containsString(
-                "Invalid Content Specification! Invalid XML Entities. test is a custom entity and cannot be defined. Only overrides to "
-                        + "the default XML entities can be defined."));
-    }
-
-    @Test
-    public void shouldFailWhenMultipleCustomEntitiesUsed() {
-        // Given an invalid XML entity declaration
-        final String entities = "<!ENTITY test \"http://example.com/query?word+with+spaces\">\n" +
-                "<!ENTITY test2 \"&test;\">\n" +
-                "<!ENTITY test3 \"&test;\">";
-        // and a content spec to store the entity
-        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
-        contentSpec.setEntities(entities);
-        // with a level and spec topic
-        addLevelAndTopicToContentSpec(contentSpec);
-
-        // When validating the entities
-        boolean result = validator.preValidateContentSpec(contentSpec);
-
-        // Then the result should be false and should have a useful error message
-        assertFalse(result);
-        assertThat(logger.getLogMessages().toString(), containsString(
-                "Invalid Content Specification! Invalid XML Entities. test, test2 and test3 are custom entities and cannot be defined. " +
-                        "Only overrides to the default XML entities can be defined."));
-    }
-
-    @Test
     public void shouldSucceedWithValidEntities() {
         // Given a valid XML entity declaration
         final String entities = "<!ENTITY BZURL \"http://example.com/query?word+with+spaces\">\n" +
