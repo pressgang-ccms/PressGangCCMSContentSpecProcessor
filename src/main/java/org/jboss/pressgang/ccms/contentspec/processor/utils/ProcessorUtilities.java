@@ -1,29 +1,22 @@
 package org.jboss.pressgang.ccms.contentspec.processor.utils;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
-import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.processor.exceptions.InvalidKeyValueException;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.VariableSet;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.provider.PropertyTagProvider;
-import org.jboss.pressgang.ccms.provider.StringConstantProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.provider.TopicSourceURLProvider;
-import org.jboss.pressgang.ccms.provider.exception.ProviderException;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 import org.jboss.pressgang.ccms.utils.structures.Pair;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInTopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagWrapper;
 import org.jboss.pressgang.ccms.wrapper.ServerEntitiesWrapper;
-import org.jboss.pressgang.ccms.wrapper.StringConstantWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicSourceURLWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
@@ -289,32 +282,5 @@ public class ProcessorUtilities {
         retValue = EQUALS_PATTERN.matcher(retValue).replaceAll("=");
         retValue = PLUS_PATTERN.matcher(retValue).replaceAll("+");
         return MINUS_PATTERN.matcher(retValue).replaceAll("-");
-    }
-
-    /**
-     * Loads the Valid XML Entities string constant from the server and parses it into a list of valid XML entity names.
-     *
-     * @param providerFactory The provider factory to get the providers needed to load the constant from the server.
-     * @return A list of valid XML entity names, or null if the string constant doesn't exist.
-     * @throws ProviderException Thrown if an error occurs looking up the string constant.
-     */
-    public static List<String> loadValidXMLEntities(final DataProviderFactory providerFactory) throws ProviderException {
-        final StringConstantProvider stringConstantProvider = providerFactory.getProvider(StringConstantProvider.class);
-        final StringConstantWrapper validXMLEntitiesConstant = stringConstantProvider.getStringConstant(
-                CSConstants.VALID_ENTITIES_STRING_CONSTANT_ID);
-        if (validXMLEntitiesConstant != null) {
-            final List<String> validXMLEntities = new ArrayList<String>();
-
-            if (!isNullOrEmpty(validXMLEntitiesConstant.getValue())) {
-                final String[] entities = validXMLEntitiesConstant.getValue().split("\\s*(\\r)?\\n\\s*");
-                for (final String entity : entities) {
-                    validXMLEntities.add(entity);
-                }
-            }
-
-            return validXMLEntities;
-        } else {
-            return null;
-        }
     }
 }
