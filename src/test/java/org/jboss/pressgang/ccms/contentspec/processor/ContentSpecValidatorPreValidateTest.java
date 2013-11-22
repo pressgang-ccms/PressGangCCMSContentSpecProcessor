@@ -28,7 +28,6 @@ import net.sf.ipsedixit.annotation.Arbitrary;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
-import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.enums.BookType;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker;
@@ -56,7 +55,6 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void setUp() {
         super.setUp();
         when(dataProviderFactory.getProvider(StringConstantProvider.class)).thenReturn(stringConstantProvider);
-        when(stringConstantProvider.getStringConstant(CSConstants.VALID_ENTITIES_STRING_CONSTANT_ID)).thenReturn(stringConstantWrapper);
         when(stringConstantWrapper.getValue()).thenReturn("BZURL\nPRODUCT");
     }
 
