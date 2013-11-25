@@ -429,7 +429,7 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
         assertTrue(result);
         // and a warning should have been printed
         assertThat(logger.getLogMessages().toString(), containsString(
-                "A condition has been defined in publican.cfg and as such the condition will be ignored."));
+                "A condition has been defined in publican.cfg, and as such the condition defined against the topic or container will be ignored."));
     }
 
     @Test
@@ -449,7 +449,7 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
         assertTrue(result);
         // and a warning should have been printed
         assertThat(logger.getLogMessages().toString(), containsString(
-                "A condition has been defined in publican.cfg and as such the condition will be ignored."));
+                "A condition has been defined in publican.cfg, and as such the condition defined against the topic or container will be ignored."));
     }
 
     private void addLevelAndTopicToContentSpec(final ContentSpec contentSpec) {
