@@ -321,8 +321,8 @@ public class ProcessorConstants {
             "match, so it was replaced. Please verify that the topic used was correct." + CSLINE_MSG + CSLINE_MSG;
     public static final String WARN_REVISION_NOT_EXIST_USING_X_MSG = LINE + "The Topic revision specified doesn't exist. " +
             "So revision %d is being used instead, as it is the closest match." + CSLINE_MSG;
-    public static final String WARN_CONDITION_IGNORED_MSG = LINE + "A condition has been defined in publican.cfg and as such the " +
-            "condition will be ignored." + CSLINE_MSG;
+    public static final String WARN_CONDITION_IGNORED_MSG = LINE + "A condition has been defined in publican.cfg, " +
+            "and as such the condition defined against the topic or container will be ignored." + CSLINE_MSG;
 
     // Process Errors
     public static final String ERROR_PROCESS_NONEXIST_MSG = LINE + INVALID_PROCESS + " Topic %s doesn't exist in the database." +
