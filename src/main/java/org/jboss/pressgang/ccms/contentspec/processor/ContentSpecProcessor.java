@@ -1536,10 +1536,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // Node Type
-        if (value instanceof SpecTopic && !metaDataEntity.getNodeType().equals(CommonConstants.CS_NODE_META_DATA_TOPIC)) {
-            metaDataEntity.setNodeType(CommonConstants.CS_NODE_META_DATA_TOPIC);
-        } else if (!(value instanceof SpecTopic) && !metaDataEntity.getNodeType().equals(CommonConstants.CS_NODE_META_DATA)) {
-            metaDataEntity.setNodeType(CommonConstants.CS_NODE_META_DATA);
+        if (metaDataEntity.getNodeType() != null) {
+            if (value instanceof SpecTopic && !metaDataEntity.getNodeType().equals(CommonConstants.CS_NODE_META_DATA_TOPIC)) {
+                metaDataEntity.setNodeType(CommonConstants.CS_NODE_META_DATA_TOPIC);
+            } else if (!(value instanceof SpecTopic) && !metaDataEntity.getNodeType().equals(CommonConstants.CS_NODE_META_DATA)) {
+                metaDataEntity.setNodeType(CommonConstants.CS_NODE_META_DATA);
+            }
         }
 
         // Set the Topic details if the Meta Data is a Spec Topic
