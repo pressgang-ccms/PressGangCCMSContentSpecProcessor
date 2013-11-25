@@ -3,6 +3,7 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
 
+import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -630,9 +631,22 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             // Get the docbook DTD
             final BlobConstantWrapper rocbookDtd = blobConstantProvider.getBlobConstant(serverEntities.getRocBookDTDBlobConstantId());
 
+            // Create the dummy XML entities file
+            final StringBuilder xmlEntities = new StringBuilder(CSConstants.DUMMY_CS_NAME_ENT_FILE);
+            if (!isNullOrEmpty(contentSpec.getEntities())) {
+                xmlEntities.append(contentSpec.getEntities());
+            }
+            byte[] xmlEntitiesBytes = null;
+            try {
+                xmlEntitiesBytes = xmlEntities.toString().getBytes("UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                log.debug("", e);
+            }
+
             // Validate the XML content against the dtd
             final SAXXMLValidator validator = new SAXXMLValidator(false);
-            if (!validator.validateXML(wrappedAbstract, "rocbook.dtd", rocbookDtd.getValue(), "abstract")) {
+            if (!validator.validateXML(wrappedAbstract, "rocbook.dtd", rocbookDtd.getValue(), "entities.ent", xmlEntitiesBytes,
+                    "abstract")) {
                 valid = false;
                 final String line = CommonConstants.CS_ABSTRACT_TITLE + " = " + contentSpec.getAbstract();
                 log.error(String.format(ProcessorConstants.ERROR_INVALID_ABSTRACT_MSG, validator.getErrorText(), line));
