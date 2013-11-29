@@ -869,7 +869,8 @@ public class ContentSpecParser {
             // Abstracts can be plain text so check an opening bracket exists
             if (key.equalsIgnoreCase(CommonConstants.CS_ABSTRACT_TITLE) || key.equalsIgnoreCase(
                     CommonConstants.CS_ABSTRACT_ALTERNATE_TITLE)) {
-                return value.trim().startsWith("[");
+                final String fixedValue = value.trim().replaceAll("(?i)^" + key + "\\s*", "");
+                return fixedValue.trim().startsWith("[");
             } else {
                 return true;
             }
@@ -934,13 +935,14 @@ public class ContentSpecParser {
      * @return
      */
     private SpecTopic parseSpecTopicMetaData(final String value, final String key, final int lineNumber) throws ParsingException {
-        if (value.trim().startsWith("[") && value.trim().endsWith("]")) {
-            final String topicString = key + " " + value.trim();
+        final String fixedValue = value.trim().replaceAll("(?i)^" + key + "\\s*", "");
+        if (fixedValue.trim().startsWith("[") && fixedValue.trim().endsWith("]")) {
+            final String topicString = key + " " + fixedValue.trim();
             return parseTopic(topicString, lineNumber);
         } else {
-            if (value.trim().startsWith("[")) {
+            if (fixedValue.trim().startsWith("[")) {
                 throw new ParsingException(format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG, lineNumber, ']'));
-            } else if (value.trim().endsWith("]")) {
+            } else if (fixedValue.trim().endsWith("]")) {
                 throw new ParsingException(format(ProcessorConstants.ERROR_NO_OPENING_BRACKET_MSG, lineNumber, '['));
             } else {
                 throw new ParsingException(format(ProcessorConstants.ERROR_NO_BRACKET_MSG, lineNumber, '[', ']'));
