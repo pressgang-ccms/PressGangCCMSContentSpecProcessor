@@ -12,9 +12,11 @@ import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.Content
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.bookVersion;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.copyrightHolder;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.copyrightYear;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.description;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.dtd;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.edition;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.product;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.subtitle;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.title;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.version;
 import static org.junit.Assert.assertFalse;
@@ -26,7 +28,6 @@ import net.sf.ipsedixit.annotation.Arbitrary;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
-import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.enums.BookType;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker;
@@ -54,14 +55,13 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     public void setUp() {
         super.setUp();
         when(dataProviderFactory.getProvider(StringConstantProvider.class)).thenReturn(stringConstantProvider);
-        when(stringConstantProvider.getStringConstant(CSConstants.VALID_ENTITIES_STRING_CONSTANT_ID)).thenReturn(stringConstantWrapper);
         when(stringConstantWrapper.getValue()).thenReturn("BZURL\nPRODUCT");
     }
 
     @Test
     public void shouldPreValidateValidContentSpec() {
         // Given a valid content spec
-        ContentSpec contentSpec = make(a(ContentSpec));
+        ContentSpec contentSpec = make(a(ContentSpec, with(subtitle, randomString), with(description, "Some Description")));
         // with a level and spec topic
         addLevelAndTopicToContentSpec(contentSpec);
 
@@ -379,48 +379,6 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     }
 
     @Test
-    public void shouldFailWhenCustomEntityUsed() {
-        // Given an invalid XML entity declaration
-        final String entities = "<!ENTITY test \"http://example.com/query?word+with+spaces\">";
-        // and a content spec to store the entity
-        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
-        contentSpec.setEntities(entities);
-        // with a level and spec topic
-        addLevelAndTopicToContentSpec(contentSpec);
-
-        // When validating the entities
-        boolean result = validator.preValidateContentSpec(contentSpec);
-
-        // Then the result should be false and should have a useful error message
-        assertFalse(result);
-        assertThat(logger.getLogMessages().toString(), containsString(
-                "Invalid Content Specification! Invalid XML Entities. test is a custom entity and cannot be defined. Only overrides to "
-                        + "the default XML entities can be defined."));
-    }
-
-    @Test
-    public void shouldFailWhenMultipleCustomEntitiesUsed() {
-        // Given an invalid XML entity declaration
-        final String entities = "<!ENTITY test \"http://example.com/query?word+with+spaces\">\n" +
-                "<!ENTITY test2 \"&test;\">\n" +
-                "<!ENTITY test3 \"&test;\">";
-        // and a content spec to store the entity
-        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
-        contentSpec.setEntities(entities);
-        // with a level and spec topic
-        addLevelAndTopicToContentSpec(contentSpec);
-
-        // When validating the entities
-        boolean result = validator.preValidateContentSpec(contentSpec);
-
-        // Then the result should be false and should have a useful error message
-        assertFalse(result);
-        assertThat(logger.getLogMessages().toString(), containsString(
-                "Invalid Content Specification! Invalid XML Entities. test, test2 and test3 are custom entities and cannot be defined. " +
-                        "Only overrides to the default XML entities can be defined."));
-    }
-
-    @Test
     public void shouldSucceedWithValidEntities() {
         // Given a valid XML entity declaration
         final String entities = "<!ENTITY BZURL \"http://example.com/query?word+with+spaces\">\n" +
@@ -436,6 +394,62 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
 
         // Then the result should be true
         assertTrue(result);
+    }
+
+    @Test
+    public void shouldPrintErrorWithInvalidAbstract() {
+        // Given a content spec with an invalid abstract
+        ContentSpec contentSpec = make(a(ContentSpec, with(description, "<blah>" + randomInt)));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the abstract
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be false
+        assertFalse(result);
+        // and an error should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString(
+                "Invalid Content Specification! The abstract is not valid XML. Error Message: "));
+    }
+
+    @Test
+    public void shouldPrintWarningWhenConflictingConditions() {
+        // Given a content spec with conflicting conditions
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.getBaseLevel().setConditionStatement(randomString);
+        contentSpec.setPublicanCfg("condition: " + randomString);
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the conflicting conditions
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be true
+        assertTrue(result);
+        // and a warning should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString(
+                "A condition has been defined in publican.cfg, and as such the condition defined against the topic or container will be ignored."));
+    }
+
+    @Test
+    public void shouldPrintWarningWhenConflictingConditionsInCustomCfg() {
+        // Given a content spec with conflicting conditions
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.getBaseLevel().setConditionStatement(randomString);
+        contentSpec.setAdditionalPublicanCfg("beta", "condition: " + randomString);
+        contentSpec.setDefaultPublicanCfg("beta");
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the conflicting conditions
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be true
+        assertTrue(result);
+        // and a warning should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString(
+                "A condition has been defined in publican.cfg, and as such the condition defined against the topic or container will be ignored."));
     }
 
     private void addLevelAndTopicToContentSpec(final ContentSpec contentSpec) {

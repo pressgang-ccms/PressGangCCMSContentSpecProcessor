@@ -70,6 +70,8 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         childNodes.add(metaData);
         // and the content spec will return a collection
         given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
+        // and the node type gets set in the mergeChildren method
+        given(newCSNode.getNodeType()).willReturn(CommonConstants.CS_NODE_META_DATA);
 
         // When merging the children nodes
         try {

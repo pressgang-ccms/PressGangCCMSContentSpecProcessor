@@ -13,9 +13,7 @@ public class ProcessorConstants {
     public static final double MIN_MATCH_SIMILARITY = 0.8;
 
     public static final String RELEASE_CATEGORY_NAME = "Release";
-    public static final int ASSIGNED_WRITER_CATEGORY_ID = 12;
     public static final String ASSIGNED_WRITER_CATEGORY_NAME = "Assigned Writer";
-    public static final int BUG_LINKS_LAST_VALIDATED_PROPERTY_TAG = 38;
 
     public static final String TOPIC_ID_CONTENTS = "TopicID";
     public static final String BRACKET_CONTENTS = "Brackets";
@@ -70,7 +68,7 @@ public class ProcessorConstants {
     public static final String SUCCESSFUL_PUSH_MSG = SUCCESSFUL_PUSH_ID_MSG + "\n" + SUCCESSFUL_PUSH_REV_MSG;
     public static final String ERROR_DATABASE_ERROR_MSG = "An error occurred when inserting into the database please try again.";
     public static final String ERROR_PROCESSING_ERROR_MSG = "An error occurred during processing please try again and if another failure " +
-            "occurs please log a bug.";
+            "" + "occurs please log a bug.";
     public static final String WARN_EDIT_INFO_MSG = "Note: All descriptions, tags, source urls and writers will be ignored for existing "
             + "Topics.";
 
@@ -160,6 +158,9 @@ public class ProcessorConstants {
             " be defined. Only overrides to the default XML entities can be defined." + CSLINE_MSG;
     public static final String ERROR_INVALID_DEFAULT_PUBLICAN_CFG_MSG = INVALID_CS + " Invalid " + CommonConstants
             .CS_DEFAULT_PUBLICAN_CFG_TITLE + " name. The \"%s\" configuration doesn't exist in the Content Specification.";
+    public static final String ERROR_INVALID_ABSTRACT_MSG = INVALID_CS + " The abstract is not valid XML. Error Message:" +
+            " %s" + CSLINE_MSG;
+    public static final String ERROR_INVALID_ABSTRACT_NO_ERROR_MSG = INVALID_CS + " The abstract is not valid XML." + CSLINE_MSG;
 
     // Article based level errors
     public static final String ERROR_ARTICLE_CHAPTER_MSG = LINE + INVALID_CS + " Chapters can't be used in Articles." + CSLINE_MSG;
@@ -286,8 +287,10 @@ public class ProcessorConstants {
             "Notice Topic." + CSLINE_MSG;
     public static final String ERROR_REV_HISTORY_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not a Revision " +
             "History Topic." + CSLINE_MSG;
-    public static final String ERROR_AUTHOR_GROUP_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not a Author " +
+    public static final String ERROR_AUTHOR_GROUP_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not an Author " +
             "Group Topic." + CSLINE_MSG;
+    public static final String ERROR_ABSTRACT_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not an Abstract " +
+            "Topic." + CSLINE_MSG;
 
     // Files
     public static final String ERROR_FILE_ID_NONEXIST_MSG = LINE + INVALID_FILE + " ID doesn't exist in the database." + CSLINE_MSG;
@@ -318,6 +321,8 @@ public class ProcessorConstants {
             "match, so it was replaced. Please verify that the topic used was correct." + CSLINE_MSG + CSLINE_MSG;
     public static final String WARN_REVISION_NOT_EXIST_USING_X_MSG = LINE + "The Topic revision specified doesn't exist. " +
             "So revision %d is being used instead, as it is the closest match." + CSLINE_MSG;
+    public static final String WARN_CONDITION_IGNORED_MSG = LINE + "A condition has been defined in publican.cfg, " +
+            "and as such the condition defined against the topic or container will be ignored." + CSLINE_MSG;
 
     // Process Errors
     public static final String ERROR_PROCESS_NONEXIST_MSG = LINE + INVALID_PROCESS + " Topic %s doesn't exist in the database." +
@@ -403,6 +408,6 @@ public class ProcessorConstants {
             CommonConstants.CS_MAVEN_ARTIFACT_ID_TITLE, CommonConstants.CS_FILE_TITLE, CommonConstants.CS_FILE_SHORT_TITLE,
             CommonConstants.CS_JIRA_PROJECT_TITLE, CommonConstants.CS_JIRA_COMPONENT_TITLE, CommonConstants.CS_JIRA_VERSION_TITLE,
             CommonConstants.CS_JIRA_LABELS_TITLE, CommonConstants.CS_JIRA_SERVER_TITLE, CommonConstants.CS_SPACES_TITLE,
-            CommonConstants.CS_ENTITIES_TITLE, CommonConstants.CS_DEFAULT_PUBLICAN_CFG_TITLE, CSConstants.DEBUG_TITLE,
-            CSConstants.OUTPUT_STYLE_TITLE, CSConstants.SURVEY_LINK_TITLE);
+            CommonConstants.CS_ENTITIES_TITLE, CommonConstants.CS_DEFAULT_PUBLICAN_CFG_TITLE, CommonConstants.CS_INDEX_TITLE,
+            CSConstants.DEBUG_TITLE, CSConstants.OUTPUT_STYLE_TITLE, CSConstants.SURVEY_LINK_TITLE);
 }

@@ -11,9 +11,10 @@ import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.SnapshotOptions;
 import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
+import org.jboss.pressgang.ccms.provider.ServerSettingsProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.provider.exception.NotFoundException;
-import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
+import org.jboss.pressgang.ccms.wrapper.ServerSettingsWrapper;
 import org.jboss.pressgang.ccms.wrapper.base.BaseTopicWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,7 @@ public class SnapshotProcessor implements ShutdownAbleApp {
 
     private final DataProviderFactory factory;
     private final TopicProvider topicProvider;
+    private final ServerSettingsWrapper serverSettings;
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -46,7 +48,9 @@ public class SnapshotProcessor implements ShutdownAbleApp {
     public SnapshotProcessor(final DataProviderFactory factory) {
         this.factory = factory;
         topicProvider = factory.getProvider(TopicProvider.class);
-        locale = CommonConstants.DEFAULT_LOCALE;
+
+        serverSettings = factory.getProvider(ServerSettingsProvider.class).getServerSettings();
+        locale = serverSettings.getDefaultLocale();
     }
 
     /**
@@ -70,7 +74,7 @@ public class SnapshotProcessor implements ShutdownAbleApp {
         processLevel(contentSpec.getBaseLevel(), processingOptions);
 
         // reset the locale back to its default
-        locale = CommonConstants.DEFAULT_LOCALE;
+        locale = serverSettings.getDefaultLocale();
     }
 
     /**

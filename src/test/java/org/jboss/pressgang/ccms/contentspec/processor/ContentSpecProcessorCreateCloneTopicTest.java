@@ -30,7 +30,6 @@ import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
-import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInTopicWrapper;
@@ -128,7 +127,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         setupValidBaseTopicMocks();
         // and the csp id already exists
         existingProperties.add(existingCspIdPropertyTagInTopic);
-        when(existingCspIdPropertyTagInTopic.getId()).thenReturn(CSConstants.CSP_PROPERTY_ID);
+        when(existingCspIdPropertyTagInTopic.getId()).thenReturn(CSP_PROPERTY_ID);
 
         TopicWrapper topic = null;
         try {
@@ -407,7 +406,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         when(writerTagWrapper.getId()).thenReturn(id);
         when(writerTag.getId()).thenReturn(id);
         // and the existing writer tag is in the writer category
-        when(writerTagWrapper.containedInCategory(CSConstants.WRITER_CATEGORY_ID)).thenReturn(true);
+        when(writerTagWrapper.containedInCategory(WRITER_CATEGORY_ID)).thenReturn(true);
         // and the topic already has the writerTag in it's collection
         when(existingTagCollection.getItems()).thenReturn(Arrays.asList(writerTagWrapper));
 
@@ -500,7 +499,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         // and the property tag collection already has the added by tag
         existingProperties.add(existingAddedByPropertyTagInTopic);
         when(existingTopicProperties.getItems()).thenReturn(existingProperties);
-        when(existingAddedByPropertyTagInTopic.getId()).thenReturn(CSConstants.ADDED_BY_PROPERTY_TAG_ID);
+        when(existingAddedByPropertyTagInTopic.getId()).thenReturn(ADDED_BY_PROPERTY_TAG_ID);
         when(existingAddedByPropertyTagInTopic.getValue()).thenReturn(username);
     }
 
@@ -514,8 +513,8 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         when(propertyTagProvider.newPropertyTagInTopicCollection(any(TopicWrapper.class))).thenReturn(propertyTagCollection);
         newTopicWrapper.setProperties(null);
         // and the property tag provider will return a property tag
-        when(propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID)).thenReturn(cspIdPropertyTag);
-        when(propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID)).thenReturn(addedByPropertyTag);
+        when(propertyTagProvider.getPropertyTag(CSP_PROPERTY_ID)).thenReturn(cspIdPropertyTag);
+        when(propertyTagProvider.getPropertyTag(ADDED_BY_PROPERTY_TAG_ID)).thenReturn(addedByPropertyTag);
         // and the topic source url provider will return a new topic source url collection
         when(topicSourceURLProvider.newTopicSourceURLCollection(eq(newTopicWrapper))).thenReturn(topicSourceURLCollection);
         newTopicWrapper.setSourceURLs(null);

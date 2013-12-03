@@ -26,7 +26,6 @@ import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
-import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInTopicWrapper;
@@ -184,8 +183,8 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         when(propertyTagProvider.newPropertyTagInTopicCollection(Matchers.any(TopicWrapper.class))).thenReturn(propertyTagCollection);
         when(topicWrapper.getProperties()).thenReturn(propertyTagCollection);
         // and the property tag provider will return a property tag
-        when(propertyTagProvider.getPropertyTag(CSConstants.CSP_PROPERTY_ID)).thenReturn(cspIdPropertyTag);
-        when(propertyTagProvider.getPropertyTag(CSConstants.ADDED_BY_PROPERTY_TAG_ID)).thenReturn(addedByPropertyTag);
+        when(propertyTagProvider.getPropertyTag(CSP_PROPERTY_ID)).thenReturn(cspIdPropertyTag);
+        when(propertyTagProvider.getPropertyTag(ADDED_BY_PROPERTY_TAG_ID)).thenReturn(addedByPropertyTag);
         // and the topic source url provider will return a new topic source url collection
         when(topicSourceURLProvider.newTopicSourceURLCollection(eq(topicWrapper))).thenReturn(topicSourceURLCollection);
         when(topicWrapper.getSourceURLs()).thenReturn(topicSourceURLCollection);
@@ -218,7 +217,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         // and the doctype is set
         verify(topic, times(1)).setXmlDoctype(CommonConstants.DOCBOOK_45);
         // and the locale is set
-        verify(topic, times(1)).setLocale(CommonConstants.DEFAULT_LOCALE);
+        verify(topic, times(1)).setLocale(DEFAULT_LOCALE);
         // and the topic had the properties set
         verify(topic, atLeast(1)).setProperties(eq(propertyTagCollection));
         // and the topic had the CSP property tag set

@@ -156,26 +156,6 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
     }
 
     @Test
-    public void shouldThrowExceptionWhenPublicanConfigEmpty() {
-        // Given a line produces a key-value pair with an empty publican.cfg value
-        keyValuePair.setFirst("publican.cfg");
-        keyValuePair.setSecond("");
-
-        // When the metadata line is processed
-        try {
-            parser.parseMetaDataLine(contentSpec, line, lineNumber);
-
-            // Then an exception is thrown
-            fail(MISSING_PARSING_EXCEPTION);
-        } catch (ParsingException e) {
-            // And it contains an error about the config
-            assertThat(e.getMessage(), containsString("Invalid Content Specification! Incorrect multiple line metadata format."));
-            // And the error message contains the line number
-            assertThat(e.getMessage(), containsString(lineNumber.toString()));
-        }
-    }
-
-    @Test
     public void shouldSetPublicanConfig() throws Exception {
         // Given a line produces a key-value pair with a publican.cfg key
         keyValuePair.setFirst("publican.cfg");

@@ -46,6 +46,7 @@ import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
+import org.jboss.pressgang.ccms.provider.ServerSettingsProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.utils.common.CollectionUtilities;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
@@ -86,6 +87,7 @@ public class ContentSpecParser {
 
     private final DataProviderFactory providerFactory;
     private final TopicProvider topicProvider;
+    private final ServerSettingsProvider serverSettingsProvider;
     private final ErrorLogger log;
     private final ErrorLoggerManager loggerManager;
 
@@ -112,6 +114,7 @@ public class ContentSpecParser {
     public ContentSpecParser(final DataProviderFactory providerFactory, final ErrorLoggerManager loggerManager) {
         this.providerFactory = providerFactory;
         topicProvider = providerFactory.getProvider(TopicProvider.class);
+        serverSettingsProvider = providerFactory.getProvider(ServerSettingsProvider.class);
         this.loggerManager = loggerManager;
         log = loggerManager.getLogger(ContentSpecParser.class);
     }
@@ -541,7 +544,7 @@ public class ContentSpecParser {
         // relationships and targets are created
         if (processProcesses) {
             for (final Process process : getProcesses()) {
-                process.processTopics(getSpecTopics(), getTargetTopics(), topicProvider);
+                process.processTopics(getSpecTopics(), getTargetTopics(), topicProvider, serverSettingsProvider);
             }
         }
 
@@ -835,14 +838,14 @@ public class ContentSpecParser {
             } else if (key.equalsIgnoreCase(CommonConstants.CS_FILE_TITLE) || key.equalsIgnoreCase(CommonConstants.CS_FILE_SHORT_TITLE)) {
                 final FileList files = parseFilesMetaData(value, lineNumber, line);
                 contentSpec.appendKeyValueNode(files);
-            } else if (ContentSpecUtilities.isSpecTopicMetaData(key)) {
+            } else if (isSpecTopicMetaData(key, value)) {
                 final SpecTopic specTopic = parseSpecTopicMetaData(value, key, lineNumber);
                 contentSpec.appendKeyValueNode(new KeyValueNode<SpecTopic>(key, specTopic, lineNumber));
             } else {
                 try {
                     final KeyValueNode<String> node;
                     if (ContentSpecUtilities.isMetaDataMultiLine(key)) {
-                        node = parseMultiLineMetaData(key, value, line, lineNumber);
+                        node = parseMultiLineMetaData(key, value, lineNumber);
                     } else {
                         node = new KeyValueNode<String>(key, value, lineNumber);
                     }
@@ -855,17 +858,39 @@ public class ContentSpecParser {
     }
 
     /**
+     * Checks if a metadata line is a spec topic.
+     *
+     * @param key   The metadata key.
+     * @param value The metadata value.
+     * @return True if the line is a spec topic metadata element, otherwise false.
+     */
+    private boolean isSpecTopicMetaData(final String key, final String value) {
+        if (ContentSpecUtilities.isSpecTopicMetaData(key)) {
+            // Abstracts can be plain text so check an opening bracket exists
+            if (key.equalsIgnoreCase(CommonConstants.CS_ABSTRACT_TITLE) || key.equalsIgnoreCase(
+                    CommonConstants.CS_ABSTRACT_ALTERNATE_TITLE)) {
+                final String fixedValue = value.trim().replaceAll("(?i)^" + key + "\\s*", "");
+                return fixedValue.trim().startsWith("[");
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * Parses a multiple line metadata element.
      *
      * @param key        The metadata key.
      * @param value      The value on the metadata line.
-     * @param line       The initial line.
      * @param lineNumber The initial line number.
      * @return The parsed multiple line value for the metadata element.
      * @throws ParsingException
      */
-    private KeyValueNode<String> parseMultiLineMetaData(final String key, final String value, final String line,
+    private KeyValueNode<String> parseMultiLineMetaData(final String key, final String value,
             final int lineNumber) throws ParsingException {
+        // Check if the starting brace is found, if not then assume that there is only one line.
         int startingPos = StringUtilities.indexOf(value, '[');
         if (startingPos != -1) {
             final StringBuilder multiLineValue = new StringBuilder(value);
@@ -898,7 +923,7 @@ public class ContentSpecParser {
                 return new KeyValueNode<String>(key, finalValue);
             }
         } else {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_MULTILINE_METADATA_MSG, lineNumber, line));
+            return new KeyValueNode<String>(key, value, lineNumber);
         }
     }
 
@@ -910,13 +935,14 @@ public class ContentSpecParser {
      * @return
      */
     private SpecTopic parseSpecTopicMetaData(final String value, final String key, final int lineNumber) throws ParsingException {
-        if (value.trim().startsWith("[") && value.trim().endsWith("]")) {
-            final String topicString = key + " " + value.trim();
+        final String fixedValue = value.trim().replaceAll("(?i)^" + key + "\\s*", "");
+        if (fixedValue.trim().startsWith("[") && fixedValue.trim().endsWith("]")) {
+            final String topicString = key + " " + fixedValue.trim();
             return parseTopic(topicString, lineNumber);
         } else {
-            if (value.trim().startsWith("[")) {
+            if (fixedValue.trim().startsWith("[")) {
                 throw new ParsingException(format(ProcessorConstants.ERROR_NO_ENDING_BRACKET_MSG, lineNumber, ']'));
-            } else if (value.trim().endsWith("]")) {
+            } else if (fixedValue.trim().endsWith("]")) {
                 throw new ParsingException(format(ProcessorConstants.ERROR_NO_OPENING_BRACKET_MSG, lineNumber, '['));
             } else {
                 throw new ParsingException(format(ProcessorConstants.ERROR_NO_BRACKET_MSG, lineNumber, '[', ']'));
