@@ -35,22 +35,19 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
 
     @Test
     public void shouldAddBlankLineToContentSpec() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a blank line
+        // Given a blank line
         String blankLine = "    ";
-        // and the current level is the content spec level
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, blankLine, lineNumber);
+            result = parser.parseLine(parserData, blankLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then verify that the content spec has a text node for the line
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertThat(contentSpec.getNodes().size(), is(1));
         final TextNode textNode = (TextNode) contentSpec.getNodes().get(0);
         assertThat(textNode.getText(), is("\n"));
@@ -60,18 +57,16 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
 
     @Test
     public void shouldAddBlankLineToLevel() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a blank line
+        // Given a blank line
         String blankLine = "    ";
         // and the current level is a level in the content spec
         final Level level = new Chapter(title);
-        parser.setCurrentLevel(level);
+        parserData.setCurrentLevel(level);
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, blankLine, lineNumber);
+            result = parser.parseLine(parserData, blankLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -86,22 +81,19 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
 
     @Test
     public void shouldAddCommentLineToContentSpec() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a comment line
+        // Given a comment line
         String commentLine = "    # Test Comment";
-        // and the current level is the content spec level
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, commentLine, lineNumber);
+            result = parser.parseLine(parserData, commentLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then verify that the content spec has a text node for the line
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertThat(contentSpec.getNodes().size(), is(1));
         final Comment commentNode = (Comment) contentSpec.getNodes().get(0);
         assertThat(commentNode.getText(), is(commentLine));
@@ -111,18 +103,16 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
 
     @Test
     public void shouldAddCommentLineToLevel() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a comment line
+        // Given a comment line
         String commentLine = "    # Test Comment";
         // and the current level is the some random level
         final Level level = new Chapter(title);
-        parser.setCurrentLevel(level);
+        parserData.setCurrentLevel(level);
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, commentLine, lineNumber);
+            result = parser.parseLine(parserData, commentLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -137,19 +127,15 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
 
     @Test
     public void shouldThrowExceptionWhenIndentationIsInvalid() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a line that has invalid indentation
+        // Given a line that has invalid indentation
         String topicLine = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
                         with(TopicStringMaker.indentation, 2)));
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, topicLine, lineNumber);
+            result = parser.parseLine(parserData, topicLine, lineNumber);
             fail("Indentation Exception should have been thrown.");
         } catch (IndentationException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Content Specification! Indentation is invalid."));
@@ -158,21 +144,17 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
 
     @Test
     public void shouldThrowExceptionWhenIndentationSpaceIsInvalid() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a valid line
+        // Given a valid line
         String topicLine = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
                         with(TopicStringMaker.indentation, 1)));
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
         // and a changed indentation size to break content
-        parser.setIndentationSize(4);
+        parserData.setIndentationSize(4);
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, topicLine, lineNumber);
+            result = parser.parseLine(parserData, topicLine, lineNumber);
             fail("Indentation Exception should have been thrown.");
         } catch (IndentationException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Content Specification! Indentation is invalid."));
@@ -181,9 +163,8 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
 
     @Test
     public void shouldChangeLevelWhenIndentationDecreases() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a sub level for the content spec
+        final ContentSpec contentSpec = parserData.getContentSpec();
+        // Given a sub level for the content spec
         final Level level = new Chapter(title);
         contentSpec.getBaseLevel().appendChild(level);
         // and a valid line that exists on the base level
@@ -191,20 +172,20 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
                         with(TopicStringMaker.indentation, 0)));
         // and the current level is the sublevel
-        parser.setCurrentLevel(level);
+        parserData.setCurrentLevel(level);
         // and the indentation level matches the sublevel
-        parser.setIndentationLevel(1);
+        parserData.setIndentationLevel(1);
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, topicLine, lineNumber);
+            result = parser.parseLine(parserData, topicLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then the current level should be the base level
-        assertThat(parser.getCurrentLevel(), is(contentSpec.getBaseLevel()));
+        assertThat(parserData.getCurrentLevel(), is(contentSpec.getBaseLevel()));
         assertTrue(result);
         // and the base level contains the topic
         assertThat(contentSpec.getBaseLevel().getChildNodes().size(), is(2));
@@ -213,9 +194,8 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
 
     @Test
     public void shouldChangeLevelWhenIndentationDecreasesMultipleTimes() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a sub level for the content spec
+        final ContentSpec contentSpec = parserData.getContentSpec();
+        // Given a sub level for the content spec
         final Level level = new Chapter(title);
         contentSpec.getBaseLevel().appendChild(level);
         // and another sub level for the level
@@ -226,20 +206,20 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
                         with(TopicStringMaker.indentation, 0)));
         // and the current level is the lowest sublevel
-        parser.setCurrentLevel(subLevel);
+        parserData.setCurrentLevel(subLevel);
         // and the indentation level matches the sublevel
-        parser.setIndentationLevel(2);
+        parserData.setIndentationLevel(2);
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, topicLine, lineNumber);
+            result = parser.parseLine(parserData, topicLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then the current level should be the base level
-        assertThat(parser.getCurrentLevel(), is(contentSpec.getBaseLevel()));
+        assertThat(parserData.getCurrentLevel(), is(contentSpec.getBaseLevel()));
         assertTrue(result);
         // and the base level contains the topic
         assertThat(contentSpec.getBaseLevel().getChildNodes().size(), is(2));
@@ -249,22 +229,19 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
 
     @Test
     public void shouldAddMetaDataToContentSpec() {
-        // Given a content spec
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a meta data line
+        // Given a meta data line
         final String metaData = "Title = " + title;
-        // and the current level is the content spec level
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, metaData, lineNumber);
+            result = parser.parseLine(parserData, metaData, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the meta data assigned
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertThat(contentSpec.getNodes().size(), is(1));
         final KeyValueNode<String> metaDataNode = (KeyValueNode<String>) contentSpec.getNodes().get(0);
         assertThat(metaDataNode.getKey(), is("Title"));
@@ -276,24 +253,21 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
 
     @Test
     public void shouldAddTopicToContentSpec() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a valid line that exists on the base level
+        // Given a valid line that exists on the base level
         String topicLine = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
                         with(TopicStringMaker.indentation, 0)));
-        // and the current level is the content spec level
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, topicLine, lineNumber);
+            result = parser.parseLine(parserData, topicLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the topic assigned
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertThat(contentSpec.getBaseLevel().getChildNodes().size(), is(1));
         final SpecTopic specTopic = (SpecTopic) contentSpec.getBaseLevel().getChildNodes().get(0);
         assertThat(specTopic.getTitle(), is(title));
@@ -303,24 +277,55 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
     }
 
     @Test
-    public void shouldAddLevelToContentSpec() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a valid line that exists on the base level
-        String levelLine = make(
-                a(LevelStringMaker.LevelString, with(LevelStringMaker.levelType, LevelType.CHAPTER), with(LevelStringMaker.title, title)));
-        // and the current level is the content spec level
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
+    public void shouldAddFrontMatterTopicToContentSpec() {
+        // Given a valid line that exists on the base level
+        String frontMatterTopicLine = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
+                        with(TopicStringMaker.indentation, 2)));
+        String topicLine = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
+                        with(TopicStringMaker.indentation, 1)));
+        String levelLine = make(a(LevelStringMaker.LevelString, with(LevelStringMaker.title, "Test")));
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, levelLine, lineNumber);
+            result = parser.parseLine(parserData, levelLine, lineNumber);
+            result = parser.parseLine(parserData, "  Front Matter:", lineNumber + 1);
+            result = parser.parseLine(parserData, frontMatterTopicLine, lineNumber + 2);
+            result = parser.parseLine(parserData, topicLine, lineNumber + 3);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the topic assigned
+        final ContentSpec contentSpec = parserData.getContentSpec();
+        assertThat(contentSpec.getBaseLevel().getChildNodes().size(), is(1));
+        final Level level = (Level) contentSpec.getBaseLevel().getChildNodes().get(0);
+        assertThat(level.getTitle(), is("Test"));
+        final SpecTopic specTopic = (SpecTopic) level.getFrontMatterTopics().get(0);
+        assertThat(specTopic.getTitle(), is(title));
+        assertThat(specTopic.getId(), is(id.toString()));
+        // and the line processed successfully
+        assertTrue(result);
+    }
+
+    @Test
+    public void shouldAddLevelToContentSpec() {
+        // Given a valid line that exists on the base level
+        String levelLine = make(
+                a(LevelStringMaker.LevelString, with(LevelStringMaker.levelType, LevelType.CHAPTER), with(LevelStringMaker.title, title)));
+
+        // When processing a line
+        Boolean result = null;
+        try {
+            result = parser.parseLine(parserData, levelLine, lineNumber);
+        } catch (IndentationException e) {
+            fail("Indentation Exception should not have been thrown.");
+        }
+
+        // Then check that the content spec has the topic assigned
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertThat(contentSpec.getBaseLevel().getChildNodes().size(), is(1));
         final Level level = (Level) contentSpec.getBaseLevel().getChildNodes().get(0);
         assertThat(level.getTitle(), is(title));
@@ -331,46 +336,39 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
 
     @Test
     public void shouldAddProcessToContentSpec() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a valid line that exists on the base level
+        // Given a valid line that exists on the base level
         String levelLine = make(
                 a(LevelStringMaker.LevelString, with(LevelStringMaker.levelType, LevelType.PROCESS), with(LevelStringMaker.title, title)));
-        // and the current level is the content spec level
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, levelLine, lineNumber);
+            result = parser.parseLine(parserData, levelLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the topic assigned
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertThat(contentSpec.getBaseLevel().getChildNodes().size(), is(1));
         final Level level = (Level) contentSpec.getBaseLevel().getChildNodes().get(0);
         assertThat(level.getTitle(), is(title));
         assertThat(level.getLevelType(), is(LevelType.PROCESS));
         // and the processes list in the parser has the process
-        assertThat(parser.getProcesses().size(), is(1));
+        assertThat(parserData.getProcesses().size(), is(1));
         // and the line processed successfully
         assertTrue(result);
     }
 
     @Test
     public void shouldPrintErrorAndReturnFalseWhenLineIsInvalid() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a line that is invalid
+        // Given a line that is invalid
         String topicLine = make(a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title)));
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, topicLine, lineNumber);
+            result = parser.parseLine(parserData, topicLine, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -386,20 +384,17 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
         String url = "http://www.example.com/";
         // Given a string that represents a global option with a URL and tag
         String options = "[URL = " + url + ", " + title + "]";
-        // and a content spec
-        final ContentSpec contentSpec = new ContentSpec();
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When parsing the a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the right data set
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertTrue(result);
         assertThat(contentSpec.getSourceUrls().size(), is(1));
         assertThat(contentSpec.getSourceUrls().get(0), is(url));

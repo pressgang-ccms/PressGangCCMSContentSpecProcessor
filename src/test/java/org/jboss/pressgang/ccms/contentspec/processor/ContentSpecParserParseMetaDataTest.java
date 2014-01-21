@@ -58,8 +58,9 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         when(ProcessorUtilities.getAndValidateKeyValuePair(anyString())).thenReturn(keyValuePair, keyValuePair2);
         when(ProcessorUtilities.replaceEscapeChars(anyString())).thenCallRealMethod();
         when(ProcessorUtilities.findVariableSet(anyString(), anyChar(), anyChar(), anyInt())).thenCallRealMethod();
-        line = line.replace("[", "\\[");
         super.setUp();
+        line = line.replace("[", "\\[");
+        parserData.setContentSpec(contentSpec);
     }
 
     @Test
@@ -70,7 +71,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
         // When the metadata line is processed
         try {
-            parser.parseMetaDataLine(contentSpec, emptyLine, lineNumber);
+            parser.parseMetaDataLine(parserData, emptyLine, lineNumber);
 
             // Then an exception is thrown
             fail(MISSING_PARSING_EXCEPTION);
@@ -91,7 +92,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
         // When the metadata line is processed
         try {
-            parser.parseMetaDataLine(contentSpec, line, lineNumber);
+            parser.parseMetaDataLine(parserData, line, lineNumber);
 
             // Then an exception is thrown
             fail(MISSING_PARSING_EXCEPTION);
@@ -110,10 +111,10 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("0");
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the identation size is set to two spaces
-        assertThat(parser.getIndentationSize(), is(2));
+        assertThat(parserData.getIndentationSize(), is(2));
     }
 
     @Test
@@ -123,10 +124,10 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("-1");
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the identation size is set to two spaces
-        assertThat(parser.getIndentationSize(), is(2));
+        assertThat(parserData.getIndentationSize(), is(2));
     }
 
     @Test
@@ -136,7 +137,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("3");
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then a warning is added to the logs
         assertThat(logger.getLogMessages().toString(), containsString("WARN:  Invalid debug setting. Debug must be set to 0, 1 or 2! So debug will be off by default."));
@@ -149,7 +150,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("0");
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the log verbosity is set to 0
         assertThat(logger.getDebugLevel(), is(0));
@@ -163,7 +164,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("[" + line + "]");
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the publican config should be set
         ArgumentCaptor<KeyValueNode> publicanConfig = ArgumentCaptor.forClass(KeyValueNode.class);
@@ -179,7 +180,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("[]");
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the publican config should be set
         ArgumentCaptor<KeyValueNode> publicanConfig = ArgumentCaptor.forClass(KeyValueNode.class);
@@ -194,15 +195,15 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         // And a value containing only an opening bracket
         keyValuePair.setSecond("[" + line);
         // And the next line contains the closing bracket
-        parser.getLines().push(line2 + "]\n");
+        parserData.getLines().push(line2 + "]\n");
         // And the current line count
-        int originalLineCount = parser.getLineCount();
+        int originalLineCount = parserData.getLineCount();
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the line count should be incremented
-        assertThat(parser.getLineCount(), is(originalLineCount + 1));
+        assertThat(parserData.getLineCount(), is(originalLineCount + 1));
         // And the publican config should be set
         ArgumentCaptor<KeyValueNode> publicanConfig = ArgumentCaptor.forClass(KeyValueNode.class);
         Mockito.verify(contentSpec, times(1)).appendKeyValueNode(publicanConfig.capture());
@@ -218,7 +219,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
         // When the metadata line is processed
         try {
-            parser.parseMetaDataLine(contentSpec, line, lineNumber);
+            parser.parseMetaDataLine(parserData, line, lineNumber);
 
             // Then an exception is thrown
             fail(MISSING_PARSING_EXCEPTION);
@@ -239,7 +240,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
         // When the metadata line is processed
         try {
-            parser.parseMetaDataLine(contentSpec, line, lineNumber);
+            parser.parseMetaDataLine(parserData, line, lineNumber);
 
             // Then an exception is thrown
             fail(MISSING_PARSING_EXCEPTION);
@@ -259,7 +260,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("[" + type);
 
         try {
-            parser.parseMetaDataLine(contentSpec, line, lineNumber);
+            parser.parseMetaDataLine(parserData, line, lineNumber);
 
             // Then an exception is thrown
             fail(MISSING_PARSING_EXCEPTION);
@@ -279,7 +280,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("[" + type + "]");
 
         try {
-            parser.parseMetaDataLine(contentSpec, line, lineNumber);
+            parser.parseMetaDataLine(parserData, line, lineNumber);
 
             // Then an exception is thrown
             fail(MISSING_PARSING_EXCEPTION);
@@ -299,7 +300,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("off[" + type + "]");
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the injection options content spec type is set to off
         ArgumentCaptor<InjectionOptions> injectionOptions = ArgumentCaptor.forClass(InjectionOptions.class);
@@ -315,7 +316,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("on");
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the injection options content spec type is set to on
         ArgumentCaptor<InjectionOptions> injectionOptions = ArgumentCaptor.forClass(InjectionOptions.class);
@@ -331,7 +332,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("on[" + type + "]");
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the injection options content spec type is set to strict
         ArgumentCaptor<InjectionOptions> injectionOptions = ArgumentCaptor.forClass(InjectionOptions.class);
@@ -347,7 +348,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("off[" + type + "," + type2 + "]");
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the injection option topic types should be set
         ArgumentCaptor<InjectionOptions> injectionOptions = ArgumentCaptor.forClass(InjectionOptions.class);
@@ -365,7 +366,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond(line);
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then this pair should be added to the spec
         ArgumentCaptor<KeyValueNode> keyValueNode = ArgumentCaptor.forClass(KeyValueNode.class);
@@ -383,7 +384,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         given(ProcessorUtilities.findVariableSet(anyString(), anyChar(), anyChar(), anyInt())).willCallRealMethod();
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the revision history should be set
         ArgumentCaptor<KeyValueNode> revisionHistory = ArgumentCaptor.forClass(KeyValueNode.class);
@@ -403,7 +404,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
         // When the metadata line is processed
         try {
-            parser.parseMetaDataLine(contentSpec, line, lineNumber);
+            parser.parseMetaDataLine(parserData, line, lineNumber);
 
             // Then an exception is thrown
             fail(MISSING_PARSING_EXCEPTION);
@@ -425,7 +426,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
         // When the metadata line is processed
         try {
-            parser.parseMetaDataLine(contentSpec, line, lineNumber);
+            parser.parseMetaDataLine(parserData, line, lineNumber);
 
             // Then an exception is thrown
             fail(MISSING_PARSING_EXCEPTION);
@@ -447,7 +448,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
         // When the metadata line is processed
         try {
-            parser.parseMetaDataLine(contentSpec, line, lineNumber);
+            parser.parseMetaDataLine(parserData, line, lineNumber);
 
             // Then an exception is thrown
             fail(MISSING_PARSING_EXCEPTION);
@@ -467,7 +468,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("[" + id + "]");
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the files should be set
         ArgumentCaptor<FileList> files = ArgumentCaptor.forClass(FileList.class);
@@ -485,7 +486,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair.setSecond("[" + line  + " [" + id + ", rev: " + revision + "]]");
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the files should be set
         ArgumentCaptor<FileList> files = ArgumentCaptor.forClass(FileList.class);
@@ -506,7 +507,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
         // When the metadata line is processed
         try {
-            parser.parseMetaDataLine(contentSpec, line, lineNumber);
+            parser.parseMetaDataLine(parserData, line, lineNumber);
 
             // Then an exception is thrown
             fail(MISSING_PARSING_EXCEPTION);
@@ -527,7 +528,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
 
         // When the metadata line is processed
         try {
-            parser.parseMetaDataLine(contentSpec, line, lineNumber);
+            parser.parseMetaDataLine(parserData, line, lineNumber);
 
             // Then an exception is thrown
             fail(MISSING_PARSING_EXCEPTION);
@@ -546,15 +547,15 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         // And a value containing only an opening bracket
         keyValuePair.setSecond("[" + line + " [" + id + "],");
         // And the next line contains the closing bracket
-        parser.getLines().push(line2 + " [" + revision + "]]\n");
+        parserData.getLines().push(line2 + " [" + revision + "]]\n");
         // And the current line count
-        int originalLineCount = parser.getLineCount();
+        int originalLineCount = parserData.getLineCount();
 
         // When the metadata line is processed
-        parser.parseMetaDataLine(contentSpec, line, lineNumber);
+        parser.parseMetaDataLine(parserData, line, lineNumber);
 
         // Then the line count should be incremented
-        assertThat(parser.getLineCount(), is(originalLineCount + 1));
+        assertThat(parserData.getLineCount(), is(originalLineCount + 1));
         // And the files should be set
         ArgumentCaptor<FileList> files = ArgumentCaptor.forClass(FileList.class);
         Mockito.verify(contentSpec, times(1)).appendKeyValueNode(files.capture());
@@ -575,8 +576,8 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         keyValuePair2.setSecond(line);
 
         try {
-            parser.parseMetaDataLine(contentSpec, line, lineNumber);
-            parser.parseMetaDataLine(contentSpec, line, lineNumber2);
+            parser.parseMetaDataLine(parserData, line, lineNumber);
+            parser.parseMetaDataLine(parserData, line, lineNumber2);
 
             // Then an exception is thrown
             fail(MISSING_PARSING_EXCEPTION);

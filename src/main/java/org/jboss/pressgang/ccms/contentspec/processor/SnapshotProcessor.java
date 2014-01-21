@@ -90,8 +90,10 @@ public class SnapshotProcessor implements ShutdownAbleApp {
         }
 
         // Process the front matter topic if it exists
-        if (level.getInnerTopic() != null) {
-            processTopic(level.getInnerTopic(), processingOptions);
+        if (!level.getFrontMatterTopics().isEmpty()) {
+            for (final SpecTopic frontMatterTopic : level.getFrontMatterTopics()) {
+                processTopic(frontMatterTopic, processingOptions);
+            }
         }
 
         // Validate the sub levels and topics

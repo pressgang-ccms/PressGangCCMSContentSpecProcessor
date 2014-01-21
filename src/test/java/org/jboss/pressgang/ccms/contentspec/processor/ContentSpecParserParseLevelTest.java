@@ -7,7 +7,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.jboss.pressgang.ccms.contentspec.TestUtil.selectRandomListItem;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker.Level;
-import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker.SpecTopic;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -21,9 +20,11 @@ import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import org.hamcrest.Matchers;
 import org.jboss.pressgang.ccms.contentspec.Level;
+import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
 import org.jboss.pressgang.ccms.contentspec.enums.TopicType;
 import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
+import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
 import org.junit.Test;
 
 /**
@@ -45,7 +46,7 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         String line = "";
 
         // When process level is called
-        Level result = parser.parseLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
 
         // Then an empty level of the given type is created a returned
         assertThat(result.getLevelType(), is(levelType));
@@ -60,7 +61,7 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         String line = "Chapter:" + title;
 
         // When process level is called
-        Level result = parser.parseLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
 
         // Then a level of the given type is created a returned
         assertThat(result.getLevelType(), is(levelType));
@@ -75,7 +76,7 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         String line = "Chapter:" + title + "\\," + title;
 
         // When process level is called
-        Level result = parser.parseLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
 
         // Then a level of the given type is created a returned
         assertThat(result.getLevelType(), is(levelType));
@@ -90,7 +91,7 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
 
         // When process level is called
         try {
-            parser.parseLevel(lineNumber, levelType, line);
+            parser.parseLevel(parserData, lineNumber, levelType, line);
 
             // Then a parsing exception should be thrown containing an appropriate error
             fail(MISSING_PARSING_EXCEPTION);
@@ -107,7 +108,7 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         String line = "Section:" + title + "[URL=" + url + ",Writer=" + writer + "]";
 
         // When process level is called
-        Level result = parser.parseLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
 
         // Then the options are set
         assertThat(result.getAssignedWriter(false), is(writer));
@@ -120,7 +121,7 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         String line = "Section:" + title + "[" + topicTag + "]";
 
         // When process level is called
-        Level result = parser.parseLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
 
         // Then the options are set
         assertThat(result.getTags(false), Matchers.contains(topicTag));
@@ -130,11 +131,11 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
     public void shouldThrowExceptionIfAttemptToSetDuplicateTargetTopic() throws Exception {
         // Given a line number, level type and a line with an already existing target topic id
         String line = "Chapter:" + title + "[T" + id + "]";
-        parser.getTargetTopics().put("T" + id, make(a(SpecTopic)));
+        parserData.getTargetTopics().put("T" + id, make(a(SpecTopicMaker.SpecTopic)));
 
         // When process level is called
         try {
-            parser.parseLevel(lineNumber, levelType, line);
+            parser.parseLevel(parserData, lineNumber, levelType, line);
 
             // Then a parsing exception should be thrown containing an appropriate error
             fail(MISSING_PARSING_EXCEPTION);
@@ -149,11 +150,11 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
     public void shouldThrowExceptionIfAttemptToSetDuplicateTargetLevel() throws Exception {
         // Given a line number, level type and a line with an already existing target level id
         String line = "Chapter:" + title + "[T" + id + "]";
-        parser.getTargetLevels().put("T" + id, make(a(Level)));
+        parserData.getTargetLevels().put("T" + id, make(a(Level)));
 
         // When process level is called
         try {
-            parser.parseLevel(lineNumber, levelType, line);
+            parser.parseLevel(parserData, lineNumber, levelType, line);
 
             // Then a parsing exception should be thrown containing an appropriate error
             fail(MISSING_PARSING_EXCEPTION);
@@ -170,7 +171,7 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         String line = "Section:" + title + "[T" + id + "]";
 
         // When process level is called
-        Level result = parser.parseLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
 
         // Then the target id should be set
         assertThat(result.getTargetId(), is("T" + id));
@@ -185,7 +186,7 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
 
         // When process level is called
         try {
-            parser.parseLevel(lineNumber, levelType, line);
+            parser.parseLevel(parserData, lineNumber, levelType, line);
 
             // Then a parsing exception should be thrown containing an appropriate error
             fail(MISSING_PARSING_EXCEPTION);
@@ -202,12 +203,13 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         String line = "Section:" + title + "[" + id + "]";
 
         // When process level is called
-        Level result = parser.parseLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
 
         // Then the inner topic is set
-        assertNotNull(result.getInnerTopic());
-        assertEquals(result.getInnerTopic().getId(), id.toString());
-        assertEquals(result.getInnerTopic().getTopicType(), TopicType.LEVEL);
+        final SpecTopic frontMatterTopic = result.getFrontMatterTopics().get(0);
+        assertNotNull(frontMatterTopic);
+        assertEquals(frontMatterTopic.getId(), id.toString());
+        assertEquals(frontMatterTopic.getTopicType(), TopicType.LEVEL);
     }
 
     @Test
@@ -216,11 +218,12 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         String line = "Section:" + title + "[" + id + "] [" + topicTag + "]";
 
         // When process level is called
-        Level result = parser.parseLevel(lineNumber, levelType, line);
+        Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
 
         // Then the inner topic and tag is set
-        assertNotNull(result.getInnerTopic());
-        assertEquals(result.getInnerTopic().getId(), id.toString());
+        final SpecTopic frontMatterTopic = result.getFrontMatterTopics().get(0);
+        assertNotNull(frontMatterTopic);
+        assertEquals(frontMatterTopic.getId(), id.toString());
         assertThat(result.getTags(false), Matchers.contains(topicTag));
     }
 

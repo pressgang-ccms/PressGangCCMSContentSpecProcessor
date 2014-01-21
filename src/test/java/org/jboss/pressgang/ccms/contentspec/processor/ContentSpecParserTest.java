@@ -22,11 +22,13 @@ public class ContentSpecParserTest extends BaseUnitTest {
     protected final String MISSING_PARSING_EXCEPTION = "ParsingException not thrown";
     protected ErrorLogger logger;
     protected ContentSpecParser parser;
+    protected ContentSpecParser.ParserData parserData;
 
     @Before
     public void setUp() throws Exception {
-        this.logger = new ErrorLogger("testLogger");
+        logger = new ErrorLogger("testLogger");
         when(loggerManager.getLogger(ContentSpecParser.class)).thenReturn(logger);
-        this.parser = new ContentSpecParser(dataProviderFactory, loggerManager);
+        parser = new ContentSpecParser(dataProviderFactory, loggerManager);
+        parserData = new ContentSpecParser.ParserData();
     }
 }

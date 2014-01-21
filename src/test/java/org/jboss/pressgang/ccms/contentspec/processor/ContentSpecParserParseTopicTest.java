@@ -42,7 +42,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -66,7 +66,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -91,7 +91,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Revision attribute must be a valid number" +
@@ -110,7 +110,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -134,7 +134,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -153,14 +153,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         String topicString = make(a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, "N1"),
                 with(TopicStringMaker.topicType, "Concept")));
         // and a topic already exists with that unique id
-        parser.getSpecTopics().put("N1", new SpecTopic(0, "N1"));
+        parserData.getSpecTopics().put("N1", new SpecTopic(0, "N1"));
         // and a line number
         int lineNumber = randomNumber;
 
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -178,7 +178,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Title, Type and ID must be specified."));
@@ -197,7 +197,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -220,7 +220,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -243,7 +243,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -266,7 +266,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -289,7 +289,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -314,7 +314,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -339,7 +339,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Title and ID must be specified."));
@@ -359,7 +359,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -384,7 +384,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Incorrect topic format."));
@@ -403,7 +403,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -423,7 +423,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -441,7 +441,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Title and ID must be specified."));
@@ -460,7 +460,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -480,7 +480,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -505,7 +505,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -530,7 +530,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Duplicated bracket types found."));
@@ -544,14 +544,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
                         with(TopicStringMaker.targetId, "[T1]")));
         // and the target already exists
-        parser.getTargetTopics().put("T1", new SpecTopic(0, title));
+        parserData.getTargetTopics().put("T1", new SpecTopic(0, title));
         // and a line number
         int lineNumber = randomNumber;
 
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Target ID is duplicated. Target ID's must be unique."));
@@ -565,14 +565,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
                         with(TopicStringMaker.targetId, "[T1]")));
         // and the target already exists
-        parser.getTargetLevels().put("T1", new Level(title, LevelType.CHAPTER));
+        parserData.getTargetLevels().put("T1", new Level(title, LevelType.CHAPTER));
         // and a line number
         int lineNumber = randomNumber;
 
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Target ID is duplicated. Target ID's must be unique."));
@@ -596,7 +596,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -608,14 +608,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parser.getRelationships().size(), is(1));
-        assertThat(parser.getRelationships().get(uniqueId).size(), is(2));
+        assertThat(parserData.getRelationships().size(), is(1));
+        assertThat(parserData.getRelationships().get(uniqueId).size(), is(2));
         // and the relationships have the right main topic id
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
     }
 
     @Test
@@ -627,7 +627,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
                         with(TopicRelationshipStringMaker.longRelationship, true),
                         with(TopicRelationshipStringMaker.relationships, topics)));
         // and the relationship is setup in the lines
-        parser.getLines().addAll(Arrays.asList(refersToRelationship.split("\n")));
+        parserData.getLines().addAll(Arrays.asList(refersToRelationship.split("\n")));
         // and a string that represents a topic title and id
         String topicString = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
@@ -637,7 +637,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -649,14 +649,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parser.getRelationships().size(), is(1));
-        assertThat(parser.getRelationships().get(uniqueId).size(), is(2));
+        assertThat(parserData.getRelationships().size(), is(1));
+        assertThat(parserData.getRelationships().get(uniqueId).size(), is(2));
         // and the relationships have the right main topic id
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
     }
 
     @Test
@@ -676,7 +676,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -688,14 +688,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parser.getRelationships().size(), is(1));
-        assertThat(parser.getRelationships().get(uniqueId).size(), is(2));
+        assertThat(parserData.getRelationships().size(), is(1));
+        assertThat(parserData.getRelationships().get(uniqueId).size(), is(2));
         // and the relationships have the right main topic id
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.PREREQUISITE));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.PREREQUISITE));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.PREREQUISITE));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.PREREQUISITE));
     }
 
     @Test
@@ -707,7 +707,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
                         with(TopicRelationshipStringMaker.longRelationship, true),
                         with(TopicRelationshipStringMaker.relationships, topics)));
         // and the relationship is setup in the lines
-        parser.getLines().addAll(Arrays.asList(prerequisiteRelationship.split("\n")));
+        parserData.getLines().addAll(Arrays.asList(prerequisiteRelationship.split("\n")));
         // and a string that represents a topic title and id
         String topicString = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
@@ -717,7 +717,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -729,14 +729,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parser.getRelationships().size(), is(1));
-        assertThat(parser.getRelationships().get(uniqueId).size(), is(2));
+        assertThat(parserData.getRelationships().size(), is(1));
+        assertThat(parserData.getRelationships().get(uniqueId).size(), is(2));
         // and the relationships have the right main topic id
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.PREREQUISITE));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.PREREQUISITE));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.PREREQUISITE));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.PREREQUISITE));
     }
 
     @Test
@@ -756,7 +756,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -768,14 +768,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parser.getRelationships().size(), is(1));
-        assertThat(parser.getRelationships().get(uniqueId).size(), is(2));
+        assertThat(parserData.getRelationships().size(), is(1));
+        assertThat(parserData.getRelationships().get(uniqueId).size(), is(2));
         // and the relationships have the right main topic id
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.LINKLIST));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.LINKLIST));
     }
 
     @Test
@@ -787,7 +787,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
                         with(TopicRelationshipStringMaker.longRelationship, true),
                         with(TopicRelationshipStringMaker.relationships, topics)));
         // and the relationship is setup in the lines
-        parser.getLines().addAll(Arrays.asList(linkListRelationship.split("\n")));
+        parserData.getLines().addAll(Arrays.asList(linkListRelationship.split("\n")));
         // and a string that represents a topic title and id
         String topicString = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
@@ -797,7 +797,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -809,14 +809,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parser.getRelationships().size(), is(1));
-        assertThat(parser.getRelationships().get(uniqueId).size(), is(2));
+        assertThat(parserData.getRelationships().size(), is(1));
+        assertThat(parserData.getRelationships().get(uniqueId).size(), is(2));
         // and the relationships have the right main topic id
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.LINKLIST));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.LINKLIST));
     }
 
     @Test
@@ -833,7 +833,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
                         with(TopicRelationshipStringMaker.longRelationship, true),
                         with(TopicRelationshipStringMaker.relationships, topics2)));
         // and the relationship is setup in the lines
-        parser.getLines().addAll(Arrays.asList((refersToRelationship + linkListRelationship).split("\n")));
+        parserData.getLines().addAll(Arrays.asList((refersToRelationship + linkListRelationship).split("\n")));
         // and a string that represents a topic title and id
         String topicString = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
@@ -843,7 +843,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
         } catch (ParsingException e) {
             fail("Parsing should not have failed.");
         }
@@ -855,18 +855,18 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parser.getRelationships().size(), is(1));
-        assertThat(parser.getRelationships().get(uniqueId).size(), is(4));
+        assertThat(parserData.getRelationships().size(), is(1));
+        assertThat(parserData.getRelationships().get(uniqueId).size(), is(4));
         // and the relationships have the right main topic id
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parser.getRelationships().get(uniqueId).get(2).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parser.getRelationships().get(uniqueId).get(3).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(2).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getRelationships().get(uniqueId).get(3).getMainRelationshipTopicId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parser.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
-        assertThat(parser.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
-        assertThat(parser.getRelationships().get(uniqueId).get(2).getType(), is(RelationshipType.LINKLIST));
-        assertThat(parser.getRelationships().get(uniqueId).get(3).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parserData.getRelationships().get(uniqueId).get(2).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parserData.getRelationships().get(uniqueId).get(3).getType(), is(RelationshipType.LINKLIST));
     }
 
     @Test
@@ -887,7 +887,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -913,7 +913,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -939,7 +939,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -965,7 +965,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -982,7 +982,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
                         with(TopicRelationshipStringMaker.longRelationship, true), with(TopicRelationshipStringMaker.missingVariable, true),
                         with(TopicRelationshipStringMaker.relationships, topics)));
         // and the relationship is setup in the lines
-        parser.getLines().addAll(Arrays.asList(refersToRelationship.split("\n")));
+        parserData.getLines().addAll(Arrays.asList(refersToRelationship.split("\n")));
         // and a string that represents a topic title, id and a missing variable
         String topicString = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
@@ -992,7 +992,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -1010,7 +1010,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
                         with(TopicRelationshipStringMaker.missingSeparator, true),
                         with(TopicRelationshipStringMaker.relationships, topics)));
         // and the relationship is setup in the lines
-        parser.getLines().addAll(Arrays.asList(refersToRelationship.split("\n")));
+        parserData.getLines().addAll(Arrays.asList(refersToRelationship.split("\n")));
         // and a string that represents a topic title, id and a missing variable
         String topicString = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
@@ -1020,7 +1020,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -1039,7 +1039,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
                         with(TopicRelationshipStringMaker.relationships, topics)));
         // and the relationship is setup in the lines
         String[] lines = refersToRelationship.split("\n");
-        parser.getLines().addAll(Arrays.asList(lines).subList(1, lines.length));
+        parserData.getLines().addAll(Arrays.asList(lines).subList(1, lines.length));
         // and a string that represents a topic title, id and a missing variable
         String topicString = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
@@ -1050,7 +1050,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(),
@@ -1068,7 +1068,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
                         with(TopicRelationshipStringMaker.missingClosingBracket, true),
                         with(TopicRelationshipStringMaker.relationships, topics)));
         // and the relationship is setup in the lines
-        parser.getLines().addAll(Arrays.asList(refersToRelationship.split("\n")));
+        parserData.getLines().addAll(Arrays.asList(refersToRelationship.split("\n")));
         // and a string that represents a topic title, id and a missing variable
         String topicString = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
@@ -1078,7 +1078,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Content Specification! Missing ending bracket (])" +
@@ -1103,7 +1103,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString(
@@ -1129,7 +1129,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         // When parsing the topic string
         SpecTopic topic = null;
         try {
-            topic = parser.parseTopic(topicString, lineNumber);
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
             assertThat(e.getMessage(), containsString(

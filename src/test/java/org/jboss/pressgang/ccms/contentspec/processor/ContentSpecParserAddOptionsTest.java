@@ -26,20 +26,17 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
         String url = "http://www.example.com/";
         // Given a string that represents a global option to define the options
         String options = "[URL = " + url + "]";
-        // and a content spec
-        final ContentSpec contentSpec = new ContentSpec();
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When parsing the a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the right data set
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertTrue(result);
         assertThat(contentSpec.getSourceUrls().size(), is(1));
         assertThat(contentSpec.getSourceUrls().get(0), is(url));
@@ -52,20 +49,17 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
         String url2 = "http://www.domain.com/";
         // Given a string that represents a global option to define the options
         String options = "[URL = " + url + ", URL = " + url2 + "]";
-        // and a content spec
-        final ContentSpec contentSpec = new ContentSpec();
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When parsing the a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the right data set
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertTrue(result);
         assertThat(contentSpec.getSourceUrls().size(), is(2));
         assertThat(contentSpec.getSourceUrls().get(0), is(url));
@@ -77,20 +71,17 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
     public void shouldAddDescriptionToNode() {
         // Given a string that represents a global option to define the options
         String options = "[Description = " + title + "]";
-        // and a content spec
-        final ContentSpec contentSpec = new ContentSpec();
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When parsing the a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the right data set
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertTrue(result);
         assertThat(contentSpec.getDescription(), is(title));
         assertThat(contentSpec.getNodes().size(), is(0));
@@ -100,20 +91,17 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
     public void shouldAddConditionToNode() {
         // Given a string that represents a global option to define the options
         String options = "[condition = " + title + "]";
-        // and a content spec
-        final ContentSpec contentSpec = new ContentSpec();
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When parsing the a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the right data set
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertTrue(result);
         assertThat(contentSpec.getBaseLevel().getConditionStatement(), is(title));
         assertThat(contentSpec.getNodes().size(), is(0));
@@ -123,20 +111,17 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
     public void shouldAddGroupedConditionToNode() {
         // Given a string that represents a global option to define the options
         String options = "[condition = " + title + "[A-Z]]";
-        // and a content spec
-        final ContentSpec contentSpec = new ContentSpec();
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When parsing the a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the right data set
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertTrue(result);
         assertThat(contentSpec.getBaseLevel().getConditionStatement(), is(title + "[A-Z]"));
         assertThat(contentSpec.getNodes().size(), is(0));
@@ -146,20 +131,17 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
     public void shouldAddWriterToNode() {
         // Given a string that represents a global option to define the options
         String options = "[Writer = " + title + "]";
-        // and a content spec
-        final ContentSpec contentSpec = new ContentSpec();
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When parsing the a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the right data set
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertTrue(result);
         assertThat(contentSpec.getAssignedWriter(), is(title));
         assertThat(contentSpec.getNodes().size(), is(0));
@@ -169,20 +151,17 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
     public void shouldAddTagToNode() {
         // Given a string that represents a global option to define the options
         String options = "[" + title + "]";
-        // and a content spec
-        final ContentSpec contentSpec = new ContentSpec();
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When parsing the a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the right data set
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertTrue(result);
         assertThat(contentSpec.getTags().size(), is(1));
         assertThat(contentSpec.getTags().get(0), is(title));
@@ -193,20 +172,17 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
     public void shouldAddTagWrappedInCategoryToNode() {
         // Given a string that represents a global option to define the options
         String options = "[Test : " + title + "]";
-        // and a content spec
-        final ContentSpec contentSpec = new ContentSpec();
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When parsing the a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the right data set
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertTrue(result);
         assertThat(contentSpec.getTags().size(), is(1));
         assertThat(contentSpec.getTags().get(0), is(title));
@@ -217,20 +193,17 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
     public void shouldAddRemoveTagToNode() {
         // Given a string that represents a global option to define the options
         String options = "[-" + title + "]";
-        // and a content spec
-        final ContentSpec contentSpec = new ContentSpec();
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When parsing the a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the right data set
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertTrue(result);
         assertThat(contentSpec.getTags().size(), is(0));
         assertThat(contentSpec.getRemoveTags().size(), is(1));
@@ -242,20 +215,17 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
     public void shouldAddMultipleTagsToNode() {
         // Given a string that represents a global option to define the options
         String options = "[" + title + ", +" + randomString + ", Test]";
-        // and a content spec
-        final ContentSpec contentSpec = new ContentSpec();
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When parsing the a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the right data set
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertTrue(result);
         assertThat(contentSpec.getTags().size(), is(3));
         assertThat(contentSpec.getTags().get(0), is(title));
@@ -267,20 +237,17 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
     public void shouldAddMultipleTagsWrappedInCategoryToNode() {
         // Given a string that represents a global option to define the options
         String options = "[Test : (" + title + ", +" + randomString + ", Test)]";
-        // and a content spec
-        final ContentSpec contentSpec = new ContentSpec();
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When parsing the a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
 
         // Then check that the content spec has the right data set
+        final ContentSpec contentSpec = parserData.getContentSpec();
         assertTrue(result);
         assertThat(contentSpec.getTags().size(), is(3));
         assertThat(contentSpec.getTags().get(0), is(title));
@@ -290,17 +257,13 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
 
     @Test
     public void shouldPrintErrorAndReturnFalseWhenConditionIsInvalid() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a line that is a global option
+        // Given a line that is a global option
         String options = "[condition = (" + title + "]";
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -315,17 +278,13 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
 
     @Test
     public void shouldPrintErrorAndReturnFalseWhenOptionIsInvalid() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a line that is a global option
+        // Given a line that is a global option
         String options = "[blah = " + title + "]";
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -341,17 +300,13 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
 
     @Test
     public void shouldPrintErrorAndReturnFalseWhenOptionIsBlank() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a line that is a global option
+        // Given a line that is a global option
         String options = "[condition = ]";
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -366,17 +321,13 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
 
     @Test
     public void shouldPrintErrorAndReturnFalseWhenTagListIsBlankWhenWrappedInCategory() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a line that is a global option
+        // Given a line that is a global option
         String options = "[Test : () ]";
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -391,17 +342,13 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
 
     @Test
     public void shouldPrintErrorAndReturnFalseWhenTagIsId() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a line that is a global option
+        // Given a line that is a global option
         String options = "[N1]";
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -416,17 +363,13 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
 
     @Test
     public void shouldPrintErrorAndReturnFalseWhenTagIsDuplicated() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a line that is a global option
+        // Given a line that is a global option
         String options = "[" + title + "," + title + "]";
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -441,17 +384,13 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
 
     @Test
     public void shouldPrintErrorAndReturnFalseWhenTagIsDuplicatedWhenWrappedInCategory() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a line that is a global option
+        // Given a line that is a global option
         String options = "[Test : (" + title + ", " + title + ")]";
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }
@@ -466,17 +405,13 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
 
     @Test
     public void shouldPrintErrorAndReturnFalseWhenDuplicateAttributesSet() {
-        // Given a content spec object
-        final ContentSpec contentSpec = new ContentSpec();
-        // and a line that is a global option with two conditions set
+        // Given a line that is a global option with two conditions set
         String options = "[condition=a, condition=b]";
-        // and the current level is the base content spec
-        parser.setCurrentLevel(contentSpec.getBaseLevel());
 
         // When processing a line
         Boolean result = null;
         try {
-            result = parser.parseLine(contentSpec, options, lineNumber);
+            result = parser.parseLine(parserData, options, lineNumber);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
         }

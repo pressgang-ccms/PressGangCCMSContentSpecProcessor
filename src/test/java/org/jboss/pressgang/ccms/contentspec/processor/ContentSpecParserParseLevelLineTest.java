@@ -32,7 +32,7 @@ public class ContentSpecParserParseLevelLineTest extends ContentSpecParserTest {
 
         // When the level line is processed
         try {
-            parser.parseLevelLine(line, lineNumber);
+            parser.parseLevelLine(parserData, line, lineNumber);
 
             // Then an exception is thrown with an appropriate error
             fail(MISSING_PARSING_EXCEPTION);
@@ -52,7 +52,7 @@ public class ContentSpecParserParseLevelLineTest extends ContentSpecParserTest {
         String line = levelType.name() + ": " + title;
 
         // When the level line is processed
-        Level result = parser.parseLevelLine(line, lineNumber);
+        Level result = parser.parseLevelLine(parserData, line, lineNumber);
 
         // Then the result should be a level of that type
         assertThat(result.getLevelType(), is(levelType));
@@ -67,7 +67,7 @@ public class ContentSpecParserParseLevelLineTest extends ContentSpecParserTest {
         String line = levelType.name() + ": " + "[";
 
         // When the level line is processed
-        Level result = parser.parseLevelLine(line, lineNumber);
+        Level result = parser.parseLevelLine(parserData, line, lineNumber);
 
         // Then an empty level of that type is returned
         assertThat(result.getLevelType(), is(levelType));

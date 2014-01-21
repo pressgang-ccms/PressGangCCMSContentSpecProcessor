@@ -78,6 +78,7 @@ import org.jboss.pressgang.ccms.wrapper.TextContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.base.BaseTopicWrapper;
 import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
 /**
  * A class that is used to validate a Content Specification and the objects within a Content Specification. It
@@ -832,6 +833,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             // Check to make sure the topic doesn't relate to itself
             log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopic.getLineNumber(), specTopic.getText()));
             return false;
+        } else if (specTopic.getTopicType() == TopicType.LEVEL && ((Level) specTopic.getParent()).getFrontMatterTopics().contains
+                (relatedTopic)) {
+            // Check to make sure front matter topics don't relate to any neighbouring front matter topics
+            log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_NEIGHBOUR_FRONT_MATTER_MSG, specTopic.getLineNumber(), specTopic.getText()));
+            return false;
         } else {
             final String relatedTitle = TopicType.LEVEL.equals(
                     relatedTopic.getTopicType()) && relatedTopic.getParent() instanceof Level ? ((Level) relatedTopic.getParent())
@@ -884,9 +890,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                                                                                        * (allowEmptyLevels &&
                                                                                        * !csAllowEmptyLevels)
                                                                                        */) {
-            // Check to make sure an inner topic doesn't exist, unless its a section level as in that case the section should just be a
-            // normal topic
-            if (levelType == LevelType.SECTION || level.getInnerTopic() == null) {
+            // Check to make sure a front matter topic doesn't exist, unless its a section level as in that case the section should just
+            // be a normal topic
+            if (levelType == LevelType.SECTION || !level.getFrontMatterTopics().isEmpty()) {
                 log.error(format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), levelType.getTitle(),
                         levelType.getTitle(), level.getText()));
                 valid = false;
@@ -903,9 +909,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
-        // Validate the topics level
-        if (level.getInnerTopic() != null && !preValidateTopic(level.getInnerTopic(), specTopics, bookType, contentSpec)) {
-            valid = false;
+        // Validate the front matter topics for the level
+        if (!level.getFrontMatterTopics().isEmpty()) {
+            for (final SpecTopic frontMatterTopic : level.getFrontMatterTopics()) {
+                if (!preValidateTopic(frontMatterTopic, specTopics, bookType, contentSpec)) {
+                    valid = false;
+                }
+            }
         }
 
         // Validate the sub levels and topics
@@ -1062,9 +1072,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
-        // Validate the topics level
-        if (level.getInnerTopic() != null && !postValidateTopic(level.getInnerTopic())) {
-            valid = false;
+        // Validate the front matter topics for the level
+        if (!level.getFrontMatterTopics().isEmpty()) {
+            for (final SpecTopic frontMatterTopic : level.getFrontMatterTopics()) {
+                if (!postValidateTopic(frontMatterTopic)) {
+                    valid = false;
+                }
+            }
         }
 
         // Validate the sub levels and topics
@@ -1463,6 +1477,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     specTopic.setTitle(topicTitle);
                 }
             }
+
+            // Make sure the topics XML can be used as front matter content
+            if (!validateFrontMatterTopicXML(specTopic, topic)) {
+                valid = false;
+            }
         }
 
         if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.FEEDBACK || specTopic.getTopicType() ==
@@ -1544,6 +1563,41 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             return topic.getTitle();
         } else {
             return topic.getTitle();
+        }
+    }
+
+    /**
+     * Checks a topics XML to make sure it has content that can be used as front matter for a level.
+     *
+     * @param specTopic The SpecTopic of the topic to check the XML for.
+     * @param topic     The actual topic to check the XML from.
+     * @return True if the XML can be used, otherwise false.
+     */
+    private boolean validateFrontMatterTopicXML(final SpecTopic specTopic, final BaseTopicWrapper<?> topic) {
+        final String condition = specTopic.getConditionStatement(true);
+        if (condition != null) {
+            boolean valid = true;
+            try {
+                final Document doc = XMLUtilities.convertStringToDocument(topic.getXml());
+
+                // Process the conditions to remove anything that isn't used
+                DocBookUtilities.processConditions(condition, doc);
+
+                // Make sure no <simplesect> or <refentry> elements are used
+                final NodeList refEntries = doc.getDocumentElement().getElementsByTagName("refentry");
+                final NodeList simpleSects = doc.getDocumentElement().getElementsByTagName("simplesect");
+                if (refEntries.getLength() > 0 || simpleSects.getLength() > 0) {
+                    log.error(format(ProcessorConstants.ERROR_TOPIC_CANNOT_BE_USED_AS_FRONT_MATTER, specTopic.getLineNumber(),
+                            specTopic.getText()));
+                    valid = false;
+                }
+            } catch (Exception e) {
+                log.debug(e.getMessage());
+            }
+
+            return valid;
+        } else {
+            return true;
         }
     }
 

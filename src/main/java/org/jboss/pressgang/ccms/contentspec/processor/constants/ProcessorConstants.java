@@ -291,6 +291,8 @@ public class ProcessorConstants {
             "Group Topic." + CSLINE_MSG;
     public static final String ERROR_ABSTRACT_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not an Abstract " +
             "Topic." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_CANNOT_BE_USED_AS_FRONT_MATTER = LINE + INVALID_TOPIC + " The Topic specified has content that" +
+            " cannot be used in the front matter of a Chapter/Section/Appendix." + CSLINE_MSG;
 
     // Files
     public static final String ERROR_FILE_ID_NONEXIST_MSG = LINE + INVALID_FILE + " ID doesn't exist in the database." + CSLINE_MSG;
@@ -377,6 +379,8 @@ public class ProcessorConstants {
     public static final String ERROR_FILE_TITLE_NO_MATCH_MSG = LINE + INVALID_FILE + " The file name " +
             "specified doesn't match the actual files name." + NEW_LINE_SPACER + "Specified: %s" + NEW_LINE_SPACER + "Actual:    " +
             "%s";
+    public static final String ERROR_TOPIC_RELATED_TO_NEIGHBOUR_FRONT_MATTER_MSG = LINE + INVALID_RELATIONSHIP + " You can't relate a " +
+            "topic to a direct neighbour in front matter content." + CSLINE_MSG;
 
     // Bug Link Errors
     public static final String ERROR_BUG_LINKS_UNABLE_TO_CONNECT = "Unable to connect to the bug tracking server specified.";
@@ -393,6 +397,7 @@ public class ProcessorConstants {
     public static final String PREFACE_REGEX = "^PREFACE[ ]*((:.*)|$)";
     public static final String PROCESS_REGEX = "^PROCESS[ ]*((:.*)|$)";
     public static final String LEVEL_REGEX = "^(CHAPTER|SECTION|APPENDIX|PART|PREFACE|PROCESS)[ ]*((:.*)|$)";
+    public static final String FRONT_MATTER_REGEX = "^FRONT[ ]+MATTER[ ]*((:.*)|$)";
 
     public static final List<String> VALID_METADATA_KEYS = Arrays.asList(CommonConstants.CS_CHECKSUM_TITLE, CommonConstants.CS_ID_TITLE,
             CommonConstants.CS_TITLE_TITLE, CommonConstants.CS_SUBTITLE_TITLE, CommonConstants.CS_EDITION_TITLE,
