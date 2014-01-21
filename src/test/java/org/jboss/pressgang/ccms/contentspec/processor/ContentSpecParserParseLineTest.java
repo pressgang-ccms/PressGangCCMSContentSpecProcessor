@@ -277,9 +277,9 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
     }
 
     @Test
-    public void shouldAddFrontMatterTopicToContentSpec() {
+    public void shouldAddInitialContentTopicToContentSpec() {
         // Given a valid line that exists on the base level
-        String frontMatterTopicLine = make(
+        String initialContentTopicLine = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString()),
                         with(TopicStringMaker.indentation, 2)));
         String topicLine = make(
@@ -291,8 +291,8 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
         Boolean result = null;
         try {
             result = parser.parseLine(parserData, levelLine, lineNumber);
-            result = parser.parseLine(parserData, "  Front Matter:", lineNumber + 1);
-            result = parser.parseLine(parserData, frontMatterTopicLine, lineNumber + 2);
+            result = parser.parseLine(parserData, "  Initial Content:", lineNumber + 1);
+            result = parser.parseLine(parserData, initialContentTopicLine, lineNumber + 2);
             result = parser.parseLine(parserData, topicLine, lineNumber + 3);
         } catch (IndentationException e) {
             fail("Indentation Exception should not have been thrown.");
@@ -303,7 +303,7 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
         assertThat(contentSpec.getBaseLevel().getChildNodes().size(), is(1));
         final Level level = (Level) contentSpec.getBaseLevel().getChildNodes().get(0);
         assertThat(level.getTitle(), is("Test"));
-        final SpecTopic specTopic = (SpecTopic) level.getFrontMatterTopics().get(0);
+        final SpecTopic specTopic = (SpecTopic) level.getInitialContentTopics().get(0);
         assertThat(specTopic.getTitle(), is(title));
         assertThat(specTopic.getId(), is(id.toString()));
         // and the line processed successfully

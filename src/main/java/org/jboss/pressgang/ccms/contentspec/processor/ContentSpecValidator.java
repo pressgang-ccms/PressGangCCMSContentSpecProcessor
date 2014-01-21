@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -833,7 +832,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             // Check to make sure the topic doesn't relate to itself
             log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopic.getLineNumber(), specTopic.getText()));
             return false;
-        } else if (specTopic.getTopicType() == TopicType.LEVEL && ((Level) specTopic.getParent()).getFrontMatterTopics().contains
+        } else if (specTopic.getTopicType() == TopicType.LEVEL && ((Level) specTopic.getParent()).getInitialContentTopics().contains
                 (relatedTopic)) {
             // Check to make sure front matter topics don't relate to any neighbouring front matter topics
             log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_NEIGHBOUR_FRONT_MATTER_MSG, specTopic.getLineNumber(), specTopic.getText()));
@@ -892,7 +891,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                                                                                        */) {
             // Check to make sure a front matter topic doesn't exist, unless its a section level as in that case the section should just
             // be a normal topic
-            if (levelType == LevelType.SECTION || !level.getFrontMatterTopics().isEmpty()) {
+            if (levelType == LevelType.SECTION || !level.getInitialContentTopics().isEmpty()) {
                 log.error(format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), levelType.getTitle(),
                         levelType.getTitle(), level.getText()));
                 valid = false;
@@ -910,8 +909,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Validate the front matter topics for the level
-        if (!level.getFrontMatterTopics().isEmpty()) {
-            for (final SpecTopic frontMatterTopic : level.getFrontMatterTopics()) {
+        if (!level.getInitialContentTopics().isEmpty()) {
+            for (final SpecTopic frontMatterTopic : level.getInitialContentTopics()) {
                 if (!preValidateTopic(frontMatterTopic, specTopics, bookType, contentSpec)) {
                     valid = false;
                 }
@@ -1073,8 +1072,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Validate the front matter topics for the level
-        if (!level.getFrontMatterTopics().isEmpty()) {
-            for (final SpecTopic frontMatterTopic : level.getFrontMatterTopics()) {
+        if (!level.getInitialContentTopics().isEmpty()) {
+            for (final SpecTopic frontMatterTopic : level.getInitialContentTopics()) {
                 if (!postValidateTopic(frontMatterTopic)) {
                     valid = false;
                 }
@@ -1130,12 +1129,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         boolean valid = true;
 
-        // Check that the topic exists in the spec by checking it's step
-        if (specTopic.getStep() == 0) {
-            log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
-            valid = false;
-        }
-
         // Checks that the id isn't null and is a valid topic ID
         if (specTopic.getId() == null || !specTopic.getId().matches(CSConstants.ALL_TOPIC_ID_REGEX)) {
             log.error(String.format(ProcessorConstants.ERROR_INVALID_TOPIC_ID_MSG, specTopic.getLineNumber(), specTopic.getText()));
@@ -1155,7 +1148,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
             // Check that there are no levels in the parent part (ie the topic is in the intro)
             if (parent != null && parentLevelType == LevelType.PART) {
-                final LinkedList<Node> parentChildren = parent.getChildNodes();
+                final List<Node> parentChildren = parent.getChildNodes();
                 final int index = parentChildren.indexOf(specTopic);
 
                 for (int i = 0; i < index; i++) {

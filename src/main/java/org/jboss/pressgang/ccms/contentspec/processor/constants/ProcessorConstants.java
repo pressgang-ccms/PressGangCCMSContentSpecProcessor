@@ -397,7 +397,7 @@ public class ProcessorConstants {
     public static final String PREFACE_REGEX = "^PREFACE[ ]*((:.*)|$)";
     public static final String PROCESS_REGEX = "^PROCESS[ ]*((:.*)|$)";
     public static final String LEVEL_REGEX = "^(CHAPTER|SECTION|APPENDIX|PART|PREFACE|PROCESS)[ ]*((:.*)|$)";
-    public static final String FRONT_MATTER_REGEX = "^FRONT[ ]+MATTER[ ]*((:.*)|$)";
+    public static final String LEVEL_INITIAL_CONTENT_REGEX = "^INITIAL[ ]+CONTENT[ ]*((:.*)|$)";
 
     public static final List<String> VALID_METADATA_KEYS = Arrays.asList(CommonConstants.CS_CHECKSUM_TITLE, CommonConstants.CS_ID_TITLE,
             CommonConstants.CS_TITLE_TITLE, CommonConstants.CS_SUBTITLE_TITLE, CommonConstants.CS_EDITION_TITLE,

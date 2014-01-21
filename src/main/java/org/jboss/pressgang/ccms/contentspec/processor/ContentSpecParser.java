@@ -64,7 +64,7 @@ import org.jboss.pressgang.ccms.utils.structures.Pair;
  */
 public class ContentSpecParser {
     private static final Pattern LEVEL_PATTERN = Pattern.compile(ProcessorConstants.LEVEL_REGEX);
-    private static final Pattern FRONT_MATTER_PATTERN = Pattern.compile(ProcessorConstants.FRONT_MATTER_REGEX);
+    private static final Pattern LEVEL_INITIAL_CONTENT_PATTERN = Pattern.compile(ProcessorConstants.LEVEL_INITIAL_CONTENT_REGEX);
     private static final Pattern SQUARE_BRACKET_PATTERN = Pattern.compile(format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']'));
     private static final Pattern RELATION_ID_LONG_PATTERN = Pattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
     private static final Pattern FILE_ID_LONG_PATTERN = Pattern.compile(ProcessorConstants.FILE_ID_LONG_PATTERN);
@@ -416,7 +416,7 @@ public class ContentSpecParser {
             try {
                 if (isMetaDataLine(parserData, trimmedLine)) {
                     parseMetaDataLine(parserData, line, lineNumber);
-                } else if (isFrontMatterLine(trimmedLine)) {
+                } else if (isLevelTextLine(trimmedLine)) {
                     parserData.setParsingFrontMatter(true);
                     parserData.setIndentationLevel(parserData.getIndentationLevel() + 1);
                 } else if (isLevelLine(trimmedLine)) {
@@ -520,8 +520,8 @@ public class ContentSpecParser {
      * @param line The line to be checked.
      * @return True if the line is a front matter declaration, otherwise false.
      */
-    protected boolean isFrontMatterLine(String line) {
-        final Matcher matcher = FRONT_MATTER_PATTERN.matcher(line.trim().toUpperCase(Locale.ENGLISH));
+    protected boolean isLevelTextLine(String line) {
+        final Matcher matcher = LEVEL_INITIAL_CONTENT_PATTERN.matcher(line.trim().toUpperCase(Locale.ENGLISH));
         return matcher.find();
     }
 
@@ -1248,7 +1248,7 @@ public class ContentSpecParser {
                     RelationshipType.PREVIOUS) || variableMap.containsKey(RelationshipType.LINKLIST)) {
 
                 // Check that no relationships were specified for the level
-                if (newLvl.getFrontMatterTopics().size() != 1) {
+                if (newLvl.getInitialContentTopics().size() != 1) {
                     throw new ParsingException(
                             format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineNumber, CSConstants.CHAPTER, CSConstants.CHAPTER,
                                     line));
@@ -1258,7 +1258,7 @@ public class ContentSpecParser {
                         flattenedVariableMap.put(lineVariable.getKey(), lineVariable.getValue().get(0));
                     }
 
-                    processTopicRelationships(parserData, newLvl.getFrontMatterTopics().get(0), flattenedVariableMap, line, lineNumber);
+                    processTopicRelationships(parserData, newLvl.getInitialContentTopics().get(0), flattenedVariableMap, line, lineNumber);
                 }
             }
         }

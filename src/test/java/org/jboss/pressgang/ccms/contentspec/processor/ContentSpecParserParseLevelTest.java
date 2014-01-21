@@ -198,7 +198,7 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
     }
 
     @Test
-    public void shouldSetInnerTopic() throws Exception {
+    public void shouldSetInitialContentTopic() throws Exception {
         // Given a line number, level type and a line specifying an id
         String line = "Section:" + title + "[" + id + "]";
 
@@ -206,14 +206,14 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
 
         // Then the inner topic is set
-        final SpecTopic frontMatterTopic = result.getFrontMatterTopics().get(0);
-        assertNotNull(frontMatterTopic);
-        assertEquals(frontMatterTopic.getId(), id.toString());
-        assertEquals(frontMatterTopic.getTopicType(), TopicType.LEVEL);
+        final SpecTopic initialContentTopic = result.getInitialContentTopics().get(0);
+        assertNotNull(initialContentTopic);
+        assertEquals(initialContentTopic.getId(), id.toString());
+        assertEquals(initialContentTopic.getTopicType(), TopicType.LEVEL);
     }
 
     @Test
-    public void shouldSetInnerTopicAndGlobalOptions() throws Exception {
+    public void shouldSetInitialContentTopicAndGlobalOptions() throws Exception {
         // Given a line number, level type, a line specifying an id and a tag
         String line = "Section:" + title + "[" + id + "] [" + topicTag + "]";
 
@@ -221,9 +221,9 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
 
         // Then the inner topic and tag is set
-        final SpecTopic frontMatterTopic = result.getFrontMatterTopics().get(0);
-        assertNotNull(frontMatterTopic);
-        assertEquals(frontMatterTopic.getId(), id.toString());
+        final SpecTopic initialContentTopic = result.getInitialContentTopics().get(0);
+        assertNotNull(initialContentTopic);
+        assertEquals(initialContentTopic.getId(), id.toString());
         assertThat(result.getTags(false), Matchers.contains(topicTag));
     }
 

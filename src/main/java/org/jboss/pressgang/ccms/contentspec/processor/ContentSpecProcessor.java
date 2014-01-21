@@ -1308,9 +1308,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 final Level level = (Level) childNode;
 
                 // Add the levels front matter topics to the list of children if one exists
-                final LinkedList<Node> children = level.getChildNodes();
-                if (!level.getFrontMatterTopics().isEmpty()) {
-                    for (final SpecTopic frontMatterTopic : level.getFrontMatterTopics()) {
+                final LinkedList<Node> children = (LinkedList<Node>) level.getChildNodes();
+                if (!level.getInitialContentTopics().isEmpty()) {
+                    for (final SpecTopic frontMatterTopic : level.getInitialContentTopics()) {
                         children.addFirst(frontMatterTopic);
                     }
                 }
