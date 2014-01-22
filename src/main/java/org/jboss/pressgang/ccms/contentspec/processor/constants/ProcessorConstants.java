@@ -379,8 +379,11 @@ public class ProcessorConstants {
     public static final String ERROR_FILE_TITLE_NO_MATCH_MSG = LINE + INVALID_FILE + " The file name " +
             "specified doesn't match the actual files name." + NEW_LINE_SPACER + "Specified: %s" + NEW_LINE_SPACER + "Actual:    " +
             "%s";
-    public static final String ERROR_TOPIC_RELATED_TO_NEIGHBOUR_FRONT_MATTER_MSG = LINE + INVALID_RELATIONSHIP + " You can't relate a " +
-            "topic to a direct neighbour in front matter content." + CSLINE_MSG;
+    public static final String ERROR_INITIAL_CONTENT_TOPIC_RELATIONSHIP_MSG = LINE + INVALID_RELATIONSHIP + " " + CSConstants
+            .LEVEL_INITIAL_CONTENT + " topics cannot have relationships applied directly. Instead they should be applied on the \"" +
+            CSConstants.LEVEL_INITIAL_CONTENT + "\" container." + CSLINE_MSG;
+    public static final String ERROR_LEVEL_RELATED_TO_ITSELF_MSG = LINE + INVALID_RELATIONSHIP + " You can't relate a %s to itself." +
+            CSLINE_MSG;
 
     // Bug Link Errors
     public static final String ERROR_BUG_LINKS_UNABLE_TO_CONNECT = "Unable to connect to the bug tracking server specified.";
@@ -397,7 +400,7 @@ public class ProcessorConstants {
     public static final String PREFACE_REGEX = "^PREFACE[ ]*((:.*)|$)";
     public static final String PROCESS_REGEX = "^PROCESS[ ]*((:.*)|$)";
     public static final String LEVEL_REGEX = "^(CHAPTER|SECTION|APPENDIX|PART|PREFACE|PROCESS)[ ]*((:.*)|$)";
-    public static final String LEVEL_INITIAL_CONTENT_REGEX = "^INITIAL[ ]+CONTENT[ ]*((:.*)|$)";
+    public static final String LEVEL_INITIAL_CONTENT_REGEX = "^INITIAL[ ]+TEXT[ ]*((:.*)|$)";
 
     public static final List<String> VALID_METADATA_KEYS = Arrays.asList(CommonConstants.CS_CHECKSUM_TITLE, CommonConstants.CS_ID_TITLE,
             CommonConstants.CS_TITLE_TITLE, CommonConstants.CS_SUBTITLE_TITLE, CommonConstants.CS_EDITION_TITLE,

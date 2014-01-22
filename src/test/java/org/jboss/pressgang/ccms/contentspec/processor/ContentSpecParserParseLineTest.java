@@ -291,7 +291,7 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
         Boolean result = null;
         try {
             result = parser.parseLine(parserData, levelLine, lineNumber);
-            result = parser.parseLine(parserData, "  Initial Content:", lineNumber + 1);
+            result = parser.parseLine(parserData, "  Initial Text:", lineNumber + 1);
             result = parser.parseLine(parserData, initialContentTopicLine, lineNumber + 2);
             result = parser.parseLine(parserData, topicLine, lineNumber + 3);
         } catch (IndentationException e) {

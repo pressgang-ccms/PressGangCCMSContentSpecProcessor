@@ -27,6 +27,7 @@ import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Node;
 import org.jboss.pressgang.ccms.contentspec.Process;
 import org.jboss.pressgang.ccms.contentspec.SpecNode;
+import org.jboss.pressgang.ccms.contentspec.SpecNodeWithRelationships;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.buglinks.BaseBugLinkStrategy;
 import org.jboss.pressgang.ccms.contentspec.buglinks.BugLinkOptions;
@@ -725,9 +726,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // Create the map of unique ids to spec topics
         final Map<String, List<SpecTopic>> specTopicMap = ContentSpecUtilities.getIdSpecTopicMap(contentSpec);
 
-        final Map<SpecTopic, List<Relationship>> relationships = contentSpec.getRelationships();
-        for (final Entry<SpecTopic, List<Relationship>> relationshipEntry : relationships.entrySet()) {
-            final SpecTopic specTopic = relationshipEntry.getKey();
+        final Map<SpecNodeWithRelationships, List<Relationship>> relationships = contentSpec.getRelationships();
+        for (final Entry<SpecNodeWithRelationships, List<Relationship>> relationshipEntry : relationships.entrySet()) {
+            final SpecNodeWithRelationships specNode = relationshipEntry.getKey();
 
             // Check if the app should be shutdown
             if (isShuttingDown.get()) {
@@ -742,35 +743,19 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     return false;
                 }
 
-                final String relatedId = relationship.getSecondaryRelationshipTopicId();
+                final String relatedId = relationship.getSecondaryRelationshipId();
                 // The relationship points to a target so it must be a level or topic
                 if (relationship instanceof TargetRelationship) {
                     final SpecNode node = ((TargetRelationship) relationship).getSecondaryRelationship();
                     if (node instanceof SpecTopic) {
                         final SpecTopic targetTopic = (SpecTopic) node;
-                        if (!validateTopicRelationship(relationship, specTopic, relatedId, targetTopic)) {
+                        if (!validateRelationshipToTopic(relationship, specNode, relatedId, targetTopic)) {
                             error = true;
                         }
                     } else if (node instanceof Level) {
                         final Level targetLevel = (Level) node;
-                        if (relationship.getType() == RelationshipType.NEXT) {
-                            log.error(String.format(ProcessorConstants.ERROR_NEXT_RELATED_LEVEL_MSG, specTopic.getLineNumber(),
-                                    specTopic.getText()));
+                        if (!validateRelationshipToLevel(relationship, specNode, targetLevel)) {
                             error = true;
-                        } else if (relationship.getType() == RelationshipType.PREVIOUS) {
-                            log.error(String.format(ProcessorConstants.ERROR_PREV_RELATED_LEVEL_MSG, specTopic.getLineNumber(),
-                                    specTopic.getText()));
-                            error = true;
-                        } else if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
-                                targetLevel.getTitle())) {
-                            if (processingOptions.isStrictTitles()) {
-                                log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
-                                        relationship.getRelationshipTitle(), targetLevel.getTitle()));
-                                error = true;
-                            } else {
-                                log.warn(String.format(ProcessorConstants.WARN_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
-                                        relationship.getRelationshipTitle(), targetLevel.getTitle()));
-                            }
                         }
                     }
                 } else if (relationship instanceof TopicRelationship) {
@@ -778,12 +763,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     final List<SpecTopic> relatedSpecTopics = specTopicMap.get(relatedTopic.getId());
                     if (relatedId.startsWith("X")) {
                         // Duplicated topics are never unique so throw an error straight away.
-                        log.error(String.format(ProcessorConstants.ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG, specTopic.getLineNumber(),
-                                specTopic.getText()));
+                        log.error(String.format(ProcessorConstants.ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG, specNode.getLineNumber(),
+                                specNode.getText()));
                         error = true;
                     } else if (relatedSpecTopics == null) {
-                        log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
-                                specTopic.getText()));
+                        log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specNode.getLineNumber(), relatedId,
+                                specNode.getText()));
                         error = true;
                     } else if (relatedSpecTopics.size() > 1) {
                         // Check to make sure the topic isn't duplicated
@@ -801,11 +786,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             lineNumbers.append(relatedTopics.get(i).getLineNumber());
                         }
 
-                        log.error(String.format(ProcessorConstants.ERROR_INVALID_RELATIONSHIP_MSG, specTopic.getLineNumber(), relatedId,
-                                lineNumbers.toString(), specTopic.getText()));
+                        log.error(String.format(ProcessorConstants.ERROR_INVALID_RELATIONSHIP_MSG, specNode.getLineNumber(), relatedId,
+                                lineNumbers.toString(), specNode.getText()));
                         error = true;
                     } else {
-                        if (!validateTopicRelationship(relationship, specTopic, relatedId, relatedTopic)) {
+                        if (!validateRelationshipToTopic(relationship, specNode, relatedId, relatedTopic)) {
                             error = true;
                         }
                     }
@@ -817,25 +802,29 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
     /**
      * @param relationship
-     * @param specTopic
+     * @param node
      * @param relatedId
      * @param relatedTopic
      * @return True if the topic relationship is valid, otherwise false.
      */
-    private boolean validateTopicRelationship(final Relationship relationship, final SpecTopic specTopic, final String relatedId,
-            final SpecTopic relatedTopic) {
+    private boolean validateRelationshipToTopic(final Relationship relationship, final SpecNodeWithRelationships node,
+            final String relatedId, final SpecTopic relatedTopic) {
         if (relatedTopic.getDBId() != null && relatedTopic.getDBId() < 0) {
-            log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), relatedId,
-                    specTopic.getText()));
+            log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, node.getLineNumber(), relatedId,
+                    node.getText()));
             return false;
-        } else if (relatedTopic == specTopic) {
+        } else if (relatedTopic == node) {
             // Check to make sure the topic doesn't relate to itself
-            log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, specTopic.getLineNumber(), specTopic.getText()));
+            log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, node.getLineNumber(), node.getText()));
             return false;
-        } else if (specTopic.getTopicType() == TopicType.LEVEL && ((Level) specTopic.getParent()).getInitialContentTopics().contains
-                (relatedTopic)) {
-            // Check to make sure front matter topics don't relate to any neighbouring front matter topics
-            log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_NEIGHBOUR_FRONT_MATTER_MSG, specTopic.getLineNumber(), specTopic.getText()));
+        } else if (node instanceof Level && ((Level) node).getInitialContentTopics().contains(relatedTopic)) {
+            // Check that the relationship isn't to something in the front matter content, as it would relate to itself
+            // TODO Proper Error Message
+            log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, node.getLineNumber(), node.getText()));
+            return false;
+        } else if (node instanceof SpecTopic && ((SpecTopic) node).getTopicType() == TopicType.LEVEL) {
+            // Initial Content topics can't have relationships
+            log.error(String.format(ProcessorConstants.ERROR_INITIAL_CONTENT_TOPIC_RELATIONSHIP_MSG, node.getLineNumber(), node.getText()));
             return false;
         } else {
             final String relatedTitle = TopicType.LEVEL.equals(
@@ -843,13 +832,53 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     .getTitle() : relatedTopic.getTitle();
             if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(relatedTitle)) {
                 if (processingOptions.isStrictTitles()) {
-                    log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+                    log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, node.getLineNumber(),
                             relationship.getRelationshipTitle(), relatedTitle));
                     return false;
                 } else {
-                    log.warn(String.format(ProcessorConstants.WARN_RELATED_TITLE_NO_MATCH_MSG, specTopic.getLineNumber(),
+                    log.warn(String.format(ProcessorConstants.WARN_RELATED_TITLE_NO_MATCH_MSG, node.getLineNumber(),
                             relationship.getRelationshipTitle(), relatedTitle));
                 }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param relationship
+     * @param node
+     * @param relatedLevel
+     * @return True if the level relationship is valid, otherwise false.
+     */
+    private boolean validateRelationshipToLevel(final Relationship relationship, final SpecNodeWithRelationships node,
+            final Level relatedLevel) {
+        if (relationship.getType() == RelationshipType.NEXT) {
+            log.error(String.format(ProcessorConstants.ERROR_NEXT_RELATED_LEVEL_MSG, node.getLineNumber(),
+                    node.getText()));
+            return false;
+        } else if (relationship.getType() == RelationshipType.PREVIOUS) {
+            log.error(String.format(ProcessorConstants.ERROR_PREV_RELATED_LEVEL_MSG, node.getLineNumber(),
+                    node.getText()));
+            return false;
+        } else if (node == relatedLevel) {
+            // Check to make sure the relationship doesn't relate to itself
+            log.error(String.format(ProcessorConstants.ERROR_LEVEL_RELATED_TO_ITSELF_MSG, node.getLineNumber(),
+                    relatedLevel.getLevelType().getTitle(), node.getText()));
+            return false;
+        } else if (node instanceof SpecTopic && ((SpecTopic) node).getTopicType() == TopicType.LEVEL) {
+            // Initial Content topics can't have relationships
+            log.error(String.format(ProcessorConstants.ERROR_INITIAL_CONTENT_TOPIC_RELATIONSHIP_MSG, node.getLineNumber(), node.getText()));
+            return false;
+        } else if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(
+                relatedLevel.getTitle())) {
+            if (processingOptions.isStrictTitles()) {
+                log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, relatedLevel.getLineNumber(),
+                        relationship.getRelationshipTitle(), relatedLevel.getTitle()));
+                return false;
+            } else {
+                log.warn(String.format(ProcessorConstants.WARN_RELATED_TITLE_NO_MATCH_MSG, node.getLineNumber(),
+                        relationship.getRelationshipTitle(), relatedLevel.getTitle()));
             }
         }
 
@@ -891,7 +920,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                                                                                        */) {
             // Check to make sure a front matter topic doesn't exist, unless its a section level as in that case the section should just
             // be a normal topic
-            if (levelType == LevelType.SECTION || !level.getInitialContentTopics().isEmpty()) {
+            if (levelType == LevelType.SECTION || level.getInitialContentTopics().isEmpty()) {
                 log.error(format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), levelType.getTitle(),
                         levelType.getTitle(), level.getText()));
                 valid = false;

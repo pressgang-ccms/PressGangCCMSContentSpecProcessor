@@ -19,6 +19,7 @@ import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Node;
 import org.jboss.pressgang.ccms.contentspec.SpecNode;
+import org.jboss.pressgang.ccms.contentspec.SpecNodeWithRelationships;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.buglinks.BaseBugLinkStrategy;
 import org.jboss.pressgang.ccms.contentspec.buglinks.BugLinkOptions;
@@ -290,7 +291,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     protected boolean doBugLinkValidationPass(final ProcessorData processorData) {
         final ContentSpec contentSpec = processorData.getContentSpec();
         boolean valid = true;
-        if (processingOptions.isValidateBugLinks()) {
+        if (processingOptions.isValidateBugLinks() && contentSpec.isInjectBugLinks()) {
             // Find out if we should re-validate bug links
             boolean reValidateBugLinks = true;
             if (contentSpec.getId() != null) {
@@ -325,28 +326,26 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     if (!weekPassed) {
                         // A week hasn't passed so check to see if anything has changed
                         boolean changed = false;
-                        if (contentSpec.isInjectBugLinks()) {
-                            final String bugLinksValue = contentSpec.getBugLinksActualValue() == null ? null : contentSpec
-                                    .getBugLinksActualValue().toString();
-                            if (EntityUtilities.hasContentSpecMetaDataChanged(CommonConstants.CS_BUG_LINKS_TITLE, bugLinksValue,
-                                    contentSpecEntity)) {
-                                changed = true;
+                        final String bugLinksValue = contentSpec.getBugLinksActualValue() == null ? null : contentSpec
+                                .getBugLinksActualValue().toString();
+                        if (EntityUtilities.hasContentSpecMetaDataChanged(CommonConstants.CS_BUG_LINKS_TITLE, bugLinksValue,
+                                contentSpecEntity)) {
+                            changed = true;
+                        } else {
+                            BugLinkType bugLinkType = null;
+                            BugLinkOptions bugOptions = null;
+                            if (contentSpec.getBugLinks() == BugLinkType.JIRA) {
+                                bugLinkType = BugLinkType.JIRA;
+                                bugOptions = contentSpec.getJIRABugLinkOptions();
                             } else {
-                                BugLinkType bugLinkType = null;
-                                BugLinkOptions bugOptions = null;
-                                if (contentSpec.getBugLinks() == BugLinkType.JIRA) {
-                                    bugLinkType = BugLinkType.JIRA;
-                                    bugOptions = contentSpec.getJIRABugLinkOptions();
-                                } else {
-                                    bugLinkType = BugLinkType.BUGZILLA;
-                                    bugOptions = contentSpec.getBugzillaBugLinkOptions();
-                                }
-                                final BaseBugLinkStrategy bugLinkStrategy = BugLinkStrategyFactory.getInstance().create(bugLinkType,
-                                        bugOptions.getBaseUrl());
+                                bugLinkType = BugLinkType.BUGZILLA;
+                                bugOptions = contentSpec.getBugzillaBugLinkOptions();
+                            }
+                            final BaseBugLinkStrategy bugLinkStrategy = BugLinkStrategyFactory.getInstance().create(bugLinkType,
+                                    bugOptions.getBaseUrl());
 
-                                if (bugLinkType != null && bugLinkStrategy.hasValuesChanged(contentSpecEntity, bugOptions)) {
-                                    changed = true;
-                                }
+                            if (bugLinkType != null && bugLinkStrategy.hasValuesChanged(contentSpecEntity, bugOptions)) {
+                                changed = true;
                             }
                         }
 
@@ -1109,8 +1108,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         contentSpecProvider.updateContentSpec(contentSpecEntity);
 
-        // Merge the relationships now all spec topics have a mapping to a node
-        mergeTopicRelationships(nodeMapping, providerFactory);
+        // Merge the relationships now all nodes have a mapping to a database node
+        mergeRelationships(nodeMapping, providerFactory);
 
         contentSpecProvider.updateContentSpec(contentSpecEntity, processorData.getLogMessage());
     }
@@ -1307,11 +1306,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             if (childNode instanceof Level) {
                 final Level level = (Level) childNode;
 
-                // Add the levels front matter topics to the list of children if one exists
-                final LinkedList<Node> children = (LinkedList<Node>) level.getChildNodes();
+                // Add the levels initial content topics to the list of children if one exists
+                final LinkedList<Node> children = new LinkedList<Node>(level.getChildNodes());
                 if (!level.getInitialContentTopics().isEmpty()) {
-                    for (final SpecTopic frontMatterTopic : level.getInitialContentTopics()) {
-                        children.addFirst(frontMatterTopic);
+                    for (final SpecTopic initialContentTopic : level.getInitialContentTopics()) {
+                        children.addFirst(initialContentTopic);
                     }
                 }
 
@@ -1714,51 +1713,51 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param nodeMapping     The mapping of Spec Nodes to Entity nodes.
      * @param providerFactory
      */
-    protected void mergeTopicRelationships(final Map<SpecNode, CSNodeWrapper> nodeMapping, final DataProviderFactory providerFactory) {
+    protected void mergeRelationships(final Map<SpecNode, CSNodeWrapper> nodeMapping, final DataProviderFactory providerFactory) {
         final CSNodeProvider nodeProvider = providerFactory.getProvider(CSNodeProvider.class);
 
         for (final Map.Entry<SpecNode, CSNodeWrapper> nodes : nodeMapping.entrySet()) {
-            // Only process spec topics
-            if (!(nodes.getKey() instanceof SpecTopic)) continue;
+            // Only process relationship nodes
+            if (!(nodes.getKey() instanceof SpecNodeWithRelationships)) continue;
 
-            // Get the matching spec topic and entity
-            final SpecTopic specTopic = (SpecTopic) nodes.getKey();
-            final CSNodeWrapper topicEntity = nodes.getValue();
+            // Get the matching node and entity
+            final SpecNodeWithRelationships specNode = (SpecNodeWithRelationships) nodes.getKey();
+            final CSNodeWrapper entity = nodes.getValue();
 
             // Check if the node or entity have any relationships, if not then the node doesn't need to be merged
-            if (!specTopic.getRelationships().isEmpty() || topicEntity.getRelatedToNodes() != null && !topicEntity.getRelatedToNodes()
+            if (!specNode.getRelationships().isEmpty() || entity.getRelatedToNodes() != null && !entity.getRelatedToNodes()
                     .isEmpty()) {
                 // merge the relationships from the spec topic to the entity
-                mergeTopicRelationship(nodeMapping, specTopic, topicEntity, nodeProvider);
+                mergeRelationship(nodeMapping, specNode, entity, nodeProvider);
             }
         }
     }
 
     /**
-     * Merges the relationships from a Spec Topic into a Topic Node Entity.
+     * Merges the relationships from a Spec Node into a Node Entity.
      *
      * @param nodeMapping  The mapping of Spec Nodes to Entity nodes.
-     * @param specTopic    The Spec Topic to get the relationships from.
-     * @param topicEntity  The Entity to merge the relationships into.
+     * @param specNode    The Spec Node to get the relationships from.
+     * @param entity  The Entity to merge the relationships into.
      * @param nodeProvider The provider factory for getting new or existing nodes.
      */
-    protected void mergeTopicRelationship(final Map<SpecNode, CSNodeWrapper> nodeMapping, final SpecTopic specTopic,
-            final CSNodeWrapper topicEntity, final CSNodeProvider nodeProvider) {
-        final UpdateableCollectionWrapper<CSRelatedNodeWrapper> relatedToNodes = topicEntity.getRelatedToNodes() == null ? nodeProvider
-                .newCSRelatedNodeCollection() : topicEntity.getRelatedToNodes();
+    protected void mergeRelationship(final Map<SpecNode, CSNodeWrapper> nodeMapping, final SpecNodeWithRelationships specNode,
+            final CSNodeWrapper entity, final CSNodeProvider nodeProvider) {
+        final UpdateableCollectionWrapper<CSRelatedNodeWrapper> relatedToNodes = entity.getRelatedToNodes() == null ? nodeProvider
+                .newCSRelatedNodeCollection() : entity.getRelatedToNodes();
         final List<CSRelatedNodeWrapper> existingRelationships = new ArrayList<CSRelatedNodeWrapper>(relatedToNodes.getItems());
 
-        LOG.debug("Processing relationships for topic: {}", topicEntity.getEntityId());
+        LOG.debug("Processing relationships for entity: {}", entity.getEntityId());
 
         // Check to make sure that the spec topic has any relationships
-        if (!specTopic.getRelationships().isEmpty()) {
+        if (!specNode.getRelationships().isEmpty()) {
             int relationshipSortCount = 1;
 
-            for (final Relationship relationship : specTopic.getRelationships()) {
+            for (final Relationship relationship : specNode.getRelationships()) {
                 // All process relationships should not be stored
                 if (relationship instanceof ProcessRelationship) continue;
 
-                LOG.debug("Processing Relationship: {}", relationship.getSecondaryRelationshipTopicId());
+                LOG.debug("Processing Relationship: {}", relationship.getSecondaryRelationshipId());
 
                 // Determine the relationship mode
                 final Integer relationshipMode;
@@ -1830,23 +1829,23 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Check if anything was changed, if so then set the changes
         if (!relatedToNodes.getAddItems().isEmpty() || !relatedToNodes.getUpdateItems().isEmpty() || !relatedToNodes.getRemoveItems()
                 .isEmpty()) {
-            topicEntity.setRelatedToNodes(relatedToNodes);
+            entity.setRelatedToNodes(relatedToNodes);
 
             // Make sure the node is in the updated state
-            if (topicEntity.getParent() == null) {
-                topicEntity.getContentSpec().getChildren().remove(topicEntity);
-                if (topicEntity.getId() == null) {
-                    topicEntity.getContentSpec().getChildren().addNewItem(topicEntity);
+            if (entity.getParent() == null) {
+                entity.getContentSpec().getChildren().remove(entity);
+                if (entity.getId() == null) {
+                    entity.getContentSpec().getChildren().addNewItem(entity);
                 } else {
-                    topicEntity.getContentSpec().getChildren().addUpdateItem(topicEntity);
+                    entity.getContentSpec().getChildren().addUpdateItem(entity);
                 }
             } else {
-                final CSNodeWrapper parent = topicEntity.getParent();
-                parent.getChildren().remove(topicEntity);
-                if (topicEntity.getId() == null) {
-                    parent.getChildren().addNewItem(topicEntity);
+                final CSNodeWrapper parent = entity.getParent();
+                parent.getChildren().remove(entity);
+                if (entity.getId() == null) {
+                    parent.getChildren().addNewItem(entity);
                 } else {
-                    parent.getChildren().addUpdateItem(topicEntity);
+                    parent.getChildren().addUpdateItem(entity);
                 }
             }
         }

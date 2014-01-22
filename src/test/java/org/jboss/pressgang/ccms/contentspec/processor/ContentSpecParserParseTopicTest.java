@@ -608,14 +608,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parserData.getRelationships().size(), is(1));
-        assertThat(parserData.getRelationships().get(uniqueId).size(), is(2));
+        assertThat(parserData.getTopicRelationships().size(), is(1));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).size(), is(2));
         // and the relationships have the right main topic id
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getPrimaryRelationshipId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getPrimaryRelationshipId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
     }
 
     @Test
@@ -649,14 +649,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parserData.getRelationships().size(), is(1));
-        assertThat(parserData.getRelationships().get(uniqueId).size(), is(2));
+        assertThat(parserData.getTopicRelationships().size(), is(1));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).size(), is(2));
         // and the relationships have the right main topic id
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getPrimaryRelationshipId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getPrimaryRelationshipId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
     }
 
     @Test
@@ -688,14 +688,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parserData.getRelationships().size(), is(1));
-        assertThat(parserData.getRelationships().get(uniqueId).size(), is(2));
+        assertThat(parserData.getTopicRelationships().size(), is(1));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).size(), is(2));
         // and the relationships have the right main topic id
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getPrimaryRelationshipId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getPrimaryRelationshipId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.PREREQUISITE));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.PREREQUISITE));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.PREREQUISITE));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.PREREQUISITE));
     }
 
     @Test
@@ -729,14 +729,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parserData.getRelationships().size(), is(1));
-        assertThat(parserData.getRelationships().get(uniqueId).size(), is(2));
+        assertThat(parserData.getTopicRelationships().size(), is(1));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).size(), is(2));
         // and the relationships have the right main topic id
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getPrimaryRelationshipId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getPrimaryRelationshipId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.PREREQUISITE));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.PREREQUISITE));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.PREREQUISITE));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.PREREQUISITE));
     }
 
     @Test
@@ -768,14 +768,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parserData.getRelationships().size(), is(1));
-        assertThat(parserData.getRelationships().get(uniqueId).size(), is(2));
+        assertThat(parserData.getTopicRelationships().size(), is(1));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).size(), is(2));
         // and the relationships have the right main topic id
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getPrimaryRelationshipId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getPrimaryRelationshipId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.LINKLIST));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.LINKLIST));
     }
 
     @Test
@@ -809,14 +809,14 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parserData.getRelationships().size(), is(1));
-        assertThat(parserData.getRelationships().get(uniqueId).size(), is(2));
+        assertThat(parserData.getTopicRelationships().size(), is(1));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).size(), is(2));
         // and the relationships have the right main topic id
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getPrimaryRelationshipId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getPrimaryRelationshipId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.LINKLIST));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.LINKLIST));
     }
 
     @Test
@@ -855,18 +855,18 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
         assertThat(topic.getTitle(), is(title));
         assertThat(topic.getUniqueId(), is(uniqueId));
         // and the right number of relationships exist
-        assertThat(parserData.getRelationships().size(), is(1));
-        assertThat(parserData.getRelationships().get(uniqueId).size(), is(4));
+        assertThat(parserData.getTopicRelationships().size(), is(1));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).size(), is(4));
         // and the relationships have the right main topic id
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parserData.getRelationships().get(uniqueId).get(2).getMainRelationshipTopicId(), is(uniqueId));
-        assertThat(parserData.getRelationships().get(uniqueId).get(3).getMainRelationshipTopicId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getPrimaryRelationshipId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getPrimaryRelationshipId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(2).getPrimaryRelationshipId(), is(uniqueId));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(3).getPrimaryRelationshipId(), is(uniqueId));
         // and the relationship type is correct
-        assertThat(parserData.getRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
-        assertThat(parserData.getRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
-        assertThat(parserData.getRelationships().get(uniqueId).get(2).getType(), is(RelationshipType.LINKLIST));
-        assertThat(parserData.getRelationships().get(uniqueId).get(3).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(0).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(1).getType(), is(RelationshipType.REFER_TO));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(2).getType(), is(RelationshipType.LINKLIST));
+        assertThat(parserData.getTopicRelationships().get(uniqueId).get(3).getType(), is(RelationshipType.LINKLIST));
     }
 
     @Test

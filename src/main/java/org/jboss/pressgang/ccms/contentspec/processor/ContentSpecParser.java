@@ -29,6 +29,7 @@ import org.jboss.pressgang.ccms.contentspec.Part;
 import org.jboss.pressgang.ccms.contentspec.Process;
 import org.jboss.pressgang.ccms.contentspec.Section;
 import org.jboss.pressgang.ccms.contentspec.SpecNode;
+import org.jboss.pressgang.ccms.contentspec.SpecNodeWithRelationships;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.TextNode;
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
@@ -397,10 +398,14 @@ public class ContentSpecParser {
                 // The line was indented without a new level so throw an error
                 throw new IndentationException(format(ProcessorConstants.ERROR_INCORRECT_INDENTATION_MSG, lineNumber, trimmedLine));
             } else if (lineIndentationLevel < parserData.getIndentationLevel()) {
-                if (parserData.isParsingFrontMatter()) {
-                    parserData.setParsingFrontMatter(false);
-                    parserData.setIndentationLevel(lineIndentationLevel);
-                } else {
+                // Since initial content isn't an actual level, just move back one step if the indentation changes
+                if (parserData.isParsingInitialContent()) {
+                    parserData.setParsingInitialContent(false);
+                    parserData.setIndentationLevel(parserData.getIndentationLevel() - 1);
+                }
+
+                // Check to see if we still need to move levels
+                if (lineIndentationLevel < parserData.getIndentationLevel()) {
                     // The line has left the previous level so move the current level up to the right level
                     Level newCurrentLevel = parserData.getCurrentLevel();
                     for (int i = (parserData.getIndentationLevel() - lineIndentationLevel); i > 0; i--) {
@@ -416,18 +421,23 @@ public class ContentSpecParser {
             try {
                 if (isMetaDataLine(parserData, trimmedLine)) {
                     parseMetaDataLine(parserData, line, lineNumber);
-                } else if (isLevelTextLine(trimmedLine)) {
-                    parserData.setParsingFrontMatter(true);
-                    parserData.setIndentationLevel(parserData.getIndentationLevel() + 1);
+                } else if (isLevelInitialContentLine(trimmedLine)) {
+                    parseLevelInitialContent(parserData, parserData.getCurrentLevel(), lineNumber, trimmedLine);
                 } else if (isLevelLine(trimmedLine)) {
-                    final Level level = parseLevelLine(parserData, trimmedLine, lineNumber);
-                    if (level instanceof Process) {
-                        parserData.getProcesses().add((Process) level);
-                    }
-                    parserData.getCurrentLevel().appendChild(level);
+                    if (parserData.isParsingInitialContent()) {
+                        // Initial content can only be topics so throw a parsing error
+                        // TODO Error Message
+                        throw new ParsingException();
+                    } else {
+                        final Level level = parseLevelLine(parserData, trimmedLine, lineNumber);
+                        if (level instanceof Process) {
+                            parserData.getProcesses().add((Process) level);
+                        }
+                        parserData.getCurrentLevel().appendChild(level);
 
-                    // Change the current level to use the new parsed level
-                    changeCurrentLevel(parserData, level, parserData.getIndentationLevel() + 1);
+                        // Change the current level to use the new parsed level
+                        changeCurrentLevel(parserData, level, parserData.getIndentationLevel() + 1);
+                    }
 //                } else if (trimmedLine.toUpperCase(Locale.ENGLISH).matches("^CS[ ]*:.*")) {
 //                    processExternalLevelLine(getCurrentLevel(), line);
                 } else if (StringUtilities.indexOf(trimmedLine,
@@ -438,7 +448,7 @@ public class ContentSpecParser {
                     final SpecTopic tempTopic = parseTopic(parserData, trimmedLine, lineNumber);
 
                     // Add the spec topic to the correct component in the level
-                    if (parserData.isParsingFrontMatter()) {
+                    if (parserData.isParsingInitialContent()) {
                         parserData.getCurrentLevel().addFrontMatterTopic(tempTopic);
                     } else {
                         // Adds the topic to the current level
@@ -520,7 +530,7 @@ public class ContentSpecParser {
      * @param line The line to be checked.
      * @return True if the line is a front matter declaration, otherwise false.
      */
-    protected boolean isLevelTextLine(String line) {
+    protected boolean isLevelInitialContentLine(String line) {
         final Matcher matcher = LEVEL_INITIAL_CONTENT_PATTERN.matcher(line.trim().toUpperCase(Locale.ENGLISH));
         return matcher.find();
     }
@@ -576,13 +586,19 @@ public class ContentSpecParser {
 
         if (tempInput.length >= 1) {
             final LevelType levelType = LevelType.getLevelType(tempInput[0]);
+            Level retValue = null;
             try {
-                return parseLevel(parserData, lineNumber, levelType, line);
+                retValue = parseLevel(parserData, lineNumber, levelType, line);
             } catch (ParsingException e) {
                 log.error(e.getMessage());
                 // Create a basic level so the rest of the spec can be processed
-                return createEmptyLevelFromType(lineNumber, levelType, line);
+                retValue = createEmptyLevelFromType(lineNumber, levelType, line);
+                retValue.setUniqueId("L" + lineNumber);
             }
+
+            parserData.getLevels().put(retValue.getUniqueId(), retValue);
+
+            return retValue;
         } else {
             throw new ParsingException(format(ProcessorConstants.ERROR_LEVEL_FORMAT_MSG, lineNumber, line));
         }
@@ -1030,13 +1046,13 @@ public class ContentSpecParser {
         final ArrayList<Relationship> topicRelationships = new ArrayList<Relationship>();
 
         // Refer-To relationships
-        processTopicRelationshipList(RelationshipType.REFER_TO, tempTopic, variableMap, topicRelationships, lineNumber);
+        processRelationshipList(RelationshipType.REFER_TO, tempTopic, variableMap, topicRelationships, lineNumber);
 
         // Prerequisite relationships
-        processTopicRelationshipList(RelationshipType.PREREQUISITE, tempTopic, variableMap, topicRelationships, lineNumber);
+        processRelationshipList(RelationshipType.PREREQUISITE, tempTopic, variableMap, topicRelationships, lineNumber);
 
         // Link-List relationships
-        processTopicRelationshipList(RelationshipType.LINKLIST, tempTopic, variableMap, topicRelationships, lineNumber);
+        processRelationshipList(RelationshipType.LINKLIST, tempTopic, variableMap, topicRelationships, lineNumber);
 
         // Next and Previous relationships should only be created internally and shouldn't be specified by the user
         if (variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType.PREVIOUS)) {
@@ -1045,7 +1061,7 @@ public class ContentSpecParser {
 
         // Add the relationships to the global list if any exist
         if (!topicRelationships.isEmpty()) {
-            parserData.getRelationships().put(uniqueId, topicRelationships);
+            parserData.getTopicRelationships().put(uniqueId, topicRelationships);
         }
 
         // Process targets
@@ -1081,17 +1097,17 @@ public class ContentSpecParser {
     /**
      * Processes a list of relationships for a specific relationship type from some line processed variables.
      *
-     * @param relationshipType   The relationship type to be processed.
-     * @param tempTopic          The temporary topic that will be turned into a full topic once fully parsed.
-     * @param variableMap        The list of variables containing the parsed relationships.
-     * @param lineNumber         The number of the line the relationships are on.
-     * @param topicRelationships The list of topic relationships.
+     * @param relationshipType The relationship type to be processed.
+     * @param tempNode         The temporary node that will be turned into a full node once fully parsed.
+     * @param variableMap      The list of variables containing the parsed relationships.
+     * @param lineNumber       The number of the line the relationships are on.
+     * @param relationships    The list of topic relationships.
      * @throws ParsingException Thrown if the variables can't be parsed due to incorrect syntax.
      */
-    private void processTopicRelationshipList(final RelationshipType relationshipType, final SpecTopic tempTopic,
-            final HashMap<RelationshipType, String[]> variableMap, final List<Relationship> topicRelationships,
+    private void processRelationshipList(final RelationshipType relationshipType, final SpecNodeWithRelationships tempNode,
+            final HashMap<RelationshipType, String[]> variableMap, final List<Relationship> relationships,
             int lineNumber) throws ParsingException {
-        final String uniqueId = tempTopic.getUniqueId();
+        final String uniqueId = tempNode.getUniqueId();
 
         String errorMessageFormat = null;
         switch (relationshipType) {
@@ -1112,7 +1128,7 @@ public class ContentSpecParser {
             final String[] relationshipList = variableMap.get(relationshipType);
             for (final String relationshipId : relationshipList) {
                 if (relationshipId.matches(ProcessorConstants.RELATION_ID_REGEX)) {
-                    topicRelationships.add(new Relationship(uniqueId, relationshipId, relationshipType));
+                    relationships.add(new Relationship(uniqueId, relationshipId, relationshipType));
                 } else if (relationshipId.matches(ProcessorConstants.RELATION_ID_LONG_REGEX)) {
                     final Matcher matcher = RELATION_ID_LONG_PATTERN.matcher(relationshipId);
 
@@ -1120,7 +1136,7 @@ public class ContentSpecParser {
                     final String id = matcher.group("TopicID");
                     final String relationshipTitle = matcher.group("TopicTitle");
 
-                    topicRelationships.add(new Relationship(uniqueId, id, relationshipType,
+                    relationships.add(new Relationship(uniqueId, id, relationshipType,
                             ProcessorUtilities.replaceEscapeChars(relationshipTitle.trim())));
                 } else {
                     if (relationshipId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
@@ -1178,6 +1194,7 @@ public class ContentSpecParser {
 
         // Create the level based on the type
         final Level newLvl = createEmptyLevelFromType(lineNumber, levelType, line);
+        newLvl.setUniqueId("L" + lineNumber);
 
         // Parse the input
         if (splitVars.length >= 2) {
@@ -1208,31 +1225,33 @@ public class ContentSpecParser {
                 }
             }
 
+            // Flatten the variable map since we've gotten the useful information
+            final HashMap<RelationshipType, String[]> flattenedVariableMap = new HashMap<RelationshipType, String[]>();
+            for (final Map.Entry<RelationshipType, List<String[]>> lineVariable : variableMap.entrySet()) {
+                flattenedVariableMap.put(lineVariable.getKey(), lineVariable.getValue().get(0));
+            }
+
             // Add targets for the level
             if (variableMap.containsKey(RelationshipType.TARGET)) {
-                final List<String[]> targets = variableMap.get(RelationshipType.TARGET);
-                if (targets.size() == 1) {
-                    final String targetId = targets.get(0)[0];
-                    if (parserData.getTargetTopics().containsKey(targetId)) {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG,
-                                parserData.getTargetTopics().get(targetId).getLineNumber(),
-                                parserData.getTargetTopics().get(targetId).getText(), lineNumber, line));
-                    } else if (parserData.getTargetLevels().containsKey(targetId)) {
-                        throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG,
-                                parserData.getTargetLevels().get(targetId).getLineNumber(),
-                                parserData.getTargetLevels().get(targetId).getText(), lineNumber, line));
-                    } else {
-                        parserData.getTargetLevels().put(targetId, newLvl);
-                        newLvl.setTargetId(targetId);
-                    }
+                final String[] targets = flattenedVariableMap.get(RelationshipType.TARGET);
+                final String targetId = targets[0];
+                if (parserData.getTargetTopics().containsKey(targetId)) {
+                    throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG,
+                            parserData.getTargetTopics().get(targetId).getLineNumber(),
+                            parserData.getTargetTopics().get(targetId).getText(), lineNumber, line));
+                } else if (parserData.getTargetLevels().containsKey(targetId)) {
+                    throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_TARGET_ID_MSG,
+                            parserData.getTargetLevels().get(targetId).getLineNumber(),
+                            parserData.getTargetLevels().get(targetId).getText(), lineNumber, line));
                 } else {
-                    throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATED_RELATIONSHIP_TYPE_MSG, lineNumber, line));
+                    parserData.getTargetLevels().put(targetId, newLvl);
+                    newLvl.setTargetId(targetId);
                 }
             }
 
             // Check for external targets
 //            if (variableMap.containsKey(RelationshipType.EXTERNAL_TARGET)) {
-//                final String externalTargetId = variableMap.get(RelationshipType.EXTERNAL_TARGET).get(0)[0];
+//                final String externalTargetId = variableMap.get(RelationshipType.EXTERNAL_TARGET)[0];
 //                getExternalTargetLevels().put(externalTargetId, newLvl);
 //                newLvl.setExternalTargetId(externalTargetId);
 //            }
@@ -1242,7 +1261,7 @@ public class ContentSpecParser {
 //                processExternalLevel(newLvl, variableMap.get(RelationshipType.EXTERNAL_CONTENT_SPEC)[0], title, line);
 //            }
 
-            // Check that no relationships were specified for the appendix
+            // Process any relationship content that might have been defined only if an initial content topic has been defined
             if (variableMap.containsKey(RelationshipType.REFER_TO) || variableMap.containsKey(
                     RelationshipType.PREREQUISITE) || variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(
                     RelationshipType.PREVIOUS) || variableMap.containsKey(RelationshipType.LINKLIST)) {
@@ -1250,19 +1269,64 @@ public class ContentSpecParser {
                 // Check that no relationships were specified for the level
                 if (newLvl.getInitialContentTopics().size() != 1) {
                     throw new ParsingException(
-                            format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineNumber, CSConstants.CHAPTER, CSConstants.CHAPTER,
+                            format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineNumber, levelType.getTitle(), levelType.getTitle(),
                                     line));
                 } else {
-                    final HashMap<RelationshipType, String[]> flattenedVariableMap = new HashMap<RelationshipType, String[]>();
-                    for (final Map.Entry<RelationshipType, List<String[]>> lineVariable : variableMap.entrySet()) {
-                        flattenedVariableMap.put(lineVariable.getKey(), lineVariable.getValue().get(0));
-                    }
-
-                    processTopicRelationships(parserData, newLvl.getInitialContentTopics().get(0), flattenedVariableMap, line, lineNumber);
+                    processLevelRelationships(parserData, newLvl, flattenedVariableMap, line, lineNumber);
                 }
             }
         }
+
         return newLvl;
+    }
+
+    /**
+     * Process the relationships parsed for a topic.
+     *
+     * @param parserData
+     * @param level       The temporary topic that will be turned into a full topic once fully parsed.
+     * @param variableMap The list of variables containing the parsed relationships.
+     * @param line        The line representing the topic and it's relationships.
+     * @param lineNumber  The number of the line the relationships are on.
+     * @throws ParsingException Thrown if the variables can't be parsed due to incorrect syntax.
+     */
+    protected void processLevelRelationships(final ParserData parserData, final Level level,
+            final HashMap<RelationshipType, String[]> variableMap, final String line, int lineNumber) throws ParsingException {
+        // Process the relationships
+        final String uniqueId = level.getUniqueId();
+        final ArrayList<Relationship> levelRelationships = new ArrayList<Relationship>();
+
+        // Refer-To relationships
+        processRelationshipList(RelationshipType.REFER_TO, level, variableMap, levelRelationships, lineNumber);
+
+        // Prerequisite relationships
+        processRelationshipList(RelationshipType.PREREQUISITE, level, variableMap, levelRelationships, lineNumber);
+
+        // Link-List relationships
+        processRelationshipList(RelationshipType.LINKLIST, level, variableMap, levelRelationships, lineNumber);
+
+        // Next and Previous relationships should only be created internally and shouldn't be specified by the user
+        if (variableMap.containsKey(RelationshipType.NEXT) || variableMap.containsKey(RelationshipType.PREVIOUS)) {
+            throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_NEXT_PREV_MSG, lineNumber, line));
+        }
+
+        // Add the relationships to the global list if any exist
+        if (!levelRelationships.isEmpty()) {
+            parserData.getLevelRelationships().put(uniqueId, levelRelationships);
+        }
+    }
+
+    protected void parseLevelInitialContent(final ParserData parserData, final Level level, final int lineNumber,
+            final String line) throws ParsingException {
+        parserData.setParsingInitialContent(true);
+        parserData.setIndentationLevel(parserData.getIndentationLevel() + 1);
+
+        // Get the mapping of variables
+        final HashMap<RelationshipType, String[]> variableMap = getLineVariables(parserData, line, lineNumber, '[', ']', ',',
+                false);
+
+        // Process any relationship content
+        processLevelRelationships(parserData, level, variableMap, line, lineNumber);
     }
 
     /**
@@ -1314,9 +1378,6 @@ public class ContentSpecParser {
         final int lastStartDelimPos = StringUtilities.lastIndexOf(line, startDelim);
         final int lastEndDelimPos = StringUtilities.lastIndexOf(line, endDelim);
 
-        // Check that we have variables to process
-        if (lastStartDelimPos == -1 && lastEndDelimPos == -1) return output;
-
         final String nextLine = parserData.getLines().peek();
 
         /*
@@ -1334,6 +1395,9 @@ public class ContentSpecParser {
                         groupTypes);
             }
         }
+
+        // Check that we have variables to process
+        if (lastStartDelimPos == -1 && lastEndDelimPos == -1) return output;
 
         /* Get the variables from the line */
         final List<VariableSet> varSets = findVariableSets(parserData, line, startDelim, endDelim);
@@ -1629,104 +1693,128 @@ public class ContentSpecParser {
      * @param parserData
      */
     protected void processRelationships(final ParserData parserData) {
-        for (final Map.Entry<String, List<Relationship>> entry : parserData.getRelationships().entrySet()) {
+        // Process the level relationships
+        for (final Map.Entry<String, List<Relationship>> entry : parserData.getLevelRelationships().entrySet()) {
+            final String levelId = entry.getKey();
+            final Level level = parserData.getLevels().get(levelId);
+
+            assert level != null;
+
+            for (final Relationship relationship : entry.getValue()) {
+                processRelationship(parserData, level, relationship);
+            }
+        }
+
+        // Process the topic relationships
+        for (final Map.Entry<String, List<Relationship>> entry : parserData.getTopicRelationships().entrySet()) {
             final String topicId = entry.getKey();
             final SpecTopic specTopic = parserData.getSpecTopics().get(topicId);
 
             assert specTopic != null;
 
             for (final Relationship relationship : entry.getValue()) {
-                final String relatedId = relationship.getSecondaryRelationshipTopicId();
-                // The relationship points to a target so it must be a level or topic
-                if (relatedId.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.TARGET_REGEX)) {
-                    if (parserData.getTargetTopics().containsKey(relatedId) && !parserData.getTargetLevels().containsKey(relatedId)) {
-                        specTopic.addRelationshipToTarget(parserData.getTargetTopics().get(relatedId),
-                                relationship.getType(),
-                                relationship.getRelationshipTitle());
-                    } else if (!parserData.getTargetTopics().containsKey(relatedId) && parserData.getTargetLevels().containsKey(
-                            relatedId)) {
-                        specTopic.addRelationshipToTarget(parserData.getTargetLevels().get(relatedId),
-                                relationship.getType(),
-                                relationship.getRelationshipTitle());
+                processRelationship(parserData, specTopic, relationship);
+            }
+        }
+    }
+
+    /**
+     * Process a specific relationship without any error checking.
+     *
+     * @param parserData
+     * @param specNode
+     * @param relationship
+     */
+    protected void processRelationship(final ParserData parserData, final SpecNodeWithRelationships specNode,
+            final Relationship relationship) {
+        final String relatedId = relationship.getSecondaryRelationshipId();
+        // The relationship points to a target so it must be a level or topic
+        if (relatedId.toUpperCase(Locale.ENGLISH).matches(ProcessorConstants.TARGET_REGEX)) {
+            if (parserData.getTargetTopics().containsKey(relatedId) && !parserData.getTargetLevels().containsKey(relatedId)) {
+                specNode.addRelationshipToTarget(parserData.getTargetTopics().get(relatedId), relationship.getType(),
+                        relationship.getRelationshipTitle());
+            } else if (!parserData.getTargetTopics().containsKey(relatedId) && parserData.getTargetLevels().containsKey(relatedId)) {
+                specNode.addRelationshipToTarget(parserData.getTargetLevels().get(relatedId), relationship.getType(),
+                        relationship.getRelationshipTitle());
+            } else {
+                final SpecTopic dummyTopic = new SpecTopic(-1, "");
+                dummyTopic.setTargetId(relatedId);
+                dummyTopic.setUniqueId("-1");
+                specNode.addRelationshipToTarget(dummyTopic, relationship.getType(), relationship.getRelationshipTitle());
+            }
+        }
+        // The relationship isn't a target so it must point to a topic directly
+        else {
+            if (!CSConstants.NEW_TOPIC_ID_PATTERN.matcher(relatedId).matches()) {
+                // The relationship isn't a unique new topic so it will contain the line number in front of
+                // the topic ID
+                if (!relatedId.startsWith("X")) {
+                    int count = 0;
+                    SpecTopic relatedTopic = null;
+
+                    // Get the related topic and count if more then one is found
+                    for (final Map.Entry<String, SpecTopic> specTopicEntry : parserData.getSpecTopics().entrySet()) {
+                        if (specTopicEntry.getKey().matches("^[\\w\\d]+-" + relatedId + "$")) {
+                            relatedTopic = specTopicEntry.getValue();
+                            count++;
+                        }
+                    }
+
+                    /*
+                     * Add the relationship to the node even if the relationship isn't duplicated
+                     * and the related topic isn't the current topic. This is so it shows up in the
+                     * output.
+                     */
+                    if (count > 0) {
+                        specNode.addRelationshipToTopic(relatedTopic, relationship.getType(), relationship.getRelationshipTitle());
                     } else {
                         final SpecTopic dummyTopic = new SpecTopic(-1, "");
-                        dummyTopic.setTargetId(relatedId);
-                        specTopic.addRelationshipToTarget(dummyTopic, relationship.getType(), relationship.getRelationshipTitle());
+                        dummyTopic.setId(relatedId);
+                        dummyTopic.setUniqueId("-1");
+                        specNode.addRelationshipToTopic(dummyTopic, relationship.getType(), relationship.getRelationshipTitle());
                     }
+                } else {
+                    final SpecTopic dummyTopic = new SpecTopic(-1, "");
+                    dummyTopic.setId(relatedId);
+                    dummyTopic.setUniqueId("-1");
+                    specNode.addRelationshipToTopic(dummyTopic, relationship.getType(), relationship.getRelationshipTitle());
                 }
-                // The relationship isn't a target so it must point to a topic directly
-                else {
-                    if (!CSConstants.NEW_TOPIC_ID_PATTERN.matcher(relatedId).matches()) {
-                        // The relationship isn't a unique new topic so it will contain the line number in front of
-                        // the topic ID
-                        if (!relatedId.startsWith("X")) {
-                            int count = 0;
-                            SpecTopic relatedTopic = null;
+            } else {
+                if (parserData.getSpecTopics().containsKey(relatedId)) {
+                    final SpecTopic relatedSpecTopic = parserData.getSpecTopics().get(relatedId);
 
-                            // Get the related topic and count if more then one is found
-                            for (final Map.Entry<String, SpecTopic> specTopicEntry : parserData.getSpecTopics().entrySet()) {
-                                if (specTopicEntry.getKey().matches("^[\\w\\d]+-" + relatedId + "$")) {
-                                    relatedTopic = specTopicEntry.getValue();
-                                    count++;
-                                }
-                            }
-
-                            /*
-                             * Add the relationship to the topic even if the relationship isn't duplicated
-                             * and the related topic isn't the current topic. This is so it shows up in the
-                             * output.
-                             */
-                            if (count > 0) {
-                                specTopic.addRelationshipToTopic(relatedTopic, relationship.getType(), relationship.getRelationshipTitle());
-                            } else {
-                                final SpecTopic dummyTopic = new SpecTopic(-1, "");
-                                dummyTopic.setId(relatedId);
-                                specTopic.addRelationshipToTopic(dummyTopic, relationship.getType(), relationship.getRelationshipTitle());
-                            }
-                        } else {
-                            final SpecTopic dummyTopic = new SpecTopic(-1, "");
-                            dummyTopic.setId(relatedId);
-                            specTopic.addRelationshipToTopic(dummyTopic, relationship.getType(), relationship.getRelationshipTitle());
-                        }
-                    } else {
-                        if (parserData.getSpecTopics().containsKey(relatedId)) {
-                            final SpecTopic relatedSpecTopic = parserData.getSpecTopics().get(relatedId);
-
-                            // Check that a duplicate doesn't exist, because if it does the new topic isn't unique
-                            String duplicatedId = "X" + relatedId.substring(1);
-                            boolean duplicateExists = false;
-                            for (String uniqueTopicId : parserData.getSpecTopics().keySet()) {
-                                if (uniqueTopicId.matches("^[\\w\\d]+-" + duplicatedId + "$")) {
-                                    duplicateExists = true;
-                                    break;
-                                }
-                            }
-
-                            if (relatedSpecTopic != specTopic) {
-                                if (!duplicateExists) {
-                                    specTopic.addRelationshipToTopic(relatedSpecTopic, relationship.getType(),
-                                            relationship.getRelationshipTitle());
-                                } else {
-                                    // Only create a new target if one doesn't already exist
-                                    if (relatedSpecTopic.getTargetId() == null) {
-                                        String targetId = ContentSpecUtilities.generateRandomTargetId(relatedSpecTopic.getUniqueId());
-                                        while (parserData.getTargetTopics().containsKey(
-                                                targetId) || parserData.getTargetLevels().containsKey(targetId)) {
-                                            targetId = ContentSpecUtilities.generateRandomTargetId(relatedSpecTopic.getUniqueId());
-                                        }
-                                        parserData.getSpecTopics().get(relatedId).setTargetId(targetId);
-                                        parserData.getTargetTopics().put(targetId, relatedSpecTopic);
-                                    }
-                                    specTopic.addRelationshipToTopic(relatedSpecTopic, relationship.getType(),
-                                            relationship.getRelationshipTitle());
-                                }
-                            }
-                        } else {
-                            final SpecTopic dummyTopic = new SpecTopic(-1, "");
-                            dummyTopic.setId(relatedId);
-                            specTopic.addRelationshipToTopic(dummyTopic, relationship.getType(), relationship.getRelationshipTitle());
+                    // Check that a duplicate doesn't exist, because if it does the new topic isn't unique
+                    String duplicatedId = "X" + relatedId.substring(1);
+                    boolean duplicateExists = false;
+                    for (String uniqueTopicId : parserData.getSpecTopics().keySet()) {
+                        if (uniqueTopicId.matches("^[\\w\\d]+-" + duplicatedId + "$")) {
+                            duplicateExists = true;
+                            break;
                         }
                     }
+
+                    if (relatedSpecTopic != specNode) {
+                        if (!duplicateExists) {
+                            specNode.addRelationshipToTopic(relatedSpecTopic, relationship.getType(), relationship.getRelationshipTitle());
+                        } else {
+                            // Only create a new target if one doesn't already exist
+                            if (relatedSpecTopic.getTargetId() == null) {
+                                String targetId = ContentSpecUtilities.generateRandomTargetId(relatedSpecTopic.getUniqueId());
+                                while (parserData.getTargetTopics().containsKey(targetId) || parserData.getTargetLevels().containsKey(
+                                        targetId)) {
+                                    targetId = ContentSpecUtilities.generateRandomTargetId(relatedSpecTopic.getUniqueId());
+                                }
+                                parserData.getSpecTopics().get(relatedId).setTargetId(targetId);
+                                parserData.getTargetTopics().put(targetId, relatedSpecTopic);
+                            }
+                            specNode.addRelationshipToTopic(relatedSpecTopic, relationship.getType(), relationship.getRelationshipTitle());
+                        }
+                    }
+                } else {
+                    final SpecTopic dummyTopic = new SpecTopic(-1, "");
+                    dummyTopic.setId(relatedId);
+                    dummyTopic.setUniqueId("-1");
+                    specNode.addRelationshipToTopic(dummyTopic, relationship.getType(), relationship.getRelationshipTitle());
                 }
             }
         }
@@ -1879,17 +1967,24 @@ public class ContentSpecParser {
         private int spaces = 2;
         private ContentSpec contentSpec = new ContentSpec();
         private int indentationLevel = 0;
-        private boolean parsingFrontMatter = false;
+        private boolean parsingInitialContent = false;
         private HashMap<String, SpecTopic> specTopics = new HashMap<String, SpecTopic>();
+        private HashMap<String, Level> levels = new HashMap<String, Level>();
         private HashMap<String, Level> targetLevels = new HashMap<String, Level>();
         private HashMap<String, Level> externalTargetLevels = new HashMap<String, Level>();
         private HashMap<String, SpecTopic> targetTopics = new HashMap<String, SpecTopic>();
-        private HashMap<String, List<Relationship>> relationships = new HashMap<String, List<Relationship>>();
+        private HashMap<String, List<Relationship>> topicRelationships = new HashMap<String, List<Relationship>>();
+        private HashMap<String, List<Relationship>> levelRelationships = new HashMap<String, List<Relationship>>();
         private ArrayList<Process> processes = new ArrayList<Process>();
         private Set<String> parsedMetaDataKeys = new HashSet<String>();
         private Level lvl = contentSpec.getBaseLevel();
         private int lineCount = 0;
         private LinkedList<String> lines = new LinkedList<String>();
+
+        public ParserData() {
+            lvl.setUniqueId("L0");
+            levels.put("L0", lvl);
+        }
 
         public int getLineCount() {
             return lineCount;
@@ -1945,8 +2040,17 @@ public class ContentSpecParser {
          *
          * @return The mapping of topics to their unique Content Specification Topic ID's
          */
-        protected HashMap<String, SpecTopic> getSpecTopics() {
+        public HashMap<String, SpecTopic> getSpecTopics() {
             return specTopics;
+        }
+
+        /**
+         * Gets the Content Specification Levels/Containers inside of a content specification
+         *
+         * @return The mapping of levels to their line numbers.
+         */
+        public HashMap<String, Level> getLevels() {
+            return levels;
         }
 
         /**
@@ -1954,7 +2058,7 @@ public class ContentSpecParser {
          *
          * @return A List of Processes
          */
-        protected List<Process> getProcesses() {
+        public List<Process> getProcesses() {
             return processes;
         }
 
@@ -1963,7 +2067,7 @@ public class ContentSpecParser {
          *
          * @return A list of Content Specification Topics mapped by their Target ID.
          */
-        protected HashMap<String, SpecTopic> getTargetTopics() {
+        public HashMap<String, SpecTopic> getTargetTopics() {
             return targetTopics;
         }
 
@@ -1972,7 +2076,7 @@ public class ContentSpecParser {
          *
          * @return A List of Levels mapped by their Target ID.
          */
-        protected HashMap<String, Level> getTargetLevels() {
+        public HashMap<String, Level> getTargetLevels() {
             return targetLevels;
         }
 
@@ -1981,17 +2085,26 @@ public class ContentSpecParser {
          *
          * @return A List of External Levels mapped by their Target ID.
          */
-        protected HashMap<String, Level> getExternalTargetLevels() {
+        public HashMap<String, Level> getExternalTargetLevels() {
             return externalTargetLevels;
         }
 
         /**
-         * Gets the relationships that were created when parsing the Content Specification.
+         * Gets the relationships that were created for topics when parsing the Content Specification.
          *
          * @return The map of Unique id's to relationships
          */
-        protected HashMap<String, List<Relationship>> getRelationships() {
-            return relationships;
+        public HashMap<String, List<Relationship>> getTopicRelationships() {
+            return topicRelationships;
+        }
+
+        /**
+         * Gets the relationships that were created for levels when parsing the Content Specification.
+         *
+         * @return The map of Unique id's to relationships
+         */
+        public HashMap<String, List<Relationship>> getLevelRelationships() {
+            return levelRelationships;
         }
 
         /**
@@ -2007,12 +2120,12 @@ public class ContentSpecParser {
             this.contentSpec = contentSpec;
         }
 
-        public boolean isParsingFrontMatter() {
-            return parsingFrontMatter;
+        public boolean isParsingInitialContent() {
+            return parsingInitialContent;
         }
 
-        public void setParsingFrontMatter(boolean parsingFrontMatter) {
-            this.parsingFrontMatter = parsingFrontMatter;
+        public void setParsingInitialContent(boolean parsingInitialContent) {
+            this.parsingInitialContent = parsingInitialContent;
         }
     }
 }

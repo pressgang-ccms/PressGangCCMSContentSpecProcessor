@@ -25,6 +25,7 @@ import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
 import org.jboss.pressgang.ccms.contentspec.enums.TopicType;
 import org.jboss.pressgang.ccms.contentspec.exceptions.ParsingException;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -39,6 +40,14 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
     @ArbitraryString(type = ALPHANUMERIC) String url;
     @ArbitraryString(type = ALPHANUMERIC) String writer;
     @ArbitraryString(type = ALPHANUMERIC) String topicTag;
+
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+        if (levelType == LevelType.BASE || levelType == LevelType.PROCESS) {
+            levelType = LevelType.CHAPTER;
+        }
+    }
 
     @Test
     public void shouldCreateEmptyLevelOfType() throws Exception {
@@ -182,7 +191,7 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         // Given a line number, level type and a line with an appendix relationship specified
         List<String> relationshipTypes = Arrays.asList("R", "P", "NEXT", "PREV");
         String relationship = selectRandomListItem(relationshipTypes);
-        String line = "Chapter:" + title + "[T" + id + "] [" + relationship + ": " + title + "[" + id + "]]";
+        String line = levelType.getTitle() + ":" + title + "[T" + id + "] [" + relationship + ": " + title + "[" + id + "]]";
 
         // When process level is called
         try {
@@ -191,7 +200,8 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
             // Then a parsing exception should be thrown containing an appropriate error
             fail(MISSING_PARSING_EXCEPTION);
         } catch (ParsingException e) {
-            assertThat(e.getMessage(), containsString("Invalid Chapter! Relationships can't be used for a Chapter."));
+            assertThat(e.getMessage(), containsString("Invalid " + levelType.getTitle() + "! Relationships can't be used for a " +
+                    levelType.getTitle() + "."));
             // And the line number should be included
             assertThat(e.getMessage(), containsString(lineNumber.toString()));
         }
