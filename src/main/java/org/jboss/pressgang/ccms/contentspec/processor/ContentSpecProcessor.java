@@ -1228,8 +1228,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 if (childNode instanceof SpecTopic) {
                     final SpecTopic specTopic = (SpecTopic) childNode;
                     mergeTopic(specTopic, newCSNodeEntity);
-                    if (specTopic.getTopicType().equals(TopicType.LEVEL)) {
-                        newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_INNER_TOPIC);
+                    if (specTopic.getTopicType().equals(TopicType.INITIAL_CONTENT)) {
+                        newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_INITIAL_CONTENT_TOPIC);
                     } else {
                         newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_TOPIC);
                     }
@@ -1266,13 +1266,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                         changed = true;
                     }
                     if (specTopic.getTopicType().equals(
-                            TopicType.LEVEL) && (foundNodeEntity.getNodeType() == null || !foundNodeEntity.getNodeType().equals(
-                            CommonConstants.CS_NODE_INNER_TOPIC))) {
-                        foundNodeEntity.setNodeType(CommonConstants.CS_NODE_INNER_TOPIC);
-                        foundNodeEntity.setNextNode(null);
+                            TopicType.INITIAL_CONTENT) && (foundNodeEntity.getNodeType() == null || !foundNodeEntity.getNodeType().equals(
+                            CommonConstants.CS_NODE_INITIAL_CONTENT_TOPIC))) {
+                        foundNodeEntity.setNodeType(CommonConstants.CS_NODE_INITIAL_CONTENT_TOPIC);
                         changed = true;
                     } else if (!specTopic.getTopicType().equals(
-                            TopicType.LEVEL) && (foundNodeEntity.getNodeType() == null || !foundNodeEntity.getNodeType().equals(
+                            TopicType.INITIAL_CONTENT) && (foundNodeEntity.getNodeType() == null || !foundNodeEntity.getNodeType().equals(
                             CommonConstants.CS_NODE_TOPIC))) {
                         foundNodeEntity.setNodeType(CommonConstants.CS_NODE_TOPIC);
                         changed = true;
@@ -1306,13 +1305,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             if (childNode instanceof Level) {
                 final Level level = (Level) childNode;
 
-                // Add the levels initial content topics to the list of children if one exists
+                // Get the child nodes
                 final LinkedList<Node> children = new LinkedList<Node>(level.getChildNodes());
-                if (!level.getInitialContentTopics().isEmpty()) {
-                    for (final SpecTopic initialContentTopic : level.getInitialContentTopics()) {
-                        children.addFirst(initialContentTopic);
-                    }
-                }
 
                 final ArrayList<CSNodeWrapper> currentChildren = new ArrayList<CSNodeWrapper>();
                 if (foundNodeEntity.getChildren() != null) {
@@ -1338,10 +1332,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
 
             // Set up the next node relationship for the previous node
-            if (!foundNodeEntity.getNodeType().equals(CommonConstants.CS_NODE_INNER_TOPIC) && prevNode != null &&
-                    (prevNode.getNextNode() == null || (prevNode.getNextNode() != null && foundNodeEntity.getId() == null) || (prevNode
-                            .getNextNode() != null && !prevNode.getNextNode().getId().equals(
-                            foundNodeEntity.getId())))) {
+            if (prevNode != null && (prevNode.getNextNode() == null || (prevNode.getNextNode() != null && foundNodeEntity.getId() ==
+                    null) || (prevNode.getNextNode() != null && !prevNode.getNextNode().getId().equals(
+                    foundNodeEntity.getId())))) {
                 prevNode.setNextNode(foundNodeEntity);
                 changed = true;
 
@@ -1368,9 +1361,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
 
             // Set the previous node to the current node since processing is done
-            if (!foundNodeEntity.getNodeType().equals(CommonConstants.CS_NODE_INNER_TOPIC)) {
-                prevNode = foundNodeEntity;
-            }
+            prevNode = foundNodeEntity;
         }
 
         // If there is a previous node then make sure it's next node id is null as it's the last in the linked list
@@ -1725,8 +1716,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             final CSNodeWrapper entity = nodes.getValue();
 
             // Check if the node or entity have any relationships, if not then the node doesn't need to be merged
-            if (!specNode.getRelationships().isEmpty() || entity.getRelatedToNodes() != null && !entity.getRelatedToNodes()
-                    .isEmpty()) {
+            if (!specNode.getRelationships().isEmpty() || entity.getRelatedToNodes() != null && !entity.getRelatedToNodes().isEmpty()) {
                 // merge the relationships from the spec topic to the entity
                 mergeRelationship(nodeMapping, specNode, entity, nodeProvider);
             }
@@ -1737,8 +1727,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * Merges the relationships from a Spec Node into a Node Entity.
      *
      * @param nodeMapping  The mapping of Spec Nodes to Entity nodes.
-     * @param specNode    The Spec Node to get the relationships from.
-     * @param entity  The Entity to merge the relationships into.
+     * @param specNode     The Spec Node to get the relationships from.
+     * @param entity       The Entity to merge the relationships into.
      * @param nodeProvider The provider factory for getting new or existing nodes.
      */
     protected void mergeRelationship(final Map<SpecNode, CSNodeWrapper> nodeMapping, final SpecNodeWithRelationships specNode,
@@ -1987,8 +1977,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         if (matchTypes) {
             boolean matches = true;
             switch (specTopic.getTopicType()) {
-                case LEVEL:
-                    matches = node.getNodeType().equals(CommonConstants.CS_NODE_INNER_TOPIC);
+                case INITIAL_CONTENT:
+                    matches = node.getNodeType().equals(CommonConstants.CS_NODE_INITIAL_CONTENT_TOPIC);
                     break;
                 case NORMAL:
                     matches = node.getNodeType().equals(CommonConstants.CS_NODE_TOPIC);

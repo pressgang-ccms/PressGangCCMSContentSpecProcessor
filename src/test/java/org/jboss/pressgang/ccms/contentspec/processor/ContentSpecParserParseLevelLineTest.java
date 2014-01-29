@@ -63,6 +63,7 @@ public class ContentSpecParserParseLevelLineTest extends ContentSpecParserTest {
         // Given a line with a valid level type but invalid other contents
         ArrayList<LevelType> levelTypes = new ArrayList<LevelType>(asList(LevelType.values()));
         levelTypes.remove(LevelType.BASE);
+        levelTypes.remove(LevelType.INITIAL_CONTENT);
         LevelType levelType = selectRandomListItem(levelTypes);
         String line = levelType.name() + ": " + "[";
 

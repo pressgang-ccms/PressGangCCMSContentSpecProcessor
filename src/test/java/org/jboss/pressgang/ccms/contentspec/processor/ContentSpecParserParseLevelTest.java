@@ -19,6 +19,7 @@ import java.util.List;
 import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import org.hamcrest.Matchers;
+import org.jboss.pressgang.ccms.contentspec.InitialContent;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
@@ -44,8 +45,8 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        if (levelType == LevelType.BASE || levelType == LevelType.PROCESS) {
-            levelType = LevelType.CHAPTER;
+        if (levelType == LevelType.BASE || levelType == LevelType.PROCESS || levelType == LevelType.INITIAL_CONTENT) {
+            levelType = LevelType.SECTION;
         }
     }
 
@@ -216,10 +217,11 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
 
         // Then the inner topic is set
-        final SpecTopic initialContentTopic = result.getInitialContentTopics().get(0);
+        final InitialContent initialContent = (InitialContent) result.getChildLevels().get(0);
+        final SpecTopic initialContentTopic = initialContent.getSpecTopics().get(0);
         assertNotNull(initialContentTopic);
         assertEquals(initialContentTopic.getId(), id.toString());
-        assertEquals(initialContentTopic.getTopicType(), TopicType.LEVEL);
+        assertEquals(initialContentTopic.getTopicType(), TopicType.INITIAL_CONTENT);
     }
 
     @Test
@@ -231,7 +233,8 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
 
         // Then the inner topic and tag is set
-        final SpecTopic initialContentTopic = result.getInitialContentTopics().get(0);
+        final InitialContent initialContent = (InitialContent) result.getChildLevels().get(0);
+        final SpecTopic initialContentTopic = initialContent.getSpecTopics().get(0);
         assertNotNull(initialContentTopic);
         assertEquals(initialContentTopic.getId(), id.toString());
         assertThat(result.getTags(false), Matchers.contains(topicTag));

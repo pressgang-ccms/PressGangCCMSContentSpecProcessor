@@ -16,6 +16,7 @@ import net.sf.ipsedixit.core.StringType;
 import org.jboss.pressgang.ccms.contentspec.Chapter;
 import org.jboss.pressgang.ccms.contentspec.Comment;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.InitialContent;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
@@ -303,7 +304,8 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
         assertThat(contentSpec.getBaseLevel().getChildNodes().size(), is(1));
         final Level level = (Level) contentSpec.getBaseLevel().getChildNodes().get(0);
         assertThat(level.getTitle(), is("Test"));
-        final SpecTopic specTopic = (SpecTopic) level.getInitialContentTopics().get(0);
+        final InitialContent initialContent = (InitialContent) level.getChildNodes().get(0);
+        final SpecTopic specTopic = (SpecTopic) initialContent.getSpecTopics().get(0);
         assertThat(specTopic.getTitle(), is(title));
         assertThat(specTopic.getId(), is(id.toString()));
         // and the line processed successfully

@@ -107,8 +107,8 @@ public class ProcessorConstants {
     public static final String ERROR_TAG_NONEXIST_MSG = LINE + INVALID_CS + " Tag \"%s\" doesn't exist." + CSLINE_MSG;
     public static final String ERROR_MULTI_TAG_DUPLICATED_MSG = LINE + INVALID_CS + " One or more tags are duplicated." + CSLINE_MSG;
     public static final String ERROR_CS_EMPTY_MSG = LINE + INVALID_CS + " The content specification can't be empty.";
-    public static final String ERROR_CS_SECTION_NO_CHAPTER_MSG = LINE + INVALID_CS + " A Section can't be outside of a Chapter, Preface, " +
-            "Article or Appendix." + CSLINE_MSG;
+    public static final String ERROR_CS_SECTION_NO_CHAPTER_MSG = LINE + INVALID_CS + " A Section must be within a Chapter, " +
+            "Preface, Article or Appendix." + CSLINE_MSG;
     public static final String ERROR_CS_NESTED_CHAPTER_MSG = LINE + INVALID_CS + " A Chapter must be within a \"Part\" or have no " +
             "indentation." + CSLINE_MSG;
     public static final String ERROR_CS_NESTED_PREFACE_MSG = LINE + INVALID_CS + " A Preface must be within a \"Part\" or have no " +
@@ -139,6 +139,8 @@ public class ProcessorConstants {
             "contain chapters or parts.";
     public static final String ERROR_CS_APPENDIX_STRUCTURE_MSG = LINE + INVALID_CS + " An Appendix must be at the end of the content " +
             "specification." + CSLINE_MSG;
+    public static final String ERROR_CS_INITIAL_CONTENT_STRUCTURE_MSG = LINE + INVALID_CS + " " + CSConstants.LEVEL_INITIAL_CONTENT +
+            " must be at the start of the %s." + CSLINE_MSG;
     public static final String ERROR_INVALID_ATTRIBUTE_MSG = LINE + INVALID_CS + " Unknown attribute found. \"condition\", " +
             "\"Description\", \"URL\" and \"Writer\" are currently the only supported attributes." + CSLINE_MSG;
     public static final String ERROR_INVALID_CONDITION_MSG = LINE + INVALID_CS + " The condition statement must be a valid regular " +
@@ -210,6 +212,8 @@ public class ProcessorConstants {
     public static final String ERROR_LEVEL_RELATIONSHIP_MSG = LINE + "Invalid %s! Relationships can't be used for a %s." + CSLINE_MSG;
     public static final String ERROR_LEVEL_TOPIC_TITLES_NONMATCH_MSG = LINE + "Invalid %s! The topic title doesn't match." +
             CSLINE_MSG + CSLINE_MSG;
+    public static final String ERROR_INITIAL_CONTENT_CHILD_LEVEL_MSG = LINE + INVALID_CS + " " + CSConstants.LEVEL_INITIAL_CONTENT + " " +
+            "cannot have child levels.";
 
     public static final String ERROR_INVALID_NUMBER_MSG = LINE + "Number expected but the value specified is not a valid number." +
             CSLINE_MSG;
@@ -291,8 +295,8 @@ public class ProcessorConstants {
             "Group Topic." + CSLINE_MSG;
     public static final String ERROR_ABSTRACT_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not an Abstract " +
             "Topic." + CSLINE_MSG;
-    public static final String ERROR_TOPIC_CANNOT_BE_USED_AS_FRONT_MATTER = LINE + INVALID_TOPIC + " The Topic specified has content that" +
-            " cannot be used in the front matter of a Chapter/Section/Appendix." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT = LINE + INVALID_TOPIC + " The Topic specified has content that" +
+            " cannot be used in the initial content of a Chapter/Preface/Section/Appendix." + CSLINE_MSG;
 
     // Files
     public static final String ERROR_FILE_ID_NONEXIST_MSG = LINE + INVALID_FILE + " ID doesn't exist in the database." + CSLINE_MSG;

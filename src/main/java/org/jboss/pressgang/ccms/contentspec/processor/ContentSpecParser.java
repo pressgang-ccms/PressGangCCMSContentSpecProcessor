@@ -1,5 +1,6 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
 
 import java.io.BufferedReader;
@@ -23,6 +24,7 @@ import org.jboss.pressgang.ccms.contentspec.Chapter;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.File;
 import org.jboss.pressgang.ccms.contentspec.FileList;
+import org.jboss.pressgang.ccms.contentspec.InitialContent;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Part;
@@ -398,23 +400,14 @@ public class ContentSpecParser {
                 // The line was indented without a new level so throw an error
                 throw new IndentationException(format(ProcessorConstants.ERROR_INCORRECT_INDENTATION_MSG, lineNumber, trimmedLine));
             } else if (lineIndentationLevel < parserData.getIndentationLevel()) {
-                // Since initial content isn't an actual level, just move back one step if the indentation changes
-                if (parserData.isParsingInitialContent()) {
-                    parserData.setParsingInitialContent(false);
-                    parserData.setIndentationLevel(parserData.getIndentationLevel() - 1);
-                }
-
-                // Check to see if we still need to move levels
-                if (lineIndentationLevel < parserData.getIndentationLevel()) {
-                    // The line has left the previous level so move the current level up to the right level
-                    Level newCurrentLevel = parserData.getCurrentLevel();
-                    for (int i = (parserData.getIndentationLevel() - lineIndentationLevel); i > 0; i--) {
-                        if (newCurrentLevel.getParent() != null) {
-                            newCurrentLevel = newCurrentLevel.getParent();
-                        }
+                // The line has left the previous level so move the current level up to the right level
+                Level newCurrentLevel = parserData.getCurrentLevel();
+                for (int i = (parserData.getIndentationLevel() - lineIndentationLevel); i > 0; i--) {
+                    if (newCurrentLevel.getParent() != null) {
+                        newCurrentLevel = newCurrentLevel.getParent();
                     }
-                    changeCurrentLevel(parserData, newCurrentLevel, lineIndentationLevel);
                 }
+                changeCurrentLevel(parserData, newCurrentLevel, lineIndentationLevel);
             }
 
             // Process the line based on what type the line is
@@ -422,22 +415,20 @@ public class ContentSpecParser {
                 if (isMetaDataLine(parserData, trimmedLine)) {
                     parseMetaDataLine(parserData, line, lineNumber);
                 } else if (isLevelInitialContentLine(trimmedLine)) {
-                    parseLevelInitialContent(parserData, parserData.getCurrentLevel(), lineNumber, trimmedLine);
-                } else if (isLevelLine(trimmedLine)) {
-                    if (parserData.isParsingInitialContent()) {
-                        // Initial content can only be topics so throw a parsing error
-                        // TODO Error Message
-                        throw new ParsingException();
-                    } else {
-                        final Level level = parseLevelLine(parserData, trimmedLine, lineNumber);
-                        if (level instanceof Process) {
-                            parserData.getProcesses().add((Process) level);
-                        }
-                        parserData.getCurrentLevel().appendChild(level);
+                    final Level initialContent = parseLevelLine(parserData, trimmedLine, lineNumber);
+                    parserData.getCurrentLevel().appendChild(initialContent);
 
-                        // Change the current level to use the new parsed level
-                        changeCurrentLevel(parserData, level, parserData.getIndentationLevel() + 1);
+                    // Change the current level to use the new parsed level
+                    changeCurrentLevel(parserData, initialContent, parserData.getIndentationLevel() + 1);
+                } else if (isLevelLine(trimmedLine)) {
+                    final Level level = parseLevelLine(parserData, trimmedLine, lineNumber);
+                    if (level instanceof Process) {
+                        parserData.getProcesses().add((Process) level);
                     }
+                    parserData.getCurrentLevel().appendChild(level);
+
+                    // Change the current level to use the new parsed level
+                    changeCurrentLevel(parserData, level, parserData.getIndentationLevel() + 1);
 //                } else if (trimmedLine.toUpperCase(Locale.ENGLISH).matches("^CS[ ]*:.*")) {
 //                    processExternalLevelLine(getCurrentLevel(), line);
                 } else if (StringUtilities.indexOf(trimmedLine,
@@ -447,13 +438,8 @@ public class ContentSpecParser {
                     // Process a new topic
                     final SpecTopic tempTopic = parseTopic(parserData, trimmedLine, lineNumber);
 
-                    // Add the spec topic to the correct component in the level
-                    if (parserData.isParsingInitialContent()) {
-                        parserData.getCurrentLevel().addFrontMatterTopic(tempTopic);
-                    } else {
-                        // Adds the topic to the current level
-                        parserData.getCurrentLevel().appendSpecTopic(tempTopic);
-                    }
+                    // Adds the topic to the current level
+                    parserData.getCurrentLevel().appendSpecTopic(tempTopic);
                 }
             } catch (ParsingException e) {
                 log.error(e.getMessage());
@@ -1171,6 +1157,8 @@ public class ContentSpecParser {
                 return new Part(null, lineNumber, input);
             case PROCESS:
                 return new Process(null, lineNumber, input);
+            case INITIAL_CONTENT:
+                return new InitialContent(lineNumber, input);
             default:
                 return new Level(null, lineNumber, input, levelType);
         }
@@ -1199,7 +1187,9 @@ public class ContentSpecParser {
         // Parse the input
         if (splitVars.length >= 2) {
             final String title = ProcessorUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
-            newLvl.setTitle(title);
+            if (!isNullOrEmpty(title)) {
+                newLvl.setTitle(title);
+            }
             // Get the mapping of variables
             final HashMap<RelationshipType, List<String[]>> variableMap = getLineVariables(parserData, splitVars[1], lineNumber, '[', ']',
                     ',', false, true);
@@ -1208,9 +1198,19 @@ public class ContentSpecParser {
                 for (final String[] variables : variableMap.get(RelationshipType.NONE)) {
                     if (variables.length >= 1) {
                         if (variables[0].matches(CSConstants.ALL_TOPIC_ID_REGEX)) {
+                            final InitialContent initialContent;
+                            if (newLvl instanceof InitialContent) {
+                                initialContent = (InitialContent) newLvl;
+                            } else {
+                                initialContent = new InitialContent(lineNumber, "");
+                                initialContent.setUniqueId("L" + lineNumber + "-1");
+                                parserData.getLevels().put(initialContent.getUniqueId(), initialContent);
+                                newLvl.appendChild(initialContent);
+                            }
+
                             final String topicString = title + " [" + StringUtilities.buildString(variables, ", ") + "]";
-                            final SpecTopic frontMatterTopic = parseTopic(parserData, topicString, lineNumber);
-                            newLvl.addFrontMatterTopic(frontMatterTopic);
+                            final SpecTopic initialContentTopic = parseTopic(parserData, topicString, lineNumber);
+                            initialContent.appendSpecTopic(initialContentTopic);
                         } else {
                             // Process the options
                             if (!optionsProcessed) {
@@ -1267,12 +1267,14 @@ public class ContentSpecParser {
                     RelationshipType.PREVIOUS) || variableMap.containsKey(RelationshipType.LINKLIST)) {
 
                 // Check that no relationships were specified for the level
-                if (newLvl.getInitialContentTopics().size() != 1) {
+                if (newLvl instanceof InitialContent) {
+                    processLevelRelationships(parserData, newLvl, flattenedVariableMap, line, lineNumber);
+                } else if (newLvl.getChildLevels().isEmpty()) {
                     throw new ParsingException(
                             format(ProcessorConstants.ERROR_LEVEL_RELATIONSHIP_MSG, lineNumber, levelType.getTitle(), levelType.getTitle(),
                                     line));
                 } else {
-                    processLevelRelationships(parserData, newLvl, flattenedVariableMap, line, lineNumber);
+                    processLevelRelationships(parserData, (Level) newLvl.getChildLevels().get(0), flattenedVariableMap, line, lineNumber);
                 }
             }
         }
@@ -1314,19 +1316,6 @@ public class ContentSpecParser {
         if (!levelRelationships.isEmpty()) {
             parserData.getLevelRelationships().put(uniqueId, levelRelationships);
         }
-    }
-
-    protected void parseLevelInitialContent(final ParserData parserData, final Level level, final int lineNumber,
-            final String line) throws ParsingException {
-        parserData.setParsingInitialContent(true);
-        parserData.setIndentationLevel(parserData.getIndentationLevel() + 1);
-
-        // Get the mapping of variables
-        final HashMap<RelationshipType, String[]> variableMap = getLineVariables(parserData, line, lineNumber, '[', ']', ',',
-                false);
-
-        // Process any relationship content
-        processLevelRelationships(parserData, level, variableMap, line, lineNumber);
     }
 
     /**
@@ -1967,7 +1956,6 @@ public class ContentSpecParser {
         private int spaces = 2;
         private ContentSpec contentSpec = new ContentSpec();
         private int indentationLevel = 0;
-        private boolean parsingInitialContent = false;
         private HashMap<String, SpecTopic> specTopics = new HashMap<String, SpecTopic>();
         private HashMap<String, Level> levels = new HashMap<String, Level>();
         private HashMap<String, Level> targetLevels = new HashMap<String, Level>();
@@ -2118,14 +2106,6 @@ public class ContentSpecParser {
 
         public void setContentSpec(final ContentSpec contentSpec) {
             this.contentSpec = contentSpec;
-        }
-
-        public boolean isParsingInitialContent() {
-            return parsingInitialContent;
-        }
-
-        public void setParsingInitialContent(boolean parsingInitialContent) {
-            this.parsingInitialContent = parsingInitialContent;
         }
     }
 }

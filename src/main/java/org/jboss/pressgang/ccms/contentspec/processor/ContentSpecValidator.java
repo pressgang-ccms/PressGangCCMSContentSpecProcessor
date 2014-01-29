@@ -22,6 +22,7 @@ import com.j2bugzilla.base.ConnectionException;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.File;
 import org.jboss.pressgang.ccms.contentspec.FileList;
+import org.jboss.pressgang.ccms.contentspec.InitialContent;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Node;
@@ -817,19 +818,22 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             // Check to make sure the topic doesn't relate to itself
             log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, node.getLineNumber(), node.getText()));
             return false;
-        } else if (node instanceof Level && ((Level) node).getInitialContentTopics().contains(relatedTopic)) {
+        } else if (node instanceof InitialContent && ((Level) node).getSpecTopics().contains(relatedTopic)) {
             // Check that the relationship isn't to something in the front matter content, as it would relate to itself
             // TODO Proper Error Message
             log.error(String.format(ProcessorConstants.ERROR_TOPIC_RELATED_TO_ITSELF_MSG, node.getLineNumber(), node.getText()));
             return false;
-        } else if (node instanceof SpecTopic && ((SpecTopic) node).getTopicType() == TopicType.LEVEL) {
+        } else if (node instanceof SpecTopic && ((SpecTopic) node).getTopicType() == TopicType.INITIAL_CONTENT) {
             // Initial Content topics can't have relationships
             log.error(String.format(ProcessorConstants.ERROR_INITIAL_CONTENT_TOPIC_RELATIONSHIP_MSG, node.getLineNumber(), node.getText()));
             return false;
         } else {
-            final String relatedTitle = TopicType.LEVEL.equals(
-                    relatedTopic.getTopicType()) && relatedTopic.getParent() instanceof Level ? ((Level) relatedTopic.getParent())
-                    .getTitle() : relatedTopic.getTitle();
+            final String relatedTitle;
+            if (TopicType.INITIAL_CONTENT.equals(relatedTopic.getTopicType()) && relatedTopic.getParent() instanceof InitialContent) {
+                 relatedTitle = ((InitialContent) relatedTopic.getParent()).getParent().getTitle();
+            } else {
+                relatedTitle = relatedTopic.getTitle();
+            }
             if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(relatedTitle)) {
                 if (processingOptions.isStrictTitles()) {
                     log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, node.getLineNumber(),
@@ -866,7 +870,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             log.error(String.format(ProcessorConstants.ERROR_LEVEL_RELATED_TO_ITSELF_MSG, node.getLineNumber(),
                     relatedLevel.getLevelType().getTitle(), node.getText()));
             return false;
-        } else if (node instanceof SpecTopic && ((SpecTopic) node).getTopicType() == TopicType.LEVEL) {
+        } else if (node instanceof SpecTopic && ((SpecTopic) node).getTopicType() == TopicType.INITIAL_CONTENT) {
             // Initial Content topics can't have relationships
             log.error(String.format(ProcessorConstants.ERROR_INITIAL_CONTENT_TOPIC_RELATIONSHIP_MSG, node.getLineNumber(), node.getText()));
             return false;
@@ -913,18 +917,10 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that the level isn't empty
-        if (levelType != LevelType.PART && level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 0 /*
-                                                                                       * && !allowEmptyLevels &&
-                                                                                       * (allowEmptyLevels &&
-                                                                                       * !csAllowEmptyLevels)
-                                                                                       */) {
-            // Check to make sure a front matter topic doesn't exist, unless its a section level as in that case the section should just
-            // be a normal topic
-            if (levelType == LevelType.SECTION || level.getInitialContentTopics().isEmpty()) {
-                log.error(format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), levelType.getTitle(),
-                        levelType.getTitle(), level.getText()));
-                valid = false;
-            }
+        if (levelType != LevelType.PART && level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 0) {
+            log.error(format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), levelType.getTitle(),
+                    levelType.getTitle(), level.getText()));
+            valid = false;
         } else if (levelType == LevelType.PART && level.getNumberOfChildLevels() <= 0) {
             log.error(format(ProcessorConstants.ERROR_LEVEL_NO_CHILD_LEVELS_MSG, level.getLineNumber(), levelType.getTitle(),
                     levelType.getTitle(), level.getText()));
@@ -935,15 +931,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             log.error(String.format(ProcessorConstants.ERROR_LEVEL_NO_TITLE_MSG, level.getLineNumber(), levelType.getTitle(),
                     level.getText()));
             valid = false;
-        }
-
-        // Validate the front matter topics for the level
-        if (!level.getInitialContentTopics().isEmpty()) {
-            for (final SpecTopic frontMatterTopic : level.getInitialContentTopics()) {
-                if (!preValidateTopic(frontMatterTopic, specTopics, bookType, contentSpec)) {
-                    valid = false;
-                }
-            }
         }
 
         // Validate the sub levels and topics
@@ -1001,6 +988,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 case SECTION:
                     if (!(parentLevelType == LevelType.BASE || parentLevelType == LevelType.SECTION)) {
                         log.error(format(ProcessorConstants.ERROR_ARTICLE_SECTION_MSG, level.getLineNumber(), level.getText()));
+                        valid = false;
+                    }
+                    break;
+                case INITIAL_CONTENT:
+                    // Check that the initial content is at the start of the container
+                    if (level.getParent().getFirstSpecNode() != level) {
+                        log.error(format(ProcessorConstants.ERROR_CS_INITIAL_CONTENT_STRUCTURE_MSG, level.getLineNumber(),
+                                parentLevelType.getTitle(), level.getText()));
                         valid = false;
                     }
                     break;
@@ -1063,6 +1058,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                         valid = false;
                     }
                     break;
+                case INITIAL_CONTENT:
+                    // Check that the initial content is at the start of the container
+                    if (level.getParent().getFirstSpecNode() != level) {
+                        log.error(format(ProcessorConstants.ERROR_CS_INITIAL_CONTENT_STRUCTURE_MSG, level.getLineNumber(),
+                                parentLevelType.getTitle(), level.getText()));
+                        valid = false;
+                    }
+                    break;
                 default:
                     break;
             }
@@ -1098,15 +1101,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // Validate the tags
         if (!validateTopicTags(level, level.getTags(false))) {
             valid = false;
-        }
-
-        // Validate the front matter topics for the level
-        if (!level.getInitialContentTopics().isEmpty()) {
-            for (final SpecTopic frontMatterTopic : level.getInitialContentTopics()) {
-                if (!postValidateTopic(frontMatterTopic)) {
-                    valid = false;
-                }
-            }
         }
 
         // Validate the sub levels and topics
@@ -1170,7 +1164,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             final LevelType parentLevelType = parent.getLevelType();
             if (parent == null || !(parentLevelType == LevelType.CHAPTER || parentLevelType == LevelType.APPENDIX ||
                     parentLevelType == LevelType.PROCESS || parentLevelType == LevelType.SECTION || parentLevelType == LevelType.PART ||
-                    parentLevelType == LevelType.PREFACE)) {
+                    parentLevelType == LevelType.PREFACE || parentLevelType == LevelType.INITIAL_CONTENT)) {
                 log.error(format(ProcessorConstants.ERROR_TOPIC_OUTSIDE_CHAPTER_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
@@ -1480,7 +1474,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     specTopic.setTitle(topicTitle);
                 }
             }
-        } else if (specTopic.getTopicType() == TopicType.LEVEL) {
+        } else if (specTopic.getTopicType() == TopicType.INITIAL_CONTENT) {
             // Validate the title matches for inner level topics
             final Level parent = (Level) specTopic.getParent();
             final String topicTitle = getTopicTitleWithConditions(specTopic, topic);
@@ -1501,13 +1495,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
 
             // Make sure the topics XML can be used as front matter content
-            if (!validateFrontMatterTopicXML(specTopic, topic)) {
+            if (!validateInitialContentTopicXML(specTopic, topic)) {
                 valid = false;
             }
         }
 
         if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.FEEDBACK || specTopic.getTopicType() ==
-                TopicType.LEVEL) {
+                TopicType.INITIAL_CONTENT) {
             // Check to make sure the topic is a normal topic and not a special case
             if (topic.hasTag(serverEntities.getLegalNoticeTagId()) || topic.hasTag(
                     serverEntities.getRevisionHistoryTagId()) || topic.hasTag(serverEntities.getAuthorGroupTagId()) || topic.hasTag(
@@ -1595,7 +1589,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @param topic     The actual topic to check the XML from.
      * @return True if the XML can be used, otherwise false.
      */
-    private boolean validateFrontMatterTopicXML(final SpecTopic specTopic, final BaseTopicWrapper<?> topic) {
+    private boolean validateInitialContentTopicXML(final SpecTopic specTopic, final BaseTopicWrapper<?> topic) {
         final String condition = specTopic.getConditionStatement(true);
         if (condition != null) {
             boolean valid = true;
@@ -1609,7 +1603,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 final NodeList refEntries = doc.getDocumentElement().getElementsByTagName("refentry");
                 final NodeList simpleSects = doc.getDocumentElement().getElementsByTagName("simplesect");
                 if (refEntries.getLength() > 0 || simpleSects.getLength() > 0) {
-                    log.error(format(ProcessorConstants.ERROR_TOPIC_CANNOT_BE_USED_AS_FRONT_MATTER, specTopic.getLineNumber(),
+                    log.error(format(ProcessorConstants.ERROR_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT, specTopic.getLineNumber(),
                             specTopic.getText()));
                     valid = false;
                 }
