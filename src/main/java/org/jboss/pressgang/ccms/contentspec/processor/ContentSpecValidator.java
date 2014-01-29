@@ -927,6 +927,14 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
+        // Sections have to have more than just initial text
+        if (levelType == LevelType.SECTION && level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 1 && level
+                .getFirstSpecNode() instanceof InitialContent) {
+            log.error(format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), levelType.getTitle(),
+                    levelType.getTitle(), level.getText()));
+            valid = false;
+        }
+
         if (isNullOrEmpty(level.getTitle())) {
             log.error(String.format(ProcessorConstants.ERROR_LEVEL_NO_TITLE_MSG, level.getLineNumber(), levelType.getTitle(),
                     level.getText()));
@@ -1458,7 +1466,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private boolean postValidateExistingTopic(final SpecTopic specTopic, final BaseTopicWrapper<?> topic) {
         boolean valid = true;
 
-        if (specTopic.getTopicType() == TopicType.NORMAL) {
+        if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.INITIAL_CONTENT) {
             // Validate the title matches for normal topics
             final String topicTitle = getTopicTitleWithConditions(specTopic, topic);
             if (!specTopic.getTitle().equals(topicTitle)) {
@@ -1474,29 +1482,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     specTopic.setTitle(topicTitle);
                 }
             }
-        } else if (specTopic.getTopicType() == TopicType.INITIAL_CONTENT) {
-            // Validate the title matches for inner level topics
-            final Level parent = (Level) specTopic.getParent();
-            final String topicTitle = getTopicTitleWithConditions(specTopic, topic);
-            if (!specTopic.getTitle().equals(topicTitle)) {
-                // Add the warning message
-                String topicTitleMsg = "Topic " + specTopic.getId() + ": " + topicTitle;
-                if (processingOptions.isStrictTitles()) {
-                    log.error(format(ProcessorConstants.ERROR_LEVEL_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
-                            parent.getLevelType().getTitle(), "Specified: " + specTopic.getTitle(), topicTitleMsg));
+
+            if (specTopic.getTopicType() == TopicType.INITIAL_CONTENT) {
+                // Make sure the topics XML can be used as front matter content
+                if (!validateInitialContentTopicXML(specTopic, topic)) {
                     valid = false;
-                } else {
-                    log.warn(format(ProcessorConstants.WARN_LEVEL_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
-                            parent.getLevelType().getTitle(), "Specified: " + specTopic.getTitle(), topicTitleMsg));
-
-                    // Change the title
-                    specTopic.setTitle(topicTitle);
                 }
-            }
-
-            // Make sure the topics XML can be used as front matter content
-            if (!validateInitialContentTopicXML(specTopic, topic)) {
-                valid = false;
             }
         }
 
