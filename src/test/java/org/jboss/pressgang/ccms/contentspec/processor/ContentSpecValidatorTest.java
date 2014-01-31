@@ -23,6 +23,7 @@ public class ContentSpecValidatorTest extends BaseUnitTest {
     protected static Integer READ_ONLY_PROPERTY_TAG_ID = 25;
     protected static Integer TYPE_CATEGORY_ID = 4;
     protected static Integer WRITER_CATEGORY_ID = 12;
+    protected static Integer ROCBOOK_DTD_ID = 9;
 
     @Rule public PowerMockRule rule = new PowerMockRule();
 
@@ -49,6 +50,7 @@ public class ContentSpecValidatorTest extends BaseUnitTest {
         when(serverEntities.getReadOnlyPropertyTagId()).thenReturn(READ_ONLY_PROPERTY_TAG_ID);
         when(serverEntities.getTypeCategoryId()).thenReturn(TYPE_CATEGORY_ID);
         when(serverEntities.getWriterCategoryId()).thenReturn(WRITER_CATEGORY_ID);
+        when(serverEntities.getRocBookDTDBlobConstantId()).thenReturn(ROCBOOK_DTD_ID);
 
         this.validator = new ContentSpecValidator(dataProviderFactory, loggerManager, processingOptions);
     }

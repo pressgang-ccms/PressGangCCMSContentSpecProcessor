@@ -329,8 +329,8 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
     }
 
     @Test
-    public void shouldThrowExceptionWithTitleAndInvalidId() {
-        // Given a string that represents a topic with a title and a new id
+    public void shouldThrowExceptionWithInvalidTopicId() {
+        // Given a string that represents a topic title and an invalid id
         String topicString = make(
                 a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, randomString)));
         // and a line number
@@ -342,7 +342,7 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
             topic = parser.parseTopic(parserData, topicString, lineNumber);
             fail("Parsing the topic should have thrown an exception.");
         } catch (ParsingException e) {
-            assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Title and ID must be specified."));
+            assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! The Topic ID specified is not a valid ID."));
         }
     }
 

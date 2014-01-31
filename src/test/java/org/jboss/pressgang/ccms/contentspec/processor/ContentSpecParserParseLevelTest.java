@@ -2,6 +2,7 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 
 import static com.natpryce.makeiteasy.MakeItEasy.a;
 import static com.natpryce.makeiteasy.MakeItEasy.make;
+import static junit.framework.TestCase.assertTrue;
 import static net.sf.ipsedixit.core.StringType.ALPHANUMERIC;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
@@ -190,7 +191,7 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
     @Test
     public void shouldThrowExceptionIfRelationshipSpecified() throws Exception {
         // Given a line number, level type and a line with an appendix relationship specified
-        List<String> relationshipTypes = Arrays.asList("R", "P", "NEXT", "PREV");
+        List<String> relationshipTypes = Arrays.asList("R", "P", "L", "NEXT", "PREV");
         String relationship = selectRandomListItem(relationshipTypes);
         String line = levelType.getTitle() + ":" + title + "[T" + id + "] [" + relationship + ": " + title + "[" + id + "]]";
 
@@ -238,6 +239,53 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         assertNotNull(initialContentTopic);
         assertEquals(initialContentTopic.getId(), id.toString());
         assertThat(result.getTags(false), Matchers.contains(topicTag));
+    }
+
+    @Test
+    public void shouldSetShorthandInitialContentTopicAndRelationships() throws Exception {
+        // Given a line number, level type, a line specifying an id and a relationship
+        List<String> relationshipTypes = Arrays.asList("R", "P", "L");
+        String relationship = selectRandomListItem(relationshipTypes);
+        String line = "Section:" + title + "[" + id + "] [" + relationship + ": T1]";
+        // and the relationship exists
+        parserData.getTargetTopics().put("T1", new SpecTopic(id, title));
+        // and the generated uniqueid will be "L<LINE>-1"
+        String uniqueId = "L" + lineNumber + "-1";
+
+        // When process level is called
+        Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
+
+        // Then the inner topic and relationship is set
+        final InitialContent initialContent = (InitialContent) result.getChildLevels().get(0);
+        final SpecTopic initialContentTopic = initialContent.getSpecTopics().get(0);
+        assertNotNull(initialContentTopic);
+        assertEquals(initialContentTopic.getId(), id.toString());
+        assertThat(initialContent.getUniqueId(), is(uniqueId));
+        assertTrue(parserData.getLevelRelationships().containsKey(uniqueId));
+        assertThat(parserData.getLevelRelationships().get(uniqueId).size(), is(1));
+        assertThat(parserData.getLevelRelationships().get(uniqueId).get(0).getSecondaryRelationshipId(), is("T1"));
+    }
+
+    @Test
+    public void shouldParseInitialContentWithRelationships() throws Exception {
+        // Given a line number, level type, a line specifying an id and a relationship
+        List<String> relationshipTypes = Arrays.asList("R", "P", "L");
+        String relationship = selectRandomListItem(relationshipTypes);
+        String line = "Initial Text: [" + relationship + ": T1]";
+        // and the relationship exists
+        parserData.getTargetTopics().put("T1", new SpecTopic(id, title));
+        // and the generated uniqueid will be "L<LINE>"
+        String uniqueId = "L" + lineNumber;
+
+        // When process level is called
+        Level result = parser.parseLevel(parserData, lineNumber, LevelType.INITIAL_CONTENT, line);
+
+        // Then the inner content container should exist and the relationship should exist
+        assertNotNull(result);
+        assertThat(result.getUniqueId(), is(uniqueId));
+        assertTrue(parserData.getLevelRelationships().containsKey(uniqueId));
+        assertThat(parserData.getLevelRelationships().get(uniqueId).size(), is(1));
+        assertThat(parserData.getLevelRelationships().get(uniqueId).get(0).getSecondaryRelationshipId(), is("T1"));
     }
 
 //    @Test

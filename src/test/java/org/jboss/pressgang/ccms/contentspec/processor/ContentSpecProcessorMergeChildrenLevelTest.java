@@ -48,6 +48,7 @@ public class ContentSpecProcessorMergeChildrenLevelTest extends ContentSpecProce
     @ArbitraryString(type = StringType.ALPHANUMERIC) String randomAlphaString;
 
     @Mock ContentSpecWrapper contentSpecWrapper;
+    @Mock CSNodeWrapper levelNode;
     @Mock CSNodeWrapper newCSNode;
     @Mock CSNodeWrapper foundCSNode;
 
@@ -81,6 +82,31 @@ public class ContentSpecProcessorMergeChildrenLevelTest extends ContentSpecProce
         // When merging the children nodes
         try {
             processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("An Exception should not have been thrown. Message: " + e.getMessage());
+        }
+
+        // Then a new node should exist in the updated collection
+        assertThat(updatedChildrenNodes.size(), is(1));
+        assertThat(updatedChildrenNodes.getAddItems().size(), is(1));
+        // and the basic details are correct
+        verifyBaseNewLevel(newCSNode);
+    }
+
+    @Test
+    public void shouldCreateNewChildLevelNode() throws Exception {
+        final List<Node> childNodes = new ArrayList<Node>();
+        setUpNodeToReturnNulls(newCSNode);
+        // Given a content spec level that doesn't exist
+        final Level level = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.CHAPTER), with(LevelMaker.title, title)));
+        childNodes.add(level);
+        // and the level will return a collection
+        given(levelNode.getChildren()).willReturn(updatedChildrenNodes);
+
+        // When merging the children nodes
+        try {
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, levelNode, contentSpecWrapper, nodeMap);
         } catch (Exception e) {
             e.printStackTrace();
             fail("An Exception should not have been thrown. Message: " + e.getMessage());
@@ -643,16 +669,6 @@ public class ContentSpecProcessorMergeChildrenLevelTest extends ContentSpecProce
         // and the base level hasn't changed
         verifyBaseExistingLevel(foundCSNode);
         verifyBaseExistingLevel(newCSNode);
-    }
-
-    protected void setUpNodeToReturnNulls(final CSNodeWrapper nodeMock) {
-        when(nodeMock.getRevision()).thenReturn(null);
-        when(nodeMock.getAdditionalText()).thenReturn(null);
-        when(nodeMock.getEntityRevision()).thenReturn(null);
-        when(nodeMock.getEntityId()).thenReturn(null);
-        when(nodeMock.getTitle()).thenReturn(null);
-        when(nodeMock.getTargetId()).thenReturn(null);
-        when(nodeMock.getNextNode()).thenReturn(null);
     }
 
     protected void verifyBaseNewLevel(final CSNodeWrapper levelNode) {

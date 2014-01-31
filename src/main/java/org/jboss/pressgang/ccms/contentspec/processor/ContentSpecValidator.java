@@ -750,7 +750,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     final SpecNode node = ((TargetRelationship) relationship).getSecondaryRelationship();
                     if (node instanceof SpecTopic) {
                         final SpecTopic targetTopic = (SpecTopic) node;
-                        if (!validateRelationshipToTopic(relationship, specNode, relatedId, targetTopic)) {
+                        if (!validateRelationshipToTopic(relationship, specNode, relatedId, targetTopic, specTopicMap)) {
                             error = true;
                         }
                     } else if (node instanceof Level) {
@@ -761,39 +761,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     }
                 } else if (relationship instanceof TopicRelationship) {
                     final SpecTopic relatedTopic = ((TopicRelationship) relationship).getSecondaryRelationship();
-                    final List<SpecTopic> relatedSpecTopics = specTopicMap.get(relatedTopic.getId());
-                    if (relatedId.startsWith("X")) {
-                        // Duplicated topics are never unique so throw an error straight away.
-                        log.error(String.format(ProcessorConstants.ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG, specNode.getLineNumber(),
-                                specNode.getText()));
+                    if (!validateRelationshipToTopic(relationship, specNode, relatedId, relatedTopic, specTopicMap)) {
                         error = true;
-                    } else if (relatedSpecTopics == null) {
-                        log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, specNode.getLineNumber(), relatedId,
-                                specNode.getText()));
-                        error = true;
-                    } else if (relatedSpecTopics.size() > 1) {
-                        // Check to make sure the topic isn't duplicated
-                        final List<SpecTopic> relatedTopics = specTopicMap.get(relatedTopic.getId());
-
-                        // Build up the line numbers message
-                        final StringBuilder lineNumbers = new StringBuilder();
-                        for (int i = 0; i < relatedTopics.size(); i++) {
-                            if (i == relatedTopics.size() - 1) {
-                                lineNumbers.append(" and ");
-                            } else if (lineNumbers.length() != 0) {
-                                lineNumbers.append(", ");
-                            }
-
-                            lineNumbers.append(relatedTopics.get(i).getLineNumber());
-                        }
-
-                        log.error(String.format(ProcessorConstants.ERROR_INVALID_RELATIONSHIP_MSG, specNode.getLineNumber(), relatedId,
-                                lineNumbers.toString(), specNode.getText()));
-                        error = true;
-                    } else {
-                        if (!validateRelationshipToTopic(relationship, specNode, relatedId, relatedTopic)) {
-                            error = true;
-                        }
                     }
                 }
             }
@@ -809,10 +778,35 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @return True if the topic relationship is valid, otherwise false.
      */
     private boolean validateRelationshipToTopic(final Relationship relationship, final SpecNodeWithRelationships node,
-            final String relatedId, final SpecTopic relatedTopic) {
-        if (relatedTopic.getDBId() != null && relatedTopic.getDBId() < 0) {
+            final String relatedId, final SpecTopic relatedTopic, final Map<String, List<SpecTopic>> specTopicMap) {
+        final List<SpecTopic> relatedSpecTopics = specTopicMap.get(relatedTopic.getId());
+        if (relatedId.startsWith("X")) {
+            // Duplicated topics are never unique so throw an error straight away.
+            log.error(String.format(ProcessorConstants.ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG, node.getLineNumber(),
+                    node.getText()));
+            return false;
+        } else if (relatedSpecTopics == null) {
             log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, node.getLineNumber(), relatedId,
                     node.getText()));
+            return false;
+        } else if (relatedSpecTopics.size() > 1) {
+            // Check to make sure the topic isn't duplicated
+            final List<SpecTopic> relatedTopics = specTopicMap.get(relatedTopic.getId());
+
+            // Build up the line numbers message
+            final StringBuilder lineNumbers = new StringBuilder();
+            for (int i = 0; i < relatedTopics.size(); i++) {
+                if (i == relatedTopics.size() - 1) {
+                    lineNumbers.append(" and ");
+                } else if (lineNumbers.length() != 0) {
+                    lineNumbers.append(", ");
+                }
+
+                lineNumbers.append(relatedTopics.get(i).getLineNumber());
+            }
+
+            log.error(String.format(ProcessorConstants.ERROR_INVALID_RELATIONSHIP_MSG, node.getLineNumber(), relatedId,
+                    lineNumbers.toString(), node.getText()));
             return false;
         } else if (relatedTopic == node) {
             // Check to make sure the topic doesn't relate to itself

@@ -193,21 +193,6 @@ public class ContentSpecProcessorMergeChildrenMetaDataTest extends ContentSpecPr
         verifyBaseExistingMetaData(foundCSNode);
     }
 
-    /**
-     * Sets up the mock to return nulls for all primitive type wrapper classes.
-     *
-     * @param mockNode
-     */
-    protected void setUpNodeToReturnNulls(final CSNodeWrapper mockNode) {
-        when(mockNode.getRevision()).thenReturn(null);
-        when(mockNode.getAdditionalText()).thenReturn(null);
-        when(mockNode.getEntityRevision()).thenReturn(null);
-        when(mockNode.getEntityId()).thenReturn(null);
-        when(mockNode.getTitle()).thenReturn(null);
-        when(mockNode.getTargetId()).thenReturn(null);
-        when(mockNode.getNextNode()).thenReturn(null);
-    }
-
     protected void verifyBaseNewMetaData(final CSNodeWrapper metaDataNode) {
         // and the node has the Spec Topic type set
         verify(metaDataNode, times(1)).setNodeType(CommonConstants.CS_NODE_META_DATA);

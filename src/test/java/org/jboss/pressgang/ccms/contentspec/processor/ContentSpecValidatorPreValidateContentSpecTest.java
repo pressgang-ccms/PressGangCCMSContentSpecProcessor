@@ -15,6 +15,7 @@ import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.Content
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.description;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.dtd;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.edition;
+import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.pomVersion;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.product;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.subtitle;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker.title;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import net.sf.ipsedixit.annotation.Arbitrary;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.enums.BookType;
@@ -34,6 +36,7 @@ import org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
 import org.jboss.pressgang.ccms.contentspec.test.makers.validator.ContentSpecMaker;
 import org.jboss.pressgang.ccms.provider.StringConstantProvider;
+import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.StringConstantWrapper;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +47,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
  * @author kamiller@redhat.com (Katie Miller)
  */
 @PowerMockIgnore({"javax.xml.parsers.*", "org.apache.xerces.jaxp.*", "org.xml.sax.*", "org.w3c.dom.*"})
-public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTest {
+public class ContentSpecValidatorPreValidateContentSpecTest extends ContentSpecValidatorTest {
     @Arbitrary Integer randomInt;
     @Arbitrary String randomString;
     @Mock StringConstantProvider stringConstantProvider;
@@ -138,6 +141,23 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
         // And an error message should be output
         assertThat(logger.getLogMessages().toString(),
                 containsString("Invalid Book Version specified. The value must be a valid version."));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenInvalidPOMVersion() {
+        // Given an otherwise valid content spec with an invalid book version
+        ContentSpec contentSpec = make(a(ContentSpec, with(pomVersion, "AAA")));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When the spec is prevalidated
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(),
+                containsString("Invalid POM Version specified. The value must be a valid version."));
     }
 
     @Test
@@ -343,6 +363,23 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
     }
 
     @Test
+    public void shouldFailAndLogErrorWhenInvalidAbstract() {
+        // Given an invalid content spec because of an invalid feedback
+        ContentSpec contentSpec = make(a(ContentSpec));
+        contentSpec.setAbstractTopic(new SpecTopic(0, null));
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When the spec is prevalidated
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Topic!"));
+    }
+
+    @Test
     public void shouldFailAndLogErrorWhenInvalidPubsnumber() {
         // Given an otherwise valid content spec with an invalid pubsnumber
         ContentSpec contentSpec = make(a(ContentSpec));
@@ -450,6 +487,78 @@ public class ContentSpecValidatorPreValidateTest extends ContentSpecValidatorTes
         // and a warning should have been printed
         assertThat(logger.getLogMessages().toString(), containsString(
                 "A condition has been defined in publican.cfg, and as such the condition defined against the topic or container will be ignored."));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenDefaultPublicanCfgIsInvalid() {
+        // Given a content spec with an invalid default publican cfg
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setDefaultPublicanCfg("AAA");
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the conflicting conditions
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be true
+        assertFalse(result);
+        // and an error should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString(
+                "Invalid Default publican.cfg name. The \"AAA\" configuration doesn't exist in the Content Specification."));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenMetaDataKeyIsBlank() {
+        // Given a Content Spec with a metadata node that has a null key
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        KeyValueNode<String> metaData = new KeyValueNode<String>(null, null);
+        contentSpec.appendChild(metaData);
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the conflicting conditions
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be true
+        assertFalse(result);
+        // and an error should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! Incorrect metadata format."));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenMetaDataValueIsBlank() {
+        // Given a Content Spec with a metadata node that has a null key
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        KeyValueNode<String> metaData = new KeyValueNode<String>(CommonConstants.CS_TITLE_TITLE, null);
+        contentSpec.appendChild(metaData);
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the conflicting conditions
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be true
+        assertFalse(result);
+        // and an error should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! Value must be specified for metadata."));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenMetaDataKeyIsInvalid() {
+        // Given a Content Spec with a metadata node that has a null key
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        KeyValueNode<String> metaData = new KeyValueNode<String>("AAA", "");
+        contentSpec.appendChild(metaData);
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the conflicting conditions
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be true
+        assertFalse(result);
+        // and an error should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! Value must be specified for metadata."));
     }
 
     private void addLevelAndTopicToContentSpec(final ContentSpec contentSpec) {

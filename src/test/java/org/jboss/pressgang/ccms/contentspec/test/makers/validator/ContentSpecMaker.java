@@ -25,6 +25,7 @@ public class ContentSpecMaker {
     public static final Property<ContentSpec, String> dtd = newProperty();
     public static final Property<ContentSpec, BookType> bookType = newProperty();
     public static final Property<ContentSpec, String> bookVersion = newProperty();
+    public static final Property<ContentSpec, String> pomVersion = newProperty();
     public static final Property<ContentSpec, String> edition = newProperty();
     public static final Property<ContentSpec, Integer> id = newProperty();
     public static final Property<ContentSpec, String> checksum = newProperty();
@@ -42,6 +43,7 @@ public class ContentSpecMaker {
             contentSpec.setDtd(lookup.valueOf(dtd, "Docbook 4.5"));
             contentSpec.setBookType(lookup.valueOf(bookType, BookType.BOOK));
             contentSpec.setBookVersion(lookup.valueOf(bookVersion, valueOf(nextInt())));
+            contentSpec.setPOMVersion(lookup.valueOf(pomVersion, valueOf(nextInt())));
             contentSpec.setEdition(lookup.valueOf(edition, valueOf(nextInt())));
             contentSpec.setId(lookup.valueOf(id, nextInt()));
             contentSpec.setChecksum(lookup.valueOf(checksum, randomAlphanumeric(10)));

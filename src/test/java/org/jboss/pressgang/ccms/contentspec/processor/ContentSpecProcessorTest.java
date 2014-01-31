@@ -18,6 +18,7 @@ import org.jboss.pressgang.ccms.provider.ServerSettingsProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.provider.TopicSourceURLProvider;
+import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.ServerEntitiesWrapper;
 import org.jboss.pressgang.ccms.wrapper.ServerSettingsWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
@@ -97,5 +98,15 @@ public class ContentSpecProcessorTest extends BaseUnitTest {
         when(tagWrapper.getName()).thenReturn(tagName);
 
         return tagCollection;
+    }
+
+    protected void setUpNodeToReturnNulls(final CSNodeWrapper nodeMock) {
+        when(nodeMock.getRevision()).thenReturn(null);
+        when(nodeMock.getAdditionalText()).thenReturn(null);
+        when(nodeMock.getEntityRevision()).thenReturn(null);
+        when(nodeMock.getEntityId()).thenReturn(null);
+        when(nodeMock.getTitle()).thenReturn(null);
+        when(nodeMock.getTargetId()).thenReturn(null);
+        when(nodeMock.getNextNode()).thenReturn(null);
     }
 }

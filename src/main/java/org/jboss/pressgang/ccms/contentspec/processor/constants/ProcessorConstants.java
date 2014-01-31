@@ -148,7 +148,7 @@ public class ProcessorConstants {
     public static final String ERROR_DUPLICATE_ATTRIBUTE_MSG = LINE + "Invalid attribute, \"%s\" has already been defined." + CSLINE_MSG;
     public static final String ERROR_TOPIC_WITH_DIFFERENT_REVS_MSG = INVALID_CS + " Topic %d has two or more different revisions included" +
             " in the Content Specification. The topic is located at:";
-    public static final String ERROR_TOPIC_WITH_DIFFERENT_REVS_REV_MSG = "Revision %s, lines(s) %s.";
+    public static final String ERROR_TOPIC_WITH_DIFFERENT_REVS_REV_MSG = "Revision %s, line(s) %s.";
     public static final String ERROR_INVALID_VERSION_NUMBER_MSG = "Invalid %s specified. The value must be a valid version.";
     public static final String ERROR_INVALID_PUBSNUMBER_MSG = "Invalid Pubsnumber specified. The value must be a positive number.";
     public static final String ERROR_INVALID_FILES_MSG = LINE + INVALID_CS + " Incorrect additional files input." + CSLINE_MSG;

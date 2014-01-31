@@ -4,6 +4,7 @@ import static com.natpryce.makeiteasy.MakeItEasy.a;
 import static com.natpryce.makeiteasy.MakeItEasy.make;
 import static com.natpryce.makeiteasy.MakeItEasy.with;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
@@ -32,6 +33,7 @@ import org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
+import org.jboss.pressgang.ccms.wrapper.CSRelatedNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.mocks.UpdateableCollectionWrapperMock;
 import org.junit.Before;
@@ -51,15 +53,18 @@ public class ContentSpecProcessorMergeChildrenTest extends ContentSpecProcessorT
     @Mock CSNodeWrapper newCSNode2;
     @Mock CSNodeWrapper newCSNode3;
     @Mock CSNodeWrapper foundCSNode;
+    @Mock CSRelatedNodeWrapper relatedNodeWrapper;
 
     List<CSNodeWrapper> childrenNodes;
     UpdateableCollectionWrapperMock<CSNodeWrapper> updatedChildrenNodes;
+    UpdateableCollectionWrapperMock<CSRelatedNodeWrapper> relatedNodes;
     Map<SpecNode, CSNodeWrapper> nodeMap;
 
     @Before
     public void setUpCollections() {
         childrenNodes = new LinkedList<CSNodeWrapper>();
         updatedChildrenNodes = new UpdateableCollectionWrapperMock<CSNodeWrapper>();
+        relatedNodes = new UpdateableCollectionWrapperMock<CSRelatedNodeWrapper>();
         nodeMap = new HashMap<SpecNode, CSNodeWrapper>();
 
         when(contentSpecNodeProvider.newCSNode()).thenReturn(newCSNode, newCSNode2, newCSNode3);
@@ -228,5 +233,34 @@ public class ContentSpecProcessorMergeChildrenTest extends ContentSpecProcessorT
 
         // Then the updated nodes list should be empty
         assertThat(updatedChildrenNodes.size(), is(0));
+    }
+
+    @Test
+    public void shouldRemoveNodesAndIncomingRelationshipsThatAreNoLongerUsed() {
+        // Given no nodes
+        final List<Node> childNodes = new LinkedList<Node>();
+        // and a node exists in the current children collection, that has incoming relationships
+        childrenNodes.add(newCSNode);
+        given(newCSNode.getRelatedFromNodes()).willReturn(relatedNodes);
+        relatedNodes.addItem(relatedNodeWrapper);
+        // and the content spec will return a collection
+        given(contentSpecWrapper.getChildren()).willReturn(updatedChildrenNodes);
+
+        // When merging the children nodes
+        try {
+            processor.mergeChildren(childNodes, childrenNodes, providerFactory, null, contentSpecWrapper, nodeMap);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("An Exception should not have been thrown. Message: " + e.getMessage());
+        }
+
+        // Then the updated nodes list should have the exiting node marked for removal
+        assertThat(updatedChildrenNodes.size(), is(1));
+        assertThat(updatedChildrenNodes.getRemoveItems().size(), is(1));
+        assertEquals(updatedChildrenNodes.getRemoveItems().get(0), newCSNode);
+        // and the incoming relationships have been removed
+        assertThat(relatedNodes.size(), is(1));
+        assertThat(relatedNodes.getRemoveItems().size(), is(1));
+        assertEquals(relatedNodes.getRemoveItems().get(0), relatedNodeWrapper);
     }
 }

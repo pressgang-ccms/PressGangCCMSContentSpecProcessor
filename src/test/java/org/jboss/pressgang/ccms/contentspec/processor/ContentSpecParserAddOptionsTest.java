@@ -423,4 +423,83 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
         assertThat(logger.getLogMessages().get(0).toString(),
                 containsString("Line " + lineNumber + ": Invalid attribute, \"condition\" has already been defined."));
     }
+
+    @Test
+    public void shouldPrintErrorAndReturnFalseWhenGlobalRelationshipsUsed() {
+        // Given a line that is a relationship on the base level
+        String options = "[R: 10]";
+
+        // When processing a line
+        Boolean result = null;
+        try {
+            result = parser.parseLine(parserData, options, lineNumber);
+        } catch (IndentationException e) {
+            fail("Indentation Exception should not have been thrown.");
+        }
+
+        // Then the result should be false
+        assertFalse(result);
+        // and an error message should exist
+        assertThat(logger.getLogMessages().size(), is(1));
+        assertThat(logger.getLogMessages().get(0).toString(), containsString("Line " + lineNumber + ": Invalid Content Specification! Relationships can't be at the base level"));
+    }
+
+    @Test
+    public void shouldPrintWarningWhenEmptyOptionsUsed() {
+        // Given a line that has no data
+        String options = "[]";
+
+        // When processing a line
+        try {
+            parser.parseLine(parserData, options, lineNumber);
+        } catch (IndentationException e) {
+            fail("Indentation Exception should not have been thrown.");
+        }
+
+        // Then a warning message should exist
+        assertThat(logger.getLogMessages().size(), is(1));
+        assertThat(logger.getLogMessages().get(0).toString(), containsString("Line " + lineNumber + ": Empty brackets found."));
+    }
+
+    @Test
+    public void shouldPrintErrorAndReturnFalseWhenDuplicateDescriptionsUsed() {
+        // Given a line that has duplicate description options
+        String options = "[description = blah, description = blah2]";
+
+        // When processing a line
+        Boolean result = null;
+        try {
+            result = parser.parseLine(parserData, options, lineNumber);
+        } catch (IndentationException e) {
+            fail("Indentation Exception should not have been thrown.");
+        }
+
+        // Then the result should be false
+        assertFalse(result);
+        // and an error message should exist
+        assertThat(logger.getLogMessages().size(), is(1));
+        assertThat(logger.getLogMessages().get(0).toString(), containsString("Line " + lineNumber + ": Invalid attribute, \"Description\"" +
+                " has already been defined."));
+    }
+
+    @Test
+    public void shouldPrintErrorAndReturnFalseWhenDuplicateWritersUsed() {
+        // Given a line that has duplicate writer options
+        String options = "[writer = blah, writer = blah2]";
+
+        // When processing a line
+        Boolean result = null;
+        try {
+            result = parser.parseLine(parserData, options, lineNumber);
+        } catch (IndentationException e) {
+            fail("Indentation Exception should not have been thrown.");
+        }
+
+        // Then the result should be false
+        assertFalse(result);
+        // and an error message should exist
+        assertThat(logger.getLogMessages().size(), is(1));
+        assertThat(logger.getLogMessages().get(0).toString(), containsString("Line " + lineNumber + ": Invalid attribute, \"Writer\"" +
+                " has already been defined."));
+    }
 }

@@ -26,6 +26,8 @@ import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TextContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
+import org.jboss.pressgang.ccms.utils.common.ResourceUtilities;
+import org.jboss.pressgang.ccms.wrapper.BlobConstantWrapper;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInContentSpecWrapper;
@@ -39,13 +41,15 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 /**
  * @author kamiller@redhat.com (Katie Miller)
  */
 @PrepareForTest({HashUtilities.class})
-public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTest {
+@PowerMockIgnore({"javax.xml.parsers.*", "org.apache.xerces.jaxp.*", "org.xml.sax.*", "org.w3c.dom.*"})
+public class ContentSpecValidatorPostValidateContentSpecTest extends ContentSpecValidatorTest {
 
     @ArbitraryString(type = StringType.ALPHANUMERIC) String username;
     @ArbitraryString(type = StringType.ALPHA) String strictTopicType;
@@ -63,6 +67,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
     @Mock TagWrapper tagWrapper;
     @Mock TopicProvider topicProvider;
     @Mock TopicWrapper topicWrapper;
+    @Mock BlobConstantWrapper blobConstantWrapper;
 
     @Before
     public void setUp() {
@@ -71,6 +76,8 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         when(dataProviderFactory.getProvider(TagProvider.class)).thenReturn(tagProvider);
         when(dataProviderFactory.getProvider(TopicProvider.class)).thenReturn(topicProvider);
         when(dataProviderFactory.getProvider(BlobConstantProvider.class)).thenReturn(blobConstantProvider);
+        when(blobConstantProvider.getBlobConstant(ROCBOOK_DTD_ID)).thenReturn(blobConstantWrapper);
+        when(blobConstantWrapper.getValue()).thenReturn(ResourceUtilities.resourceFileToByteArray("/", "rocbook.dtd"));
         super.setUp();
     }
 
@@ -129,7 +136,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
     }
 
     @Test
-    public void shouldLogErrorAndFailIfServerAndSpecCheckSumsDoNotMatch() {
+    public void shouldLogErrorAndFailIfServerAndSpecChecksumsDoNotMatch() {
         // Given a valid content spec that has an id set
         ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
         // And a valid content spec wrapper for the id and revision specified
@@ -149,7 +156,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
     }
 
     @Test
-    public void shouldLogErrorAndFailIfLocalSpecCheckSumsNotFound() {
+    public void shouldLogErrorAndFailIfLocalSpecChecksumsNotFound() {
         // Given a valid content spec that has an id set but no checksum
         ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
         contentSpec.setChecksum(null);
@@ -170,7 +177,7 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
     }
 
     @Test
-    public void shouldNotCalculateSpecCheckSumsIfOptionSetToIgnore() {
+    public void shouldNotCalculateSpecChecksumsIfOptionSetToIgnore() {
         // Given a valid content spec that has an id set but no checksum
         ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
         contentSpec.setChecksum(null);
@@ -376,5 +383,23 @@ public class ContentSpecValidatorPostValidateTest extends ContentSpecValidatorTe
         assertThat(result, is(false));
         // And an error message should be output
         assertThat(logger.getLogMessages().toString(), containsString("Invalid Topic!"));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenInvalidAuthorGroup() {
+        // Given an invalid content spec because of an invalid feedback
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setId(null);
+        // and an invalid abstract
+        contentSpec.setAbstract("This is a test with invalid <blah>DocBook</blah>");
+
+        // When the spec is postvalidated
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! The abstract is not valid XML. " +
+                "Error Message: Element type \"blah\" must be declared."));
     }
 }

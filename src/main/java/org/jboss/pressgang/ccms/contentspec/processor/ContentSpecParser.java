@@ -878,9 +878,8 @@ public class ContentSpecParser {
         final HashMap<RelationshipType, String[]> variableMap = getLineVariables(parserData, line, lineNumber, '[', ']', ',', false);
 
         // Check the read in values are valid
-        if (!variableMap.containsKey(RelationshipType.NONE)) {
-            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIB_FORMAT_MSG, lineNumber, line));
-        } else if (variableMap.size() > 1) {
+        if ((variableMap.size() > 1 && variableMap.containsKey(RelationshipType.NONE))
+                || (variableMap.size() > 0 && !variableMap.containsKey(RelationshipType.NONE))) {
             throw new ParsingException(format(ProcessorConstants.ERROR_RELATIONSHIP_BASE_LEVEL_MSG, lineNumber, line));
         }
         String[] variables = variableMap.get(RelationshipType.NONE);
@@ -960,7 +959,7 @@ public class ContentSpecParser {
             if (!variables[0].matches("(" + CSConstants.DUPLICATE_TOPIC_ID_REGEX + ")|(" + CSConstants.CLONED_TOPIC_ID_REGEX + ")|(" +
                     CSConstants.EXISTING_TOPIC_ID_REGEX + ")|(" + CSConstants.NEW_TOPIC_ID_REGEX + ")|(" +
                     CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX + ")")) {
-                throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TITLE_ID_MSG, lineNumber, line));
+                throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_INVALID_ID_MSG, lineNumber, line));
             } else if (CSConstants.NEW_TOPIC_ID_PATTERN.matcher(variables[0]).matches()) {
                 throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TYPE_TITLE_ID_MSG, lineNumber, line));
             }
@@ -992,8 +991,6 @@ public class ContentSpecParser {
             parserData.getSpecTopics().put(uniqueId, tempTopic);
         } else if (variables[0].startsWith("N") && CSConstants.NEW_TOPIC_ID_PATTERN.matcher(variables[0]).matches()) {
             throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_ID_MSG, lineNumber, variables[0], line));
-        } else {
-            throw new ParsingException(format(ProcessorConstants.ERROR_TOPIC_INVALID_ID_MSG, lineNumber, line));
         }
         tempTopic.setUniqueId(uniqueId);
 

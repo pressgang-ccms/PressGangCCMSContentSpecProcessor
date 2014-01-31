@@ -1,7 +1,7 @@
 package org.jboss.pressgang.ccms.contentspec.processor;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 import static net.sf.ipsedixit.core.StringType.ALPHANUMERIC;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;

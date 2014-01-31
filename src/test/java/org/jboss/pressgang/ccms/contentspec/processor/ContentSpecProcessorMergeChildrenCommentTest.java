@@ -268,16 +268,6 @@ public class ContentSpecProcessorMergeChildrenCommentTest extends ContentSpecPro
         verifyBaseExistingComment(foundCSNode);
     }
 
-    protected void setUpNodeToReturnNulls(final CSNodeWrapper nodeMock) {
-        when(nodeMock.getRevision()).thenReturn(null);
-        when(nodeMock.getAdditionalText()).thenReturn(null);
-        when(nodeMock.getEntityRevision()).thenReturn(null);
-        when(nodeMock.getEntityId()).thenReturn(null);
-        when(nodeMock.getTitle()).thenReturn(null);
-        when(nodeMock.getTargetId()).thenReturn(null);
-        when(nodeMock.getNextNode()).thenReturn(null);
-    }
-
     protected void verifyBaseNewComment(final CSNodeWrapper commentNode) {
         // and the node has the Spec Topic type set
         verify(commentNode, times(1)).setNodeType(CommonConstants.CS_NODE_COMMENT);

@@ -1315,12 +1315,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
                 mergeChildren(getTransformableNodes(children), currentChildren, providerFactory, foundNodeEntity, contentSpec, nodeMapping);
             } else if (childNode instanceof FileList) {
-                final FileList level = (FileList) childNode;
+                final FileList fileList = (FileList) childNode;
 
-                // Add the levels inner topic to the list of children if one exists
+                // Get all the files from the list
                 final LinkedList<Node> children = new LinkedList<Node>();
-                if (level.getValue() != null) {
-                    children.addAll(level.getValue());
+                if (fileList.getValue() != null) {
+                    children.addAll(fileList.getValue());
                 }
 
                 final ArrayList<CSNodeWrapper> currentChildren = new ArrayList<CSNodeWrapper>();
@@ -1522,9 +1522,16 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         // Meta Data Value
         final Object value = metaData.getValue();
-        if (metaDataEntity.getAdditionalText() == null || !metaDataEntity.getAdditionalText().equals(value.toString())) {
-            metaDataEntity.setAdditionalText(value.toString());
-            changed = true;
+        if (metaData instanceof FileList) {
+            if (metaDataEntity.getAdditionalText() != null) {
+                metaDataEntity.setAdditionalText(null);
+                changed = true;
+            }
+        } else {
+            if (metaDataEntity.getAdditionalText() == null || !metaDataEntity.getAdditionalText().equals(value.toString())) {
+                metaDataEntity.setAdditionalText(value.toString());
+                changed = true;
+            }
         }
 
         // Node Type

@@ -809,16 +809,6 @@ public class ContentSpecProcessorMergeChildrenTopicTest extends ContentSpecProce
         verify(foundCSNode, never()).setTargetId(anyString());
     }
 
-    protected void setUpNodeToReturnNulls(final CSNodeWrapper nodeMock) {
-        when(nodeMock.getRevision()).thenReturn(null);
-        when(nodeMock.getAdditionalText()).thenReturn(null);
-        when(nodeMock.getEntityRevision()).thenReturn(null);
-        when(nodeMock.getEntityId()).thenReturn(null);
-        when(nodeMock.getTitle()).thenReturn(null);
-        when(nodeMock.getTargetId()).thenReturn(null);
-        when(nodeMock.getNextNode()).thenReturn(null);
-    }
-
     protected void verifyBaseNewTopic(final CSNodeWrapper topicNode) {
         // and the node has the Spec Topic type set
         verify(topicNode, times(1)).setNodeType(CommonConstants.CS_NODE_TOPIC);
