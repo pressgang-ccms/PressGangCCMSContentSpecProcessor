@@ -3,6 +3,7 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 import static com.natpryce.makeiteasy.MakeItEasy.a;
 import static com.natpryce.makeiteasy.MakeItEasy.make;
 import static com.natpryce.makeiteasy.MakeItEasy.with;
+import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -18,7 +19,10 @@ import java.util.Map;
 import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
+import org.jboss.pressgang.ccms.contentspec.Chapter;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.InitialContent;
+import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecNodeWithRelationships;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.entities.Relationship;
@@ -167,6 +171,28 @@ public class ContentSpecValidatorPreValidateRelationshipTest extends ContentSpec
     }
 
     @Test
+    public void shouldFailAndLogErrorWhenTopicRelationshipRelatesToItselfViaInitialContent() {
+        // Given a map of topics is returned
+        PowerMockito.mockStatic(ContentSpecUtilities.class);
+        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(createDummyTopicMap());
+        // and an initial content container
+        final InitialContent initialContent = new InitialContent();
+        initialContent.appendSpecTopic(topic1);
+        // and a relationship to itself
+        final Map<SpecNodeWithRelationships, List<Relationship>> dummyMap = new HashMap<SpecNodeWithRelationships, List<Relationship>>();
+        dummyMap.put(initialContent, Arrays.asList((Relationship) new TopicRelationship(initialContent, topic1, RelationshipType.REFER_TO)));
+        given(contentSpec.getRelationships()).willReturn(dummyMap);
+
+        // When prevalidating the relationships
+        final boolean result = validator.preValidateRelationships(contentSpec);
+
+        // Then the result should be false
+        assertFalse(result);
+        // and an error should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Relationship! You can't relate a topic to itself."));
+    }
+
+    @Test
     public void shouldFailAndLogErrorWhenTopicRelationshipExistsOnInitialContentTopic() {
         // Given a map of topics is returned
         PowerMockito.mockStatic(ContentSpecUtilities.class);
@@ -190,6 +216,80 @@ public class ContentSpecValidatorPreValidateRelationshipTest extends ContentSpec
         // and an error should have been printed
         assertThat(logger.getLogMessages().toString(), containsString("Invalid Relationship! Initial Text topics cannot have " +
                 "relationships applied directly. Instead they should be applied on the \"Initial Text\" container."));
+    }
+
+    @Test
+    public void shouldLogWarningWhenTopicRelationshipTitlesDontMatch() {
+        // Given a map of topics is returned
+        PowerMockito.mockStatic(ContentSpecUtilities.class);
+        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(createDummyTopicMap());
+        // and a relationship to another topic with an different title
+        final Map<SpecNodeWithRelationships, List<Relationship>> dummyMap = new HashMap<SpecNodeWithRelationships, List<Relationship>>();
+        dummyMap.put(specTopic, Arrays.asList((Relationship) new TopicRelationship(specTopic, topic1, RelationshipType.REFER_TO, "blah")));
+        given(contentSpec.getRelationships()).willReturn(dummyMap);
+
+        // When prevalidating the relationships
+        final boolean result = validator.preValidateRelationships(contentSpec);
+
+        // Then the result should be true
+        assertTrue(result);
+        // and a warning should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString("Possible Invalid Relationship! The topic/target relationship title" +
+                " specified doesn't match the actual topic/target title, so it was replaced. Please verify that the topic/target used was" +
+                " correct.\n" +
+                "       -> Specified: blah\n" +
+                "       -> Actual:    " + title));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenTopicRelationshipTitlesDontMatchWithStrictTitles() {
+        // Given a map of topics is returned
+        PowerMockito.mockStatic(ContentSpecUtilities.class);
+        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(createDummyTopicMap());
+        // and a relationship to another topic with an different title
+        final Map<SpecNodeWithRelationships, List<Relationship>> dummyMap = new HashMap<SpecNodeWithRelationships, List<Relationship>>();
+        dummyMap.put(specTopic, Arrays.asList((Relationship) new TopicRelationship(specTopic, topic1, RelationshipType.REFER_TO, "blah")));
+        given(contentSpec.getRelationships()).willReturn(dummyMap);
+        // and strict titles are being used
+        given(processingOptions.isStrictTitles()).willReturn(true);
+
+        // When prevalidating the relationships
+        final boolean result = validator.preValidateRelationships(contentSpec);
+
+        // Then the result should be false
+        assertFalse(result);
+        // and a warning should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Relationship! The topic/target relationship title specified doesn't match the actual topic/target title.\n" +
+                "       -> Specified: blah\n" +
+                "       -> Actual:    " + title));
+    }
+
+    @Test
+    public void shouldLogWarningWhenTopicRelationshipTitlesDontMatchForInitialContent() {
+        // Given a map of topics is returned
+        PowerMockito.mockStatic(ContentSpecUtilities.class);
+        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(createDummyTopicMap());
+        // and a topic that is in an initial content container
+        Level chapter = new Chapter(title);
+        InitialContent initialContent = new InitialContent();
+        chapter.appendChild(initialContent);
+        initialContent.appendSpecTopic(topic1);
+        // and a relationship to another topic with an different title
+        final Map<SpecNodeWithRelationships, List<Relationship>> dummyMap = new HashMap<SpecNodeWithRelationships, List<Relationship>>();
+        dummyMap.put(specTopic, Arrays.asList((Relationship) new TopicRelationship(specTopic, topic1, RelationshipType.REFER_TO, "blah")));
+        given(contentSpec.getRelationships()).willReturn(dummyMap);
+
+        // When prevalidating the relationships
+        final boolean result = validator.preValidateRelationships(contentSpec);
+
+        // Then the result should be true
+        assertTrue(result);
+        // and a warning should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString("Possible Invalid Relationship! The topic/target relationship title" +
+                " specified doesn't match the actual topic/target title, so it was replaced. Please verify that the topic/target used was" +
+                " correct.\n" +
+                "       -> Specified: blah\n" +
+                "       -> Actual:    " + title));
     }
 
     protected Map<String, List<SpecTopic>> createDummyTopicMap() {

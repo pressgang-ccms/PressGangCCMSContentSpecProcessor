@@ -4,6 +4,7 @@ import static java.util.Arrays.asList;
 import static net.sf.ipsedixit.core.StringType.ALPHANUMERIC;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.jboss.pressgang.ccms.contentspec.TestUtil.selectRandomLevelType;
 import static org.jboss.pressgang.ccms.contentspec.TestUtil.selectRandomListItem;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -46,10 +47,8 @@ public class ContentSpecParserParseLevelLineTest extends ContentSpecParserTest {
     @Test
     public void shouldReturnEmptyLevelForType() throws Exception {
         // Given a valid line with a valid level type
-        ArrayList<LevelType> levelTypes = new ArrayList<LevelType>(asList(LevelType.values()));
-        levelTypes.remove(LevelType.BASE);
-        LevelType levelType = selectRandomListItem(levelTypes);
-        String line = levelType.name() + ": " + title;
+        LevelType levelType = selectRandomLevelType();
+        String line = levelType.getTitle() + ": " + title;
 
         // When the level line is processed
         Level result = parser.parseLevelLine(parserData, line, lineNumber);
@@ -63,9 +62,8 @@ public class ContentSpecParserParseLevelLineTest extends ContentSpecParserTest {
         // Given a line with a valid level type but invalid other contents
         ArrayList<LevelType> levelTypes = new ArrayList<LevelType>(asList(LevelType.values()));
         levelTypes.remove(LevelType.BASE);
-        levelTypes.remove(LevelType.INITIAL_CONTENT);
         LevelType levelType = selectRandomListItem(levelTypes);
-        String line = levelType.name() + ": " + "[";
+        String line = levelType.getTitle() + ": " + "[";
 
         // When the level line is processed
         Level result = parser.parseLevelLine(parserData, line, lineNumber);

@@ -26,7 +26,6 @@ import org.jboss.pressgang.ccms.contentspec.InitialContent;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Node;
-import org.jboss.pressgang.ccms.contentspec.Process;
 import org.jboss.pressgang.ccms.contentspec.SpecNode;
 import org.jboss.pressgang.ccms.contentspec.SpecNodeWithRelationships;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
@@ -959,7 +958,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                         valid = false;
                     }
 
-                    /* Check that the appendix is at the end of the article */
+                    // Check that the appendix is at the end of the article
                     final Integer nodeListId = level.getParent().getChildNodes().indexOf(level);
                     final ListIterator<Node> parentNodes = level.getParent().getChildNodes().listIterator(nodeListId);
 
@@ -995,7 +994,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     break;
                 case INITIAL_CONTENT:
                     // Check that the initial content is at the start of the container
-                    if (level.getParent().getFirstSpecNode() != level) {
+                    if (level.getParent() == null || level.getParent().getFirstSpecNode() != level) {
                         log.error(format(ProcessorConstants.ERROR_CS_INITIAL_CONTENT_STRUCTURE_MSG, level.getLineNumber(),
                                 parentLevelType.getTitle(), level.getText()));
                         valid = false;
@@ -1014,7 +1013,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                         valid = false;
                     }
 
-                    /* Check that the appendix is at the end of the book */
+                    // Check that the appendix is at the end of the book
                     final Integer nodeListId = level.getParent().getChildNodes().indexOf(level);
                     final ListIterator<Node> parentNodes = level.getParent().getChildNodes().listIterator(nodeListId);
 
@@ -1035,9 +1034,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     break;
                 case PROCESS:
                     // Check that the process has no children
-                    Process process = (Process) level;
-                    if (process.getNumberOfChildLevels() != 0) {
-                        log.error(format(ProcessorConstants.ERROR_PROCESS_HAS_LEVELS_MSG, process.getLineNumber(), process.getText()));
+                    if (level.getNumberOfChildLevels() != 0) {
+                        log.error(format(ProcessorConstants.ERROR_PROCESS_HAS_LEVELS_MSG, level.getLineNumber(), level.getText()));
                         valid = false;
                     }
                     break;
@@ -1062,7 +1060,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     break;
                 case INITIAL_CONTENT:
                     // Check that the initial content is at the start of the container
-                    if (level.getParent().getFirstSpecNode() != level) {
+                    if (level.getParent() == null || level.getParent().getFirstSpecNode() != level) {
                         log.error(format(ProcessorConstants.ERROR_CS_INITIAL_CONTENT_STRUCTURE_MSG, level.getLineNumber(),
                                 parentLevelType.getTitle(), level.getText()));
                         valid = false;

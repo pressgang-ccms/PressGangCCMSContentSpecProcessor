@@ -343,8 +343,8 @@ public class ProcessorConstants {
             "one topic." + CSLINE_MSG;
     public static final String ERROR_PROCESS_DUPLICATE_TOPICS_MSG = LINE + INVALID_PROCESS + " Topic %s is duplicated. A Process must not" +
             " have duplicate topics." + CSLINE_MSG;
-    public static final String ERROR_PROCESS_HAS_LEVELS_MSG = LINE + INVALID_PROCESS + " A process cannot contain " +
-            "Chapters/Sections/Appendixes or other Processes." + CSLINE_MSG;
+    public static final String ERROR_PROCESS_HAS_LEVELS_MSG = LINE + INVALID_PROCESS + " A process cannot contain Chapters, " +
+            "Sections, Appendixes, Prefaces or other Processes." + CSLINE_MSG;
 
     //Relationship Errors
     public static final String ERROR_DUPLICATE_TARGET_ID_MSG = "Target ID is duplicated. Target ID's must be unique." + NEW_LINE_SPACER +
