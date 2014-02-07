@@ -40,7 +40,7 @@ public class ContentSpecMaker {
             contentSpec.setAbstract(lookup.valueOf(description, (String) null));
             contentSpec.setCopyrightHolder(lookup.valueOf(copyrightHolder, randomAlphanumeric(10)));
             contentSpec.setCopyrightYear(lookup.valueOf(copyrightYear, (String) null));
-            contentSpec.setDtd(lookup.valueOf(dtd, "Docbook 4.5"));
+            contentSpec.setFormat(lookup.valueOf(dtd, "Docbook 4.5"));
             contentSpec.setBookType(lookup.valueOf(bookType, BookType.BOOK));
             contentSpec.setBookVersion(lookup.valueOf(bookVersion, valueOf(nextInt())));
             contentSpec.setPOMVersion(lookup.valueOf(pomVersion, valueOf(nextInt())));

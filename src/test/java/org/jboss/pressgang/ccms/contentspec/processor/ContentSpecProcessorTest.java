@@ -31,6 +31,8 @@ import org.powermock.modules.junit4.rule.PowerMockRule;
 
 @Ignore
 public class ContentSpecProcessorTest extends BaseUnitTest {
+    protected static final String DOCBOOK_45 = "DocBook 4.5";
+    protected static final String DOCBOOK_50 = "DocBook 4.5";
     protected static String DEFAULT_LOCALE = "en-US";
     protected static Integer ADDED_BY_PROPERTY_TAG_ID = 14;
     protected static Integer CSP_PROPERTY_ID = 15;

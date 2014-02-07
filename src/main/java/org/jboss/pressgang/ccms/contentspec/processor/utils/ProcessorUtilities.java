@@ -150,7 +150,7 @@ public class ProcessorUtilities {
         cloneTopic.setTitle(originalTopic.getTitle());
         cloneTopic.setDescription(originalTopic.getDescription());
         cloneTopic.setXml(originalTopic.getXml());
-        cloneTopic.setXmlDoctype(originalTopic.getXmlDoctype());
+        cloneTopic.setXmlFormat(originalTopic.getXmlFormat());
         cloneTopic.setLocale(originalTopic.getLocale());
 
         // Go through each collection and add the original topics data

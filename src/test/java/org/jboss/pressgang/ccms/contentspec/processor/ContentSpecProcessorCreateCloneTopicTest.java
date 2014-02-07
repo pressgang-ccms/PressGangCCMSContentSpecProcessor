@@ -100,7 +100,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");
@@ -131,7 +131,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");
@@ -171,7 +171,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");
@@ -221,7 +221,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -270,7 +270,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -318,7 +318,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -367,7 +367,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -412,7 +412,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -454,7 +454,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");
@@ -485,7 +485,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         // and the topic has xml
         when(topicWrapper.getXml()).thenReturn(randomString);
         // and the topic has a doctype
-        when(topicWrapper.getXmlDoctype()).thenReturn(CommonConstants.DOCBOOK_45);
+        when(topicWrapper.getXmlFormat()).thenReturn(CommonConstants.DOCBOOK_45);
         // and the topic has a locale
         when(topicWrapper.getLocale()).thenReturn(locale);
         // and the topic provider will return an existing
@@ -545,7 +545,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         // and the topic xml was cloned
         assertThat(topic.getXml(), is(randomString));
         // and the topic doctype was cloned
-        assertThat(topic.getXmlDoctype(), is(CommonConstants.DOCBOOK_45));
+        assertThat(topic.getXmlFormat(), is(CommonConstants.DOCBOOK_45));
         // and the locale was cloned
         assertThat(topic.getLocale(), is(locale));
         // check that the added by property was not copied across
@@ -574,7 +574,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
         // and the description was not changed
         verify(topicWrapper, never()).setDescription(anyString());
         // and the doctype was not changed
-        verify(topicWrapper, never()).setXmlDoctype(anyInt());
+        verify(topicWrapper, never()).setXmlFormat(anyInt());
         // and the locale was not changed
         verify(topicWrapper, never()).setLocale(anyString());
         // and the added by value hasn't changed

@@ -69,7 +69,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");
@@ -101,7 +101,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -135,7 +135,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -164,7 +164,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
             fail("Creating a topic should have thrown an exception");
         } catch (Exception e) {
             // Then there should be a log message about the error
@@ -215,7 +215,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         // and the description was set
         verify(topic, times(1)).setDescription(randomString);
         // and the doctype is set
-        verify(topic, times(1)).setXmlDoctype(CommonConstants.DOCBOOK_45);
+        verify(topic, times(1)).setXmlFormat(CommonConstants.DOCBOOK_45);
         // and the locale is set
         verify(topic, times(1)).setLocale(DEFAULT_LOCALE);
         // and the topic had the properties set

@@ -21,7 +21,7 @@ public class ContentSpecProcessorCreateTopicTest extends ContentSpecProcessorTes
         // When creating the topic
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -38,7 +38,7 @@ public class ContentSpecProcessorCreateTopicTest extends ContentSpecProcessorTes
         // When creating the topic
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }

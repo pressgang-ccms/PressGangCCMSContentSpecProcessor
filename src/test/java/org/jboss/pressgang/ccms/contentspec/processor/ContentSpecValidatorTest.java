@@ -50,7 +50,7 @@ public class ContentSpecValidatorTest extends BaseUnitTest {
         when(serverEntities.getReadOnlyPropertyTagId()).thenReturn(READ_ONLY_PROPERTY_TAG_ID);
         when(serverEntities.getTypeCategoryId()).thenReturn(TYPE_CATEGORY_ID);
         when(serverEntities.getWriterCategoryId()).thenReturn(WRITER_CATEGORY_ID);
-        when(serverEntities.getRocBookDTDBlobConstantId()).thenReturn(ROCBOOK_DTD_ID);
+        when(serverEntities.getRocBook45DTDBlobConstantId()).thenReturn(ROCBOOK_DTD_ID);
 
         this.validator = new ContentSpecValidator(dataProviderFactory, loggerManager, processingOptions);
     }

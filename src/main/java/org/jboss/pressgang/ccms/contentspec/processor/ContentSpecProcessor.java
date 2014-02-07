@@ -413,7 +413,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 // Add topics to the TopicPool that need to be added or updated
                 if (specTopic.isTopicAClonedTopic() || specTopic.isTopicANewTopic()) {
                     try {
-                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic);
+                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic, processorData.getContentSpec().getFormat());
                         if (topic != null) {
                             topics.addNewTopic(topic);
                         }
@@ -422,7 +422,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     }
                 } else if (specTopic.isTopicAnExistingTopic() && !specTopic.getTags(true).isEmpty() && specTopic.getRevision() == null) {
                     try {
-                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic);
+                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic, processorData.getContentSpec().getFormat());
                         if (topic != null) {
                             topics.addUpdatedTopic(topic);
                         }
@@ -517,7 +517,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @throws ProcessingException
      */
     protected TopicWrapper createTopicEntity(final DataProviderFactory providerFactory,
-            final SpecTopic specTopic) throws ProcessingException {
+            final SpecTopic specTopic, final String docBookVersion) throws ProcessingException {
         LOG.debug("Processing topic: {}", specTopic.getText());
 
         // Duplicates reference another new or cloned topic and should not have a different new/updated underlying topic
@@ -568,6 +568,22 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Process and set the source urls for new and cloned topics
         if (!specTopic.isTopicAnExistingTopic()) {
             if (processTopicSourceUrls(topicSourceURLProvider, specTopic, topic)) changed = true;
+        }
+
+        // Check if the app should be shutdown
+        if (isShuttingDown.get()) {
+            return null;
+        }
+
+        // Process and set the docbook version
+        if (!specTopic.isTopicAnExistingTopic()) {
+            if (docBookVersion.equals(CommonConstants.DOCBOOK_45_TITLE) && topic.getXmlFormat() != CommonConstants.DOCBOOK_45) {
+                topic.setXmlFormat(CommonConstants.DOCBOOK_45);
+                changed = true;
+            } else if (docBookVersion.equals(CommonConstants.DOCBOOK_50_TITLE) && topic.getXmlFormat() != CommonConstants.DOCBOOK_50) {
+                topic.setXmlFormat(CommonConstants.DOCBOOK_50);
+                changed = true;
+            }
         }
 
         // Check if the app should be shutdown
@@ -629,7 +645,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         topic.setTitle(specTopic.getTitle());
         topic.setDescription(specTopic.getDescription(true));
         topic.setXml("");
-        topic.setXmlDoctype(CommonConstants.DOCBOOK_45);
+        topic.setXmlFormat(CommonConstants.DOCBOOK_45);
         topic.setLocale(serverSettings.getDefaultLocale());
 
         // Write the type

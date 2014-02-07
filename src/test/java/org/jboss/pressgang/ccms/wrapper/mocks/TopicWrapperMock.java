@@ -60,13 +60,13 @@ public class TopicWrapperMock implements TopicWrapper {
     }
 
     @Override
-    public Integer getXmlDoctype() {
+    public Integer getXmlFormat() {
         return xmlDoctype;
     }
 
     @Override
-    public void setXmlDoctype(Integer doctypeId) {
-        this.xmlDoctype = doctypeId;
+    public void setXmlFormat(Integer formatId) {
+        this.xmlDoctype = formatId;
     }
 
     @Override

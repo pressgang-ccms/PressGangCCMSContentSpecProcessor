@@ -3,7 +3,6 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
 
-import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -64,8 +63,8 @@ import org.jboss.pressgang.ccms.provider.exception.NotFoundException;
 import org.jboss.pressgang.ccms.utils.common.DocBookUtilities;
 import org.jboss.pressgang.ccms.utils.common.ExceptionUtilities;
 import org.jboss.pressgang.ccms.utils.common.HashUtilities;
-import org.jboss.pressgang.ccms.utils.common.SAXXMLValidator;
 import org.jboss.pressgang.ccms.utils.common.XMLUtilities;
+import org.jboss.pressgang.ccms.utils.common.XMLValidator;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.BlobConstantWrapper;
 import org.jboss.pressgang.ccms.wrapper.CategoryWrapper;
@@ -197,11 +196,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
-        if (isNullOrEmpty(contentSpec.getDtd())) {
+        if (isNullOrEmpty(contentSpec.getFormat())) {
             log.error(ProcessorConstants.ERROR_CS_NO_DTD_MSG);
             valid = false;
             // Check that the DTD specified is a valid DTD format
-        } else if (!contentSpec.getDtd().equalsIgnoreCase("Docbook 4.5")) {
+        } else if (!contentSpec.getFormat().equalsIgnoreCase(CommonConstants.DOCBOOK_45_TITLE)
+                && !contentSpec.getFormat().equalsIgnoreCase(CommonConstants.DOCBOOK_50_TITLE)) {
             log.error(ProcessorConstants.ERROR_CS_INVALID_DTD_MSG);
             valid = false;
         }
@@ -605,19 +605,19 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that any metadata topics are valid
-        if (contentSpec.getRevisionHistory() != null && !postValidateTopic(contentSpec.getRevisionHistory())) {
+        if (contentSpec.getRevisionHistory() != null && !postValidateTopic(contentSpec.getRevisionHistory(), contentSpec)) {
             valid = false;
         }
-        if (contentSpec.getFeedback() != null && !postValidateTopic(contentSpec.getFeedback())) {
+        if (contentSpec.getFeedback() != null && !postValidateTopic(contentSpec.getFeedback(), contentSpec)) {
             valid = false;
         }
-        if (contentSpec.getLegalNotice() != null && !postValidateTopic(contentSpec.getLegalNotice())) {
+        if (contentSpec.getLegalNotice() != null && !postValidateTopic(contentSpec.getLegalNotice(), contentSpec)) {
             valid = false;
         }
-        if (contentSpec.getAuthorGroup() != null && !postValidateTopic(contentSpec.getAuthorGroup())) {
+        if (contentSpec.getAuthorGroup() != null && !postValidateTopic(contentSpec.getAuthorGroup(), contentSpec)) {
             valid = false;
         }
-        if (contentSpec.getAbstractTopic() != null && !postValidateTopic(contentSpec.getAbstractTopic())) {
+        if (contentSpec.getAbstractTopic() != null && !postValidateTopic(contentSpec.getAbstractTopic(), contentSpec)) {
             valid = false;
         }
 
@@ -637,23 +637,30 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             wrappedAbstract = "<abstract>" + wrappedAbstract + "</abstract>";
 
             // Get the docbook DTD
-            final BlobConstantWrapper rocbookDtd = blobConstantProvider.getBlobConstant(serverEntities.getRocBookDTDBlobConstantId());
+            final String docbookFileName;
+            final XMLValidator.ValidationMethod validationMethod;
+            final byte[] docbookSchema;
+            if (contentSpec.getFormat().equalsIgnoreCase(CommonConstants.DOCBOOK_50_TITLE)) {
+                final BlobConstantWrapper docbookRng = blobConstantProvider.getBlobConstant(serverEntities.getDocBook50RNGBlobConstantId());
+                docbookFileName = docbookRng.getName();
+                validationMethod = XMLValidator.ValidationMethod.RELAXNG;
+                docbookSchema = docbookRng.getValue();
+            } else {
+                final BlobConstantWrapper rocbookDtd = blobConstantProvider.getBlobConstant(serverEntities.getRocBook45DTDBlobConstantId());
+                docbookFileName = rocbookDtd.getName();
+                validationMethod = XMLValidator.ValidationMethod.DTD;
+                docbookSchema = rocbookDtd.getValue();
+            }
 
             // Create the dummy XML entities file
             final StringBuilder xmlEntities = new StringBuilder(CSConstants.DUMMY_CS_NAME_ENT_FILE);
             if (!isNullOrEmpty(contentSpec.getEntities())) {
                 xmlEntities.append(contentSpec.getEntities());
             }
-            byte[] xmlEntitiesBytes = null;
-            try {
-                xmlEntitiesBytes = xmlEntities.toString().getBytes("UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                log.debug("", e);
-            }
 
             // Validate the XML content against the dtd
-            final SAXXMLValidator validator = new SAXXMLValidator(false);
-            if (!validator.validateXML(wrappedAbstract, "rocbook.dtd", rocbookDtd.getValue(), "entities.ent", xmlEntitiesBytes,
+            final XMLValidator validator = new XMLValidator(false);
+            if (!validator.validate(validationMethod, wrappedAbstract, docbookFileName, docbookSchema, xmlEntities.toString(),
                     "abstract")) {
                 valid = false;
                 final String line = CommonConstants.CS_ABSTRACT_TITLE + " = " + contentSpec.getAbstract();
@@ -662,7 +669,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that each level is valid
-        if (!postValidateLevel(contentSpec.getBaseLevel())) {
+        if (!postValidateLevel(contentSpec.getBaseLevel(), contentSpec)) {
             valid = false;
         }
 
@@ -1086,10 +1093,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     /**
      * Validates a level to ensure its format and child levels/topics are valid.
      *
+     *
      * @param level The level to be validated.
+     * @param contentSpec
      * @return True if the level is valid otherwise false.
      */
-    public boolean postValidateLevel(final Level level) {
+    public boolean postValidateLevel(final Level level, final ContentSpec contentSpec) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -1106,11 +1115,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // Validate the sub levels and topics
         for (final Node childNode : level.getChildNodes()) {
             if (childNode instanceof Level) {
-                if (!postValidateLevel((Level) childNode)) {
+                if (!postValidateLevel((Level) childNode, contentSpec)) {
                     valid = false;
                 }
             } else if (childNode instanceof SpecTopic) {
-                if (!postValidateTopic((SpecTopic) childNode)) {
+                if (!postValidateTopic((SpecTopic) childNode, contentSpec)) {
                     valid = false;
                 }
             }
@@ -1336,11 +1345,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     /**
      * Validates a topic against the database and for formatting issues.
      *
+     *
      * @param specTopic The topic to be validated.
+     * @param contentSpec
      * @return True if the topic is valid otherwise false.
      */
     @SuppressWarnings("unchecked")
-    public boolean postValidateTopic(final SpecTopic specTopic) {
+    public boolean postValidateTopic(final SpecTopic specTopic, final ContentSpec contentSpec) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -1421,7 +1432,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     log.warn(String.format(ProcessorConstants.WARN_INTERNAL_TOPIC_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 }
 
-                if (!postValidateExistingTopic(specTopic, topic)) {
+                if (!postValidateExistingTopic(specTopic, topic, contentSpec)) {
                     valid = false;
                 }
             }
@@ -1441,7 +1452,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 log.error(String.format(ProcessorConstants.ERROR_TOPIC_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             } else {
-                if (!postValidateExistingTopic(specTopic, topic)) {
+                if (!postValidateExistingTopic(specTopic, topic, contentSpec)) {
                     valid = false;
                 }
 
@@ -1455,7 +1466,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         return valid;
     }
 
-    private boolean postValidateExistingTopic(final SpecTopic specTopic, final BaseTopicWrapper<?> topic) {
+    private boolean postValidateExistingTopic(final SpecTopic specTopic, final BaseTopicWrapper<?> topic, final ContentSpec contentSpec) {
         boolean valid = true;
 
         if (specTopic.getTopicType() == TopicType.NORMAL || specTopic.getTopicType() == TopicType.INITIAL_CONTENT) {
@@ -1525,6 +1536,18 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         if (specTopic.getRevision() != null && !specTopic.getRevision().equals(topic.getRevision())) {
             log.warn(format(ProcessorConstants.WARN_REVISION_NOT_EXIST_USING_X_MSG, specTopic.getLineNumber(), topic.getRevision(),
                     specTopic.getText()));
+        }
+
+        // Check the docbook versions match
+        if (contentSpec.getFormat().equalsIgnoreCase(CommonConstants.DOCBOOK_45_TITLE) && topic.getXmlFormat() != CommonConstants.DOCBOOK_45) {
+            log.error(format(ProcessorConstants.ERROR_TOPIC_DOESNT_MATCH_FORMAT_MSG, specTopic.getLineNumber(), contentSpec.getFormat(),
+                    specTopic.getText()));
+            valid = false;
+        } else if (contentSpec.getFormat().equalsIgnoreCase(CommonConstants.DOCBOOK_50_TITLE) && topic.getXmlFormat() != CommonConstants
+                .DOCBOOK_50) {
+            log.error(format(ProcessorConstants.ERROR_TOPIC_DOESNT_MATCH_FORMAT_MSG, specTopic.getLineNumber(), contentSpec.getFormat(),
+                    specTopic.getText()));
+            valid = false;
         }
 
         // Validate the tags

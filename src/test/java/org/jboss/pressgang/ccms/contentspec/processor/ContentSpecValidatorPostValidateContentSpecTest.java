@@ -78,6 +78,7 @@ public class ContentSpecValidatorPostValidateContentSpecTest extends ContentSpec
         when(dataProviderFactory.getProvider(BlobConstantProvider.class)).thenReturn(blobConstantProvider);
         when(blobConstantProvider.getBlobConstant(ROCBOOK_DTD_ID)).thenReturn(blobConstantWrapper);
         when(blobConstantWrapper.getValue()).thenReturn(ResourceUtilities.resourceFileToByteArray("/", "rocbook.dtd"));
+        when(blobConstantWrapper.getName()).thenReturn("rocbook.dtd");
         super.setUp();
     }
 
@@ -386,7 +387,7 @@ public class ContentSpecValidatorPostValidateContentSpecTest extends ContentSpec
     }
 
     @Test
-    public void shouldFailAndLogErrorWhenInvalidAuthorGroup() {
+    public void shouldFailAndLogErrorIfAbstractInvalid() {
         // Given an invalid content spec because of an invalid feedback
         ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
         contentSpec.setId(null);

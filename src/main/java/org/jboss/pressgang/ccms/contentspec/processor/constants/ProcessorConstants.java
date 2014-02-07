@@ -297,6 +297,8 @@ public class ProcessorConstants {
             "Topic." + CSLINE_MSG;
     public static final String ERROR_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT = LINE + INVALID_TOPIC + " The Topic specified has content that" +
             " cannot be used in the initial content of a Chapter/Preface/Section/Appendix." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_DOESNT_MATCH_FORMAT_MSG = LINE + INVALID_TOPIC + " The topic specified isn't compatible with " +
+            "the \"%s\" format, which is required by the Content Specification." + CSLINE_MSG;
 
     // Files
     public static final String ERROR_FILE_ID_NONEXIST_MSG = LINE + INVALID_FILE + " ID doesn't exist in the database." + CSLINE_MSG;
@@ -414,12 +416,12 @@ public class ProcessorConstants {
             CommonConstants.CS_BUG_LINKS_TITLE, CommonConstants.CS_BUGZILLA_PRODUCT_TITLE, CommonConstants.CS_BUGZILLA_COMPONENT_TITLE,
             CommonConstants.CS_BUGZILLA_VERSION_TITLE, CommonConstants.CS_BUGZILLA_KEYWORDS_TITLE, CommonConstants.CS_BUGZILLA_SERVER_TITLE,
             CommonConstants.CS_BUGZILLA_URL_TITLE, CommonConstants.CS_BOOK_TYPE_TITLE, CommonConstants.CS_BRAND_LOGO_TITLE,
-            CommonConstants.CS_PUBLICAN_CFG_TITLE, CommonConstants.CS_INLINE_INJECTION_TITLE, CommonConstants.CS_DTD_TITLE,
+            CommonConstants.CS_PUBLICAN_CFG_TITLE, CommonConstants.CS_INLINE_INJECTION_TITLE, CommonConstants.CS_FORMAT_TITLE,
             CommonConstants.CS_REV_HISTORY_TITLE, CommonConstants.CS_FEEDBACK_TITLE, CommonConstants.CS_LEGAL_NOTICE_TITLE,
             CommonConstants.CS_AUTHOR_GROUP_TITLE, CommonConstants.CS_BUGZILLA_ASSIGNEE_TITLE, CommonConstants.CS_MAVEN_GROUP_ID_TITLE,
             CommonConstants.CS_MAVEN_ARTIFACT_ID_TITLE, CommonConstants.CS_MAVEN_POM_VERSION_TITLE, CommonConstants.CS_FILE_TITLE,
             CommonConstants.CS_FILE_SHORT_TITLE, CommonConstants.CS_JIRA_PROJECT_TITLE, CommonConstants.CS_JIRA_COMPONENT_TITLE,
             CommonConstants.CS_JIRA_VERSION_TITLE, CommonConstants.CS_JIRA_LABELS_TITLE, CommonConstants.CS_JIRA_SERVER_TITLE,
             CommonConstants.CS_SPACES_TITLE, CommonConstants.CS_ENTITIES_TITLE, CommonConstants.CS_DEFAULT_PUBLICAN_CFG_TITLE,
-            CommonConstants.CS_INDEX_TITLE, CSConstants.DEBUG_TITLE, CSConstants.OUTPUT_STYLE_TITLE, CSConstants.SURVEY_LINK_TITLE);
+            CommonConstants.CS_INDEX_TITLE, CSConstants.DEBUG_TITLE, CSConstants.OUTPUT_STYLE_TITLE);
 }

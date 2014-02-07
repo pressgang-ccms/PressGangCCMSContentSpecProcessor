@@ -84,7 +84,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");
@@ -117,7 +117,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 //
 //        TopicWrapper topic = null;
 //        try {
-//            topic = processor.createTopicEntity(providerFactory, specTopic);
+//            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //            fail("Creating a topic should not have thrown an exception");
@@ -156,7 +156,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -199,7 +199,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -243,7 +243,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -287,7 +287,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -325,7 +325,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -356,7 +356,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -413,7 +413,7 @@ public class ContentSpecProcessorCreateExistingTopicTest extends ContentSpecProc
         // and the description was not changed
         verify(topicWrapper, never()).setDescription(anyString());
         // and the doctype was not changed
-        verify(topicWrapper, never()).setXmlDoctype(anyInt());
+        verify(topicWrapper, never()).setXmlFormat(anyInt());
         // and the locale was not changed
         verify(topicWrapper, never()).setLocale(anyString());
     }
