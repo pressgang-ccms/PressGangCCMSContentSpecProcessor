@@ -21,10 +21,9 @@ public class ProcessorConstants {
     public static final String BRACKET_PATTERN = "(?<!\\\\)\\%c((.|\n)*?)(?<!\\\\)\\%c";
     public static final String BRACKET_VALIDATE_REGEX = ".*%s[ ]*$"; // ".*%s(([ ]*$)|([ ]*#.*$))" For use to allow comments at the end
     // of a line
-    public static final String PRODUCT_VERSION_VALIDATE_REGEX = "(([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+))([ \\" + "" +
-            ".\\-]?[A-Za-z0-9]+)?";
-    public static final String VERSION_VALIDATE_REGEX = "([0-9]+)|([0-9]+.[0-9]+)|([0-9]+.[0-9]+.[0-9]+)";
-    public static final String VERSION_EPOCH_VALIDATE_REGEX = "(" + VERSION_VALIDATE_REGEX + ")(-[0-9\\.]+)?";
+    public static final String VERSION_VALIDATE_REGEX = "(\\d+)|(\\d+.\\d+)|(\\d+.\\d+.\\d+)";
+    public static final String PRODUCT_VERSION_VALIDATE_REGEX = "(" + VERSION_VALIDATE_REGEX + ")([ \\.\\-]?[A-Za-z\\d]+)?";
+    public static final String VERSION_EPOCH_VALIDATE_REGEX = "(" + VERSION_VALIDATE_REGEX + ")(-[\\d\\.]+)?";
     public static final String COPYRIGHT_YEAR_VALIDATE_REGEX = "^\\d+[\\s\\-\\d,]*$";
 
     public static final String RELATED_REGEX = "^(R|RELATED-TO|REFER-TO)[ ]*:(.|(\r?\n))*$";
@@ -32,21 +31,21 @@ public class ProcessorConstants {
     public static final String LINK_LIST_REGEX = "^(L|LINK-LIST)[ ]*:(.|(\r?\n))*$";
     public static final String NEXT_REGEX = "^NEXT[ ]*:(.|(\r?\n))*$";
     public static final String PREV_REGEX = "^PREV[ ]*:(.|(\r?\n))*$";
-    public static final String TARGET_BASE_REGEX = "T(([0-9]+)|(\\-[ ]*[A-Za-z][A-Za-z0-9\\-_]*))";
+    public static final String TARGET_BASE_REGEX = "T(\\d+|(\\-[ ]*[A-Za-z][A-Za-z\\d\\-_]*))";
     public static final String TARGET_REGEX = "^" + TARGET_BASE_REGEX + "$";
     public static final String EXTERNAL_TARGET_REGEX = "^E" + TARGET_BASE_REGEX + "$";
-    public static final String EXTERNAL_CSP_REGEX = "^CS[0-9]+[ ]*(:[ ]*[0-9]+)?$";
+    public static final String EXTERNAL_CSP_REGEX = "^CS\\d+[ ]*(:[ ]*\\d+)?$";
 
-    public static final String CSP_TITLE_REGEX = "^[0-9a-zA-Z_\\-\\.\\+\\s]+$";
-    public static final String CSP_PRODUCT_REGEX = "^[0-9a-zA-Z_\\-\\.\\+\\s]+$";
+    public static final String CSP_TITLE_REGEX = "^[\\da-zA-Z_\\-\\.\\+\\s]+$";
+    public static final String CSP_PRODUCT_REGEX = "^[\\da-zA-Z_\\-\\.\\+\\s]+$";
 
-    public static final String RELATION_ID_REGEX = "^(" + TARGET_BASE_REGEX + ")|(N?[0-9]+)$";
-    public static final String RELATION_ID_LONG_REGEX = "^.*\\[((" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
-    public static final String RELATION_ID_LONG_PATTERN = "^(?<TopicTitle>.*)[ ]*\\[(?<TopicID>(" + TARGET_BASE_REGEX + ")|(N?[0-9]+))\\]$";
+    public static final String RELATION_ID_REGEX = "^(" + TARGET_BASE_REGEX + ")|(N?\\d+)$";
+    public static final String RELATION_ID_LONG_REGEX = "^.*\\[((" + TARGET_BASE_REGEX + ")|(N?\\d+))\\]$";
+    public static final String RELATION_ID_LONG_PATTERN = "^(?<TopicTitle>.*)[ ]*\\[(?<TopicID>(" + TARGET_BASE_REGEX + ")|(N?\\d+))\\]$";
 
-    public static final String FILE_ID_REGEX = "^[0-9]+$";
-    public static final String FILE_ID_LONG_REGEX = "^.*\\[[0-9]+([ ]*,[ ]*rev:[ ]+[0-9]+)?\\]$";
-    public static final String FILE_ID_LONG_PATTERN = "^(?<Title>.*)[ ]*\\[(?<ID>[0-9]+)([ ]*,[ ]*rev:[ ]+(?<REV>[0-9]+))?\\]$";
+    public static final String FILE_ID_REGEX = "^\\d+$";
+    public static final String FILE_ID_LONG_REGEX = "^.*\\[\\d+([ ]*,[ ]*rev:[ ]+\\d+)?\\]$";
+    public static final String FILE_ID_LONG_PATTERN = "^(?<Title>.*)[ ]*\\[(?<ID>\\d+)([ ]*,[ ]*rev:[ ]+(?<REV>\\d+))?\\]$";
 
     public static final String VALID_BOOK_TYPE_REGEX = "^(BOOK|ARTICLE)(-DRAFT)?$";
 
