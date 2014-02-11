@@ -213,7 +213,9 @@ public class ProcessorConstants {
             CSLINE_MSG + CSLINE_MSG;
     public static final String ERROR_INITIAL_CONTENT_CHILD_LEVEL_MSG = LINE + INVALID_CS + " " + CSConstants.LEVEL_INITIAL_CONTENT + " " +
             "cannot have child levels.";
-
+    public static final String ERROR_SECTION_NO_TOPICS_OR_INITIAL_CONTENT_MSG = LINE + "Invalid Section! No levels in this " +
+            "Section and only one " + CSConstants.LEVEL_INITIAL_CONTENT + " topic. Sections with only an " + CSConstants
+            .LEVEL_INITIAL_CONTENT + " topic are just ordinary topics, so please use the regular topic syntax." +  CSLINE_MSG;
     public static final String ERROR_INVALID_NUMBER_MSG = LINE + "Number expected but the value specified is not a valid number." +
             CSLINE_MSG;
     public static final String WARN_EMPTY_BRACKETS_MSG = LINE + "Empty brackets found.";

@@ -19,6 +19,7 @@ import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.InitialContent;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.contentspec.enums.BookType;
 import org.jboss.pressgang.ccms.contentspec.enums.LevelType;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.LevelMaker;
@@ -110,7 +111,9 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         // Then the result should be false
         assertFalse(result);
         // and an error should have been printed
-        assertThat(logger.getLogMessages().toString(), containsString("Invalid Section! No topics or levels in this Section."));
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Section! No levels in this " +
+        "Section and only one " + CSConstants.LEVEL_INITIAL_CONTENT + " topic. Sections with only an " + CSConstants
+                .LEVEL_INITIAL_CONTENT + " topic are just ordinary topics, so please use the regular topic syntax."));
     }
 
     @Test

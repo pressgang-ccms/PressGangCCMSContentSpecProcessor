@@ -927,12 +927,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
-        // Sections have to have more than just initial text
+        // Sections have to have more than just one initial text topic
         if (levelType == LevelType.SECTION && level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 1 && level
                 .getFirstSpecNode() instanceof InitialContent) {
-            log.error(format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), levelType.getTitle(),
-                    levelType.getTitle(), level.getText()));
-            valid = false;
+            if (((InitialContent) level.getFirstSpecNode()).getNumberOfSpecTopics() <= 1) {
+                log.error(format(ProcessorConstants.ERROR_SECTION_NO_TOPICS_OR_INITIAL_CONTENT_MSG, level.getLineNumber(), level.getText()));
+                valid = false;
+            }
         }
 
         if (isNullOrEmpty(level.getTitle())) {
