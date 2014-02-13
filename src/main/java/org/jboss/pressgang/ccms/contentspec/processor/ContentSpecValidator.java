@@ -786,16 +786,16 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private boolean validateRelationshipToTopic(final Relationship relationship, final SpecNodeWithRelationships node,
             final String relatedId, final SpecTopic relatedTopic, final Map<String, List<SpecTopic>> specTopicMap) {
         final List<SpecTopic> relatedSpecTopics = specTopicMap.get(relatedTopic.getId());
-        if (relatedId.startsWith("X")) {
+        if (relatedSpecTopics == null) {
+            log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, node.getLineNumber(), relatedId,
+                    node.getText()));
+            return false;
+        } else if (relationship instanceof TopicRelationship && relatedId.startsWith("X")) {
             // Duplicated topics are never unique so throw an error straight away.
             log.error(String.format(ProcessorConstants.ERROR_INVALID_DUPLICATE_RELATIONSHIP_MSG, node.getLineNumber(),
                     node.getText()));
             return false;
-        } else if (relatedSpecTopics == null) {
-            log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_NONEXIST_MSG, node.getLineNumber(), relatedId,
-                    node.getText()));
-            return false;
-        } else if (relatedSpecTopics.size() > 1) {
+        } else if (relationship instanceof TopicRelationship &&  relatedSpecTopics.size() > 1) {
             // Check to make sure the topic isn't duplicated
             final List<SpecTopic> relatedTopics = specTopicMap.get(relatedTopic.getId());
 
