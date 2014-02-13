@@ -1597,9 +1597,10 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @return True if the XML can be used, otherwise false.
      */
     private boolean validateInitialContentTopicXML(final SpecTopic specTopic, final BaseTopicWrapper<?> topic) {
-        final String condition = specTopic.getConditionStatement(true);
-        if (condition != null) {
-            boolean valid = true;
+        boolean valid = true;
+        final InitialContent initialContent = (InitialContent) specTopic.getParent();
+        if (initialContent.getNumberOfSpecTopics() > 1) {
+            final String condition = specTopic.getConditionStatement(true);
             try {
                 final Document doc = XMLUtilities.convertStringToDocument(topic.getXml());
 
@@ -1617,11 +1618,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             } catch (Exception e) {
                 log.debug(e.getMessage());
             }
-
-            return valid;
-        } else {
-            return true;
         }
+
+        return valid;
     }
 
     /**
