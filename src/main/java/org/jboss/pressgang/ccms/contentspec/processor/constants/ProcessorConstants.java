@@ -153,9 +153,9 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_FILES_MSG = LINE + INVALID_CS + " Incorrect additional files input." + CSLINE_MSG;
     public static final String ERROR_INVALID_FILE_MSG = LINE + INVALID_FILE + " Invalid format.";
     public static final String ERROR_INVALID_ENTITIES_MSG = INVALID_CS + " Invalid XML Entities. XML Error Message: %s" + CSLINE_MSG;
-    public static final String ERROR_RESERVED_ENTITIES_SINGLE_DEFINED_MSG = INVALID_CS + " Invalid XML Entities. %s is a reserved entity " +
+    public static final String ERROR_RESERVED_ENTITIES_SINGLE_DEFINED_MSG = "Invalid XML Entities! %s is a reserved entity " +
             "and cannot be defined." + CSLINE_MSG;
-    public static final String ERROR_RESERVED_ENTITIES_DEFINED_MSG = INVALID_CS + " Invalid XML Entities. %s are reserved entities and " +
+    public static final String ERROR_RESERVED_ENTITIES_DEFINED_MSG = "Invalid XML Entities! %s are reserved entities and " +
             "cannot be defined." + CSLINE_MSG;
     public static final String ERROR_INVALID_DEFAULT_PUBLICAN_CFG_MSG = INVALID_CS + " Invalid " + CommonConstants
             .CS_DEFAULT_PUBLICAN_CFG_TITLE + " name. The \"%s\" configuration doesn't exist in the Content Specification.";
