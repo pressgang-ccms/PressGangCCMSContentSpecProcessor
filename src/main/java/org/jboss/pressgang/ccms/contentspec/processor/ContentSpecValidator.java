@@ -77,6 +77,7 @@ import org.jboss.pressgang.ccms.wrapper.TextContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.base.BaseTopicWrapper;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
 
 /**
@@ -419,12 +420,47 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // Make sure the input is valid XML.
         final String wrappedEntities = "<!DOCTYPE section [" + entities + "]><section></section>";
+        Document doc = null;
         try {
-            XMLUtilities.convertStringToDocument(wrappedEntities);
+            doc = XMLUtilities.convertStringToDocument(wrappedEntities);
         } catch (Exception e) {
             final String line = CommonConstants.CS_ENTITIES_TITLE + " = [" + entities + "]";
             log.error(String.format(ProcessorConstants.ERROR_INVALID_ENTITIES_MSG, e.getMessage(), line));
             valid = false;
+        }
+
+        // Check that no reserved entities are defined.
+        if (doc != null) {
+            final List<String> invalidEntities = new ArrayList<String>();
+            final NamedNodeMap entityNodes = doc.getDoctype().getEntities();
+            for (int i = 0; i < entityNodes.getLength(); i++) {
+                final org.w3c.dom.Node entityNode = entityNodes.item(i);
+                if (ProcessorConstants.RESERVED_ENTITIES.contains(entityNode.getNodeName())) {
+                    invalidEntities.add(entityNode.getNodeName());
+                }
+            }
+
+            if (!invalidEntities.isEmpty()) {
+                final StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < invalidEntities.size(); i++) {
+                    if (i != 0) {
+                        if (i == invalidEntities.size() - 1) {
+                            builder.append(" and ");
+                        } else {
+                            builder.append(", ");
+                        }
+                    }
+                    builder.append(invalidEntities.get(i));
+                }
+
+                final String line = CommonConstants.CS_ENTITIES_TITLE + " = [" + entities + "]";
+                if (invalidEntities.size() == 1) {
+                    log.error(String.format(ProcessorConstants.ERROR_RESERVED_ENTITIES_SINGLE_DEFINED_MSG, builder.toString(), line));
+                } else {
+                    log.error(String.format(ProcessorConstants.ERROR_RESERVED_ENTITIES_DEFINED_MSG, builder.toString(), line));
+                }
+                valid = false;
+            }
         }
 
         return valid;

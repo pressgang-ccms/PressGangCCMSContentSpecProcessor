@@ -153,10 +153,10 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_FILES_MSG = LINE + INVALID_CS + " Incorrect additional files input." + CSLINE_MSG;
     public static final String ERROR_INVALID_FILE_MSG = LINE + INVALID_FILE + " Invalid format.";
     public static final String ERROR_INVALID_ENTITIES_MSG = INVALID_CS + " Invalid XML Entities. XML Error Message: %s" + CSLINE_MSG;
-    public static final String ERROR_CUSTOM_ENTITIES_SINGLE_DEFINED_MSG = INVALID_CS + " Invalid XML Entities. %s is a custom entity " +
-            "and cannot be defined. Only overrides to the default XML entities can be defined." + CSLINE_MSG;
-    public static final String ERROR_CUSTOM_ENTITIES_DEFINED_MSG = INVALID_CS + " Invalid XML Entities. %s are custom entities and cannot" +
-            " be defined. Only overrides to the default XML entities can be defined." + CSLINE_MSG;
+    public static final String ERROR_RESERVED_ENTITIES_SINGLE_DEFINED_MSG = INVALID_CS + " Invalid XML Entities. %s is a reserved entity " +
+            "and cannot be defined." + CSLINE_MSG;
+    public static final String ERROR_RESERVED_ENTITIES_DEFINED_MSG = INVALID_CS + " Invalid XML Entities. %s are reserved entities and " +
+            "cannot be defined." + CSLINE_MSG;
     public static final String ERROR_INVALID_DEFAULT_PUBLICAN_CFG_MSG = INVALID_CS + " Invalid " + CommonConstants
             .CS_DEFAULT_PUBLICAN_CFG_TITLE + " name. The \"%s\" configuration doesn't exist in the Content Specification.";
     public static final String ERROR_INVALID_ABSTRACT_MSG = INVALID_CS + " The abstract is not valid XML. Error Message:" +
@@ -425,4 +425,14 @@ public class ProcessorConstants {
             CommonConstants.CS_JIRA_VERSION_TITLE, CommonConstants.CS_JIRA_LABELS_TITLE, CommonConstants.CS_JIRA_SERVER_TITLE,
             CommonConstants.CS_SPACES_TITLE, CommonConstants.CS_ENTITIES_TITLE, CommonConstants.CS_DEFAULT_PUBLICAN_CFG_TITLE,
             CommonConstants.CS_INDEX_TITLE, CSConstants.DEBUG_TITLE, CSConstants.OUTPUT_STYLE_TITLE);
+
+    public static final List<String> RESERVED_ENTITIES = Arrays.asList("BUILD_NAME",
+            "BUILD_DATE",
+            "BUILD_BZPRODUCT",
+            "BUILD_BZCOMPONENT",
+            "BUILD_BZVERSION",
+            "BUILD_BZKEYWORDS",
+            "BUILD_JIRA_PID",
+            "BUILD_JIRA_CID",
+            "BUILD_JIRA_VID");
 }
