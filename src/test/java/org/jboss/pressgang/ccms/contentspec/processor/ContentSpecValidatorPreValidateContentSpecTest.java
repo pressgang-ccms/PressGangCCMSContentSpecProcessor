@@ -222,7 +222,8 @@ public class ContentSpecValidatorPreValidateContentSpecTest extends ContentSpecV
         assertThat(result, is(false));
         // And an error message should be output
         assertThat(logger.getLogMessages().toString(), containsString(
-                "Invalid Content Specification! DTD specified is unsupported. Docbook 4.5 is the only currently supported DTD."));
+                "Invalid Content Specification! Format specified is unsupported. DocBook 4.5 and DocBook 5.0 are the only currently " +
+                        "supported Formats."));
     }
 
     @Test
