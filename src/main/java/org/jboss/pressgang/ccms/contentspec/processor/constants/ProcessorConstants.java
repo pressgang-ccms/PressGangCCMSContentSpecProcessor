@@ -79,8 +79,8 @@ public class ProcessorConstants {
     public static final String ERROR_CS_NO_PRODUCT_MSG = INVALID_CS + " No Product specified.";
     public static final String ERROR_CS_NO_VERSION_MSG = INVALID_CS + " No Version specified.";
     public static final String ERROR_CS_NO_DTD_MSG = INVALID_CS + " No DTD specified.";
-    public static final String ERROR_CS_INVALID_DTD_MSG = INVALID_CS + " DTD specified is unsupported. Docbook 4.5 is the only currently " +
-            "supported DTD.";
+    public static final String ERROR_CS_INVALID_DTD_MSG = INVALID_CS + " Format specified is unsupported. DocBook 4.5 and DocBook 5.0 are" +
+            " the only currently supported Formats.";
     public static final String ERROR_CS_NO_CHECKSUM_MSG = INVALID_CS + " \"CHECKSUM\" or \"ID\" attribute not found in the Content " +
             "Specification.";
     public static final String ERROR_CS_NONMATCH_SPEC_REVISION_MSG = INVALID_CS + " Revisions must match to be edited." + NEW_LINE_SPACER
