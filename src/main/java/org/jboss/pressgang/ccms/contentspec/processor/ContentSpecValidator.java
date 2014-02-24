@@ -864,12 +864,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             log.error(String.format(ProcessorConstants.ERROR_INITIAL_CONTENT_TOPIC_RELATIONSHIP_MSG, node.getLineNumber(), node.getText()));
             return false;
         } else {
-            final String relatedTitle;
-            if (TopicType.INITIAL_CONTENT.equals(relatedTopic.getTopicType()) && relatedTopic.getParent() instanceof InitialContent) {
-                 relatedTitle = ((InitialContent) relatedTopic.getParent()).getParent().getTitle();
-            } else {
-                relatedTitle = relatedTopic.getTitle();
-            }
+            final String relatedTitle = relatedTopic.getTitle();
             if (relationship.getRelationshipTitle() != null && !relationship.getRelationshipTitle().equals(relatedTitle)) {
                 if (processingOptions.isStrictTitles()) {
                     log.error(String.format(ProcessorConstants.ERROR_RELATED_TITLE_NO_MATCH_MSG, node.getLineNumber(),
