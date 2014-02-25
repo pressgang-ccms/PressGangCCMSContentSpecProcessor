@@ -1217,7 +1217,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
                 for (int i = 0; i < index; i++) {
                     final Node node = parentChildren.get(i);
-                    if (node instanceof Level) {
+                    if (node instanceof Level && ((Level) node).getLevelType() != LevelType.INITIAL_CONTENT) {
                         log.error(String.format(ProcessorConstants.ERROR_TOPIC_NOT_IN_PART_INTRO_MSG, specTopic.getLineNumber(),
                                 specTopic.getText()));
                         valid = false;
