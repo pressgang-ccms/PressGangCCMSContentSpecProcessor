@@ -10,7 +10,7 @@
 
     <groupId>org.jboss.pressgang.ccms.contentspec</groupId>
     <artifactId>processor</artifactId>
-    <version>1.4</version>
+    <version>1.4.1-SNAPSHOT</version>
     <name>PressGang CCMS Content Specification Processor</name>
 
     <scm>
@@ -82,7 +82,7 @@
         <dependency>
             <groupId>org.jboss.pressgang.ccms</groupId>
             <artifactId>pressgang-ccms-contentspec</artifactId>
-            <version>${pressgang.ccms.version}</version>
+            <version>1.4.1-SNAPSHOT</version>
         </dependency>
 
         <!-- Logging Libraries -->
