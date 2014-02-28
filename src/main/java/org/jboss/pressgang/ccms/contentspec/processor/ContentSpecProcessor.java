@@ -396,7 +396,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final ContentSpecProvider contentSpecProvider = providerFactory.getProvider(ContentSpecProvider.class);
 
         try {
-            final List<SpecTopic> specTopics = processorData.getContentSpec().getSpecTopics();
+            final ContentSpec contentSpec = processorData.contentSpec;
+            final String locale = contentSpec.getLocale() == null ? serverSettings.getDefaultLocale() : contentSpec.getLocale();
+            final List<SpecTopic> specTopics = contentSpec.getSpecTopics();
 
             // Create the duplicate topic map
             final Map<SpecTopic, SpecTopic> duplicatedTopicMap = createDuplicatedTopicMap(specTopics);
@@ -413,7 +415,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 // Add topics to the TopicPool that need to be added or updated
                 if (specTopic.isTopicAClonedTopic() || specTopic.isTopicANewTopic()) {
                     try {
-                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic, processorData.getContentSpec().getFormat());
+                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic, processorData.getContentSpec().getFormat(),
+                                locale);
                         if (topic != null) {
                             topics.addNewTopic(topic);
                         }
@@ -422,7 +425,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     }
                 } else if (specTopic.isTopicAnExistingTopic() && !specTopic.getTags(true).isEmpty() && specTopic.getRevision() == null) {
                     try {
-                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic, processorData.getContentSpec().getFormat());
+                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic, processorData.getContentSpec().getFormat(),
+                                locale);
                         if (topic != null) {
                             topics.addUpdatedTopic(topic);
                         }
@@ -513,11 +517,12 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      *
      * @param providerFactory
      * @param specTopic       The Content Specification Topic to create the topic entity from.
+     * @param locale
      * @return The new topic object if any changes where made otherwise null.
      * @throws ProcessingException
      */
-    protected TopicWrapper createTopicEntity(final DataProviderFactory providerFactory,
-            final SpecTopic specTopic, final String docBookVersion) throws ProcessingException {
+    protected TopicWrapper createTopicEntity(final DataProviderFactory providerFactory, final SpecTopic specTopic,
+            final String docBookVersion, final String locale) throws ProcessingException {
         LOG.debug("Processing topic: {}", specTopic.getText());
 
         // Duplicates reference another new or cloned topic and should not have a different new/updated underlying topic
@@ -575,13 +580,23 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return null;
         }
 
-        // Process and set the docbook version
         if (!specTopic.isTopicAnExistingTopic()) {
-            if (docBookVersion.equals(CommonConstants.DOCBOOK_45_TITLE) && topic.getXmlFormat() != CommonConstants.DOCBOOK_45) {
+            // Process and set the docbook version
+            if (docBookVersion.equals(
+                    CommonConstants.DOCBOOK_45_TITLE) && (topic.getXmlFormat() == null || topic.getXmlFormat() != CommonConstants
+                    .DOCBOOK_45)) {
                 topic.setXmlFormat(CommonConstants.DOCBOOK_45);
                 changed = true;
-            } else if (docBookVersion.equals(CommonConstants.DOCBOOK_50_TITLE) && topic.getXmlFormat() != CommonConstants.DOCBOOK_50) {
+            } else if (docBookVersion.equals(
+                    CommonConstants.DOCBOOK_50_TITLE) && (topic.getXmlFormat() == null || topic.getXmlFormat() != CommonConstants
+                    .DOCBOOK_50)) {
                 topic.setXmlFormat(CommonConstants.DOCBOOK_50);
+                changed = true;
+            }
+
+            // Process and set the locale
+            if (locale != null && !locale.equals(topic.getLocale())) {
+                topic.setLocale(locale);
                 changed = true;
             }
         }
@@ -629,6 +644,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      *
      * @param providerFactory
      * @param specTopic
+     * @param locale
      * @return
      */
     private TopicWrapper getTopicForNewSpecTopic(final DataProviderFactory providerFactory, final SpecTopic specTopic) {
@@ -645,8 +661,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         topic.setTitle(specTopic.getTitle());
         topic.setDescription(specTopic.getDescription(true));
         topic.setXml("");
-        topic.setXmlFormat(CommonConstants.DOCBOOK_45);
-        topic.setLocale(serverSettings.getDefaultLocale());
 
         // Write the type
         final TagWrapper tag = tagProvider.getTagByName(specTopic.getType());
@@ -1039,7 +1053,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             contentSpecEntity = contentSpecProvider.newContentSpec();
 
             // setup the basic values
-            contentSpecEntity.setLocale(serverSettings.getDefaultLocale());
+            final String locale = contentSpec.getLocale() == null ? serverSettings.getDefaultLocale() : contentSpec.getLocale();
+            contentSpecEntity.setLocale(locale);
 
             if (processorData.getUsername() != null) {
                 // Add the added by property tag

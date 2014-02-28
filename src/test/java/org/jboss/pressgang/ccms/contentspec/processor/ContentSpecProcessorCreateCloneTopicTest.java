@@ -100,7 +100,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");
@@ -131,7 +131,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");
@@ -171,7 +171,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");
@@ -221,7 +221,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -270,7 +270,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -318,7 +318,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -367,7 +367,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -412,7 +412,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -454,7 +454,7 @@ public class ContentSpecProcessorCreateCloneTopicTest extends ContentSpecProcess
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");

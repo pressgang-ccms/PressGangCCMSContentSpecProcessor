@@ -105,8 +105,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private final ProcessingOptions processingOptions;
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
-
-    private String locale;
+    private final String defaultLocale;
 
     @Override
     public void shutdown() {
@@ -140,7 +139,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         serverSettings = factory.getProvider(ServerSettingsProvider.class).getServerSettings();
         serverEntities = serverSettings.getEntities();
-        locale = serverSettings.getDefaultLocale();
+        defaultLocale = serverSettings.getDefaultLocale();
     }
 
     /**
@@ -169,8 +168,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @return True if the content specification is valid, otherwise false.
      */
     public boolean preValidateContentSpec(final ContentSpec contentSpec) {
-        locale = contentSpec.getLocale() == null ? locale : contentSpec.getLocale();
-
         // Create the map of unique ids to spec topics
         final Map<String, SpecTopic> specTopicMap = ContentSpecUtilities.getUniqueIdSpecTopicMap(contentSpec);
 
@@ -373,9 +370,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
-        // reset the locale back to its default
-        locale = serverSettings.getDefaultLocale();
-
         return valid;
     }
 
@@ -565,7 +559,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      */
     @SuppressWarnings("deprecation")
     public boolean postValidateContentSpec(final ContentSpec contentSpec, final String username) {
-        locale = contentSpec.getLocale() == null ? locale : contentSpec.getLocale();
 
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
@@ -708,9 +701,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         if (!postValidateLevel(contentSpec.getBaseLevel(), contentSpec)) {
             valid = false;
         }
-
-        // reset the locale back to its default
-        locale = serverSettings.getDefaultLocale();
 
         return valid;
     }
@@ -1232,11 +1222,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TITLE_MSG, specTopic.getLineNumber(), specTopic.getText()));
             valid = false;
         }
-        // Check that it is valid when escaped
-        else if (DocBookUtilities.escapeTitle(specTopic.getTitle()).isEmpty()) {
-            log.error(String.format(ProcessorConstants.ERROR_INVALID_TOPIC_TITLE_MSG, specTopic.getLineNumber(), specTopic.getText()));
-            valid = false;
-        }
 
         // Check that we aren't using translations for anything but existing topics
         if (!specTopic.isTopicAnExistingTopic()) {
@@ -1444,7 +1429,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             BaseTopicWrapper<?> topic = null;
             try {
                 if (processingOptions.isTranslation()) {
-                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()), revision, locale);
+                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()), revision,
+                            contentSpec.getLocale() == null ? defaultLocale : contentSpec.getLocale());
                 } else {
                     topic = topicProvider.getTopic(Integer.parseInt(specTopic.getId()), revision);
                 }
@@ -1579,6 +1565,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 .DOCBOOK_50) {
             log.error(format(ProcessorConstants.ERROR_TOPIC_DOESNT_MATCH_FORMAT_MSG, specTopic.getLineNumber(), contentSpec.getFormat(),
                     specTopic.getText()));
+            valid = false;
+        }
+
+        // Check the languages match
+        final String locale = contentSpec.getLocale() == null ? defaultLocale : contentSpec.getLocale();
+        if (locale != null && !locale.equals(topic.getLocale())) {
+            log.error(format(ProcessorConstants.ERROR_TOPIC_DOESNT_MATCH_LOCALE_MSG, specTopic.getLineNumber(), specTopic.getText()));
             valid = false;
         }
 

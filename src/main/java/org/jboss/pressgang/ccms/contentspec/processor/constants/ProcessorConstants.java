@@ -300,6 +300,8 @@ public class ProcessorConstants {
             " cannot be used in the initial content of a Chapter/Preface/Section/Appendix." + CSLINE_MSG;
     public static final String ERROR_TOPIC_DOESNT_MATCH_FORMAT_MSG = LINE + INVALID_TOPIC + " The topic specified isn't compatible with " +
             "the \"%s\" format, which is required by the Content Specification." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_DOESNT_MATCH_LOCALE_MSG = LINE + INVALID_TOPIC + " The topic specified is a different locale " +
+            "to the content specification." + CSLINE_MSG;
 
     // Files
     public static final String ERROR_FILE_ID_NONEXIST_MSG = LINE + INVALID_FILE + " ID doesn't exist in the database." + CSLINE_MSG;

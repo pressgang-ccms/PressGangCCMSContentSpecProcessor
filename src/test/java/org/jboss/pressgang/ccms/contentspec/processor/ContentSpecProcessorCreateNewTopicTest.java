@@ -27,7 +27,6 @@ import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
-import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInTopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
@@ -56,6 +55,8 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
     @Mock UpdateableCollectionWrapper<TopicSourceURLWrapper> topicSourceURLCollection;
     @Mock TagWrapper writerTag;
 
+    private String locale = "en-US";
+
     @Test
     public void shouldCreateSpecTopic() {
         // Given a SpecTopic with just an id and title
@@ -69,7 +70,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");
@@ -101,7 +102,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -135,7 +136,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -164,7 +165,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
             fail("Creating a topic should have thrown an exception");
         } catch (Exception e) {
             // Then there should be a log message about the error
@@ -188,6 +189,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         // and the topic source url provider will return a new topic source url collection
         when(topicSourceURLProvider.newTopicSourceURLCollection(eq(topicWrapper))).thenReturn(topicSourceURLCollection);
         when(topicWrapper.getSourceURLs()).thenReturn(topicSourceURLCollection);
+        when(topicWrapper.getXmlFormat()).thenReturn(null);
     }
 
     protected void setupValidBaseTopicMocks() {
@@ -215,7 +217,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         // and the description was set
         verify(topic, times(1)).setDescription(randomString);
         // and the doctype is set
-        verify(topic, times(1)).setXmlFormat(CommonConstants.DOCBOOK_45);
+        verify(topic, times(1)).setXmlFormat(anyInt());
         // and the locale is set
         verify(topic, times(1)).setLocale(DEFAULT_LOCALE);
         // and the topic had the properties set

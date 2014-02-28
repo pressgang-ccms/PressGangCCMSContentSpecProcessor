@@ -13,6 +13,8 @@ import org.junit.Test;
 
 public class ContentSpecProcessorCreateTopicTest extends ContentSpecProcessorTest {
 
+    private String locale = "en-US";
+
     @Test
     public void shouldReturnNullWhenSpecTopicIsDuplicate() {
         // Given a spec topic that is a duplicate
@@ -21,7 +23,7 @@ public class ContentSpecProcessorCreateTopicTest extends ContentSpecProcessorTes
         // When creating the topic
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -38,7 +40,7 @@ public class ContentSpecProcessorCreateTopicTest extends ContentSpecProcessorTes
         // When creating the topic
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }

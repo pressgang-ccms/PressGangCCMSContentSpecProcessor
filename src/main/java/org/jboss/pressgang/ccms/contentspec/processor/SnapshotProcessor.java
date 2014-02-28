@@ -27,8 +27,7 @@ public class SnapshotProcessor implements ShutdownAbleApp {
     private final ServerSettingsWrapper serverSettings;
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
-
-    private String locale;
+    private final String defaultLocale;
 
     @Override
     public void shutdown() {
@@ -50,7 +49,7 @@ public class SnapshotProcessor implements ShutdownAbleApp {
         topicProvider = factory.getProvider(TopicProvider.class);
 
         serverSettings = factory.getProvider(ServerSettingsProvider.class).getServerSettings();
-        locale = serverSettings.getDefaultLocale();
+        defaultLocale = serverSettings.getDefaultLocale();
     }
 
     /**
@@ -59,30 +58,26 @@ public class SnapshotProcessor implements ShutdownAbleApp {
      * @param processingOptions The set of processing options to be used when creating the snapshot.
      */
     public void processContentSpec(final ContentSpec contentSpec, final SnapshotOptions processingOptions) {
-        locale = contentSpec.getLocale() == null ? locale : contentSpec.getLocale();
-
         // Process the metadata for any spec topic metadata
         for (final Node node : contentSpec.getNodes()) {
             if (node instanceof KeyValueNode) {
                 final KeyValueNode keyValueNode = ((KeyValueNode) node);
                 if (keyValueNode.getValue() != null && keyValueNode.getValue() instanceof SpecTopic) {
-                    processTopic((SpecTopic) keyValueNode.getValue(), processingOptions);
+                    processTopic(contentSpec, (SpecTopic) keyValueNode.getValue(), processingOptions);
                 }
             }
         }
 
-        processLevel(contentSpec.getBaseLevel(), processingOptions);
-
-        // reset the locale back to its default
-        locale = serverSettings.getDefaultLocale();
+        processLevel(contentSpec, contentSpec.getBaseLevel(), processingOptions);
     }
 
     /**
      *
+     * @param contentSpec
      * @param level
      * @param processingOptions The set of processing options to be used when creating the snapshot.
      */
-    protected void processLevel(final Level level, final SnapshotOptions processingOptions) {
+    protected void processLevel(final ContentSpec contentSpec, final Level level, final SnapshotOptions processingOptions) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -92,19 +87,20 @@ public class SnapshotProcessor implements ShutdownAbleApp {
         // Validate the sub levels and topics
         for (final Node childNode : level.getChildNodes()) {
             if (childNode instanceof Level) {
-                processLevel((Level) childNode, processingOptions);
+                processLevel(contentSpec, (Level) childNode, processingOptions);
             } else if (childNode instanceof SpecTopic) {
-                processTopic((SpecTopic) childNode, processingOptions);
+                processTopic(contentSpec, (SpecTopic) childNode, processingOptions);
             }
         }
     }
 
     /**
      *
+     * @param contentSpec
      * @param specTopic
      * @param processingOptions The set of processing options to be used when creating the snapshot.
      */
-    protected void processTopic(final SpecTopic specTopic, final SnapshotOptions processingOptions) {
+    protected void processTopic(final ContentSpec contentSpec, final SpecTopic specTopic, final SnapshotOptions processingOptions) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -124,7 +120,8 @@ public class SnapshotProcessor implements ShutdownAbleApp {
             BaseTopicWrapper<?> topic = null;
             try {
                 if (processingOptions.isTranslation()) {
-                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()), revision, locale);
+                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()), revision,
+                            contentSpec.getLocale() == null ? defaultLocale : contentSpec.getLocale());
                     if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions())) {
                         specTopic.setRevision(topic.getTopicRevision());
                     }
