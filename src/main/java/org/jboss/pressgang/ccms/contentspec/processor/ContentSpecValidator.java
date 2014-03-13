@@ -674,6 +674,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 docbookFileName = docbookRng.getName();
                 validationMethod = XMLValidator.ValidationMethod.RELAXNG;
                 docbookSchema = docbookRng.getValue();
+                // Further wrap the abstract for docbook 5.0
+                wrappedAbstract = DocBookUtilities.addDocBook50Namespace("<book><info><title />" + wrappedAbstract + "</info></book>");
             } else {
                 final BlobConstantWrapper rocbookDtd = blobConstantProvider.getBlobConstant(serverEntities.getRocBook45DTDBlobConstantId());
                 docbookFileName = rocbookDtd.getName();
