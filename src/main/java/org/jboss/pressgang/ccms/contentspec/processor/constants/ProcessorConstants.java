@@ -426,7 +426,7 @@ public class ProcessorConstants {
             CommonConstants.CS_FILE_SHORT_TITLE, CommonConstants.CS_JIRA_PROJECT_TITLE, CommonConstants.CS_JIRA_COMPONENT_TITLE,
             CommonConstants.CS_JIRA_VERSION_TITLE, CommonConstants.CS_JIRA_LABELS_TITLE, CommonConstants.CS_JIRA_SERVER_TITLE,
             CommonConstants.CS_SPACES_TITLE, CommonConstants.CS_ENTITIES_TITLE, CommonConstants.CS_DEFAULT_PUBLICAN_CFG_TITLE,
-            CommonConstants.CS_INDEX_TITLE, CSConstants.DEBUG_TITLE, CSConstants.OUTPUT_STYLE_TITLE);
+            CommonConstants.CS_INDEX_TITLE, CommonConstants.CS_LOCALE_TITLE, CSConstants.DEBUG_TITLE, CSConstants.OUTPUT_STYLE_TITLE);
 
     public static final List<String> RESERVED_ENTITIES = Arrays.asList("BUILD_NAME",
             "BUILD_DATE",
