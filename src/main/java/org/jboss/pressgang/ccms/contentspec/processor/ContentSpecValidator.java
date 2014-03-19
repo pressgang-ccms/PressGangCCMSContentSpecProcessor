@@ -1103,7 +1103,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Validate the tags
-        if (!level.getTags(false).isEmpty() && level.hasRevisionSpecTopics()) {
+        if (processingOptions.isPrintChangeWarnings() && !level.getTags(false).isEmpty() && level.hasRevisionSpecTopics()) {
             log.warn(String.format(ProcessorConstants.WARN_LEVEL_TAGS_IGNORE_MSG, level.getLineNumber(), level.getLevelType().getTitle(),
                     "revision", level.getText()));
         }
@@ -1262,7 +1262,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
 
             // Check that tags aren't trying to be added to a revision
-            if (specTopic.getRevision() != null && !specTopic.getTags(false).isEmpty()) {
+            if (processingOptions.isPrintChangeWarnings() && specTopic.getRevision() != null && !specTopic.getTags(false).isEmpty()) {
                 log.warn(
                         String.format(ProcessorConstants.WARN_TAGS_IGNORE_MSG, specTopic.getLineNumber(), "revision", specTopic.getText()));
             }

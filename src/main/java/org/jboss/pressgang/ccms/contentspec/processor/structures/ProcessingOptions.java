@@ -13,6 +13,7 @@ public class ProcessingOptions {
     private boolean translation = false;
     private String translationLocale = null;
     private Integer maxRevision = null;
+    private boolean printChangeWarnings = true;
 
     public boolean isValidating() {
         return validate;
@@ -100,5 +101,13 @@ public class ProcessingOptions {
 
     public void setTranslationLocale(String translationLocale) {
         this.translationLocale = translationLocale;
+    }
+
+    public boolean isPrintChangeWarnings() {
+        return printChangeWarnings;
+    }
+
+    public void setPrintChangeWarnings(boolean printChangeWarnings) {
+        this.printChangeWarnings = printChangeWarnings;
     }
 }
