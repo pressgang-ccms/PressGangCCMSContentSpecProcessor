@@ -11,6 +11,7 @@ public class ProcessingOptions {
     private boolean validateBugLinks = true;
     private boolean doBugLinkLastValidateCheck = true;
     private boolean translation = false;
+    private String translationLocale = null;
     private Integer maxRevision = null;
 
     public boolean isValidating() {
@@ -91,5 +92,13 @@ public class ProcessingOptions {
 
     public void setDoBugLinkLastValidateCheck(boolean doBugLinkLastValidateCheck) {
         this.doBugLinkLastValidateCheck = doBugLinkLastValidateCheck;
+    }
+
+    public String getTranslationLocale() {
+        return translationLocale;
+    }
+
+    public void setTranslationLocale(String translationLocale) {
+        this.translationLocale = translationLocale;
     }
 }

@@ -5,6 +5,7 @@ public class SnapshotOptions {
     private boolean updateRevisions = false;
     private Integer revision = null;
     private boolean translation = false;
+    private String translationLocale = null;
 
     public boolean isAddRevisions() {
         return addRevisions;
@@ -36,5 +37,13 @@ public class SnapshotOptions {
 
     public void setTranslation(boolean translation) {
         this.translation = translation;
+    }
+
+    public String getTranslationLocale() {
+        return translationLocale;
+    }
+
+    public void setTranslationLocale(String translationLocale) {
+        this.translationLocale = translationLocale;
     }
 }

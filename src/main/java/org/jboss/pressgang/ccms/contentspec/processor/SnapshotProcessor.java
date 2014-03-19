@@ -121,7 +121,7 @@ public class SnapshotProcessor implements ShutdownAbleApp {
             try {
                 if (processingOptions.isTranslation()) {
                     topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()), revision,
-                            contentSpec.getLocale() == null ? defaultLocale : contentSpec.getLocale());
+                            processingOptions.getTranslationLocale() == null ? defaultLocale : processingOptions.getTranslationLocale());
                     if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions())) {
                         specTopic.setRevision(topic.getTopicRevision());
                     }

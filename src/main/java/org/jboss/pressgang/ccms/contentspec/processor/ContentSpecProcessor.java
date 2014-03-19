@@ -122,49 +122,21 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @return True if everything was processed successfully otherwise false.
      */
     public boolean processContentSpec(final ContentSpec contentSpec, final String username, final ContentSpecParser.ParsingMode mode) {
-        return processContentSpec(contentSpec, username, mode, (String) null);
+        return processContentSpec(contentSpec, username, mode, null);
     }
 
     /**
      * Process a content specification so that it is parsed, validated and saved.
      *
-     * @param contentSpec The Content Specification that is to be processed.
-     * @param username    The user who requested the process operation.
-     * @param mode        The mode to parse the content specification in.
+     *
+     * @param contentSpec    The Content Specification that is to be processed.
+     * @param username       The user who requested the process operation.
+     * @param mode           The mode to parse the content specification in.
      * @param logMessage
      * @return True if everything was processed successfully otherwise false.
      */
     public boolean processContentSpec(final ContentSpec contentSpec, final String username, final ContentSpecParser.ParsingMode mode,
             final LogMessageWrapper logMessage) {
-        return processContentSpec(contentSpec, username, mode, null, logMessage);
-    }
-
-    /**
-     * Process a content specification so that it is parsed, validated and saved.
-     *
-     * @param contentSpec    The Content Specification that is to be processed.
-     * @param username       The user who requested the process operation.
-     * @param mode           The mode to parse the content specification in.
-     * @param overrideLocale Override the default locale using this parameter.
-     * @return True if everything was processed successfully otherwise false.
-     */
-    public boolean processContentSpec(final ContentSpec contentSpec, final String username, final ContentSpecParser.ParsingMode mode,
-            final String overrideLocale) {
-        return processContentSpec(contentSpec, username, mode, overrideLocale, null);
-    }
-
-    /**
-     * Process a content specification so that it is parsed, validated and saved.
-     *
-     * @param contentSpec    The Content Specification that is to be processed.
-     * @param username       The user who requested the process operation.
-     * @param mode           The mode to parse the content specification in.
-     * @param overrideLocale Override the default locale using this parameter.
-     * @param logMessage
-     * @return True if everything was processed successfully otherwise false.
-     */
-    public boolean processContentSpec(final ContentSpec contentSpec, final String username, final ContentSpecParser.ParsingMode mode,
-            final String overrideLocale, final LogMessageWrapper logMessage) {
         boolean editing = false;
         if (mode == ContentSpecParser.ParsingMode.EDITED) {
             editing = true;
@@ -178,11 +150,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         // Set the username as the assigned writer if one doesn't exist
         if (isNullOrEmpty(contentSpec.getAssignedWriter())) {
             contentSpec.setAssignedWriter(username);
-        }
-
-        // Change the locale if the overrideLocale isn't null
-        if (overrideLocale != null) {
-            contentSpec.setLocale(overrideLocale);
         }
 
         // Set the log details user if one isn't set

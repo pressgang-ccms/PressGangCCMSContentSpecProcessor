@@ -1432,7 +1432,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             try {
                 if (processingOptions.isTranslation()) {
                     topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()), revision,
-                            contentSpec.getLocale() == null ? defaultLocale : contentSpec.getLocale());
+                            processingOptions.getTranslationLocale() == null ? defaultLocale : processingOptions.getTranslationLocale());
                 } else {
                     topic = topicProvider.getTopic(Integer.parseInt(specTopic.getId()), revision);
                 }
