@@ -478,8 +478,8 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
         assertFalse(result);
         // and an error message should exist
         assertThat(logger.getLogMessages().size(), is(1));
-        assertThat(logger.getLogMessages().get(0).toString(), containsString("Line " + lineNumber + ": Invalid attribute, \"Description\"" +
-                " has already been defined."));
+        assertThat(logger.getLogMessages().get(0).toString(), containsString("Line " + lineNumber + ": Invalid attribute, " +
+                "\"description\" has already been defined."));
     }
 
     @Test
@@ -499,7 +499,7 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
         assertFalse(result);
         // and an error message should exist
         assertThat(logger.getLogMessages().size(), is(1));
-        assertThat(logger.getLogMessages().get(0).toString(), containsString("Line " + lineNumber + ": Invalid attribute, \"Writer\"" +
+        assertThat(logger.getLogMessages().get(0).toString(), containsString("Line " + lineNumber + ": Invalid attribute, \"writer\"" +
                 " has already been defined."));
     }
 }

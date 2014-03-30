@@ -20,6 +20,7 @@ import java.util.List;
 import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import org.hamcrest.Matchers;
+import org.jboss.pressgang.ccms.contentspec.InfoTopic;
 import org.jboss.pressgang.ccms.contentspec.InitialContent;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
@@ -37,6 +38,7 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
 
     @Arbitrary Integer lineNumber;
     @Arbitrary Integer id;
+    @Arbitrary Integer revision;
     @Arbitrary LevelType levelType;
     @ArbitraryString(type = ALPHANUMERIC) String title;
     @ArbitraryString(type = ALPHANUMERIC) String url;
@@ -286,6 +288,36 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
         assertTrue(parserData.getLevelRelationships().containsKey(uniqueId));
         assertThat(parserData.getLevelRelationships().get(uniqueId).size(), is(1));
         assertThat(parserData.getLevelRelationships().get(uniqueId).get(0).getSecondaryRelationshipId(), is("T1"));
+    }
+
+    @Test
+    public void shouldSetInfoTopic() throws Exception {
+        // Given a line number, level type and a line specifying an id
+        String line = "Section:" + title + "[Info: " + id + "]";
+
+        // When process level is called
+        Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
+
+        // Then the info topic is set
+        final InfoTopic infoTopic = result.getInfoTopic();
+        assertNotNull(infoTopic);
+        assertEquals(id.toString(), infoTopic.getId());
+        assertEquals(TopicType.INFO, infoTopic.getTopicType());
+    }
+
+    @Test
+    public void shouldSetInfoTopicWithRevision() throws Exception {
+        // Given a line number, level type and a line specifying an id
+        String line = "Chapter:" + title + "[Info: " + id + ", rev: " + revision + "]";
+
+        // When process level is called
+        Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
+
+        // Then the info topic is set
+        final InfoTopic infoTopic = result.getInfoTopic();
+        assertNotNull(infoTopic);
+        assertEquals(id.toString(), infoTopic.getId());
+        assertEquals(TopicType.INFO, infoTopic.getTopicType());
     }
 
 //    @Test

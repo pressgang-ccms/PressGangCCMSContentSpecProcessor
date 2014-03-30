@@ -3,6 +3,7 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.ITopicNode;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Node;
@@ -63,76 +64,79 @@ public class SnapshotProcessor implements ShutdownAbleApp {
             if (node instanceof KeyValueNode) {
                 final KeyValueNode keyValueNode = ((KeyValueNode) node);
                 if (keyValueNode.getValue() != null && keyValueNode.getValue() instanceof SpecTopic) {
-                    processTopic(contentSpec, (SpecTopic) keyValueNode.getValue(), processingOptions);
+                    processTopic((SpecTopic) keyValueNode.getValue(), processingOptions);
                 }
             }
         }
 
-        processLevel(contentSpec, contentSpec.getBaseLevel(), processingOptions);
+        processLevel(contentSpec.getBaseLevel(), processingOptions);
     }
 
     /**
      *
-     * @param contentSpec
      * @param level
      * @param processingOptions The set of processing options to be used when creating the snapshot.
      */
-    protected void processLevel(final ContentSpec contentSpec, final Level level, final SnapshotOptions processingOptions) {
+    protected void processLevel(final Level level, final SnapshotOptions processingOptions) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
             return;
+        }
+
+        // Process the info topic
+        if (level.getInfoTopic() != null) {
+            processTopic(level.getInfoTopic(), processingOptions);
         }
 
         // Validate the sub levels and topics
         for (final Node childNode : level.getChildNodes()) {
             if (childNode instanceof Level) {
-                processLevel(contentSpec, (Level) childNode, processingOptions);
+                processLevel((Level) childNode, processingOptions);
             } else if (childNode instanceof SpecTopic) {
-                processTopic(contentSpec, (SpecTopic) childNode, processingOptions);
+                processTopic((SpecTopic) childNode, processingOptions);
             }
         }
     }
 
     /**
      *
-     * @param contentSpec
-     * @param specTopic
+     * @param topicNode
      * @param processingOptions The set of processing options to be used when creating the snapshot.
      */
-    protected void processTopic(final ContentSpec contentSpec, final SpecTopic specTopic, final SnapshotOptions processingOptions) {
+    protected void processTopic(final ITopicNode topicNode, final SnapshotOptions processingOptions) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
             return;
         }
 
-        if (specTopic.isTopicAnExistingTopic()) {
+        if (topicNode.isTopicAnExistingTopic()) {
             // Calculate the revision for the topic
             final Integer revision;
-            if (specTopic.getRevision() == null || processingOptions.isUpdateRevisions()) {
+            if (topicNode.getRevision() == null || processingOptions.isUpdateRevisions()) {
                 revision = processingOptions.getRevision();
             } else {
-                revision = specTopic.getRevision();
+                revision = topicNode.getRevision();
             }
 
             // Check that the id actually exists
             BaseTopicWrapper<?> topic = null;
             try {
                 if (processingOptions.isTranslation()) {
-                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(specTopic.getId()), revision,
+                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(topicNode.getId()), revision,
                             processingOptions.getTranslationLocale() == null ? defaultLocale : processingOptions.getTranslationLocale());
-                    if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions())) {
-                        specTopic.setRevision(topic.getTopicRevision());
+                    if (processingOptions.isAddRevisions() && (topicNode.getRevision() == null || processingOptions.isUpdateRevisions())) {
+                        topicNode.setRevision(topic.getTopicRevision());
                     }
                 } else {
-                    topic = topicProvider.getTopic(Integer.parseInt(specTopic.getId()), revision);
-                    if (processingOptions.isAddRevisions() && (specTopic.getRevision() == null || processingOptions.isUpdateRevisions())) {
-                        specTopic.setRevision(topic.getTopicRevision());
+                    topic = topicProvider.getTopic(Integer.parseInt(topicNode.getId()), revision);
+                    if (processingOptions.isAddRevisions() && (topicNode.getRevision() == null || processingOptions.isUpdateRevisions())) {
+                        topicNode.setRevision(topic.getTopicRevision());
                     }
                 }
             } catch (NotFoundException e) {
-                log.debug("Could not find topic for id " + specTopic.getDBId());
+                log.debug("Could not find topic for id " + topicNode.getDBId());
             }
         }
     }

@@ -35,6 +35,7 @@ public class ProcessorConstants {
     public static final String TARGET_REGEX = "^" + TARGET_BASE_REGEX + "$";
     public static final String EXTERNAL_TARGET_REGEX = "^E" + TARGET_BASE_REGEX + "$";
     public static final String EXTERNAL_CSP_REGEX = "^CS\\d+[ ]*(:[ ]*\\d+)?$";
+    public static final String INFO_REGEX = "^(INFO)[ ]*:(.|(\r?\n))*$";
 
     public static final String CSP_TITLE_REGEX = "^[\\da-zA-Z_\\-\\.\\+\\s]+$";
     public static final String CSP_PRODUCT_REGEX = "^[\\da-zA-Z_\\-\\.\\+\\s]+$";
@@ -296,12 +297,18 @@ public class ProcessorConstants {
             "Group Topic." + CSLINE_MSG;
     public static final String ERROR_ABSTRACT_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not an Abstract " +
             "Topic." + CSLINE_MSG;
+    public static final String ERROR_INFO_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not an Info " +
+            "Topic." + CSLINE_MSG;
     public static final String ERROR_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT = LINE + INVALID_TOPIC + " The Topic specified has content that" +
-            " cannot be used in the initial content of a Chapter/Preface/Section/Appendix." + CSLINE_MSG;
+            " cannot be used in the initial content of a Chapter/Preface/Section/Appendix/Part." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_WITH_INFO_CANNOT_BE_USED_AS_INITIAL_CONTENT = LINE + INVALID_TOPIC + " The Topic specified has" +
+            " <info> content and as such cannot be used as " + CSConstants.LEVEL_INITIAL_CONTENT + "." + CSLINE_MSG;
     public static final String ERROR_TOPIC_DOESNT_MATCH_FORMAT_MSG = LINE + INVALID_TOPIC + " The topic specified isn't compatible with " +
             "the \"%s\" format, which is required by the Content Specification." + CSLINE_MSG;
     public static final String ERROR_TOPIC_DOESNT_MATCH_LOCALE_MSG = LINE + INVALID_TOPIC + " The topic specified is a different locale " +
             "to the content specification." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_WITH_INFO_TOPIC = LINE + INVALID_TOPIC + " Unable to use Info topics on regular topics." +
+            CSLINE_MSG;
 
     // Files
     public static final String ERROR_FILE_ID_NONEXIST_MSG = LINE + INVALID_FILE + " ID doesn't exist in the database." + CSLINE_MSG;
@@ -358,8 +365,11 @@ public class ProcessorConstants {
             " content specification." + CSLINE_MSG;
     public static final String ERROR_RELATED_TOPIC_NONEXIST_MSG = LINE + INVALID_RELATIONSHIP + " The related topic specified (%s) " +
             "doesn't exist in the content specification." + CSLINE_MSG;
+    public static final String ERROR_RELATED_TOPIC_IS_INFO_MSG = LINE + INVALID_RELATIONSHIP + " The related topic specified (%s) " +
+            "is an info topic for a container and as such has cannot be related to. Please add a Target identifier to the container and " +
+            "reference the Target instead."+ CSLINE_MSG;
     public static final String ERROR_INVALID_RELATIONSHIP_MSG = LINE + AMBIGUOUS_RELATIONSHIP + " Topic %s is included on lines %s of the" +
-            " Content Specification. To relate to one of these topics please use a Target." + CSLINE_MSG;
+            " Content Specification. To relate to one of these topics please use a Target identifier." + CSLINE_MSG;
     public static final String ERROR_TOO_MANY_NEXTS_MSG = LINE + INVALID_RELATIONSHIP + " A topic may only have one next Topic." +
             CSLINE_MSG;
     public static final String ERROR_TOO_MANY_PREVS_MSG = LINE + INVALID_RELATIONSHIP + " A topic may only have one previous Topic." +

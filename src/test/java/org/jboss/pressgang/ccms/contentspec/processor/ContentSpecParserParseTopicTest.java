@@ -1137,4 +1137,23 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
                             "next/previous then please use a Process."));
         }
     }
+
+    @Test
+    public void shouldThrowExceptionWithInfoTopic() {
+        // Given a string that represents a topic with a title, id and info topic specified
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, id.toString())));
+        topicString += " [Info: " + id + "]";
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
+            fail("Parsing the topic should have thrown an exception.");
+        } catch (ParsingException e) {
+            assertThat(e.getMessage(), containsString("Line " + lineNumber + ": Invalid Topic! Unable to use Info topics on regular topics."));
+        }
+    }
 }

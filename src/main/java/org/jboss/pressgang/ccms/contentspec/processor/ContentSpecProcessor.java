@@ -15,6 +15,8 @@ import org.jboss.pressgang.ccms.contentspec.Comment;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.File;
 import org.jboss.pressgang.ccms.contentspec.FileList;
+import org.jboss.pressgang.ccms.contentspec.ITopicNode;
+import org.jboss.pressgang.ccms.contentspec.InfoTopic;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.Node;
@@ -41,6 +43,7 @@ import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.TopicPool;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
+import org.jboss.pressgang.ccms.provider.CSInfoNodeProvider;
 import org.jboss.pressgang.ccms.provider.CSNodeProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
@@ -52,6 +55,7 @@ import org.jboss.pressgang.ccms.provider.TopicSourceURLProvider;
 import org.jboss.pressgang.ccms.provider.exception.ProviderException;
 import org.jboss.pressgang.ccms.utils.common.StringUtilities;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
+import org.jboss.pressgang.ccms.wrapper.CSInfoNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.CSRelatedNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
@@ -128,10 +132,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     /**
      * Process a content specification so that it is parsed, validated and saved.
      *
-     *
-     * @param contentSpec    The Content Specification that is to be processed.
-     * @param username       The user who requested the process operation.
-     * @param mode           The mode to parse the content specification in.
+     * @param contentSpec The Content Specification that is to be processed.
+     * @param username    The user who requested the process operation.
+     * @param mode        The mode to parse the content specification in.
      * @param logMessage
      * @return True if everything was processed successfully otherwise false.
      */
@@ -240,8 +243,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         LOG.info("Starting first validation pass...");
 
-        // Validate the relationships
-        if (!validator.preValidateRelationships(contentSpec) || !validator.preValidateContentSpec(contentSpec)) {
+        // Validate the content spec syntax
+        if (!validator.preValidateContentSpec(contentSpec)) {
             log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
             return false;
         }
@@ -365,43 +368,13 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         try {
             final ContentSpec contentSpec = processorData.contentSpec;
             final String locale = contentSpec.getLocale() == null ? serverSettings.getDefaultLocale() : contentSpec.getLocale();
-            final List<SpecTopic> specTopics = contentSpec.getSpecTopics();
+            final List<ITopicNode> topicNodes = contentSpec.getAllTopicNodes();
 
             // Create the duplicate topic map
-            final Map<SpecTopic, SpecTopic> duplicatedTopicMap = createDuplicatedTopicMap(specTopics);
+            final Map<ITopicNode, ITopicNode> duplicatedTopicMap = createDuplicatedTopicMap(topicNodes);
 
             // Create the new topic entities
-            for (final SpecTopic specTopic : specTopics) {
-
-                // Check if the app should be shutdown
-                if (isShuttingDown.get()) {
-                    shutdown.set(true);
-                    throw new ProcessingException("Shutdown Requested");
-                }
-
-                // Add topics to the TopicPool that need to be added or updated
-                if (specTopic.isTopicAClonedTopic() || specTopic.isTopicANewTopic()) {
-                    try {
-                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic, processorData.getContentSpec().getFormat(),
-                                locale);
-                        if (topic != null) {
-                            topics.addNewTopic(topic);
-                        }
-                    } catch (Exception e) {
-                        throw new ProcessingException("Failed to create topic: " + specTopic.getId(), e);
-                    }
-                } else if (specTopic.isTopicAnExistingTopic() && !specTopic.getTags(true).isEmpty() && specTopic.getRevision() == null) {
-                    try {
-                        final TopicWrapper topic = createTopicEntity(providerFactory, specTopic, processorData.getContentSpec().getFormat(),
-                                locale);
-                        if (topic != null) {
-                            topics.addUpdatedTopic(topic);
-                        }
-                    } catch (Exception e) {
-                        throw new ProcessingException("Failed to create topic: " + specTopic.getId(), e);
-                    }
-                }
-            }
+            createOrUpdateTopics(topicNodes, topics, processorData, locale);
 
             // Check if the app should be shutdown
             if (isShuttingDown.get()) {
@@ -418,9 +391,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             }
 
             // Initialise the new and cloned topics using the populated topic pool
-            for (final SpecTopic specTopic : specTopics) {
-                topics.initialiseFromPool(specTopic);
-                cleanSpecTopicWhenCreatedOrUpdated(specTopic);
+            for (final ITopicNode topicNode : topicNodes) {
+                topics.initialiseFromPool(topicNode);
+                cleanSpecTopicWhenCreatedOrUpdated(topicNode);
             }
 
             // Sync the Duplicated Topics (ID = X<Number>)
@@ -465,35 +438,74 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         return true;
     }
 
+    protected void createOrUpdateTopics(final List<? extends ITopicNode> specTopics, final TopicPool topics,
+            final ProcessorData processorData, final String contentSpecLocale) throws ProcessingException {
+        // Create the new topic entities
+        for (final ITopicNode specTopic : specTopics) {
+
+            // Check if the app should be shutdown
+            if (isShuttingDown.get()) {
+                shutdown.set(true);
+                throw new ProcessingException("Shutdown Requested");
+            }
+
+            // Add topics to the TopicPool that need to be added or updated
+            if (specTopic.isTopicAClonedTopic() || specTopic.isTopicANewTopic()) {
+                try {
+                    final TopicWrapper topic = createTopicEntity(providerFactory, specTopic, processorData.getContentSpec().getFormat(),
+                            contentSpecLocale);
+                    if (topic != null) {
+                        topics.addNewTopic(topic);
+                    }
+                } catch (Exception e) {
+                    throw new ProcessingException("Failed to create topic: " + specTopic.getId(), e);
+                }
+            } else if (specTopic.isTopicAnExistingTopic() && !specTopic.getTags(true).isEmpty() && specTopic.getRevision() == null) {
+                try {
+                    final TopicWrapper topic = createTopicEntity(providerFactory, specTopic, processorData.getContentSpec().getFormat(),
+                            contentSpecLocale);
+                    if (topic != null) {
+                        topics.addUpdatedTopic(topic);
+                    }
+                } catch (Exception e) {
+                    throw new ProcessingException("Failed to create topic: " + specTopic.getId(), e);
+                }
+            }
+        }
+    }
+
     /**
      * Cleans a SpecTopic to reset any content that should be removed in a post processed content spec.
      *
-     * @param specTopic
+     * @param topicNode
      */
-    protected void cleanSpecTopicWhenCreatedOrUpdated(final SpecTopic specTopic) {
-        specTopic.setSourceUrls(new ArrayList<String>());
-        specTopic.setDescription(null);
-        specTopic.setTags(new ArrayList<String>());
-        specTopic.setRemoveTags(new ArrayList<String>());
-        specTopic.setAssignedWriter(null);
-        specTopic.setType(null);
+    protected void cleanSpecTopicWhenCreatedOrUpdated(final ITopicNode topicNode) {
+        topicNode.setDescription(null);
+        topicNode.setTags(new ArrayList<String>());
+        topicNode.setRemoveTags(new ArrayList<String>());
+        topicNode.setAssignedWriter(null);
+        if (topicNode instanceof SpecTopic) {
+            final SpecTopic specTopic = (SpecTopic) topicNode;
+            specTopic.setSourceUrls(new ArrayList<String>());
+            specTopic.setType(null);
+        }
     }
 
     /**
      * Creates an entity to be sent through the REST interface to create or update a DB entry.
      *
      * @param providerFactory
-     * @param specTopic       The Content Specification Topic to create the topic entity from.
+     * @param topicNode       The Content Specification Topic to create the topic entity from.
      * @param locale
      * @return The new topic object if any changes where made otherwise null.
      * @throws ProcessingException
      */
-    protected TopicWrapper createTopicEntity(final DataProviderFactory providerFactory, final SpecTopic specTopic,
+    protected TopicWrapper createTopicEntity(final DataProviderFactory providerFactory, final ITopicNode topicNode,
             final String docBookVersion, final String locale) throws ProcessingException {
-        LOG.debug("Processing topic: {}", specTopic.getText());
+        LOG.debug("Processing topic: {}", topicNode.getText());
 
         // Duplicates reference another new or cloned topic and should not have a different new/updated underlying topic
-        if (specTopic.isTopicAClonedDuplicateTopic() || specTopic.isTopicADuplicateTopic()) return null;
+        if (topicNode.isTopicAClonedDuplicateTopic() || topicNode.isTopicADuplicateTopic()) return null;
 
         final TagProvider tagProvider = providerFactory.getProvider(TagProvider.class);
         final TopicSourceURLProvider topicSourceURLProvider = providerFactory.getProvider(TopicSourceURLProvider.class);
@@ -503,8 +515,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // If the spec topic is a clone or new topic then it will have changed no mater what else is done, since it's a new topic
-        boolean changed = specTopic.isTopicAClonedTopic() || specTopic.isTopicANewTopic();
-        final TopicWrapper topic = getTopicForSpecTopic(providerFactory, specTopic);
+        boolean changed = topicNode.isTopicAClonedTopic() || topicNode.isTopicANewTopic();
+        final TopicWrapper topic = getTopicForTopicNode(providerFactory, topicNode);
 
         // Check if the topic is null, if so throw an exception as it shouldn't be at this stage
         if (topic == null) {
@@ -517,7 +529,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // Process the topic and add or remove any tags
-        if (processTopicTags(tagProvider, specTopic, topic)) {
+        if (processTopicTags(tagProvider, topicNode, topic)) {
             changed = true;
         }
 
@@ -527,8 +539,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // Process and set the assigned writer for new and cloned topics
-        if (!specTopic.isTopicAnExistingTopic()) {
-            processAssignedWriter(tagProvider, specTopic, topic);
+        if (!topicNode.isTopicAnExistingTopic()) {
+            processAssignedWriter(tagProvider, topicNode, topic);
             changed = true;
         }
 
@@ -538,8 +550,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // Process and set the source urls for new and cloned topics
-        if (!specTopic.isTopicAnExistingTopic()) {
-            if (processTopicSourceUrls(topicSourceURLProvider, specTopic, topic)) changed = true;
+        if (topicNode instanceof SpecTopic && !topicNode.isTopicAnExistingTopic()) {
+            if (processTopicSourceUrls(topicSourceURLProvider, (SpecTopic) topicNode, topic)) changed = true;
         }
 
         // Check if the app should be shutdown
@@ -547,7 +559,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return null;
         }
 
-        if (!specTopic.isTopicAnExistingTopic()) {
+        if (!topicNode.isTopicAnExistingTopic()) {
             // Process and set the docbook version
             if (docBookVersion.equals(
                     CommonConstants.DOCBOOK_45_TITLE) && (topic.getXmlFormat() == null || topic.getXmlFormat() != CommonConstants
@@ -575,8 +587,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         if (changed) {
             // Set the CSP Property Tag ID for new/updated so that we can track the newly created topic
-            if (specTopic.isTopicAClonedTopic() || specTopic.isTopicANewTopic()) {
-                setCSPPropertyForTopic(topic, specTopic, providerFactory.getProvider(PropertyTagProvider.class));
+            if (topicNode.isTopicAClonedTopic() || topicNode.isTopicANewTopic()) {
+                setCSPPropertyForTopic(topic, topicNode, providerFactory.getProvider(PropertyTagProvider.class));
             }
 
             return topic;
@@ -589,18 +601,18 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * Gets or creates the underlying Topic Entity for a spec topic.
      *
      * @param providerFactory
-     * @param specTopic       The spec topic to get the topic entity for.
+     * @param topicNode       The spec topic to get the topic entity for.
      * @return The topic entity if one could be found, otherwise null.
      */
-    protected TopicWrapper getTopicForSpecTopic(final DataProviderFactory providerFactory, final SpecTopic specTopic) {
+    protected TopicWrapper getTopicForTopicNode(final DataProviderFactory providerFactory, final ITopicNode topicNode) {
         TopicWrapper topic = null;
 
-        if (specTopic.isTopicANewTopic()) {
-            topic = getTopicForNewSpecTopic(providerFactory, specTopic);
-        } else if (specTopic.isTopicAClonedTopic()) {
-            topic = ProcessorUtilities.cloneTopic(providerFactory, specTopic, serverEntities);
-        } else if (specTopic.isTopicAnExistingTopic()) {
-            topic = getTopicForExistingSpecTopic(providerFactory, specTopic);
+        if (topicNode.isTopicANewTopic()) {
+            topic = getTopicForNewTopicNode(providerFactory, topicNode);
+        } else if (topicNode.isTopicAClonedTopic()) {
+            topic = ProcessorUtilities.cloneTopic(providerFactory, topicNode, serverEntities);
+        } else if (topicNode.isTopicAnExistingTopic()) {
+            topic = getTopicForExistingTopicNode(providerFactory, topicNode);
         }
 
         return topic;
@@ -610,11 +622,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * C
      *
      * @param providerFactory
-     * @param specTopic
-     * @param locale
+     * @param topicNode
      * @return
      */
-    private TopicWrapper getTopicForNewSpecTopic(final DataProviderFactory providerFactory, final SpecTopic specTopic) {
+    private TopicWrapper getTopicForNewTopicNode(final DataProviderFactory providerFactory, final ITopicNode topicNode) {
         LOG.debug("Creating a new topic");
 
         final TopicProvider topicProvider = providerFactory.getProvider(TopicProvider.class);
@@ -625,14 +636,23 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         final TopicWrapper topic = topicProvider.newTopic();
 
         // Set the basics
-        topic.setTitle(specTopic.getTitle());
-        topic.setDescription(specTopic.getDescription(true));
+        if (topicNode instanceof SpecTopic) {
+            topic.setTitle(((SpecTopic) topicNode).getTitle());
+        } else {
+            topic.setTitle("Info");
+        }
+        topic.setDescription(topicNode.getDescription(true));
         topic.setXml("");
 
         // Write the type
-        final TagWrapper tag = tagProvider.getTagByName(specTopic.getType());
+        final TagWrapper tag;
+        if (topicNode instanceof SpecTopic) {
+            tag = tagProvider.getTagByName(((SpecTopic) topicNode).getType());
+        } else {
+            tag = tagProvider.getTag(serverEntities.getInfoTagId());
+        }
         if (tag == null) {
-            log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, specTopic.getLineNumber(), specTopic.getText()));
+            log.error(String.format(ProcessorConstants.ERROR_TYPE_NONEXIST_MSG, topicNode.getLineNumber(), topicNode.getText()));
             return null;
         }
 
@@ -642,7 +662,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         // Add the added by property tag
         topic.setProperties(propertyTagProvider.newPropertyTagInTopicCollection(topic));
-        final String assignedWriter = specTopic.getAssignedWriter(true);
+        final String assignedWriter = topicNode.getAssignedWriter(true);
         if (assignedWriter != null) {
             final PropertyTagWrapper addedByPropertyTag = propertyTagProvider.getPropertyTag(serverEntities.getAddedByPropertyTagId());
             final PropertyTagInTopicWrapper addedByProperty = propertyTagProvider.newPropertyTagInTopic(addedByPropertyTag, topic);
@@ -658,7 +678,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param specTopic
      * @return
      */
-    private TopicWrapper getTopicForExistingSpecTopic(final DataProviderFactory providerFactory, final SpecTopic specTopic) {
+    private TopicWrapper getTopicForExistingTopicNode(final DataProviderFactory providerFactory, final ITopicNode specTopic) {
         final TopicProvider topicProvider = providerFactory.getProvider(TopicProvider.class);
 
         // Get the current existing topic
@@ -668,7 +688,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         return topic;
     }
 
-    protected void setCSPPropertyForTopic(final TopicWrapper topic, final SpecTopic specTopic,
+    protected void setCSPPropertyForTopic(final TopicWrapper topic, final ITopicNode specTopic,
             final PropertyTagProvider propertyTagProvider) {
         LOG.debug("Setting the CSP Property Tag for {}", specTopic.getId());
 
@@ -714,7 +734,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param topic       The topic entity to be updated.
      * @return True if anything in the topic entity was changed, otherwise false.
      */
-    protected boolean processTopicTags(final TagProvider tagProvider, final SpecTopic specTopic, final TopicWrapper topic) {
+    protected boolean processTopicTags(final TagProvider tagProvider, final ITopicNode specTopic, final TopicWrapper topic) {
         LOG.debug("Processing topic tags");
         boolean changed = false;
 
@@ -752,7 +772,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param addTags
      * @return
      */
-    private boolean processClonedTopicTags(final TagProvider tagProvider, final SpecTopic specTopic, final TopicWrapper topic,
+    private boolean processClonedTopicTags(final TagProvider tagProvider, final ITopicNode specTopic, final TopicWrapper topic,
             final List<TagWrapper> addTags) {
         // See if a new tag collection needs to be created
         if (addTags.size() > 0 && topic.getTags() == null) {
@@ -892,7 +912,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @param topic       The topic entity to be updated.
      * @return True if anything in the topic entity was changed, otherwise false.
      */
-    protected void processAssignedWriter(final TagProvider tagProvider, final SpecTopic specTopic, final TopicWrapper topic) {
+    protected void processAssignedWriter(final TagProvider tagProvider, final ITopicNode specTopic, final TopicWrapper topic) {
         LOG.debug("Processing assigned writer");
 
         // See if a new tag collection needs to be created
@@ -926,8 +946,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         if (urls != null && !urls.isEmpty()) {
             final UpdateableCollectionWrapper<TopicSourceURLWrapper> sourceUrls = topic.getSourceURLs() == null ? topicSourceURLProvider
-                    .newTopicSourceURLCollection(
-                    topic) : topic.getSourceURLs();
+                    .newTopicSourceURLCollection(topic) : topic.getSourceURLs();
 
             // Iterate over the spec topic urls and add them
             for (final String url : urls) {
@@ -944,15 +963,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         return changed;
     }
 
-    protected Map<SpecTopic, SpecTopic> createDuplicatedTopicMap(final List<SpecTopic> specTopics) {
-        final Map<SpecTopic, SpecTopic> mapping = new HashMap<SpecTopic, SpecTopic>();
-        for (final SpecTopic topic : specTopics) {
+    protected Map<ITopicNode, ITopicNode> createDuplicatedTopicMap(final List<ITopicNode> topicNodes) {
+        final Map<ITopicNode, ITopicNode> mapping = new HashMap<ITopicNode, ITopicNode>();
+        for (final ITopicNode topic : topicNodes) {
             // Sync the normal duplicates first
             if (topic.isTopicADuplicateTopic()) {
                 final String id = topic.getId();
                 final String temp = "N" + id.substring(1);
-                SpecTopic cloneTopic = null;
-                for (final SpecTopic specTopic : specTopics) {
+                ITopicNode cloneTopic = null;
+                for (final ITopicNode specTopic : topicNodes) {
                     final String key = specTopic.getId();
                     if (key.equals(temp)) {
                         cloneTopic = specTopic;
@@ -965,8 +984,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             else if (topic.isTopicAClonedDuplicateTopic()) {
                 final String id = topic.getId();
                 final String idType = id.substring(1);
-                SpecTopic cloneTopic = null;
-                for (final SpecTopic specTopic : specTopics) {
+                ITopicNode cloneTopic = null;
+                for (final ITopicNode specTopic : topicNodes) {
                     final String key = specTopic.getId();
                     if (key.endsWith(idType) && !key.endsWith(id)) {
                         cloneTopic = specTopic;
@@ -985,10 +1004,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      *
      * @param duplicatedTopics A Map of the all the duplicated topics in the Content Specification mapped to there bae topic.
      */
-    protected void syncDuplicatedTopics(final Map<SpecTopic, SpecTopic> duplicatedTopics) {
-        for (final Map.Entry<SpecTopic, SpecTopic> topicEntry : duplicatedTopics.entrySet()) {
-            final SpecTopic topic = topicEntry.getKey();
-            final SpecTopic cloneTopic = topicEntry.getValue();
+    protected void syncDuplicatedTopics(final Map<ITopicNode, ITopicNode> duplicatedTopics) {
+        for (final Map.Entry<ITopicNode, ITopicNode> topicEntry : duplicatedTopics.entrySet()) {
+            final ITopicNode topic = topicEntry.getKey();
+            final ITopicNode cloneTopic = topicEntry.getValue();
 
             // Set the id
             topic.setId(cloneTopic.getDBId() == null ? null : cloneTopic.getDBId().toString());
@@ -1026,8 +1045,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             if (processorData.getUsername() != null) {
                 // Add the added by property tag
                 final UpdateableCollectionWrapper<PropertyTagInContentSpecWrapper> propertyTagCollection = propertyTagProvider
-                        .newPropertyTagInContentSpecCollection(
-                        contentSpecEntity);
+                        .newPropertyTagInContentSpecCollection(contentSpecEntity);
 
                 // Create the new property tag
                 final PropertyTagWrapper addedByProperty = propertyTagProvider.getPropertyTag(serverEntities.getAddedByPropertyTagId());
@@ -1187,6 +1205,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             final DataProviderFactory providerFactory, final CSNodeWrapper parentNode, final ContentSpecWrapper contentSpec,
             final Map<SpecNode, CSNodeWrapper> nodeMapping) throws Exception {
         final CSNodeProvider nodeProvider = providerFactory.getProvider(CSNodeProvider.class);
+        final CSInfoNodeProvider nodeInfoProvider = providerFactory.getProvider(CSInfoNodeProvider.class);
 
         UpdateableCollectionWrapper<CSNodeWrapper> levelChildren;
         if (parentNode == null) {
@@ -1302,6 +1321,26 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             // If the node is a level than merge the children nodes as well
             if (childNode instanceof Level) {
                 final Level level = (Level) childNode;
+
+                // Merge the info node if one exists
+                if (level.getInfoTopic() != null) {
+                    final InfoTopic infoTopic = level.getInfoTopic();
+                    CSInfoNodeWrapper infoEntity = foundNodeEntity.getInfoTopicNode();
+                    boolean matches = doesInfoTopicMatch(infoTopic, infoEntity);
+
+                    if (!matches) {
+                        infoEntity = nodeInfoProvider.newCSNodeInfo(foundNodeEntity);
+                        foundNodeEntity.setInfoTopicNode(infoEntity);
+                        changed = true;
+                    }
+
+                    if (mergeLevelInfoTopic(infoTopic, infoEntity)) {
+                        changed = true;
+                    }
+                } else if (foundNodeEntity.getInfoTopicNode() != null) {
+                    foundNodeEntity.setInfoTopicNode(null);
+                    changed = true;
+                }
 
                 // Get the child nodes
                 final LinkedList<Node> children = new LinkedList<Node>(level.getChildNodes());
@@ -1593,6 +1632,37 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             changed = true;
         } else if (level.getConditionStatement() == null && levelEntity.getCondition() != null) {
             levelEntity.setCondition(null);
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    protected boolean mergeLevelInfoTopic(final InfoTopic infoTopic, final CSInfoNodeWrapper infoEntity) {
+        boolean changed = false;
+
+        // CONDITION
+        if (infoTopic.getConditionStatement() != null && !infoTopic.getConditionStatement().equals(infoEntity.getCondition())) {
+            infoEntity.setCondition(infoTopic.getConditionStatement());
+            changed = true;
+        } else if (infoTopic.getConditionStatement() == null && infoEntity.getCondition() != null) {
+            infoEntity.setCondition(null);
+            changed = true;
+        }
+
+        // TOPIC ID
+        // No need to check if the topic id should be set to null, as it is a mandatory field
+        if (infoTopic.getDBId() != null && !infoTopic.getDBId().equals(infoEntity.getTopicId())) {
+            infoEntity.setTopicId(infoTopic.getDBId());
+            changed = true;
+        }
+
+        // TOPIC REVISION
+        if (infoTopic.getRevision() != null && !infoTopic.getRevision().equals(infoEntity.getTopicRevision())) {
+            infoEntity.setTopicRevision(infoTopic.getRevision());
+            changed = true;
+        } else if (infoTopic.getRevision() == null && infoEntity.getTopicRevision() != null) {
+            infoEntity.setTopicRevision(null);
             changed = true;
         }
 
@@ -2015,6 +2085,25 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
             // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the topics match
             return specTopic.getDBId().equals(node.getEntityId());
+        }
+    }
+
+    /**
+     * Checks to see if a ContentSpec topic matches a Content Spec Entity topic.
+     *
+     * @param infoTopic  The ContentSpec topic object.
+     * @param infoNode   The Content Spec Entity topic.
+     * @return True if the topic is determined to match otherwise false.
+     */
+    protected boolean doesInfoTopicMatch(final InfoTopic infoTopic, final CSInfoNodeWrapper infoNode) {
+        if (infoNode == null && infoTopic != null) return false;
+
+        // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
+        if (infoTopic.getUniqueId() != null && infoTopic.getUniqueId().matches("^\\d.*")) {
+            return infoTopic.getUniqueId().equals(Integer.toString(infoNode.getId()));
+        } else {
+            // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the topics match
+            return infoTopic.getDBId().equals(infoNode.getTopicId());
         }
     }
 

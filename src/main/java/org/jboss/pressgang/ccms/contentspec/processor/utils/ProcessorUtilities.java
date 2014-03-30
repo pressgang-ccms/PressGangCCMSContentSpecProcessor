@@ -3,7 +3,7 @@ package org.jboss.pressgang.ccms.contentspec.processor.utils;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.jboss.pressgang.ccms.contentspec.SpecTopic;
+import org.jboss.pressgang.ccms.contentspec.ITopicNode;
 import org.jboss.pressgang.ccms.contentspec.processor.exceptions.InvalidKeyValueException;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.VariableSet;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
@@ -130,7 +130,7 @@ public class ProcessorUtilities {
      * @param serverEntities
      * @return The cloned topic wrapper entity.
      */
-    public static TopicWrapper cloneTopic(final DataProviderFactory providerFactory, final SpecTopic specTopic,
+    public static TopicWrapper cloneTopic(final DataProviderFactory providerFactory, final ITopicNode specTopic,
             final ServerEntitiesWrapper serverEntities) {
         final TopicProvider topicProvider = providerFactory.getProvider(TopicProvider.class);
         final TopicSourceURLProvider topicSourceUrlProvider = providerFactory.getProvider(TopicSourceURLProvider.class);

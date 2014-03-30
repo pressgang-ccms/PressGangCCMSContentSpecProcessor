@@ -21,6 +21,7 @@ import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
 import org.jboss.pressgang.ccms.contentspec.Chapter;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.ITopicNode;
 import org.jboss.pressgang.ccms.contentspec.InitialContent;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecNodeWithRelationships;
@@ -64,7 +65,7 @@ public class ContentSpecValidatorPreValidateRelationshipTest extends ContentSpec
     public void shouldFailAndLogErrorWhenTopicRelationshipToDuplicateTopic() {
         // Given a map of topics is returned
         PowerMockito.mockStatic(ContentSpecUtilities.class);
-        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(createDummyTopicMap());
+        when(ContentSpecUtilities.getIdTopicNodeMap(contentSpec)).thenReturn(createDummyTopicMap());
         // and some relationships
         final Map<SpecNodeWithRelationships, List<Relationship>> dummyMap = new HashMap<SpecNodeWithRelationships, List<Relationship>>();
         dummyMap.put(topic2, Arrays.asList((Relationship) new TopicRelationship(topic2, duplicateTopic, RelationshipType.PREREQUISITE)));
@@ -85,7 +86,7 @@ public class ContentSpecValidatorPreValidateRelationshipTest extends ContentSpec
     public void shouldFailAndLogErrorWhenTopicRelationshipDoesntExist() {
         // Given a map of topics is returned
         PowerMockito.mockStatic(ContentSpecUtilities.class);
-        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(createDummyTopicMap());
+        when(ContentSpecUtilities.getIdTopicNodeMap(contentSpec)).thenReturn(createDummyTopicMap());
         // and a topic that isn't in the map
         SpecTopic topic = make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, thirdId.toString()), with(SpecTopicMaker.title, title)));
         // and some relationships
@@ -107,7 +108,7 @@ public class ContentSpecValidatorPreValidateRelationshipTest extends ContentSpec
     public void shouldFailAndLogErrorWhenTargetRelationshipDoesntExist() {
         // Given a map of topics is returned
         PowerMockito.mockStatic(ContentSpecUtilities.class);
-        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(createDummyTopicMap());
+        when(ContentSpecUtilities.getIdTopicNodeMap(contentSpec)).thenReturn(createDummyTopicMap());
         // and a dummy topic that can be used in the relationship
         SpecTopic topic = make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, "-1"), with(SpecTopicMaker.title, title),
                 with(SpecTopicMaker.targetId, "T1")));
@@ -130,8 +131,8 @@ public class ContentSpecValidatorPreValidateRelationshipTest extends ContentSpec
     public void shouldFailAndLogErrorWhenTopicRelationshipHasMultipleReferences() {
         // Given a map of topics is returned
         PowerMockito.mockStatic(ContentSpecUtilities.class);
-        Map<String, List<SpecTopic>> topicMap = createDummyTopicMap();
-        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(topicMap);
+        Map<String, List<ITopicNode>> topicMap = createDummyTopicMap();
+        when(ContentSpecUtilities.getIdTopicNodeMap(contentSpec)).thenReturn(topicMap);
         // and a topic with the same id
         SpecTopic topic = make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, id.toString()), with(SpecTopicMaker.title, title)));
         topicMap.get(id.toString()).add(topic);
@@ -148,14 +149,14 @@ public class ContentSpecValidatorPreValidateRelationshipTest extends ContentSpec
         // and an error should have been printed
         assertThat(logger.getLogMessages().toString(), containsString(
                 "Ambiguous Relationship! Topic " + id + " is included on lines " + topic1.getLineNumber() + " and " + topic.getLineNumber
-                        () + " of the Content Specification. To relate to one of these topics please use a Target."));
+                        () + " of the Content Specification. To relate to one of these topics please use a Target identifier."));
     }
 
     @Test
     public void shouldFailAndLogErrorWhenTopicRelationshipRelatesToItself() {
         // Given a map of topics is returned
         PowerMockito.mockStatic(ContentSpecUtilities.class);
-        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(createDummyTopicMap());
+        when(ContentSpecUtilities.getIdTopicNodeMap(contentSpec)).thenReturn(createDummyTopicMap());
         // and a relationship to itself
         final Map<SpecNodeWithRelationships, List<Relationship>> dummyMap = new HashMap<SpecNodeWithRelationships, List<Relationship>>();
         dummyMap.put(topic1, Arrays.asList((Relationship) new TopicRelationship(topic1, topic1, RelationshipType.REFER_TO)));
@@ -174,7 +175,7 @@ public class ContentSpecValidatorPreValidateRelationshipTest extends ContentSpec
     public void shouldFailAndLogErrorWhenTopicRelationshipRelatesToItselfViaInitialContent() {
         // Given a map of topics is returned
         PowerMockito.mockStatic(ContentSpecUtilities.class);
-        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(createDummyTopicMap());
+        when(ContentSpecUtilities.getIdTopicNodeMap(contentSpec)).thenReturn(createDummyTopicMap());
         // and an initial content container
         final InitialContent initialContent = new InitialContent();
         initialContent.appendSpecTopic(topic1);
@@ -196,13 +197,13 @@ public class ContentSpecValidatorPreValidateRelationshipTest extends ContentSpec
     public void shouldFailAndLogErrorWhenTopicRelationshipExistsOnInitialContentTopic() {
         // Given a map of topics is returned
         PowerMockito.mockStatic(ContentSpecUtilities.class);
-        Map<String, List<SpecTopic>> topicMap = createDummyTopicMap();
-        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(topicMap);
+        Map<String, List<ITopicNode>> topicMap = createDummyTopicMap();
+        when(ContentSpecUtilities.getIdTopicNodeMap(contentSpec)).thenReturn(topicMap);
         // and an initial content topic
         given(specTopic.getTopicType()).willReturn(TopicType.INITIAL_CONTENT);
         given(specTopic.getId()).willReturn(thirdId.toString());
         given(specTopic.getDBId()).willReturn(thirdId);
-        topicMap.put(thirdId.toString(), Arrays.asList(specTopic));
+        topicMap.put(thirdId.toString(), Arrays.<ITopicNode>asList(specTopic));
         // and a relationship to itself
         final Map<SpecNodeWithRelationships, List<Relationship>> dummyMap = new HashMap<SpecNodeWithRelationships, List<Relationship>>();
         dummyMap.put(specTopic, Arrays.asList((Relationship) new TopicRelationship(specTopic, topic1, RelationshipType.REFER_TO)));
@@ -222,7 +223,7 @@ public class ContentSpecValidatorPreValidateRelationshipTest extends ContentSpec
     public void shouldLogWarningWhenTopicRelationshipTitlesDontMatch() {
         // Given a map of topics is returned
         PowerMockito.mockStatic(ContentSpecUtilities.class);
-        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(createDummyTopicMap());
+        when(ContentSpecUtilities.getIdTopicNodeMap(contentSpec)).thenReturn(createDummyTopicMap());
         // and a relationship to another topic with an different title
         final Map<SpecNodeWithRelationships, List<Relationship>> dummyMap = new HashMap<SpecNodeWithRelationships, List<Relationship>>();
         dummyMap.put(specTopic, Arrays.asList((Relationship) new TopicRelationship(specTopic, topic1, RelationshipType.REFER_TO, "blah")));
@@ -245,7 +246,7 @@ public class ContentSpecValidatorPreValidateRelationshipTest extends ContentSpec
     public void shouldFailAndLogErrorWhenTopicRelationshipTitlesDontMatchWithStrictTitles() {
         // Given a map of topics is returned
         PowerMockito.mockStatic(ContentSpecUtilities.class);
-        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(createDummyTopicMap());
+        when(ContentSpecUtilities.getIdTopicNodeMap(contentSpec)).thenReturn(createDummyTopicMap());
         // and a relationship to another topic with an different title
         final Map<SpecNodeWithRelationships, List<Relationship>> dummyMap = new HashMap<SpecNodeWithRelationships, List<Relationship>>();
         dummyMap.put(specTopic, Arrays.asList((Relationship) new TopicRelationship(specTopic, topic1, RelationshipType.REFER_TO, "blah")));
@@ -268,7 +269,7 @@ public class ContentSpecValidatorPreValidateRelationshipTest extends ContentSpec
     public void shouldLogWarningWhenTopicRelationshipTitlesDontMatchForInitialContent() {
         // Given a map of topics is returned
         PowerMockito.mockStatic(ContentSpecUtilities.class);
-        when(ContentSpecUtilities.getIdSpecTopicMap(contentSpec)).thenReturn(createDummyTopicMap());
+        when(ContentSpecUtilities.getIdTopicNodeMap(contentSpec)).thenReturn(createDummyTopicMap());
         // and a topic that is in an initial content container
         Level chapter = new Chapter(title);
         InitialContent initialContent = new InitialContent();
@@ -292,15 +293,15 @@ public class ContentSpecValidatorPreValidateRelationshipTest extends ContentSpec
                 "       -> Actual:    " + title));
     }
 
-    protected Map<String, List<SpecTopic>> createDummyTopicMap() {
-        final Map<String, List<SpecTopic>> dummyMap = new HashMap<String, List<SpecTopic>>();
-        dummyMap.put(id.toString(), new ArrayList<SpecTopic>() {{
+    protected Map<String, List<ITopicNode>> createDummyTopicMap() {
+        final Map<String, List<ITopicNode>> dummyMap = new HashMap<String, List<ITopicNode>>();
+        dummyMap.put(id.toString(), new ArrayList<ITopicNode>() {{
             add(topic1);
         }});
-        dummyMap.put(secondId.toString(), new ArrayList<SpecTopic>() {{
+        dummyMap.put(secondId.toString(), new ArrayList<ITopicNode>() {{
             add(topic2);
         }});
-        dummyMap.put("X1", Arrays.asList(duplicateTopic));
+        dummyMap.put("X1", Arrays.<ITopicNode>asList(duplicateTopic));
         return dummyMap;
     }
 }

@@ -16,6 +16,7 @@ import java.util.Map;
 
 import net.sf.ipsedixit.annotation.Arbitrary;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
+import org.jboss.pressgang.ccms.contentspec.InfoTopic;
 import org.jboss.pressgang.ccms.contentspec.InitialContent;
 import org.jboss.pressgang.ccms.contentspec.Level;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
@@ -34,10 +35,12 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
     @Mock ContentSpec contentSpec;
 
     Map<String, SpecTopic> specTopicMap;
+    Map<String, InfoTopic> infoTopicMap;
 
     @Before
     public void setUp() {
         specTopicMap = new HashMap<String, SpecTopic>();
+        infoTopicMap = new HashMap<String, InfoTopic>();
         super.setUp();
     }
 
@@ -49,7 +52,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(level);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, false, bookType, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, bookType, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -69,7 +72,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addParentToLevel(level, LevelType.BASE);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, false, bookType, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, bookType, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -86,7 +89,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addParentToLevel(level, LevelType.BASE);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, false, bookType, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, bookType, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -106,7 +109,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addParentToLevel(level, LevelType.CHAPTER);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, false, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -125,7 +128,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addParentToLevel(level, LevelType.BASE);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, false, bookType, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, bookType, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -144,7 +147,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         level.appendChild(child);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, false, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -161,7 +164,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         level.appendChild(topic);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, false, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -177,7 +180,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(appendix);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(appendix, specTopicMap, false, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(appendix, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -199,7 +202,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         appendix.getParent().appendChild(chapter);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(appendix, specTopicMap, false, BookType.ARTICLE_DRAFT, contentSpec);
+        boolean result = validator.preValidateLevel(appendix, specTopicMap, infoTopicMap, BookType.ARTICLE_DRAFT, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -218,7 +221,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(appendix);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(appendix, specTopicMap, false, BookType.BOOK_DRAFT, contentSpec);
+        boolean result = validator.preValidateLevel(appendix, specTopicMap, infoTopicMap, BookType.BOOK_DRAFT, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -240,7 +243,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         appendix.getParent().appendChild(chapter);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(appendix, specTopicMap, false, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(appendix, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -259,7 +262,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(chapter);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(chapter, specTopicMap, false, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(chapter, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -278,7 +281,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(chapter);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(chapter, specTopicMap, false, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(chapter, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -297,7 +300,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(part);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(part, specTopicMap, false, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(part, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -315,7 +318,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(part);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(part, specTopicMap, false, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(part, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -333,7 +336,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(preface);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(preface, specTopicMap, false, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(preface, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -352,7 +355,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(preface);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(preface, specTopicMap, false, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(preface, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -371,7 +374,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(process);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(process, specTopicMap, false, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(process, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -390,7 +393,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addChildToLevel(process);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(process, specTopicMap, false, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(process, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -409,7 +412,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(section);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(section, specTopicMap, false, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(section, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -428,7 +431,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(section);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(section, specTopicMap, false, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(section, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -450,7 +453,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         initialContent.getParent().insertBefore(section, initialContent);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(initialContent, specTopicMap, false, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(initialContent, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -472,7 +475,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         initialContent.getParent().insertBefore(chapter, initialContent);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(initialContent, specTopicMap, false, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(initialContent, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
