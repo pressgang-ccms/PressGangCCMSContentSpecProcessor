@@ -366,7 +366,7 @@ public class ProcessorConstants {
     public static final String ERROR_RELATED_TOPIC_NONEXIST_MSG = LINE + INVALID_RELATIONSHIP + " The related topic specified (%s) " +
             "doesn't exist in the content specification." + CSLINE_MSG;
     public static final String ERROR_RELATED_TOPIC_IS_INFO_MSG = LINE + INVALID_RELATIONSHIP + " The related topic specified (%s) " +
-            "is an info topic for a container and as such has cannot be related to. Please add a Target identifier to the container and " +
+            "is an info topic for a container and as such cannot be related to. Please add a Target identifier to the container and " +
             "reference the Target instead."+ CSLINE_MSG;
     public static final String ERROR_INVALID_RELATIONSHIP_MSG = LINE + AMBIGUOUS_RELATIONSHIP + " Topic %s is included on lines %s of the" +
             " Content Specification. To relate to one of these topics please use a Target identifier." + CSLINE_MSG;
