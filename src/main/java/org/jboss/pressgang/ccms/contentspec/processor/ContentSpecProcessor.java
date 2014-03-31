@@ -1326,7 +1326,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 if (level.getInfoTopic() != null) {
                     final InfoTopic infoTopic = level.getInfoTopic();
                     CSInfoNodeWrapper infoEntity = foundNodeEntity.getInfoTopicNode();
-                    boolean matches = doesInfoTopicMatch(infoTopic, infoEntity);
+                    boolean matches = doesInfoTopicMatch(infoTopic, infoEntity, foundNodeEntity);
 
                     if (!matches) {
                         infoEntity = nodeInfoProvider.newCSNodeInfo(foundNodeEntity);
@@ -2093,14 +2093,15 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      *
      * @param infoTopic  The ContentSpec topic object.
      * @param infoNode   The Content Spec Entity topic.
+     * @param parentNode
      * @return True if the topic is determined to match otherwise false.
      */
-    protected boolean doesInfoTopicMatch(final InfoTopic infoTopic, final CSInfoNodeWrapper infoNode) {
+    protected boolean doesInfoTopicMatch(final InfoTopic infoTopic, final CSInfoNodeWrapper infoNode, final CSNodeWrapper parentNode) {
         if (infoNode == null && infoTopic != null) return false;
 
         // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
         if (infoTopic.getUniqueId() != null && infoTopic.getUniqueId().matches("^\\d.*")) {
-            return infoTopic.getUniqueId().equals(Integer.toString(infoNode.getId()));
+            return infoTopic.getUniqueId().equals(Integer.toString(parentNode.getId()));
         } else {
             // Since a content spec doesn't contain the database ids for the nodes use what is available to see if the topics match
             return infoTopic.getDBId().equals(infoNode.getTopicId());
