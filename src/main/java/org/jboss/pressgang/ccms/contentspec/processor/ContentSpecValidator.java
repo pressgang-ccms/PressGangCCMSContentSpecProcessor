@@ -48,7 +48,7 @@ import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
 import org.jboss.pressgang.ccms.contentspec.processor.constants.ProcessorConstants;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptions;
 import org.jboss.pressgang.ccms.contentspec.sort.NullNumberSort;
-import org.jboss.pressgang.ccms.contentspec.sort.SpecTopicLineNumberComparator;
+import org.jboss.pressgang.ccms.contentspec.sort.TopicNodeLineNumberComparator;
 import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
@@ -366,7 +366,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // Check that the relationships are valid
         if (!preValidateRelationships(contentSpec)) {
-
+            valid = false;
         }
 
         /*
@@ -479,31 +479,31 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         boolean valid = true;
 
         // Find all Topics that have two or more different revisions
-        final List<SpecTopic> allSpecTopics = contentSpec.getSpecTopics();
-        final Map<Integer, Map<Integer, Set<SpecTopic>>> invalidSpecTopics = new HashMap<Integer, Map<Integer, Set<SpecTopic>>>();
+        final List<ITopicNode> allTopicNodes = contentSpec.getAllTopicNodes();
+        final Map<Integer, Map<Integer, Set<ITopicNode>>> invalidTopicNodes = new HashMap<Integer, Map<Integer, Set<ITopicNode>>>();
 
-        for (final SpecTopic specTopic1 : allSpecTopics) {
-            if (!specTopic1.isTopicAnExistingTopic()) continue;
+        for (final ITopicNode topicNode1 : allTopicNodes) {
+            if (!topicNode1.isTopicAnExistingTopic()) continue;
 
-            for (final SpecTopic specTopic2 : allSpecTopics) {
+            for (final ITopicNode topicNode2 : allTopicNodes) {
                 // If the Topic isn't an existing topic and doesn't match the first spec topic's id, then continue
-                if (specTopic1 == specTopic2 || !specTopic2.isTopicAnExistingTopic() || !specTopic1.getDBId().equals(specTopic2.getDBId()))
+                if (topicNode1 == topicNode2 || !topicNode2.isTopicAnExistingTopic() || !topicNode1.getDBId().equals(topicNode2.getDBId()))
                     continue;
 
                 // Check if the revisions between the two topics are the same
-                if (specTopic1.getRevision() == null && specTopic2.getRevision() != null || specTopic1.getRevision() != null &&
-                        specTopic2.getRevision() == null || specTopic1.getRevision() != null && !specTopic1.getRevision().equals(
-                        specTopic2.getRevision())) {
-                    if (!invalidSpecTopics.containsKey(specTopic1.getDBId())) {
-                        invalidSpecTopics.put(specTopic1.getDBId(), new HashMap<Integer, Set<SpecTopic>>());
+                if (topicNode1.getRevision() == null && topicNode2.getRevision() != null || topicNode1.getRevision() != null &&
+                        topicNode2.getRevision() == null || topicNode1.getRevision() != null && !topicNode1.getRevision().equals(
+                        topicNode2.getRevision())) {
+                    if (!invalidTopicNodes.containsKey(topicNode1.getDBId())) {
+                        invalidTopicNodes.put(topicNode1.getDBId(), new HashMap<Integer, Set<ITopicNode>>());
                     }
 
-                    final Map<Integer, Set<SpecTopic>> revisionsToSpecTopic = invalidSpecTopics.get(specTopic1.getDBId());
-                    if (!revisionsToSpecTopic.containsKey(specTopic1.getRevision())) {
-                        revisionsToSpecTopic.put(specTopic1.getRevision(), new HashSet<SpecTopic>());
+                    final Map<Integer, Set<ITopicNode>> revisionsToTopicNode = invalidTopicNodes.get(topicNode1.getDBId());
+                    if (!revisionsToTopicNode.containsKey(topicNode1.getRevision())) {
+                        revisionsToTopicNode.put(topicNode1.getRevision(), new HashSet<ITopicNode>());
                     }
 
-                    revisionsToSpecTopic.get(specTopic1.getRevision()).add(specTopic1);
+                    revisionsToTopicNode.get(topicNode1.getRevision()).add(topicNode1);
 
                     valid = false;
                 }
@@ -511,34 +511,34 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Loop through and generate an error message for each invalid topic
-        for (final Entry<Integer, Map<Integer, Set<SpecTopic>>> entry : invalidSpecTopics.entrySet()) {
+        for (final Entry<Integer, Map<Integer, Set<ITopicNode>>> entry : invalidTopicNodes.entrySet()) {
             final Integer topicId = entry.getKey();
-            final Map<Integer, Set<SpecTopic>> revisionsToSpecTopic = entry.getValue();
+            final Map<Integer, Set<ITopicNode>> revisionsToTopicNode = entry.getValue();
 
             final List<String> revNumbers = new ArrayList<String>();
-            final List<Integer> revisions = new ArrayList<Integer>(revisionsToSpecTopic.keySet());
+            final List<Integer> revisions = new ArrayList<Integer>(revisionsToTopicNode.keySet());
             Collections.sort(revisions, new NullNumberSort<Integer>());
 
             for (final Integer revision : revisions) {
-                final List<SpecTopic> specTopics = new ArrayList<SpecTopic>(revisionsToSpecTopic.get(revision));
+                final List<ITopicNode> topicNodes = new ArrayList<ITopicNode>(revisionsToTopicNode.get(revision));
 
                 // Build up the line numbers message
                 final StringBuilder lineNumbers = new StringBuilder();
-                if (specTopics.size() > 1) {
+                if (topicNodes.size() > 1) {
                     // Sort the Topics by line numbers
-                    Collections.sort(specTopics, new SpecTopicLineNumberComparator());
+                    Collections.sort(topicNodes, new TopicNodeLineNumberComparator());
 
-                    for (int i = 0; i < specTopics.size(); i++) {
-                        if (i == specTopics.size() - 1) {
+                    for (int i = 0; i < topicNodes.size(); i++) {
+                        if (i == topicNodes.size() - 1) {
                             lineNumbers.append(" and ");
                         } else if (lineNumbers.length() != 0) {
                             lineNumbers.append(", ");
                         }
 
-                        lineNumbers.append(specTopics.get(i).getLineNumber());
+                        lineNumbers.append(topicNodes.get(i).getLineNumber());
                     }
-                } else if (specTopics.size() == 1) {
-                    lineNumbers.append(specTopics.get(0).getLineNumber());
+                } else if (topicNodes.size() == 1) {
+                    lineNumbers.append(topicNodes.get(0).getLineNumber());
                 }
 
                 // Build the revision message
