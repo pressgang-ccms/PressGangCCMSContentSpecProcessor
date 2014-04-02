@@ -737,8 +737,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 if (fileWrapper == null) {
                     log.error(String.format(ProcessorConstants.ERROR_FILE_ID_NONEXIST_MSG, fileList.getLineNumber(), file.getText()));
                     valid = false;
-                } else {
-                    // Make sure the titles sync up.
+                } else if (file.getTitle() != null) {
+                    // Make sure the titles sync up, as a title was specified.
                     if (!fileWrapper.getFilename().equals(file.getTitle())) {
                         final String errorMsg = String.format(ProcessorConstants.ERROR_FILE_TITLE_NO_MATCH_MSG, fileList.getLineNumber(),
                                 file.getTitle(), fileWrapper.getFilename());
@@ -750,6 +750,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             file.setTitle(fileWrapper.getFilename());
                         }
                     }
+                } else {
+                    // The short format was used if the title is null, so add it
+                    file.setTitle(fileWrapper.getFilename());
                 }
             }
         }
