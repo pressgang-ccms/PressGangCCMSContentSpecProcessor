@@ -10,7 +10,7 @@
 
     <groupId>org.jboss.pressgang.ccms.contentspec</groupId>
     <artifactId>processor</artifactId>
-    <version>1.5</version>
+    <version>1.6-SNAPSHOT</version>
     <name>PressGang CCMS Content Specification Processor</name>
 
     <scm>
@@ -20,7 +20,7 @@
     </scm>
 
     <properties>
-        <pressgang.ccms.version>1.5</pressgang.ccms.version>
+        <pressgang.ccms.version>1.6-SNAPSHOT</pressgang.ccms.version>
         <slf4j.version>1.6.4</slf4j.version>
         <ipsedixit.version>1.0.2</ipsedixit.version>
         <!-- Can't move to Mockito 1.9.5 and PowerMock 1.5 yet due to bug -->
