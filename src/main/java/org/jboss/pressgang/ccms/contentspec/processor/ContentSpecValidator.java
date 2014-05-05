@@ -260,6 +260,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
         }
 
+        // BZ#1091776 Check that mainfile isn't used
+        if (!isNullOrEmpty(contentSpec.getPublicanCfg()) && contentSpec.getPublicanCfg().contains("mainfile:")) {
+            log.warn(ProcessorConstants.WARN_MAINFILE_WILL_BE_REMOVED_MSG);
+        }
+
         // Check that any metadata topics are valid
         if (contentSpec.getRevisionHistory() != null && !preValidateTopic(contentSpec.getRevisionHistory(), specTopicMap,
                 contentSpec.getBookType(), false, contentSpec)) {

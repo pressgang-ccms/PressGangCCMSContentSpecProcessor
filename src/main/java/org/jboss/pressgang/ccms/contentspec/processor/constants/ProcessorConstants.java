@@ -341,6 +341,8 @@ public class ProcessorConstants {
             "So revision %d is being used instead, as it is the closest match." + CSLINE_MSG;
     public static final String WARN_CONDITION_IGNORED_MSG = LINE + "A condition has been defined in publican.cfg, " +
             "and as such the condition defined against the topic or container will be ignored." + CSLINE_MSG;
+    public static final String WARN_MAINFILE_WILL_BE_REMOVED_MSG = "The \"mainfile\" attribute has been defined in publican.cfg, " +
+            "however it cannot be used in PressGang and as such will be removed when building.";
 
     // Process Errors
     public static final String ERROR_PROCESS_NONEXIST_MSG = LINE + INVALID_PROCESS + " Topic %s doesn't exist in the database." +
