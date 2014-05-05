@@ -1892,7 +1892,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 // Make sure no <info> or <sectioninfo> elements aren't used if it's not the first element
                 final List<org.w3c.dom.Node> invalidInfoElements = XMLUtilities.getDirectChildNodes(doc.getDocumentElement(), "info",
                         "sectioninfo");
-                if ((numSpecTopics > 1 && invalidElements.size() > 0)) {
+                if (invalidElements.size() > 0) {
                     log.error(format(ProcessorConstants.ERROR_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT, specTopic.getLineNumber(),
                             specTopic.getText()));
                     valid = false;
