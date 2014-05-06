@@ -1878,6 +1878,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         boolean valid = true;
         final InitialContent initialContent = (InitialContent) specTopic.getParent();
         final int numSpecTopics = initialContent.getNumberOfSpecTopics();
+        final boolean isOnlyChild = initialContent.getParent().getChildLevels().size() == 1
+                && initialContent.getParent().getSpecTopics().size() == 0 & numSpecTopics == 1;
         if (numSpecTopics >= 1) {
             final String condition = specTopic.getConditionStatement(true);
             try {
@@ -1892,7 +1894,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 // Make sure no <info> or <sectioninfo> elements aren't used if it's not the first element
                 final List<org.w3c.dom.Node> invalidInfoElements = XMLUtilities.getDirectChildNodes(doc.getDocumentElement(), "info",
                         "sectioninfo");
-                if (invalidElements.size() > 0) {
+                if (!isOnlyChild && invalidElements.size() > 0) {
                     log.error(format(ProcessorConstants.ERROR_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT, specTopic.getLineNumber(),
                             specTopic.getText()));
                     valid = false;
