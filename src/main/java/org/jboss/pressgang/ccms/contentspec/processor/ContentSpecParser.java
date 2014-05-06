@@ -1211,7 +1211,8 @@ public class ContentSpecParser {
 
         // Parse the input
         if (splitVars.length >= 2) {
-            final String title = ProcessorUtilities.replaceEscapeChars(getTitle(splitVars[1], '['));
+            final String unescapedTitle = getTitle(splitVars[1], '[');
+            final String title = ProcessorUtilities.replaceEscapeChars(unescapedTitle);
             if (!isNullOrEmpty(title)) {
                 newLvl.setTitle(title);
             }
@@ -1233,7 +1234,7 @@ public class ContentSpecParser {
                                 newLvl.appendChild(initialContent);
                             }
 
-                            final String topicString = title + " [" + StringUtilities.buildString(variables, ", ") + "]";
+                            final String topicString = unescapedTitle + " [" + StringUtilities.buildString(variables, ", ") + "]";
                             final SpecTopic initialContentTopic = parseTopic(parserData, topicString, lineNumber);
                             initialContent.appendSpecTopic(initialContentTopic);
                         } else {
