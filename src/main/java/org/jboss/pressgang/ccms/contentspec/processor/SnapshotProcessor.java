@@ -111,14 +111,14 @@ public class SnapshotProcessor implements ShutdownAbleApp {
             return;
         }
 
-        if (topicNode.isTopicAnExistingTopic()) {
-            // Calculate the revision for the topic
-            final Integer revision;
-            if (topicNode.getRevision() == null || processingOptions.isUpdateRevisions()) {
-                revision = processingOptions.getRevision();
-            } else {
-                revision = topicNode.getRevision();
-            }
+        if (!processingOptions.isAddRevisions()) {
+            // If we aren't adding revisions then we have nothing to do here, so just return
+            return;
+        } else if (!(topicNode.getRevision() == null || processingOptions.isUpdateRevisions())) {
+            // If the topic already has a revision and we aren't updating it, then just return
+            return;
+        } else if (topicNode.isTopicAnExistingTopic()) {
+            final Integer revision = processingOptions.getRevision();
 
             // Check that the id actually exists
             BaseTopicWrapper<?> topic = null;
@@ -126,15 +126,10 @@ public class SnapshotProcessor implements ShutdownAbleApp {
                 if (processingOptions.isTranslation()) {
                     topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(topicNode.getId()), revision,
                             processingOptions.getTranslationLocale() == null ? defaultLocale : processingOptions.getTranslationLocale());
-                    if (processingOptions.isAddRevisions() && (topicNode.getRevision() == null || processingOptions.isUpdateRevisions())) {
-                        topicNode.setRevision(topic.getTopicRevision());
-                    }
                 } else {
                     topic = topicProvider.getTopic(Integer.parseInt(topicNode.getId()), revision);
-                    if (processingOptions.isAddRevisions() && (topicNode.getRevision() == null || processingOptions.isUpdateRevisions())) {
-                        topicNode.setRevision(topic.getTopicRevision());
-                    }
                 }
+                topicNode.setRevision(topic.getTopicRevision());
             } catch (NotFoundException e) {
                 log.debug("Could not find topic for id " + topicNode.getDBId());
             }
