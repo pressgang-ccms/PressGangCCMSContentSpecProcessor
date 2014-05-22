@@ -15,9 +15,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import com.google.code.regexp.Matcher;
+import com.google.code.regexp.Pattern;
 import com.j2bugzilla.base.ConnectionException;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.File;
@@ -302,24 +302,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
             wrappedAbstract = "<abstract>" + wrappedAbstract + "</abstract>";
 
-            Document doc = null;
-
-            String errorMsg = null;
-            try {
-                doc = XMLUtilities.convertStringToDocument(wrappedAbstract);
-            } catch (Exception e) {
-                errorMsg = e.getMessage();
-            }
-
-            // If the doc variable is null then an error occurred somewhere
-            if (doc == null) {
+            if (!preValidateXML(contentSpec.getAbstractNode(), wrappedAbstract)) {
                 valid = false;
-                final String line = CommonConstants.CS_ABSTRACT_TITLE + " = " + contentSpec.getAbstract();
-                if (errorMsg != null) {
-                    log.error(String.format(ProcessorConstants.ERROR_INVALID_ABSTRACT_MSG, errorMsg, line));
-                } else {
-                    log.error(String.format(ProcessorConstants.ERROR_INVALID_ABSTRACT_NO_ERROR_MSG, line));
-                }
             }
         }
 
@@ -349,6 +333,17 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                         valid = false;
                         log.error(format(ProcessorConstants.ERROR_UNRECOGNISED_METADATA_MSG, keyValueNode.getLineNumber(),
                                 keyValueNode.getText()));
+                    }
+
+                    // Make sure that the metadata is valid XML if it might be used
+                    if (value instanceof String && !isNullOrEmpty((String) value)
+                            && ProcessorConstants.METADATA_DOCBOOK_ELEMENTS.containsKey(keyValueNode.getKey())) {
+                        final String element = ProcessorConstants.METADATA_DOCBOOK_ELEMENTS.get(keyValueNode.getKey());
+                        final String wrappedElement = "<" + element + ">" + value + "</" + element + ">";
+
+                        if (!preValidateXML(keyValueNode, wrappedElement)) {
+                            valid = false;
+                        }
                     }
                 }
             }
@@ -388,6 +383,38 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     }
 
     /**
+     * Performs the pre validation on keyvalue nodes that may be used as XML to ensure it is at least valid XML.
+     *
+     * @param keyValueNode The key value node being validated.
+     * @param wrappedValue The wrapped value, as it would appear in a build.
+     * @return True if the content is valid otherwise false.
+     */
+    private boolean preValidateXML(final KeyValueNode<String> keyValueNode, final String wrappedValue) {
+        Document doc = null;
+
+        String errorMsg = null;
+        try {
+            doc = XMLUtilities.convertStringToDocument(DocBookUtilities.escapeForXML(wrappedValue));
+        } catch (Exception e) {
+            errorMsg = e.getMessage();
+        }
+
+        // If the doc variable is null then an error occurred somewhere
+        if (doc == null) {
+            final String line = keyValueNode.getText();
+            if (errorMsg != null) {
+                log.error(String.format(ProcessorConstants.ERROR_INVALID_METADATA_MSG, keyValueNode.getKey(), errorMsg, line));
+            } else {
+                log.error(String.format(ProcessorConstants.ERROR_INVALID_METADATA_NO_ERROR_MSG, keyValueNode.getKey(), line));
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Check if the default or additional publican cfg files have a specified value
      *
      * @param contentSpec The content spec to check from.
@@ -395,7 +422,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @return True if the value exists in any publican.cfg
      */
     private boolean doesPublicanCfgsContainValue(final ContentSpec contentSpec, final String value) {
-        final Pattern pattern = Pattern.compile("^(.*\\n)?( |\\t)*" + value + ":.*", Pattern.DOTALL);
+        final Pattern pattern = Pattern.compile("^(.*\\n)?( |\\t)*" + value + ":.*", java.util.regex.Pattern.DOTALL);
         if (!isNullOrEmpty(contentSpec.getPublicanCfg()) && pattern.matcher(contentSpec.getPublicanCfg()).matches()) {
             return true;
         } else if (!contentSpec.getAllAdditionalPublicanCfgs().isEmpty()) {
@@ -701,37 +728,35 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
             wrappedAbstract = "<abstract>" + wrappedAbstract + "</abstract>";
 
-            // Get the docbook DTD
-            final String docbookFileName;
-            final XMLValidator.ValidationMethod validationMethod;
-            final byte[] docbookSchema;
-            if (contentSpec.getFormat().equalsIgnoreCase(CommonConstants.DOCBOOK_50_TITLE)) {
-                final BlobConstantWrapper docbookRng = blobConstantProvider.getBlobConstant(serverEntities.getDocBook50RNGBlobConstantId());
-                docbookFileName = docbookRng.getName();
-                validationMethod = XMLValidator.ValidationMethod.RELAXNG;
-                docbookSchema = docbookRng.getValue();
-                // Further wrap the abstract for docbook 5.0
-                wrappedAbstract = DocBookUtilities.addDocBook50Namespace("<book><info><title />" + wrappedAbstract + "</info></book>");
-            } else {
-                final BlobConstantWrapper rocbookDtd = blobConstantProvider.getBlobConstant(serverEntities.getRocBook45DTDBlobConstantId());
-                docbookFileName = rocbookDtd.getName();
-                validationMethod = XMLValidator.ValidationMethod.DTD;
-                docbookSchema = rocbookDtd.getValue();
-            }
-
-            // Create the dummy XML entities file
-            final StringBuilder xmlEntities = new StringBuilder(CSConstants.DUMMY_CS_NAME_ENT_FILE);
-            if (!isNullOrEmpty(contentSpec.getEntities())) {
-                xmlEntities.append(contentSpec.getEntities());
-            }
-
-            // Validate the XML content against the dtd
-            final XMLValidator validator = new XMLValidator(false);
-            if (!validator.validate(validationMethod, wrappedAbstract, docbookFileName, docbookSchema, xmlEntities.toString(),
-                    "abstract")) {
+            if (!postValidateXML(contentSpec, contentSpec.getAbstractNode(), wrappedAbstract, "abstract")) {
                 valid = false;
-                final String line = CommonConstants.CS_ABSTRACT_TITLE + " = " + contentSpec.getAbstract();
-                log.error(String.format(ProcessorConstants.ERROR_INVALID_ABSTRACT_MSG, validator.getErrorText(), line));
+            }
+        }
+
+        // Check to make sure the relevant keyvalue nodes have valid xml
+        for (final Node node : contentSpec.getNodes()) {
+            if (node instanceof KeyValueNode) {
+                final KeyValueNode keyValueNode = (KeyValueNode) node;
+                if (!isNullOrEmpty(keyValueNode.getKey())) {
+                    final Object value = keyValueNode.getValue();
+                    // Make sure that the metadata is valid XML if it might be used
+                    if (value instanceof String && !isNullOrEmpty((String) value)
+                            && ProcessorConstants.METADATA_DOCBOOK_ELEMENTS.containsKey(keyValueNode.getKey())) {
+                        String element = ProcessorConstants.METADATA_DOCBOOK_ELEMENTS.get(keyValueNode.getKey());
+
+                        final String wrappedElement;
+                        if ("para".equals(element)) {
+                            wrappedElement = "<abstract><" + element + ">" + value + "</" + element + "></abstract>";
+                            element = "abstract";
+                        } else {
+                            wrappedElement = "<" + element + ">" + value + "</" + element + ">";
+                        }
+
+                        if (!postValidateXML(contentSpec, keyValueNode, wrappedElement, element)) {
+                            valid = false;
+                        }
+                    }
+                }
             }
         }
 
@@ -741,6 +766,62 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         return valid;
+    }
+
+    /**
+     * Checks that the XML for a keyvalue node is valid DocBook XML.
+     *
+     * @param contentSpec
+     * @param keyValueNode
+     * @param wrappedElement
+     * @param parentElement
+     * @return
+     */
+    protected boolean postValidateXML(final ContentSpec contentSpec, final KeyValueNode<String> keyValueNode,
+            final String wrappedElement, String parentElement) {
+        String fixedWrappedElement = DocBookUtilities.escapeForXML(wrappedElement);
+
+        // Get the docbook DTD
+        final String docbookFileName;
+        final XMLValidator.ValidationMethod validationMethod;
+        final byte[] docbookSchema;
+        if (contentSpec.getFormat().equalsIgnoreCase(CommonConstants.DOCBOOK_50_TITLE)) {
+            final BlobConstantWrapper docbookRng = blobConstantProvider.getBlobConstant(serverEntities.getDocBook50RNGBlobConstantId());
+            docbookFileName = docbookRng.getName();
+            validationMethod = XMLValidator.ValidationMethod.RELAXNG;
+            docbookSchema = docbookRng.getValue();
+            // Further wrap the element for docbook 5.0
+            if (CommonConstants.CS_TITLE_TITLE.equalsIgnoreCase(keyValueNode.getKey())) {
+                fixedWrappedElement = DocBookUtilities.addDocBook50Namespace("<book><info>" + fixedWrappedElement + "</info></book>");
+            } else {
+                fixedWrappedElement = DocBookUtilities.addDocBook50Namespace("<book><info><title />" + fixedWrappedElement + "</info></book>");
+            }
+            parentElement = "book";
+        } else {
+            final BlobConstantWrapper rocbookDtd = blobConstantProvider.getBlobConstant(serverEntities.getRocBook45DTDBlobConstantId());
+            docbookFileName = rocbookDtd.getName();
+            validationMethod = XMLValidator.ValidationMethod.DTD;
+            docbookSchema = rocbookDtd.getValue();
+        }
+
+        // Create the dummy XML entities file
+        final StringBuilder xmlEntities = new StringBuilder(DocBookUtilities.DOCBOOK_ENTITIES_STRING);
+        xmlEntities.append("\n").append(CSConstants.DUMMY_CS_NAME_ENT_FILE);
+        if (!isNullOrEmpty(contentSpec.getEntities())) {
+            xmlEntities.append(contentSpec.getEntities());
+        }
+
+        // Validate the XML content against the dtd
+        final XMLValidator validator = new XMLValidator(false);
+        if (!validator.validate(validationMethod, fixedWrappedElement, docbookFileName, docbookSchema, xmlEntities.toString(),
+                parentElement)) {
+            final String line = keyValueNode.getText();
+            log.error(String.format(ProcessorConstants.ERROR_INVALID_METADATA_MSG, keyValueNode.getKey(), validator.getErrorText(), line));
+
+            return false;
+        }
+
+        return true;
     }
 
     /**

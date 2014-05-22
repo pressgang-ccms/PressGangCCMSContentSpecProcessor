@@ -1,7 +1,9 @@
 package org.jboss.pressgang.ccms.contentspec.processor.constants;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
@@ -160,9 +162,9 @@ public class ProcessorConstants {
             "cannot be defined." + CSLINE_MSG;
     public static final String ERROR_INVALID_DEFAULT_PUBLICAN_CFG_MSG = INVALID_CS + " Invalid " + CommonConstants
             .CS_DEFAULT_PUBLICAN_CFG_TITLE + " name. The \"%s\" configuration doesn't exist in the Content Specification.";
-    public static final String ERROR_INVALID_ABSTRACT_MSG = INVALID_CS + " The abstract is not valid XML. Error Message:" +
+    public static final String ERROR_INVALID_METADATA_MSG = INVALID_CS + " The %s is not valid XML. Error Message:" +
             " %s" + CSLINE_MSG;
-    public static final String ERROR_INVALID_ABSTRACT_NO_ERROR_MSG = INVALID_CS + " The abstract is not valid XML." + CSLINE_MSG;
+    public static final String ERROR_INVALID_METADATA_NO_ERROR_MSG = INVALID_CS + " The %s is not valid XML." + CSLINE_MSG;
 
     // Article based level errors
     public static final String ERROR_ARTICLE_CHAPTER_MSG = LINE + INVALID_CS + " Chapters can't be used in Articles." + CSLINE_MSG;
@@ -449,4 +451,14 @@ public class ProcessorConstants {
             "BUILD_JIRA_PID",
             "BUILD_JIRA_CID",
             "BUILD_JIRA_VID");
+
+    public static final Map<String, String> METADATA_DOCBOOK_ELEMENTS = new HashMap<String,
+                String>() {
+        {
+            put(CommonConstants.CS_TITLE_TITLE, "title");
+            put(CommonConstants.CS_PRODUCT_TITLE, "productname");
+            put(CommonConstants.CS_SUBTITLE_TITLE, "subtitle");
+            put(CommonConstants.CS_COPYRIGHT_HOLDER_TITLE, "para");
+        }
+    };
 }

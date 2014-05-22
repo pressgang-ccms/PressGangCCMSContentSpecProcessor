@@ -27,6 +27,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import net.sf.ipsedixit.annotation.Arbitrary;
+import net.sf.ipsedixit.annotation.ArbitraryString;
+import net.sf.ipsedixit.core.StringType;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
 import org.jboss.pressgang.ccms.contentspec.Level;
@@ -51,6 +53,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 public class ContentSpecValidatorPreValidateContentSpecTest extends ContentSpecValidatorTest {
     @Arbitrary Integer randomInt;
     @Arbitrary String randomString;
+    @ArbitraryString(type = StringType.ALPHANUMERIC) String randomAlphaString;
     @Mock StringConstantProvider stringConstantProvider;
     @Mock StringConstantWrapper stringConstantWrapper;
 
@@ -65,7 +68,7 @@ public class ContentSpecValidatorPreValidateContentSpecTest extends ContentSpecV
     @Test
     public void shouldPreValidateValidContentSpec() {
         // Given a valid content spec
-        ContentSpec contentSpec = make(a(ContentSpec, with(subtitle, randomString), with(description, "Some Description")));
+        ContentSpec contentSpec = make(a(ContentSpec, with(subtitle, randomAlphaString), with(description, "Some Description")));
         // with a level and spec topic
         addLevelAndTopicToContentSpec(contentSpec);
 
@@ -449,7 +452,7 @@ public class ContentSpecValidatorPreValidateContentSpecTest extends ContentSpecV
         assertFalse(result);
         // and an error should have been printed
         assertThat(logger.getLogMessages().toString(), containsString(
-                "Invalid Content Specification! The abstract is not valid XML. Error Message: "));
+                "Invalid Content Specification! The Abstract is not valid XML. Error Message: "));
     }
 
     @Test
@@ -598,6 +601,24 @@ public class ContentSpecValidatorPreValidateContentSpecTest extends ContentSpecV
         assertThat(logger.getLogMessages().toString(), not(containsString(
                 "The \"mainfile\" attribute has been defined in publican.cfg, however it cannot be used in PressGang and as such " +
                         "will be removed when building.")));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorWhenMetadataHasInvalidXML() {
+        // Given a Content Spec with a metadata node that has a null key
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setTitle("Some <phrase> title");
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the conflicting conditions
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be true
+        assertFalse(result);
+        // and an error should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString("The Title is not valid XML. Error Message: The element type " +
+                "\"phrase\" must be terminated by the matching end-tag \"</phrase>\""));
     }
 
     private void addLevelAndTopicToContentSpec(final ContentSpec contentSpec) {

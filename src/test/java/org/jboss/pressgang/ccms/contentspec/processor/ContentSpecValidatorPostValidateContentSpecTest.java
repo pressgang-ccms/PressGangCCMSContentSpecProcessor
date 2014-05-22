@@ -400,7 +400,25 @@ public class ContentSpecValidatorPostValidateContentSpecTest extends ContentSpec
         // Then the result should be a failure
         assertThat(result, is(false));
         // And an error message should be output
-        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! The abstract is not valid XML. " +
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! The Abstract is not valid XML. " +
                 "Error Message: Element type \"blah\" must be declared."));
+    }
+
+    @Test
+    public void shouldFailAndLogErrorIfCopyrightHolderInvalidEntity() {
+        // Given an invalid content spec because of an invalid feedback
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setId(null);
+        // and an invalid copyright holder
+        contentSpec.setCopyrightHolder("Blah &UNKNOWN_ENTITY; blah");
+
+        // When the spec is postvalidated
+        boolean result = validator.postValidateContentSpec(contentSpec, username);
+
+        // Then the result should be a failure
+        assertThat(result, is(false));
+        // And an error message should be output
+        assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! The Copyright Holder is not valid " +
+                "XML. Error Message: The entity \"UNKNOWN_ENTITY\" was referenced, but not declared."));
     }
 }
