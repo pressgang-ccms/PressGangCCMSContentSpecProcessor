@@ -3,6 +3,7 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 import static com.natpryce.makeiteasy.MakeItEasy.a;
 import static com.natpryce.makeiteasy.MakeItEasy.make;
 import static com.natpryce.makeiteasy.MakeItEasy.with;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker.id;
@@ -560,6 +561,43 @@ public class ContentSpecValidatorPreValidateContentSpecTest extends ContentSpecV
         assertFalse(result);
         // and an error should have been printed
         assertThat(logger.getLogMessages().toString(), containsString("Invalid Content Specification! Value must be specified for metadata."));
+    }
+
+    @Test
+    public void shouldLogWarningWhenPublicanCfgContainsMainfile() {
+        // Given a Content Spec with a metadata node that has a null key
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setPublicanCfg("\n  mainfile: blah\n");
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the conflicting conditions
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be true
+        assertTrue(result);
+        // and an error should have been printed
+        assertThat(logger.getLogMessages().toString(), containsString("The \"mainfile\" attribute has been defined in publican.cfg, " +
+                "however it cannot be used in PressGang and as such will be removed when building."));
+    }
+
+    @Test
+    public void shouldNotLogWarningWhenPublicanCfgContainsCommentedMainfile() {
+        // Given a Content Spec with a metadata node that has a null key
+        ContentSpec contentSpec = make(a(ContentSpecMaker.ContentSpec));
+        contentSpec.setPublicanCfg("\n#  mainfile: blah\n");
+        // with a level and spec topic
+        addLevelAndTopicToContentSpec(contentSpec);
+
+        // When validating the conflicting conditions
+        boolean result = validator.preValidateContentSpec(contentSpec);
+
+        // Then the result should be true
+        assertTrue(result);
+        // and an error should have been printed
+        assertThat(logger.getLogMessages().toString(), not(containsString(
+                "The \"mainfile\" attribute has been defined in publican.cfg, however it cannot be used in PressGang and as such " +
+                        "will be removed when building.")));
     }
 
     private void addLevelAndTopicToContentSpec(final ContentSpec contentSpec) {

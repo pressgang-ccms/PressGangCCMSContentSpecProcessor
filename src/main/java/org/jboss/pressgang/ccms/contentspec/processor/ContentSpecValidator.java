@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.j2bugzilla.base.ConnectionException;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
@@ -261,7 +262,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // BZ#1091776 Check that mainfile isn't used
-        if (!isNullOrEmpty(contentSpec.getPublicanCfg()) && contentSpec.getPublicanCfg().contains("mainfile:")) {
+        if (doesPublicanCfgsContainValue(contentSpec, "mainfile")) {
             log.warn(ProcessorConstants.WARN_MAINFILE_WILL_BE_REMOVED_MSG);
         }
 
@@ -384,6 +385,28 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         return valid;
+    }
+
+    /**
+     * Check if the default or additional publican cfg files have a specified value
+     *
+     * @param contentSpec The content spec to check from.
+     * @param value       The value to check for. eg: mainfile
+     * @return True if the value exists in any publican.cfg
+     */
+    private boolean doesPublicanCfgsContainValue(final ContentSpec contentSpec, final String value) {
+        final Pattern pattern = Pattern.compile("^(.*\\n)?( |\\t)*" + value + ":.*", Pattern.DOTALL);
+        if (!isNullOrEmpty(contentSpec.getPublicanCfg()) && pattern.matcher(contentSpec.getPublicanCfg()).matches()) {
+            return true;
+        } else if (!contentSpec.getAllAdditionalPublicanCfgs().isEmpty()) {
+            for (final Entry<String, String> entry : contentSpec.getAllAdditionalPublicanCfgs().entrySet()) {
+                if (!isNullOrEmpty(entry.getValue()) && pattern.matcher(entry.getValue()).matches()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
