@@ -271,10 +271,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 contentSpec.getBookType(), false, contentSpec)) {
             valid = false;
         }
-        if (contentSpec.getFeedback() != null && !preValidateTopic(contentSpec.getFeedback(), specTopicMap, contentSpec.getBookType(),
-                false, contentSpec)) {
-            valid = false;
-        }
         if (contentSpec.getLegalNotice() != null && !preValidateTopic(contentSpec.getLegalNotice(), specTopicMap, contentSpec.getBookType(),
                 false, contentSpec)) {
             valid = false;
@@ -347,6 +343,18 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     }
                 }
             }
+        }
+
+        // Content that should be checked when using the default preface
+        if (contentSpec.getUseDefaultPreface()) {
+            if (contentSpec.getFeedback() != null && !preValidateTopic(contentSpec.getFeedback(), specTopicMap, contentSpec.getBookType(),
+                    false, contentSpec)) {
+                valid = false;
+            }
+        } else if (contentSpec.getFeedback() != null) {
+            // Feedback cannot be used when the default preface is off, so log an error.
+            log.error(format(ProcessorConstants.ERROR_FEEDBACK_USED_WITHOUT_DEFAULT_PREFACE_MSG, contentSpec.getFeedback().getText()));
+            valid = false;
         }
 
         // Validate the custom entities

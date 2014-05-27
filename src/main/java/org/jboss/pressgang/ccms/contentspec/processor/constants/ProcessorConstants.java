@@ -165,6 +165,8 @@ public class ProcessorConstants {
     public static final String ERROR_INVALID_METADATA_MSG = INVALID_CS + " The %s is not valid XML. Error Message:" +
             " %s" + CSLINE_MSG;
     public static final String ERROR_INVALID_METADATA_NO_ERROR_MSG = INVALID_CS + " The %s is not valid XML." + CSLINE_MSG;
+    public static final String ERROR_FEEDBACK_USED_WITHOUT_DEFAULT_PREFACE_MSG = INVALID_CS + " A " + CommonConstants.CS_FEEDBACK_TITLE +
+            " topic cannot be used when the default Preface is turned off." + CSLINE_MSG;
 
     // Article based level errors
     public static final String ERROR_ARTICLE_CHAPTER_MSG = LINE + INVALID_CS + " Chapters can't be used in Articles." + CSLINE_MSG;
