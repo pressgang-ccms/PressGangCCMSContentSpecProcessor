@@ -1323,21 +1323,24 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 final Level level = (Level) childNode;
 
                 // Merge the info node if one exists
+                CSInfoNodeWrapper infoEntity = foundNodeEntity.getInfoTopicNode();
                 if (level.getInfoTopic() != null) {
                     final InfoTopic infoTopic = level.getInfoTopic();
-                    CSInfoNodeWrapper infoEntity = foundNodeEntity.getInfoTopicNode();
                     boolean matches = doesInfoTopicMatch(infoTopic, infoEntity, foundNodeEntity);
-
                     if (!matches) {
-                        infoEntity = nodeInfoProvider.newCSNodeInfo(foundNodeEntity);
-                        foundNodeEntity.setInfoTopicNode(infoEntity);
-                        changed = true;
-                    }
+                        // Create a new entity if needed
+                        if (infoEntity == null) {
+                            infoEntity = nodeInfoProvider.newCSNodeInfo(foundNodeEntity);
+                            foundNodeEntity.setInfoTopicNode(infoEntity);
+                            changed = true;
+                        }
 
-                    if (mergeLevelInfoTopic(infoTopic, infoEntity)) {
-                        changed = true;
+                        // Merge the changes
+                        if (mergeLevelInfoTopic(infoTopic, infoEntity)) {
+                            changed = true;
+                        }
                     }
-                } else if (foundNodeEntity.getInfoTopicNode() != null) {
+                } else if (infoEntity != null) {
                     foundNodeEntity.setInfoTopicNode(null);
                     changed = true;
                 }
