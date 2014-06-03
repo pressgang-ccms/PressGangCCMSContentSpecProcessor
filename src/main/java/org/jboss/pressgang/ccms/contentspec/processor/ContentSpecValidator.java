@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.google.code.regexp.Matcher;
 import com.google.code.regexp.Pattern;
 import com.j2bugzilla.base.ConnectionException;
+import org.jboss.pressgang.ccms.contentspec.CommonContent;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.File;
 import org.jboss.pressgang.ccms.contentspec.FileList;
@@ -970,7 +971,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             log.error(String.format(ProcessorConstants.ERROR_INVALID_RELATIONSHIP_MSG, node.getLineNumber(), relatedId,
                     lineNumbers.toString(), node.getText()));
             return false;
-        } else if (relatedSpecTopics.get(0) instanceof InfoTopic) {
+        } else if (relatedSpecTopics.get(0).getTopicType() == TopicType.INFO) {
             // Make sure we aren't trying to relate to an info topic
             log.error(String.format(ProcessorConstants.ERROR_RELATED_TOPIC_IS_INFO_MSG, node.getLineNumber(), relatedId, node.getText()));
             return false;
@@ -1105,6 +1106,10 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         for (final Node childNode : level.getChildNodes()) {
             if (childNode instanceof Level) {
                 if (!preValidateLevel((Level) childNode, specTopics, infoTopics, bookType, contentSpec)) {
+                    valid = false;
+                }
+            } else if (childNode instanceof CommonContent) {
+                if (!preValidateCommonContent((CommonContent) childNode, bookType)) {
                     valid = false;
                 }
             } else if (childNode instanceof SpecTopic) {
@@ -1620,6 +1625,63 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // Check for conflicting conditions
         checkForConflictingCondition(infoTopic, contentSpec);
+
+        return valid;
+    }
+
+    /**
+     * Validates a Common Content node for formatting issues.
+     *
+     * @param commonContent The common content to be validated.
+     * @param bookType      The type of book the common content is to be validated against.
+     * @return True if the common content is valid otherwise false.
+     */
+    protected boolean preValidateCommonContent(final CommonContent commonContent, final BookType bookType) {
+        boolean valid = true;
+
+        // Check if the app should be shutdown
+        if (isShuttingDown.get()) {
+            shutdown.set(true);
+            return false;
+        }
+
+        // Check that the title exists
+        if (isNullOrEmpty(commonContent.getTitle())) {
+            log.error(String.format(ProcessorConstants.ERROR_COMMON_CONTENT_NO_TITLE_MSG, commonContent.getLineNumber(), commonContent.getText()));
+            valid = false;
+        }
+
+        if ((bookType == BookType.BOOK || bookType == BookType.BOOK_DRAFT)) {
+            final Level parent = commonContent.getParent();
+            // Check that the common content is inside a chapter/section/process/appendix/part/preface
+            final LevelType parentLevelType = parent.getLevelType();
+            if (parent == null || parentLevelType == LevelType.BASE) {
+                log.error(format(ProcessorConstants.ERROR_COMMON_CONTENT_OUTSIDE_CHAPTER_MSG, commonContent.getLineNumber(),
+                        commonContent.getText()));
+                valid = false;
+            }
+
+            // Check that there are no levels in the parent part (ie the common content is in the intro)
+            if (parent != null && parentLevelType == LevelType.PART) {
+                final List<Node> parentChildren = parent.getChildNodes();
+                final int index = parentChildren.indexOf(commonContent);
+
+                for (int i = 0; i < index; i++) {
+                    final Node node = parentChildren.get(i);
+                    if (node instanceof Level && ((Level) node).getLevelType() != LevelType.INITIAL_CONTENT) {
+                        log.error(String.format(ProcessorConstants.ERROR_COMMON_CONTENT_NOT_IN_PART_INTRO_MSG,
+                                commonContent.getLineNumber(), commonContent.getText()));
+                        valid = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Check for known common content and warn the user if it's not known
+        if (!ProcessorConstants.KNOWN_COMMON_CONTENT.contains(commonContent.getFixedTitle())) {
+            log.warn(format(ProcessorConstants.WARN_UNRECOGNISED_COMMON_CONTENT_MSG, commonContent.getLineNumber(), commonContent.getText()));
+        }
 
         return valid;
     }

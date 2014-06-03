@@ -20,6 +20,7 @@ public class ContentSpecValidatorPreValidateTopicTest extends ContentSpecValidat
     @Arbitrary Integer id;
     @Arbitrary Integer revision;
     @Arbitrary Integer revision2;
+    @Arbitrary Integer lineNumber;
 
     @Test
     public void shouldFailAndLogErrorWhenSameTopicWithDifferentRevisions() {
@@ -29,8 +30,8 @@ public class ContentSpecValidatorPreValidateTopicTest extends ContentSpecValidat
         Level childLevel = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.APPENDIX)));
         contentSpec.getBaseLevel().appendChild(childLevel);
         // and two topics with different ids
-        childLevel.appendChild(make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, id.toString()), with(SpecTopicMaker.revision,
-                revision))));
+        childLevel.appendChild(
+                make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, id.toString()), with(SpecTopicMaker.revision, revision))));
         childLevel.appendChild(
                 make(a(SpecTopicMaker.SpecTopic, with(SpecTopicMaker.id, id.toString()), with(SpecTopicMaker.revision, revision2))));
         childLevel.appendChild(

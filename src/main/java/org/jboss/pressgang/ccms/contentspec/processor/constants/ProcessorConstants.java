@@ -55,6 +55,7 @@ public class ProcessorConstants {
     public static final String LINE = "Line %d: ";
     public static final String INVALID_CS = "Invalid Content Specification!";
     public static final String INVALID_TOPIC = "Invalid Topic!";
+    public static final String INVALID_COMMON_CONTENT = "Invalid Common Content!";
     public static final String INVALID_RELATIONSHIP = "Invalid Relationship!";
     public static final String AMBIGUOUS_RELATIONSHIP = "Ambiguous Relationship!";
     public static final String INVALID_FILE = "Invalid Additional File!";
@@ -250,7 +251,7 @@ public class ProcessorConstants {
     public static final String ERROR_TOPIC_TITLES_NONMATCH_MSG = LINE + INVALID_TOPIC + " Existing topic title doesn't match." +
             CSLINE_MSG + CSLINE_MSG;
     public static final String ERROR_TOPIC_TYPE_NONMATCH_MSG = LINE + INVALID_TOPIC + " Existing topic type doesn't match." + CSLINE_MSG;
-    public static final String ERROR_TOPIC_OUTSIDE_CHAPTER_MSG = LINE + INVALID_TOPIC + " A topic must be inside of another element, " +
+    public static final String ERROR_TOPIC_OUTSIDE_CHAPTER_MSG = LINE + INVALID_TOPIC + " A topic must be inside of another container, " +
             "it can't be at the base level." + CSLINE_MSG;
     public static final String ERROR_TOPIC_DUPLICATE_CLONES_MSG = LINE + INVALID_TOPIC + " A Duplicate clone topic can only be used when " +
             "the clone is exclusively used inside a Content Specification." + CSLINE_MSG;
@@ -286,8 +287,8 @@ public class ProcessorConstants {
             "translated topics." + CSLINE_MSG;
     public static final String ERROR_TOPIC_INVALID_REVISION_FORMAT = LINE + INVALID_TOPIC + " Revision attribute must be a valid number." +
             CSLINE_MSG;
-    public static final String ERROR_TOPIC_NOT_IN_PART_INTRO_MSG = LINE + INVALID_TOPIC + " A topic must be before any chapters inside of" +
-            " a part." + CSLINE_MSG;
+    public static final String ERROR_TOPIC_NOT_IN_PART_INTRO_MSG = LINE + INVALID_TOPIC + " A topic must be before any containers inside " +
+            "of a part." + CSLINE_MSG;
     public static final String ERROR_TOPIC_HAS_RELATIONSHIPS_MSG = LINE + INVALID_TOPIC + " The Topic has relationships, " +
             "but isn't allowed any." + CSLINE_MSG;
     public static final String ERROR_INVALID_TYPE_MSG = LINE + INVALID_TOPIC + " Invalid Type." + CSLINE_MSG;
@@ -347,6 +348,19 @@ public class ProcessorConstants {
             "and as such the condition defined against the topic or container will be ignored." + CSLINE_MSG;
     public static final String WARN_MAINFILE_WILL_BE_REMOVED_MSG = "The \"mainfile\" attribute has been defined in publican.cfg, " +
             "however it cannot be used in PressGang and as such will be removed when building.";
+
+    // Common Content
+    public static final String WARN_IGNORE_COMMON_CONTENT_INFO_MSG = LINE + "All types, descriptions, " +
+            "source urls and writers will be ignored for Common Content." + CSLINE_MSG;
+    public static final String WARN_UNRECOGNISED_COMMON_CONTENT_MSG = LINE + "The Common Content specified is not a recognised file. " +
+            "Please check to ensure that the specified title is correct, as this may lead to build errors." + CSLINE_MSG;
+    public static final String ERROR_COMMON_CONTENT_NO_TITLE_MSG = LINE + INVALID_COMMON_CONTENT + " No Title." + CSLINE_MSG;
+    public static final String ERROR_COMMON_CONTENT_CONTAINS_ILLEGAL_CONTENT = LINE + "Common Content cannot contain relationships or be " +
+            "a target." + CSLINE_MSG;
+    public static final String ERROR_COMMON_CONTENT_OUTSIDE_CHAPTER_MSG = LINE + INVALID_COMMON_CONTENT + " Common Content must be inside" +
+            " of a container, it can't be at the base level." + CSLINE_MSG;
+    public static final String ERROR_COMMON_CONTENT_NOT_IN_PART_INTRO_MSG = LINE + INVALID_COMMON_CONTENT + " Common Content must be " +
+            "before any containers inside of a part." + CSLINE_MSG;
 
     // Process Errors
     public static final String ERROR_PROCESS_NONEXIST_MSG = LINE + INVALID_PROCESS + " Topic %s doesn't exist in the database." +
@@ -442,7 +456,8 @@ public class ProcessorConstants {
             CommonConstants.CS_FILE_SHORT_TITLE, CommonConstants.CS_JIRA_PROJECT_TITLE, CommonConstants.CS_JIRA_COMPONENT_TITLE,
             CommonConstants.CS_JIRA_VERSION_TITLE, CommonConstants.CS_JIRA_LABELS_TITLE, CommonConstants.CS_JIRA_SERVER_TITLE,
             CommonConstants.CS_SPACES_TITLE, CommonConstants.CS_ENTITIES_TITLE, CommonConstants.CS_DEFAULT_PUBLICAN_CFG_TITLE,
-            CommonConstants.CS_INDEX_TITLE, CommonConstants.CS_LOCALE_TITLE, CSConstants.DEBUG_TITLE, CSConstants.OUTPUT_STYLE_TITLE);
+            CommonConstants.CS_INDEX_TITLE, CommonConstants.CS_LOCALE_TITLE, CSConstants.DEBUG_TITLE, CSConstants.OUTPUT_STYLE_TITLE,
+            CommonConstants.CS_DEFAULT_PREFACE);
 
     public static final List<String> RESERVED_ENTITIES = Arrays.asList("BUILD_NAME",
             "BUILD_DATE",
@@ -463,4 +478,14 @@ public class ProcessorConstants {
             put(CommonConstants.CS_COPYRIGHT_HOLDER_TITLE, "para");
         }
     };
+
+    public static final List<String> KNOWN_COMMON_CONTENT = Arrays.asList("Conventions.xml",
+            "JBoss_Feedback.xml",
+            "Feedback.xml",
+            "Program_Listing.xml",
+            "Legal_Notice.xml",
+            "Overview.xml",
+            "Ref_Cloud_Compare_Deployment.xml",
+            "Concepts_Cloud_ExpressFeatures.xml",
+            "Concepts_Cloud_FlexFeatures.xml");
 }

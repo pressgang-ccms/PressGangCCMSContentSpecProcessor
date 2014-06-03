@@ -13,8 +13,10 @@ import static org.junit.Assert.fail;
 import net.sf.ipsedixit.annotation.Arbitrary;
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
+import org.hamcrest.core.Is;
 import org.jboss.pressgang.ccms.contentspec.Chapter;
 import org.jboss.pressgang.ccms.contentspec.Comment;
+import org.jboss.pressgang.ccms.contentspec.CommonContent;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.InitialContent;
 import org.jboss.pressgang.ccms.contentspec.KeyValueNode;
@@ -403,5 +405,29 @@ public class ContentSpecParserParseLineTest extends ContentSpecParserTest {
         assertThat(contentSpec.getTags().size(), is(1));
         assertThat(contentSpec.getTags().get(0), is(title));
         assertThat(contentSpec.getNodes().size(), is(0));
+    }
+
+    @Test
+    public void shouldAddCommonContentToContentSpec() {
+        // Given a string that represents a common content
+        String commonContentString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title), with(TopicStringMaker.id, "Common Content")));
+
+        // When processing a line
+        Boolean result = null;
+        try {
+            result = parser.parseLine(parserData, commonContentString, lineNumber);
+        } catch (IndentationException e) {
+            fail("Indentation Exception should not have been thrown.");
+        }
+
+        // Then check that the content spec has the topic assigned
+        final ContentSpec contentSpec = parserData.getContentSpec();
+        assertThat(contentSpec.getBaseLevel().getChildNodes().size(), is(1));
+        final CommonContent commonContent = (CommonContent) contentSpec.getBaseLevel().getChildNodes().get(0);
+        assertThat(commonContent.getTitle(), Is.is(title));
+        assertThat(commonContent.getUniqueId(), Is.is("L" + lineNumber + "-CommonContent"));
+        // and the line processed successfully
+        assertTrue(result);
     }
 }

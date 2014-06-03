@@ -21,6 +21,7 @@ import com.google.code.regexp.Matcher;
 import com.google.code.regexp.Pattern;
 import org.jboss.pressgang.ccms.contentspec.Appendix;
 import org.jboss.pressgang.ccms.contentspec.Chapter;
+import org.jboss.pressgang.ccms.contentspec.CommonContent;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.File;
 import org.jboss.pressgang.ccms.contentspec.FileList;
@@ -418,6 +419,9 @@ public class ContentSpecParser {
             try {
                 if (isMetaDataLine(parserData, trimmedLine)) {
                     parseMetaDataLine(parserData, line, lineNumber);
+                } else if (isCommonContentLine(trimmedLine)) {
+                    final CommonContent commonContent = parseCommonContentLine(parserData, line, lineNumber);
+                    parserData.getCurrentLevel().appendChild(commonContent);
                 } else if (isLevelInitialContentLine(trimmedLine)) {
                     final Level initialContent = parseLevelLine(parserData, trimmedLine, lineNumber);
                     parserData.getCurrentLevel().appendChild(initialContent);
@@ -492,6 +496,17 @@ public class ContentSpecParser {
      */
     protected boolean isMetaDataLine(ParserData parserData, String line) {
         return parserData.getCurrentLevel().getLevelType() == LevelType.BASE && line.trim().matches("^\\w[\\w\\.\\s-]+=.*");
+    }
+
+    /**
+     * Checks to see if a line is represents a Content Specifications Common Content node.
+     *
+     *
+     * @param line       The line to be checked.
+     * @return True if the line is a common content node, otherwise false.
+     */
+    protected boolean isCommonContentLine(String line) {
+        return line.trim().matches("^.*\\[\\s*(?i)Common\\s+Content\\s*\\].*$");
     }
 
     /**
@@ -911,6 +926,37 @@ public class ContentSpecParser {
     }
 
     /**
+     * Processes the input to create a new common content node.
+     *
+     * @param parserData
+     * @param line       The line of input to be processed
+     * @return A common contents object initialised with the data from the input line.
+     * @throws ParsingException Thrown if the line can't be parsed as a Common Content node, due to incorrect syntax.
+     */
+    protected CommonContent parseCommonContentLine(final ParserData parserData, final String line, int lineNumber) throws ParsingException {
+        // Read in the variables inside of the brackets
+        final HashMap<ParserType, String[]> variableMap = getLineVariables(parserData, line, lineNumber, '[', ']', ',', false);
+        if (!variableMap.containsKey(ParserType.NONE)) {
+            throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TOPIC_FORMAT_MSG, lineNumber, line));
+        }
+
+        // Get the title
+        final String title = ProcessorUtilities.replaceEscapeChars(getTitle(line, '['));
+
+        // Create the common content
+        final CommonContent commonContent = new CommonContent(title, lineNumber, line);
+        commonContent.setUniqueId("L" + lineNumber + "-CommonContent");
+
+        // Throw an error for relationships
+        variableMap.remove(ParserType.NONE);
+        if (variableMap.size() > 0) {
+            throw new ParsingException(format(ProcessorConstants.ERROR_COMMON_CONTENT_CONTAINS_ILLEGAL_CONTENT, lineNumber, line));
+        }
+
+        return commonContent;
+    }
+
+    /**
      * Processes the input to create a new topic
      *
      * @param parserData
@@ -919,17 +965,17 @@ public class ContentSpecParser {
      * @throws ParsingException Thrown if the line can't be parsed as a Topic, due to incorrect syntax.
      */
     protected SpecTopic parseTopic(final ParserData parserData, final String line, int lineNumber) throws ParsingException {
-        final SpecTopic tempTopic = new SpecTopic(null, lineNumber, line, null);
-
         // Read in the variables inside of the brackets
         final HashMap<ParserType, String[]> variableMap = getLineVariables(parserData, line, lineNumber, '[', ']', ',', false);
         if (!variableMap.containsKey(ParserType.NONE)) {
             throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_TOPIC_FORMAT_MSG, lineNumber, line));
         }
 
-        // Set the title
+        // Get the title
         final String title = ProcessorUtilities.replaceEscapeChars(getTitle(line, '['));
-        tempTopic.setTitle(title);
+
+        // Create the spec topic
+        final SpecTopic tempTopic = new SpecTopic(title, lineNumber, line, null);
 
         // Add in the topic attributes
         addTopicAttributes(tempTopic, parserData, variableMap.get(ParserType.NONE), lineNumber, line);
@@ -1011,14 +1057,10 @@ public class ContentSpecParser {
          * using the line number and topic ID.
          */
         String uniqueId = variables[0];
-        if (CSConstants.NEW_TOPIC_ID_PATTERN.matcher(variables[0]).matches() && !variables[0].equals("N") &&
-                !parserData.getSpecTopics().containsKey(variables[0])) {
-            // Do Nothing to the unique id
-        } else if (variables[0].equals("N") || variables[0].matches(CSConstants.DUPLICATE_TOPIC_ID_REGEX) ||
-                variables[0].matches(CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX) || variables[0].matches(
-                CSConstants.CLONED_TOPIC_ID_REGEX) || variables[0].matches(CSConstants.EXISTING_TOPIC_ID_REGEX)) {
+        if (variables[0].equals("N") || topic.isTopicADuplicateTopic() || topic.isTopicAClonedDuplicateTopic()
+                || topic.isTopicAClonedTopic() || topic.isTopicAnExistingTopic()) {
             uniqueId = "L" + Integer.toString(lineNumber) + "-" + variables[0];
-        } else if (variables[0].startsWith("N") && CSConstants.NEW_TOPIC_ID_PATTERN.matcher(variables[0]).matches()) {
+        } else if (CSConstants.NEW_TOPIC_ID_PATTERN.matcher(variables[0]).matches() && parserData.getSpecTopics().containsKey(variables[0])) {
             throw new ParsingException(format(ProcessorConstants.ERROR_DUPLICATE_ID_MSG, lineNumber, variables[0], line));
         }
         topic.setUniqueId(uniqueId);
@@ -1029,8 +1071,7 @@ public class ContentSpecParser {
             addOptions(parserData, topic, variables, varStartPos, line, lineNumber);
         } else if (variables.length > varStartPos) {
             // Display warnings if options are specified for duplicated topics
-            if (variables[0].matches(CSConstants.DUPLICATE_TOPIC_ID_REGEX) || variables[0].matches(
-                    CSConstants.CLONED_DUPLICATE_TOPIC_ID_REGEX)) {
+            if (topic.isTopicADuplicateTopic() || topic.isTopicAClonedDuplicateTopic()) {
                 log.warn(format(ProcessorConstants.WARN_IGNORE_DUP_INFO_MSG, lineNumber, line));
             }
         }

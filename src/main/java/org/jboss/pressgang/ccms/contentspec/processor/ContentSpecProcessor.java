@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.pressgang.ccms.contentspec.Comment;
+import org.jboss.pressgang.ccms.contentspec.CommonContent;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.File;
 import org.jboss.pressgang.ccms.contentspec.FileList;
@@ -1256,6 +1257,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 } else if (childNode instanceof Comment) {
                     mergeComment((Comment) childNode, newCSNodeEntity);
                     newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_COMMENT);
+                } else if (childNode instanceof CommonContent) {
+                    mergeCommonContent((CommonContent) childNode, newCSNodeEntity);
+                    newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_COMMON_CONTENT);
                 } else if (childNode instanceof File) {
                     mergeFile((File) childNode, newCSNodeEntity);
                     newCSNodeEntity.setNodeType(CommonConstants.CS_NODE_FILE);
@@ -1299,6 +1303,10 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                     }
                 } else if (childNode instanceof Comment) {
                     if (mergeComment((Comment) childNode, foundNodeEntity)) {
+                        changed = true;
+                    }
+                } else if (childNode instanceof CommonContent) {
+                    if (mergeCommonContent((CommonContent) childNode, foundNodeEntity)) {
                         changed = true;
                     }
                 } else if (childNode instanceof File) {
@@ -1515,6 +1523,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 } else {
                     if (childNode instanceof SpecTopic && doesTopicMatch((SpecTopic) childNode, nodeEntity, foundNodeEntity != null)) {
                         foundNodeEntity = nodeEntity;
+                    } else if (childNode instanceof CommonContent && doesCommonContentMatch((CommonContent) childNode, nodeEntity,
+                            foundNodeEntity != null)) {
+                            foundNodeEntity = nodeEntity;
                     } else if (childNode instanceof KeyValueNode && doesMetaDataMatch((KeyValueNode<?>) childNode, nodeEntity)) {
                         foundNodeEntity = nodeEntity;
                     } else if (childNode instanceof File && doesFileMatch((File) childNode, nodeEntity)) {
@@ -1770,6 +1781,20 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     protected boolean mergeComment(final Comment comment, final CSNodeWrapper commentEntity) {
         if (commentEntity.getTitle() == null || !commentEntity.getTitle().equals(comment.getText())) {
             commentEntity.setTitle(comment.getText());
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param commonContent
+     * @param commentEntity
+     * @return
+     */
+    protected boolean mergeCommonContent(final CommonContent commonContent, final CSNodeWrapper commentEntity) {
+        if (commentEntity.getTitle() == null || !commentEntity.getTitle().equals(commonContent.getTitle())) {
+            commentEntity.setTitle(commonContent.getTitle());
             return true;
         }
 
@@ -2111,6 +2136,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
     }
 
+
+
     /**
      * Checks to see if a ContentSpec topic matches a Content Spec Entity file.
      *
@@ -2210,6 +2237,33 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                 } else {
                     return false;
                 }
+            }
+
+            return true;
+        }
+    }
+
+    /**
+     * Checks to see if a ContentSpec Common Content matches a Content Spec Entity Common Content.
+     *
+     * @param commonContent The ContentSpec common content object.
+     * @param node          The Content Spec Entity common content.
+     * @param matchContent  If the contents of the common content have to match to a reasonable extent.
+     * @return True if the common content is determined to match otherwise false.
+     */
+    protected boolean doesCommonContentMatch(final CommonContent commonContent, final CSNodeWrapper node, boolean matchContent) {
+        if (!node.getNodeType().equals(CommonConstants.CS_NODE_COMMON_CONTENT)) return false;
+
+        // If the unique id is not from the parser, in which case it will start with a number than use the unique id to compare
+        if (commonContent.getUniqueId() != null && commonContent.getUniqueId().matches("^\\d.*")) {
+            return commonContent.getUniqueId().equals(Integer.toString(node.getId()));
+        } else if (matchContent) {
+            return StringUtilities.similarDamerauLevenshtein(commonContent.getTitle(), node.getTitle()) >= ProcessorConstants
+                    .MIN_MATCH_SIMILARITY;
+        } else {
+            // Check the parent has the same name
+            if (commonContent.getParent() != null) {
+                return commonContent.getParent().getTitle().equals(node.getParent().getTitle());
             }
 
             return true;
