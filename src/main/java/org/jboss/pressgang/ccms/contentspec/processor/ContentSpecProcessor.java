@@ -168,30 +168,28 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // Check that the content spec is valid and if it is then continue to processing the content spec.
-        if (doValidationPass(processorData)) {
-            log.info(ProcessorConstants.INFO_VALID_CS_MSG);
-
-            // If we aren't validating then save the content specification
-            if (!processingOptions.isValidating()) {
-                // Check if the app should be shutdown
-                if (isShuttingDown.get()) {
-                    shutdown.set(true);
-                    return false;
-                }
-
-                LOG.info("Saving the Content Specification to the server...");
-                if (saveContentSpec(providerFactory, processorData, editing)) {
-                    log.info(ProcessorConstants.INFO_SUCCESSFUL_SAVE_MSG);
-                } else {
-                    log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
-                    return false;
-                }
-            }
-
-            return true;
-        } else {
+        if (processingOptions.isValidate() && !doValidationPass(processorData)) {
             return false;
         }
+
+        // Check if the app should be shutdown
+        if (isShuttingDown.get()) {
+            shutdown.set(true);
+            return false;
+        }
+
+        // If we aren't validating then save the content specification
+        if (!processingOptions.isValidateOnly()) {
+            LOG.info("Saving the Content Specification to the server...");
+            if (saveContentSpec(providerFactory, processorData, editing)) {
+                log.info(ProcessorConstants.INFO_SUCCESSFUL_SAVE_MSG);
+            } else {
+                log.error(ProcessorConstants.ERROR_PROCESSING_ERROR_MSG);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -229,6 +227,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             log.error(ProcessorConstants.ERROR_INVALID_CS_MSG);
             return false;
         }
+
+        // Log that the spec is valid
+        log.info(ProcessorConstants.INFO_VALID_CS_MSG);
 
         return true;
     }

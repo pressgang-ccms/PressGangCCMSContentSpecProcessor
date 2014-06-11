@@ -2,7 +2,7 @@ package org.jboss.pressgang.ccms.contentspec.processor.structures;
 
 public class ProcessingOptions {
 
-    private boolean validate = false;
+    private boolean validateOnly = false;
     private boolean ignoreChecksum = false;
     private boolean allowEmptyLevels = false;
     private boolean allowNewTopics = true;
@@ -14,13 +14,14 @@ public class ProcessingOptions {
     private String translationLocale = null;
     private Integer maxRevision = null;
     private boolean printChangeWarnings = true;
+    private boolean validate = true;
 
-    public boolean isValidating() {
-        return validate;
+    public boolean isValidateOnly() {
+        return validateOnly;
     }
 
-    public void setValidating(boolean validating) {
-        this.validate = validating;
+    public void setValidateOnly(boolean validateOnly) {
+        this.validateOnly = validateOnly;
     }
 
     public boolean isIgnoreChecksum() {
@@ -109,5 +110,13 @@ public class ProcessingOptions {
 
     public void setPrintChangeWarnings(boolean printChangeWarnings) {
         this.printChangeWarnings = printChangeWarnings;
+    }
+
+    public boolean isValidate() {
+        return validate;
+    }
+
+    public void setValidate(boolean validate) {
+        this.validate = validate;
     }
 }
