@@ -4,6 +4,8 @@ import static com.natpryce.makeiteasy.MakeItEasy.a;
 import static com.natpryce.makeiteasy.MakeItEasy.make;
 import static com.natpryce.makeiteasy.MakeItEasy.with;
 import static java.util.Arrays.asList;
+import static junit.framework.Assert.assertTrue;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.jboss.pressgang.ccms.contentspec.TestUtil.selectRandomLevelType;
 import static org.jboss.pressgang.ccms.contentspec.TestUtil.selectRandomListItem;
@@ -15,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import net.sf.ipsedixit.annotation.Arbitrary;
+import org.jboss.pressgang.ccms.contentspec.CommonContent;
 import org.jboss.pressgang.ccms.contentspec.ContentSpec;
 import org.jboss.pressgang.ccms.contentspec.InfoTopic;
 import org.jboss.pressgang.ccms.contentspec.InitialContent;
@@ -482,6 +485,29 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         // and an error should have been printed
         assertThat(logger.getLogMessages().toString(),
                 containsString("Invalid Content Specification! Initial Text must be at the start of the Content Specification."));
+    }
+
+    @Test
+    public void shouldSucceedWhenOnlyCommonContentChildren() {
+        // Given a level that isn't a part
+        ArrayList<LevelType> levelTypes = new ArrayList<LevelType>(asList(LevelType.values()));
+        levelTypes.remove(LevelType.PART);
+        LevelType levelType = selectRandomListItem(levelTypes);
+        Level level = make(a(LevelMaker.Level, with(LevelMaker.levelType, levelType)));
+        // and a parent level
+        addParentToLevel(level, LevelType.BASE);
+        // and a common content child
+        CommonContent commonContent = new CommonContent("Conventions.xml");
+        level.appendChild(commonContent);
+
+        // When validating the level
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, bookType, contentSpec);
+
+        // Then the result should be true
+        assertTrue(result);
+        // and no error should have been printed
+        assertThat(logger.getLogMessages().toString(), not(containsString("Invalid " + levelType.getTitle() + "! No topics or levels in " +
+                "this " + levelType.getTitle() + ".")));
     }
 
     private void addTopicToLevel(final Level level) {

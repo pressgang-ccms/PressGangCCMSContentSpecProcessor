@@ -1072,7 +1072,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that the level isn't empty
-        if (levelType != LevelType.PART && level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 0) {
+        if (levelType != LevelType.PART && level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 0
+                && level.getNumberOfCommonContents() <= 0) {
             log.error(format(ProcessorConstants.ERROR_LEVEL_NO_TOPICS_MSG, level.getLineNumber(), levelType.getTitle(),
                     levelType.getTitle(), level.getText()));
             valid = false;
@@ -1083,8 +1084,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Sections have to have more than just one initial text topic
-        if (levelType == LevelType.SECTION && level.getNumberOfSpecTopics() <= 0 && level.getNumberOfChildLevels() <= 1 && level
-                .getFirstSpecNode() instanceof InitialContent) {
+        if (levelType == LevelType.SECTION && level.getNumberOfSpecTopics() <= 0 && level.getNumberOfCommonContents() <= 0
+                && level.getNumberOfChildLevels() <= 1 && level.getFirstSpecNode() instanceof InitialContent) {
             if (((InitialContent) level.getFirstSpecNode()).getNumberOfSpecTopics() <= 1) {
                 log.error(format(ProcessorConstants.ERROR_SECTION_NO_TOPICS_OR_INITIAL_CONTENT_MSG, level.getLineNumber(), level.getText()));
                 valid = false;
@@ -2057,8 +2058,10 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         boolean valid = true;
         final InitialContent initialContent = (InitialContent) specTopic.getParent();
         final int numSpecTopics = initialContent.getNumberOfSpecTopics();
-        final boolean isOnlyChild = initialContent.getParent().getChildLevels().size() == 1
-                && initialContent.getParent().getSpecTopics().size() == 0 & numSpecTopics == 1;
+        final boolean isOnlyChild = initialContent.getParent().getNumberOfChildLevels() == 1
+                && initialContent.getParent().getNumberOfSpecTopics() == 0
+                && initialContent.getParent().getNumberOfCommonContents() == 0
+                && numSpecTopics == 1;
         if (numSpecTopics >= 1) {
             final String condition = specTopic.getConditionStatement(true);
             try {
