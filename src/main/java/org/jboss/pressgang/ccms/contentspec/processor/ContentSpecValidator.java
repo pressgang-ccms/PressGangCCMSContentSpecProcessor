@@ -1086,7 +1086,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // Sections have to have more than just one initial text topic
         if (levelType == LevelType.SECTION && level.getNumberOfSpecTopics() <= 0 && level.getNumberOfCommonContents() <= 0
                 && level.getNumberOfChildLevels() <= 1 && level.getFirstSpecNode() instanceof InitialContent) {
-            if (((InitialContent) level.getFirstSpecNode()).getNumberOfSpecTopics() <= 1) {
+            final InitialContent initialContent = ((InitialContent) level.getFirstSpecNode());
+            if ((initialContent.getNumberOfSpecTopics() + initialContent.getNumberOfCommonContents()) <= 1) {
                 log.error(format(ProcessorConstants.ERROR_SECTION_NO_TOPICS_OR_INITIAL_CONTENT_MSG, level.getLineNumber(), level.getText()));
                 valid = false;
             }
