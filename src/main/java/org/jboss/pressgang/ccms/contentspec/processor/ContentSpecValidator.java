@@ -655,7 +655,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
             }
             if (contentSpecEntity == null || serverContentSpec == null) {
-                log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID=" + contentSpec.getId()));
+                log.error(String.format(ProcessorConstants.ERROR_INVALID_CS_ID_MSG, "ID = " + contentSpec.getId()));
                 valid = false;
             } else {
                 // Check that the checksum is valid

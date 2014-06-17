@@ -492,6 +492,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         // Given a level that isn't a part
         ArrayList<LevelType> levelTypes = new ArrayList<LevelType>(asList(LevelType.values()));
         levelTypes.remove(LevelType.PART);
+        levelTypes.remove(LevelType.BASE);
         LevelType levelType = selectRandomListItem(levelTypes);
         Level level = make(a(LevelMaker.Level, with(LevelMaker.levelType, levelType)));
         // and a parent level

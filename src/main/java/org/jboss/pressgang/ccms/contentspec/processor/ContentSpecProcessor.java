@@ -1343,11 +1343,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                             foundNodeEntity.setInfoTopicNode(infoEntity);
                             changed = true;
                         }
+                    }
 
-                        // Merge the changes
-                        if (mergeLevelInfoTopic(infoTopic, infoEntity)) {
-                            changed = true;
-                        }
+                    // Merge the changes
+                    if (mergeLevelInfoTopic(infoTopic, infoEntity)) {
+                        changed = true;
                     }
                 } else if (infoEntity != null) {
                     foundNodeEntity.setInfoTopicNode(null);
@@ -2136,8 +2136,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return infoTopic.getDBId().equals(infoNode.getTopicId());
         }
     }
-
-
 
     /**
      * Checks to see if a ContentSpec topic matches a Content Spec Entity file.
