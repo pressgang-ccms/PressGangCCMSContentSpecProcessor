@@ -299,7 +299,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
             wrappedAbstract = "<abstract>" + wrappedAbstract + "</abstract>";
 
-            if (!preValidateXML(contentSpec.getAbstractNode(), wrappedAbstract)) {
+            if (!preValidateXML(contentSpec.getAbstractNode(), wrappedAbstract, contentSpec.getFormat())) {
                 valid = false;
             }
         }
@@ -338,7 +338,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                         final String element = ProcessorConstants.METADATA_DOCBOOK_ELEMENTS.get(keyValueNode.getKey());
                         final String wrappedElement = "<" + element + ">" + value + "</" + element + ">";
 
-                        if (!preValidateXML(keyValueNode, wrappedElement)) {
+                        if (!preValidateXML(keyValueNode, wrappedElement, contentSpec.getFormat())) {
                             valid = false;
                         }
                     }
@@ -394,16 +394,22 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     /**
      * Performs the pre validation on keyvalue nodes that may be used as XML to ensure it is at least valid XML.
      *
+     *
      * @param keyValueNode The key value node being validated.
      * @param wrappedValue The wrapped value, as it would appear in a build.
+     * @param format
      * @return True if the content is valid otherwise false.
      */
-    private boolean preValidateXML(final KeyValueNode<String> keyValueNode, final String wrappedValue) {
+    private boolean preValidateXML(final KeyValueNode<String> keyValueNode, final String wrappedValue, final String format) {
         Document doc = null;
 
         String errorMsg = null;
         try {
-            doc = XMLUtilities.convertStringToDocument(DocBookUtilities.escapeForXML(wrappedValue));
+            String fixedXML = DocBookUtilities.escapeForXML(wrappedValue);
+            if (CommonConstants.DOCBOOK_50_TITLE.equalsIgnoreCase(format)) {
+                fixedXML = DocBookUtilities.addDocBook50Namespace(fixedXML);
+            }
+            doc = XMLUtilities.convertStringToDocument(fixedXML);
         } catch (Exception e) {
             errorMsg = e.getMessage();
         }
