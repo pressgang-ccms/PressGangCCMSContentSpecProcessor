@@ -151,11 +151,6 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         processorData.setUsername(username);
         processorData.setLogMessage(logMessage);
 
-        // Set the username as the assigned writer if one doesn't exist
-        if (isNullOrEmpty(contentSpec.getAssignedWriter())) {
-            contentSpec.setAssignedWriter(username);
-        }
-
         // Set the log details user if one isn't set
         if (logMessage != null && username != null && logMessage.getUser() == null) {
             logMessage.setUser(serverEntities.getUnknownUserId().toString());
@@ -541,7 +536,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // Process and set the assigned writer for new and cloned topics
-        if (!topicNode.isTopicAnExistingTopic()) {
+        if (!topicNode.isTopicAnExistingTopic() && !isNullOrEmpty(topicNode.getAssignedWriter(true))) {
             processAssignedWriter(tagProvider, topicNode, topic);
             changed = true;
         }
@@ -910,11 +905,11 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * Processes a Spec Topic and adds the assigned writer for the topic it represents.
      *
      * @param tagProvider
-     * @param specTopic   The spec topic object that contains the assigned writer.
+     * @param topicNode   The topic node object that contains the assigned writer.
      * @param topic       The topic entity to be updated.
      * @return True if anything in the topic entity was changed, otherwise false.
      */
-    protected void processAssignedWriter(final TagProvider tagProvider, final ITopicNode specTopic, final TopicWrapper topic) {
+    protected void processAssignedWriter(final TagProvider tagProvider, final ITopicNode topicNode, final TopicWrapper topic) {
         LOG.debug("Processing assigned writer");
 
         // See if a new tag collection needs to be created
@@ -923,7 +918,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         }
 
         // Set the assigned writer (Tag Table)
-        final TagWrapper writerTag = tagProvider.getTagByName(specTopic.getAssignedWriter(true));
+        final TagWrapper writerTag = tagProvider.getTagByName(topicNode.getAssignedWriter(true));
         // Save a new assigned writer
         topic.getTags().addNewItem(writerTag);
         // Some providers need the collection to be set to set flags for saving

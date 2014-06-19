@@ -1399,11 +1399,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_TYPE_MSG, specTopic.getLineNumber(), specTopic.getText()));
                 valid = false;
             }
-
-            // Check Assigned Writer exists
-            if (!preValidateAssignedWriter(specTopic)) {
-                valid = false;
-            }
             // Existing Topics
         } else if (specTopic.isTopicAnExistingTopic()) {
             // Check that tags aren't trying to be removed
@@ -1554,14 +1549,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         }
 
-        // New Topics
-        if (infoTopic.isTopicANewTopic()) {
-            // Check Assigned Writer exists
-            if (!preValidateAssignedWriter(infoTopic)) {
-                valid = false;
-            }
-            // Existing Topics
-        } else if (infoTopic.isTopicAnExistingTopic()) {
+        // Existing Topics
+        if (infoTopic.isTopicAnExistingTopic()) {
             // Check that tags aren't trying to be removed
             if (!infoTopic.getRemoveTags(false).isEmpty()) {
                 log.error(String.format(ProcessorConstants.ERROR_TOPIC_EXISTING_TOPIC_CANNOT_REMOVE_TAGS, infoTopic.getLineNumber(),
@@ -2125,22 +2114,25 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      *         false.
      */
     private boolean postValidateAssignedWriter(final ITopicNode topic) {
-        // Check Assigned Writer exists
-        TagWrapper tag = null;
-        try {
-            tag = tagProvider.getTagByName(topic.getAssignedWriter(true));
-        } catch (NotFoundException e) {
+        final String writer = topic.getAssignedWriter(true);
+        if (!isNullOrEmpty(writer)) {
+            // Check Assigned Writer exists
+            TagWrapper tag = null;
+            try {
+                tag = tagProvider.getTagByName(writer);
+            } catch (NotFoundException e) {
 
-        }
-        if (tag == null) {
-            log.error(String.format(ProcessorConstants.ERROR_WRITER_NONEXIST_MSG, topic.getLineNumber(), topic.getText()));
-            return false;
-        }
+            }
+            if (tag == null) {
+                log.error(String.format(ProcessorConstants.ERROR_WRITER_NONEXIST_MSG, topic.getLineNumber(), topic.getText()));
+                return false;
+            }
 
-        // Check that the writer tag is actually part of the Assigned Writer category
-        if (!tag.containedInCategory(serverEntities.getWriterCategoryId())) {
-            log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getLineNumber(), topic.getText()));
-            return false;
+            // Check that the writer tag is actually part of the Assigned Writer category
+            if (!tag.containedInCategory(serverEntities.getWriterCategoryId())) {
+                log.error(String.format(ProcessorConstants.ERROR_INVALID_WRITER_MSG, topic.getLineNumber(), topic.getText()));
+                return false;
+            }
         }
 
         return true;
