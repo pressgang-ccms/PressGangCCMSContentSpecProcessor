@@ -2066,13 +2066,22 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 // Process the conditions to remove anything that isn't used
                 DocBookUtilities.processConditions(condition, doc);
 
-                // Make sure no <simplesect> or <refentry> elements are used
-                final List<org.w3c.dom.Node> invalidElements = XMLUtilities.getDirectChildNodes(doc.getDocumentElement(), "refentry",
-                        "simplesect");
-                // Make sure no <info> or <sectioninfo> elements aren't used if it's not the first element
+                /*
+                 * We need to make sure the following rules apply for initial text:
+                 * - Nested sections aren't used
+                 * - <simplesect> and <refentry> can only be used if the topic is an only child
+                 * - <info>/<sectioninfo> can only be used in the first child topic and the initial content doesn't have an info topic
+                 */
+                final List<org.w3c.dom.Node> invalidElements = XMLUtilities.getDirectChildNodes(doc.getDocumentElement(), "section");
+                final List<org.w3c.dom.Node> invalidElementsIfMultipleChildren = XMLUtilities.getDirectChildNodes(doc.getDocumentElement(),
+                        "refentry", "simplesect");
                 final List<org.w3c.dom.Node> invalidInfoElements = XMLUtilities.getDirectChildNodes(doc.getDocumentElement(), "info",
                         "sectioninfo");
-                if (!isOnlyChild && invalidElements.size() > 0) {
+                if (invalidElements.size() > 0) {
+                    log.error(format(ProcessorConstants.ERROR_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT, specTopic.getLineNumber(),
+                            specTopic.getText()));
+                    valid = false;
+                } else if (!isOnlyChild && invalidElementsIfMultipleChildren.size() > 0) {
                     log.error(format(ProcessorConstants.ERROR_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT, specTopic.getLineNumber(),
                             specTopic.getText()));
                     valid = false;
