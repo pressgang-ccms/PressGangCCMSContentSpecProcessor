@@ -3,6 +3,8 @@ package org.jboss.pressgang.ccms.contentspec.processor.utils;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.fail;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 
 import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
@@ -50,5 +52,17 @@ public class ProcessorUtilitiesTest extends BaseUnitTest {
         } catch (InvalidKeyValueException e) {
 
         }
+    }
+
+    @Test
+    public void shouldParseXMLCharReference() {
+        // Given a string with an xml character reference
+        String in = "This is an ampersand: &#38; &#x0026; &amp;";
+
+        // When cleaning xml character references
+        String out = ProcessorUtilities.cleanXMLCharacterReferences(in);
+
+        // Then the output should have the character references resolved
+        assertThat(out, is("This is an ampersand: & & &amp;"));
     }
 }

@@ -2,6 +2,7 @@ package org.jboss.pressgang.ccms.contentspec.processor;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
+import static org.jboss.pressgang.ccms.utils.common.StringUtilities.isStringNullOrEmpty;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -692,7 +693,9 @@ public class ContentSpecParser {
                     }
                 }
                 String injectionSetting = getTitle(value, '[');
-                if (injectionSetting.trim().equalsIgnoreCase("on")) {
+                if (injectionSetting == null) {
+                    throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_INJECTION_MSG, lineNumber, line));
+                } else if (injectionSetting.trim().equalsIgnoreCase("on")) {
                     if (types != null) {
                         injectionOptions.setContentSpecType(InjectionOptions.UserType.STRICT);
                     } else {
@@ -1187,9 +1190,10 @@ public class ContentSpecParser {
                     matcher.find();
                     final String id = matcher.group("TopicID");
                     final String relationshipTitle = matcher.group("TopicTitle");
+                    final String cleanedTitle = ProcessorUtilities.cleanXMLCharacterReferences(relationshipTitle.trim());
 
                     relationships.add(new Relationship(uniqueId, id, relationshipType,
-                            ProcessorUtilities.replaceEscapeChars(relationshipTitle.trim())));
+                            ProcessorUtilities.replaceEscapeChars(cleanedTitle)));
                 } else {
                     if (relationshipId.matches("^(" + ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*?(" +
                             ProcessorConstants.TARGET_BASE_REGEX + "|[0-9]+).*")) {
@@ -1750,7 +1754,11 @@ public class ContentSpecParser {
      * @return The title as a String or null if the title is blank.
      */
     protected String getTitle(final String input, final char startDelim) {
-        return input == null || input.equals("") ? null : StringUtilities.split(input, startDelim)[0].trim();
+        if (isStringNullOrEmpty(input)) {
+            return null;
+        } else {
+            return ProcessorUtilities.cleanXMLCharacterReferences(StringUtilities.split(input, startDelim)[0].trim());
+        }
     }
 
     /**

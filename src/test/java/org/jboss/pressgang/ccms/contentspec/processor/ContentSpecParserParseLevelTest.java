@@ -98,6 +98,21 @@ public class ContentSpecParserParseLevelTest extends ContentSpecParserTest {
     }
 
     @Test
+    public void shouldReplaceXMLCharReferencesInTitle() throws Exception {
+        // Given a line number, level type and a line with
+        // a title containing an escape character
+        String line = "Chapter:" + title + "&#x002C;" + title;
+
+        // When process level is called
+        Level result = parser.parseLevel(parserData, lineNumber, levelType, line);
+
+        // Then a level of the given type is created a returned
+        assertThat(result.getLevelType(), is(levelType));
+        // And it title is as given
+        assertThat(result.getTitle(), is(title + "," + title));
+    }
+
+    @Test
     public void shouldThrowExceptionWhenMultipleBracketedValues() throws Exception {
         // Given a line number, level type and a line with multiple bracketed values
         String line = "Chapter:" + title + "[foo] [bar]";

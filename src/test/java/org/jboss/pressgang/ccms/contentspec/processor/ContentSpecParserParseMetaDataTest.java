@@ -58,6 +58,7 @@ public class ContentSpecParserParseMetaDataTest extends ContentSpecParserTest {
         when(ProcessorUtilities.getAndValidateKeyValuePair(anyString())).thenReturn(keyValuePair, keyValuePair2);
         when(ProcessorUtilities.replaceEscapeChars(anyString())).thenCallRealMethod();
         when(ProcessorUtilities.findVariableSet(anyString(), anyChar(), anyChar(), anyInt())).thenCallRealMethod();
+        when(ProcessorUtilities.cleanXMLCharacterReferences(anyString())).thenCallRealMethod();
         super.setUp();
         line = line.replace("[", "\\[");
         parserData.setContentSpec(contentSpec);

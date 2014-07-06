@@ -1,6 +1,7 @@
 package org.jboss.pressgang.ccms.contentspec.processor.utils;
 
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.jboss.pressgang.ccms.contentspec.ITopicNode;
@@ -28,6 +29,7 @@ import org.slf4j.LoggerFactory;
 public class ProcessorUtilities {
     private static final Logger LOG = LoggerFactory.getLogger(ProcessorUtilities.class);
 
+    private static final Pattern XML_CHAR_REF_PATTERN = Pattern.compile("&#(x)?([A-Fa-f\\d]+?);");
     private static final Pattern LEFT_SQUARE_BRACKET_PATTERN = Pattern.compile("\\\\\\[");
     private static final Pattern RIGHT_SQUARE_BRACKET_PATTERN = Pattern.compile("\\\\\\]");
     private static final Pattern LEFT_BRACKET_PATTERN = Pattern.compile("\\\\\\(");
@@ -114,7 +116,8 @@ public class ProcessorUtilities {
         // Remove the whitespace from each value in the split array
         tempInput = CollectionUtilities.trimStringArray(tempInput);
         if (tempInput.length >= 2) {
-            return new Pair<String, String>(tempInput[0], replaceEscapeChars(tempInput[1]));
+            final String value = tempInput[1];
+            return new Pair<String, String>(tempInput[0], replaceEscapeChars(cleanXMLCharacterReferences(value)));
         } else if (tempInput.length >= 1 && keyValueString.contains("=")) {
             return new Pair<String, String>(tempInput[0], "");
         } else {
@@ -282,5 +285,24 @@ public class ProcessorUtilities {
         retValue = EQUALS_PATTERN.matcher(retValue).replaceAll("=");
         retValue = PLUS_PATTERN.matcher(retValue).replaceAll("+");
         return MINUS_PATTERN.matcher(retValue).replaceAll("-");
+    }
+
+    public static String cleanXMLCharacterReferences(final String input) {
+        final Matcher m = XML_CHAR_REF_PATTERN.matcher(input);
+        final StringBuffer retValue = new StringBuffer();
+        while (m.find()) {
+            // Convert the reference to an int, which can then be cast to a char
+            final int charRef;
+            if ("x".equals(m.group(1))) {
+                charRef = Integer.parseInt(m.group(2), 16);
+            } else {
+                charRef = Integer.parseInt(m.group(2));
+            }
+
+            // Add the changed value
+            m.appendReplacement(retValue, Character.toString((char) charRef));
+        }
+        m.appendTail(retValue);
+        return retValue.toString();
     }
 }

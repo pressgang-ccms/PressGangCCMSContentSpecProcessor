@@ -55,6 +55,29 @@ public class ContentSpecParserParseTopicTest extends ContentSpecParserTest {
     }
 
     @Test
+    public void shouldReturnTopicWithTitleThatContainsXMLCharReference() {
+        // Given a string that represents a topic with a title and id
+        String topicString = make(
+                a(TopicStringMaker.TopicString, with(TopicStringMaker.title, title + " &#39;"), with(TopicStringMaker.id, id.toString())));
+        // and a line number
+        int lineNumber = randomNumber;
+
+        // When parsing the topic string
+        SpecTopic topic = null;
+        try {
+            topic = parser.parseTopic(parserData, topicString, lineNumber);
+        } catch (ParsingException e) {
+            fail("Parsing should not have failed.");
+        }
+
+        // Then check that the topic has the right data set
+        assertNotNull(topic);
+        assertThat(topic.getId(), is(id.toString()));
+        assertThat(topic.getTitle(), is(title + " '"));
+        assertThat(topic.getUniqueId(), is("L" + randomNumber + "-" + id));
+    }
+
+    @Test
     public void shouldReturnTopicWithTitleExistingIdAndRevision() {
         // Given a string that represents a topic with a title, id and revision
         String topicString = make(
