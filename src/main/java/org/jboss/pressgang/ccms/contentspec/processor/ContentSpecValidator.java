@@ -2053,7 +2053,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private boolean validateInitialContentTopicXML(final SpecTopic specTopic, final BaseTopicWrapper<?> topic) {
         boolean valid = true;
         final InitialContent initialContent = (InitialContent) specTopic.getParent();
-        final int numSpecTopics = initialContent.getNumberOfSpecTopics();
+        final int numSpecTopics = initialContent.getNumberOfSpecTopics() + initialContent.getNumberOfCommonContents();
         final boolean isOnlyChild = initialContent.getParent().getNumberOfChildLevels() == 1
                 && initialContent.getParent().getNumberOfSpecTopics() == 0
                 && initialContent.getParent().getNumberOfCommonContents() == 0
@@ -2077,7 +2077,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                         "refentry", "simplesect");
                 final List<org.w3c.dom.Node> invalidInfoElements = XMLUtilities.getDirectChildNodes(doc.getDocumentElement(), "info",
                         "sectioninfo");
-                if (invalidElements.size() > 0) {
+                if (numSpecTopics > 1 && invalidElements.size() > 0) {
                     log.error(format(ProcessorConstants.ERROR_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT, specTopic.getLineNumber(),
                             specTopic.getText()));
                     valid = false;

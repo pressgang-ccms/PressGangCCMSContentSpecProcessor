@@ -11,7 +11,7 @@
 
     <groupId>org.jboss.pressgang.ccms.contentspec</groupId>
     <artifactId>processor</artifactId>
-    <version>1.8</version>
+    <version>1.8.1-SNAPSHOT</version>
     <name>PressGang CCMS Content Specification Processor</name>
 
     <scm>
