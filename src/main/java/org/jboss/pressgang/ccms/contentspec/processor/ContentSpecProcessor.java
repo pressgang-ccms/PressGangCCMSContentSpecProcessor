@@ -1615,33 +1615,14 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     protected boolean mergeLevel(final Level level, final CSNodeWrapper levelEntity) throws Exception {
         boolean changed = false;
 
+        // Merge the base details
+        if (mergeSpecNodeDetails(level, levelEntity)) {
+            changed = true;
+        }
+
         // TYPE
         if (level.getLevelType() != null && !level.getLevelType().getId().equals(levelEntity.getNodeType())) {
             levelEntity.setNodeType(level.getLevelType().getId());
-            changed = true;
-        }
-
-        // TITLE
-        if (level.getTitle() != null && !level.getTitle().equals(levelEntity.getTitle())) {
-            levelEntity.setTitle(level.getTitle());
-            changed = true;
-        }
-
-        // TARGET ID
-        if (level.getTargetId() != null && !level.getTargetId().equals(levelEntity.getTargetId())) {
-            levelEntity.setTargetId(level.getTargetId());
-            changed = true;
-        } else if (level.getTargetId() == null && levelEntity.getTargetId() != null) {
-            levelEntity.setTargetId(null);
-            changed = true;
-        }
-
-        // CONDITION
-        if (level.getConditionStatement() != null && !level.getConditionStatement().equals(levelEntity.getCondition())) {
-            levelEntity.setCondition(level.getConditionStatement());
-            changed = true;
-        } else if (level.getConditionStatement() == null && levelEntity.getCondition() != null) {
-            levelEntity.setCondition(null);
             changed = true;
         }
 
@@ -1687,30 +1668,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     protected boolean mergeTopic(final SpecTopic specTopic, final CSNodeWrapper topicEntity) {
         boolean changed = false;
 
-        // TITLE
-        // No need to check if the topic title should be set to null, as it is a mandatory field
-        if (specTopic.getTitle() != null && !specTopic.getTitle().equals(topicEntity.getTitle())) {
-            topicEntity.setTitle(specTopic.getTitle());
-            changed = true;
-        }
-
-        // TARGET ID
-        if (!specTopic.isTargetIdAnInternalId()) {
-            if (specTopic.getTargetId() != null && !specTopic.getTargetId().equals(topicEntity.getTargetId())) {
-                topicEntity.setTargetId(specTopic.getTargetId());
-                changed = true;
-            } else if (specTopic.getTargetId() == null && topicEntity.getTargetId() != null) {
-                topicEntity.setTargetId(null);
-                changed = true;
-            }
-        }
-
-        // CONDITION
-        if (specTopic.getConditionStatement() != null && !specTopic.getConditionStatement().equals(topicEntity.getCondition())) {
-            topicEntity.setCondition(specTopic.getConditionStatement());
-            changed = true;
-        } else if (specTopic.getConditionStatement() == null && topicEntity.getCondition() != null) {
-            topicEntity.setCondition(null);
+        // Merge the base details
+        if (mergeSpecNodeDetails(specTopic, topicEntity)) {
             changed = true;
         }
 
@@ -1727,6 +1686,53 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             changed = true;
         } else if (specTopic.getRevision() == null && topicEntity.getEntityRevision() != null) {
             topicEntity.setEntityRevision(null);
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    protected boolean mergeSpecNodeDetails(final SpecNode specNode, final CSNodeWrapper nodeEntity) {
+        boolean changed = false;
+
+        // TITLE
+        // No need to check if the topic title should be set to null, as it is a mandatory field
+        if (specNode.getTitle() != null && !specNode.getTitle().equals(nodeEntity.getTitle())) {
+            nodeEntity.setTitle(specNode.getTitle());
+            changed = true;
+        }
+
+        // TARGET ID
+        if (!specNode.isTargetIdAnInternalId()) {
+            if (specNode.getTargetId() != null && !specNode.getTargetId().equals(nodeEntity.getTargetId())) {
+                nodeEntity.setTargetId(specNode.getTargetId());
+                changed = true;
+            } else if (specNode.getTargetId() == null && nodeEntity.getTargetId() != null) {
+                nodeEntity.setTargetId(null);
+                changed = true;
+            }
+        }
+
+        // CONDITION
+        if (specNode.getConditionStatement() != null && !specNode.getConditionStatement().equals(nodeEntity.getCondition())) {
+            nodeEntity.setCondition(specNode.getConditionStatement());
+            changed = true;
+        } else if (specNode.getConditionStatement() == null && nodeEntity.getCondition() != null) {
+            nodeEntity.setCondition(null);
+            changed = true;
+        }
+
+        // FIXED URL
+        if (specNode.getFixedUrl() != null && !specNode.getFixedUrl().equals(nodeEntity.getFixedURL())) {
+            if (specNode.getFixedUrl().trim().isEmpty()) {
+                nodeEntity.setFixedURL(null);
+            } else {
+                nodeEntity.setFixedURL(specNode.getFixedUrl());
+            }
+
+            changed = true;
+        } else if (specNode.getFixedUrl() == null && nodeEntity.getFixedURL() != null) {
+            nodeEntity.setFixedURL(null);
             changed = true;
         }
 

@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.jboss.pressgang.ccms.contentspec.constants.CSConstants;
 import org.jboss.pressgang.ccms.utils.constants.CommonConstants;
@@ -13,6 +14,8 @@ public class ProcessorConstants {
      * The minimum value that designates if two strings match.
      */
     public static final double MIN_MATCH_SIMILARITY = 0.8;
+
+    public static final Pattern VALID_FIXED_URL_PATTERN = Pattern.compile("^[^\\d\\s][\\S]*$");
 
     public static final String RELEASE_CATEGORY_NAME = "Release";
     public static final String ASSIGNED_WRITER_CATEGORY_NAME = "Assigned Writer";
@@ -145,7 +148,7 @@ public class ProcessorConstants {
     public static final String ERROR_CS_INITIAL_CONTENT_STRUCTURE_MSG = LINE + INVALID_CS + " " + CSConstants.LEVEL_INITIAL_CONTENT +
             " must be at the start of the %s." + CSLINE_MSG;
     public static final String ERROR_INVALID_ATTRIBUTE_MSG = LINE + INVALID_CS + " Unknown attribute found. \"condition\", " +
-            "\"Description\", \"URL\" and \"Writer\" are currently the only supported attributes." + CSLINE_MSG;
+            "\"Description\", \"Fixed URL\", \"URL\" and \"Writer\" are currently the only supported attributes." + CSLINE_MSG;
     public static final String ERROR_INVALID_CONDITION_MSG = LINE + INVALID_CS + " The condition statement must be a valid regular " +
             "expression string." + CSLINE_MSG;
     public static final String ERROR_DUPLICATE_ATTRIBUTE_MSG = LINE + "Invalid attribute, \"%s\" has already been defined." + CSLINE_MSG;
@@ -315,6 +318,10 @@ public class ProcessorConstants {
     public static final String ERROR_TOPIC_WITH_INFO_TOPIC = LINE + INVALID_TOPIC + " Unable to use Info topics on regular topics." +
             CSLINE_MSG;
 
+    public static final String ERROR_FIXED_URL_NOT_VALID = LINE + "The Fixed URL specified is not a valid URL. Please ensure that it " +
+            "starts with a letter, has no spaces and doesn't contain special characters." + CSLINE_MSG;
+    public static final String ERROR_FIXED_URL_NOT_UNIQUE = LINE + "\"%s\" is not a unique URL within the Content Specification." + CSLINE_MSG;
+
     // Files
     public static final String ERROR_FILE_ID_NONEXIST_MSG = LINE + INVALID_FILE + " ID doesn't exist in the database." + CSLINE_MSG;
 
@@ -348,6 +355,8 @@ public class ProcessorConstants {
             "and as such the condition defined against the topic or container will be ignored." + CSLINE_MSG;
     public static final String WARN_MAINFILE_WILL_BE_REMOVED_MSG = "The \"mainfile\" attribute has been defined in publican.cfg, " +
             "however it cannot be used in PressGang and as such will be removed when building.";
+    public static final String WARN_FIXED_URL_WILL_BE_IGNORED_MSG = LINE + "The node has a Fixed URL specified, " +
+            "however this type of node cannot contain Fixed URL's, as such it has been removed." + CSLINE_MSG;
 
     // Common Content
     public static final String WARN_IGNORE_COMMON_CONTENT_INFO_MSG = LINE + "All types, descriptions, " +

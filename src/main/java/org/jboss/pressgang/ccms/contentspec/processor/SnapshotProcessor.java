@@ -11,6 +11,7 @@ import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.interfaces.ShutdownAbleApp;
 import org.jboss.pressgang.ccms.contentspec.processor.structures.SnapshotOptions;
 import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
+import org.jboss.pressgang.ccms.contentspec.utils.FixedURLGenerator;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.provider.ServerSettingsProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
@@ -63,13 +64,20 @@ public class SnapshotProcessor implements ShutdownAbleApp {
         for (final Node node : contentSpec.getNodes()) {
             if (node instanceof KeyValueNode) {
                 final KeyValueNode keyValueNode = ((KeyValueNode) node);
-                if (keyValueNode.getValue() != null && keyValueNode.getValue() instanceof SpecTopic) {
-                    processTopic((SpecTopic) keyValueNode.getValue(), processingOptions);
+                if (keyValueNode.getValue() != null && keyValueNode.getValue() instanceof ITopicNode) {
+                    processTopic((ITopicNode) keyValueNode.getValue(), processingOptions);
                 }
             }
         }
 
+        // Process the levels
         processLevel(contentSpec.getBaseLevel(), processingOptions);
+
+        // Set the fixed urls for the content spec
+        if (processingOptions.isAddFixedUrls()) {
+            final boolean missingUrlsOnly = !processingOptions.isUpdateRevisions();
+            FixedURLGenerator.generateFixedUrls(contentSpec, missingUrlsOnly, serverSettings.getEntities().getFixedUrlPropertyTagId());
+        }
     }
 
     /**
@@ -111,6 +119,29 @@ public class SnapshotProcessor implements ShutdownAbleApp {
             return;
         }
 
+        // Find the revision to use
+        final Integer revision;
+        if (topicNode.getRevision() == null || processingOptions.isUpdateRevisions()) {
+            revision = processingOptions.getRevision();
+        } else {
+            revision = topicNode.getRevision();
+        }
+
+        // Look up the topic
+        BaseTopicWrapper<?> topic = null;
+        try {
+            if (processingOptions.isTranslation()) {
+                topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(topicNode.getId()), revision,
+                        processingOptions.getTranslationLocale() == null ? defaultLocale : processingOptions.getTranslationLocale());
+            } else {
+                topic = topicProvider.getTopic(Integer.parseInt(topicNode.getId()), revision);
+            }
+            topicNode.setTopic(topic);
+        } catch (NotFoundException e) {
+            log.debug("Could not find topic for id " + topicNode.getDBId());
+            throw e;
+        }
+
         if (!processingOptions.isAddRevisions()) {
             // If we aren't adding revisions then we have nothing to do here, so just return
             return;
@@ -118,21 +149,7 @@ public class SnapshotProcessor implements ShutdownAbleApp {
             // If the topic already has a revision and we aren't updating it, then just return
             return;
         } else if (topicNode.isTopicAnExistingTopic()) {
-            final Integer revision = processingOptions.getRevision();
-
-            // Check that the id actually exists
-            BaseTopicWrapper<?> topic = null;
-            try {
-                if (processingOptions.isTranslation()) {
-                    topic = EntityUtilities.getTranslatedTopicByTopicId(factory, Integer.parseInt(topicNode.getId()), revision,
-                            processingOptions.getTranslationLocale() == null ? defaultLocale : processingOptions.getTranslationLocale());
-                } else {
-                    topic = topicProvider.getTopic(Integer.parseInt(topicNode.getId()), revision);
-                }
-                topicNode.setRevision(topic.getTopicRevision());
-            } catch (NotFoundException e) {
-                log.debug("Could not find topic for id " + topicNode.getDBId());
-            }
+            topicNode.setRevision(topic.getTopicRevision());
         }
     }
 }

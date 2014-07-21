@@ -1,7 +1,8 @@
 package org.jboss.pressgang.ccms.contentspec.processor.structures;
 
 public class SnapshotOptions {
-    private boolean addRevisions = false;
+    private boolean addRevisions = true;
+    private boolean addFixedUrls = true;
     private boolean updateRevisions = false;
     private Integer revision = null;
     private boolean translation = false;
@@ -45,5 +46,13 @@ public class SnapshotOptions {
 
     public void setTranslationLocale(String translationLocale) {
         this.translationLocale = translationLocale;
+    }
+
+    public boolean isAddFixedUrls() {
+        return addFixedUrls;
+    }
+
+    public void setAddFixedUrls(boolean addFixedUrls) {
+        this.addFixedUrls = addFixedUrls;
     }
 }

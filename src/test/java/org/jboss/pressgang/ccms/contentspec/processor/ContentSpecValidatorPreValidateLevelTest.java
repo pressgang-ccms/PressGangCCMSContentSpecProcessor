@@ -14,7 +14,9 @@ import static org.junit.Assert.assertThat;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import net.sf.ipsedixit.annotation.Arbitrary;
 import org.jboss.pressgang.ccms.contentspec.CommonContent;
@@ -39,11 +41,13 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
 
     Map<String, SpecTopic> specTopicMap;
     Map<String, InfoTopic> infoTopicMap;
+    Set<String> processedFixedUrls;
 
     @Before
     public void setUp() {
         specTopicMap = new HashMap<String, SpecTopic>();
         infoTopicMap = new HashMap<String, InfoTopic>();
+        processedFixedUrls = new HashSet<String>();
         super.setUp();
     }
 
@@ -55,7 +59,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(level);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, bookType, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, processedFixedUrls, bookType, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -75,7 +79,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addParentToLevel(level, LevelType.BASE);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, bookType, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, processedFixedUrls, bookType, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -92,7 +96,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addParentToLevel(level, LevelType.BASE);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, bookType, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, processedFixedUrls, bookType, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -112,7 +116,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addParentToLevel(level, LevelType.CHAPTER);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -131,7 +135,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addParentToLevel(level, LevelType.BASE);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, bookType, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, processedFixedUrls, bookType, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -150,7 +154,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         level.appendChild(child);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -167,7 +171,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         level.appendChild(topic);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -183,7 +187,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(appendix);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(appendix, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(appendix, specTopicMap, infoTopicMap, processedFixedUrls, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -205,7 +209,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         appendix.getParent().appendChild(chapter);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(appendix, specTopicMap, infoTopicMap, BookType.ARTICLE_DRAFT, contentSpec);
+        boolean result = validator.preValidateLevel(appendix, specTopicMap, infoTopicMap, processedFixedUrls, BookType.ARTICLE_DRAFT, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -224,7 +228,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(appendix);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(appendix, specTopicMap, infoTopicMap, BookType.BOOK_DRAFT, contentSpec);
+        boolean result = validator.preValidateLevel(appendix, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK_DRAFT, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -246,7 +250,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         appendix.getParent().appendChild(chapter);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(appendix, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(appendix, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -265,7 +269,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(chapter);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(chapter, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(chapter, specTopicMap, infoTopicMap, processedFixedUrls, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -284,7 +288,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(chapter);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(chapter, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(chapter, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -303,7 +307,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(part);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(part, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(part, specTopicMap, infoTopicMap, processedFixedUrls, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -321,7 +325,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(part);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(part, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(part, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -339,7 +343,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(preface);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(preface, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(preface, specTopicMap, infoTopicMap, processedFixedUrls, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -358,7 +362,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(preface);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(preface, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(preface, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -377,7 +381,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(process);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(process, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(process, specTopicMap, infoTopicMap, processedFixedUrls, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -396,7 +400,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addChildToLevel(process);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(process, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(process, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -415,7 +419,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(section);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(section, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(section, specTopicMap, infoTopicMap, processedFixedUrls, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -434,7 +438,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         addTopicToLevel(section);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(section, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(section, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -456,7 +460,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         initialContent.getParent().insertBefore(section, initialContent);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(initialContent, specTopicMap, infoTopicMap, BookType.ARTICLE, contentSpec);
+        boolean result = validator.preValidateLevel(initialContent, specTopicMap, infoTopicMap, processedFixedUrls, BookType.ARTICLE, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -478,7 +482,7 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         initialContent.getParent().insertBefore(chapter, initialContent);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(initialContent, specTopicMap, infoTopicMap, BookType.BOOK, contentSpec);
+        boolean result = validator.preValidateLevel(initialContent, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK, contentSpec);
 
         // Then the result should be false
         assertFalse(result);
@@ -492,7 +496,9 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         // Given a level that isn't a part
         ArrayList<LevelType> levelTypes = new ArrayList<LevelType>(asList(LevelType.values()));
         levelTypes.remove(LevelType.BASE);
+        // Can't use these two as they can't be a child of BASE
         levelTypes.remove(LevelType.PROCESS);
+        levelTypes.remove(LevelType.SECTION);
         LevelType levelType = selectRandomListItem(levelTypes);
         Level level = make(a(LevelMaker.Level, with(LevelMaker.levelType, levelType)));
         // and a parent level
@@ -502,13 +508,55 @@ public class ContentSpecValidatorPreValidateLevelTest extends ContentSpecValidat
         level.appendChild(commonContent);
 
         // When validating the level
-        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, bookType, contentSpec);
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK, contentSpec);
 
         // Then the result should be true
         assertTrue(result);
         // and no error should have been printed
         assertThat(logger.getLogMessages().toString(), not(containsString("Invalid " + levelType.getTitle() + "! No topics or levels in " +
                 "this " + levelType.getTitle() + ".")));
+    }
+
+    @Test
+    public void shouldFailWhenUserDefinedFixedURLIsNotUnique() {
+        // Given a level that has a user defined fixed url
+        Level level = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.CHAPTER)));
+        level.setFixedUrl("Blah");
+        processedFixedUrls.add("Blah");
+        // and a parent level
+        addParentToLevel(level, LevelType.BASE);
+        // and a child topic
+        addTopicToLevel(level);
+
+        // When validating the level
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK, contentSpec);
+
+        // Then the result should be false
+        assertFalse(result);
+        // and an error should have been printed
+        assertThat(logger.getLogMessages().toString(),
+                containsString("\"Blah\" is not a unique URL within the Content Specification."));
+    }
+
+    @Test
+    public void shouldFailWhenUserDefinedFixedURLUsesInvalidFormat() {
+        // Given a level that has a user defined fixed url
+        Level level = make(a(LevelMaker.Level, with(LevelMaker.levelType, LevelType.CHAPTER)));
+        level.setFixedUrl("10_Blah");
+        // and a parent level
+        addParentToLevel(level, LevelType.BASE);
+        // and a child topic
+        addTopicToLevel(level);
+
+        // When validating the level
+        boolean result = validator.preValidateLevel(level, specTopicMap, infoTopicMap, processedFixedUrls, BookType.BOOK, contentSpec);
+
+        // Then the result should be false
+        assertFalse(result);
+        // and an error should have been printed
+        assertThat(logger.getLogMessages().toString(),
+                containsString("The Fixed URL specified is not a valid URL. Please ensure that it starts with a letter, has no spaces " +
+                        "and doesn't contain special characters."));
     }
 
     private void addTopicToLevel(final Level level) {

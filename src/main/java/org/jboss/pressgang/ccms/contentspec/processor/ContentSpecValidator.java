@@ -176,6 +176,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         final Map<String, SpecTopic> specTopicMap = ContentSpecUtilities.getUniqueIdSpecTopicMap(contentSpec);
         final Map<String, InfoTopic> infoTopicMap = ContentSpecUtilities.getUniqueIdInfoTopicMap(contentSpec);
 
+        // Get all server defined fixed urls
+        final Set<String> processedFixedUrls = new HashSet<String>();
+
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -269,18 +272,20 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // Check that any metadata topics are valid
         if (contentSpec.getRevisionHistory() != null && !preValidateTopic(contentSpec.getRevisionHistory(), specTopicMap,
-                contentSpec.getBookType(), false, contentSpec)) {
+                processedFixedUrls, contentSpec.getBookType(), false, contentSpec)) {
             valid = false;
         }
-        if (contentSpec.getLegalNotice() != null && !preValidateTopic(contentSpec.getLegalNotice(), specTopicMap, contentSpec.getBookType(),
+        if (contentSpec.getLegalNotice() != null && !preValidateTopic(contentSpec.getLegalNotice(), specTopicMap, processedFixedUrls,
+                contentSpec.getBookType(),
                 false, contentSpec)) {
             valid = false;
         }
-        if (contentSpec.getAuthorGroup() != null && !preValidateTopic(contentSpec.getAuthorGroup(), specTopicMap, contentSpec.getBookType(),
+        if (contentSpec.getAuthorGroup() != null && !preValidateTopic(contentSpec.getAuthorGroup(), specTopicMap, processedFixedUrls,
+                contentSpec.getBookType(),
                 false, contentSpec)) {
             valid = false;
         }
-        if (contentSpec.getAbstractTopic() != null && !preValidateTopic(contentSpec.getAbstractTopic(), specTopicMap,
+        if (contentSpec.getAbstractTopic() != null && !preValidateTopic(contentSpec.getAbstractTopic(), specTopicMap, processedFixedUrls,
                 contentSpec.getBookType(), false, contentSpec)) {
             valid = false;
         }
@@ -348,7 +353,8 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // Content that should be checked when using the default preface
         if (contentSpec.getUseDefaultPreface()) {
-            if (contentSpec.getFeedback() != null && !preValidateTopic(contentSpec.getFeedback(), specTopicMap, contentSpec.getBookType(),
+            if (contentSpec.getFeedback() != null && !preValidateTopic(contentSpec.getFeedback(), specTopicMap, processedFixedUrls,
+                    contentSpec.getBookType(),
                     false, contentSpec)) {
                 valid = false;
             }
@@ -369,7 +375,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         // Check that each level is valid
-        if (!preValidateLevel(contentSpec.getBaseLevel(), specTopicMap, infoTopicMap, contentSpec.getBookType(),
+        if (!preValidateLevel(contentSpec.getBaseLevel(), specTopicMap, infoTopicMap, processedFixedUrls, contentSpec.getBookType(),
                 contentSpec)) {
             valid = false;
         }
@@ -1057,11 +1063,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
      * @param level              The level to be validated.
      * @param specTopics         The list of topics that exist within the content specification.
      * @param infoTopics
-     *@param bookType           The type of book the level should be validated for.
+     * @param processedFixedUrls
+     * @param bookType           The type of book the level should be validated for.
      * @param contentSpec        The content spec the level belongs to.   @return True if the level is valid otherwise false.
-     */
+     * */
     public boolean preValidateLevel(final Level level, final Map<String, SpecTopic> specTopics, final Map<String, InfoTopic> infoTopics,
-            final BookType bookType, final ContentSpec contentSpec) {
+            final Set<String> processedFixedUrls, final BookType bookType, final ContentSpec contentSpec) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -1099,10 +1106,25 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             }
         }
 
+        // Check that a title has been specified
         if (isNullOrEmpty(level.getTitle())) {
             log.error(String.format(ProcessorConstants.ERROR_LEVEL_NO_TITLE_MSG, level.getLineNumber(), levelType.getTitle(),
                     level.getText()));
             valid = false;
+        }
+
+
+        // Check that the initial content level doesn't have a fixed url and if it does then print a warning,
+        // otherwise validate the fixed url
+        if (level.getLevelType() == LevelType.INITIAL_CONTENT && !isNullOrEmpty(level.getFixedUrl())) {
+            log.warn(format(ProcessorConstants.WARN_FIXED_URL_WILL_BE_IGNORED_MSG, level.getLineNumber(), level.getText()));
+            level.setFixedUrl(null);
+        } else if (!isNullOrEmpty(level.getFixedUrl())) {
+            if (!validateFixedUrl(level, processedFixedUrls)) {
+                valid = false;
+            } else {
+                processedFixedUrls.add(level.getFixedUrl());
+            }
         }
 
         // Validate the info topic
@@ -1113,7 +1135,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         // Validate the sub levels and topics
         for (final Node childNode : level.getChildNodes()) {
             if (childNode instanceof Level) {
-                if (!preValidateLevel((Level) childNode, specTopics, infoTopics, bookType, contentSpec)) {
+                if (!preValidateLevel((Level) childNode, specTopics, infoTopics, processedFixedUrls, bookType, contentSpec)) {
                     valid = false;
                 }
             } else if (childNode instanceof CommonContent) {
@@ -1121,7 +1143,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     valid = false;
                 }
             } else if (childNode instanceof SpecTopic) {
-                if (!preValidateTopic((SpecTopic) childNode, specTopics, bookType, contentSpec)) {
+                if (!preValidateTopic((SpecTopic) childNode, specTopics, processedFixedUrls, bookType, contentSpec)) {
                     valid = false;
                 }
             }
@@ -1309,28 +1331,30 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     /**
      * Validates a topic against the database and for formatting issues.
      *
+     *
      * @param specTopic   The topic to be validated.
      * @param specTopics  The list of topics that exist within the content specification.
+     * @param processedFixedUrls
      * @param bookType    The type of book the topic is to be validated against.
-     * @param contentSpec The content spec the topic belongs to.
-     * @return True if the topic is valid otherwise false.
+     * @param contentSpec The content spec the topic belongs to.   @return True if the topic is valid otherwise false.
      */
-    public boolean preValidateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics, final BookType bookType,
-            final ContentSpec contentSpec) {
-        return preValidateTopic(specTopic, specTopics, bookType, true, contentSpec);
+    public boolean preValidateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics,
+            final Set<String> processedFixedUrls, final BookType bookType, final ContentSpec contentSpec) {
+        return preValidateTopic(specTopic, specTopics, processedFixedUrls, bookType, true, contentSpec);
     }
 
     /**
      * Validates a topic against the database and for formatting issues.
      *
+     *
      * @param specTopic   The topic to be validated.
      * @param specTopics  The list of topics that exist within the content specification.
+     * @param processedFixedUrls
      * @param bookType    The type of book the topic is to be validated against.
-     * @param contentSpec The content spec the topic belongs to.
-     * @return True if the topic is valid otherwise false.
+     * @param contentSpec The content spec the topic belongs to.   @return True if the topic is valid otherwise false.
      */
-    public boolean preValidateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics, final BookType bookType,
-            boolean allowRelationships, final ContentSpec contentSpec) {
+    public boolean preValidateTopic(final SpecTopic specTopic, final Map<String, SpecTopic> specTopics,
+            final Set<String> processedFixedUrls, final BookType bookType, boolean allowRelationships, final ContentSpec contentSpec) {
         // Check if the app should be shutdown
         if (isShuttingDown.get()) {
             shutdown.set(true);
@@ -1384,6 +1408,19 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 log.error(String.format(ProcessorConstants.ERROR_TOPIC_NO_NEW_TRANSLATION_TOPIC, specTopic.getLineNumber(),
                         specTopic.getText()));
                 valid = false;
+            }
+        }
+
+        // Check that the initial content topic doesn't have a fixed url and if it does then print a warning,
+        // otherwise check that the fixed url is valid
+        if (specTopic.getTopicType() == TopicType.INITIAL_CONTENT && !isNullOrEmpty(specTopic.getFixedUrl())) {
+            log.warn(format(ProcessorConstants.WARN_FIXED_URL_WILL_BE_IGNORED_MSG, specTopic.getLineNumber(), specTopic.getText()));
+            specTopic.setFixedUrl(null);
+        } else if (!isNullOrEmpty(specTopic.getFixedUrl())) {
+            if (!validateFixedUrl(specTopic, processedFixedUrls)) {
+                valid = false;
+            } else {
+                processedFixedUrls.add(specTopic.getFixedUrl());
             }
         }
 
@@ -1504,6 +1541,28 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // Check for conflicting conditions
         checkForConflictingCondition(specTopic, contentSpec);
+
+        return valid;
+    }
+
+    /**
+     * Checks to make sure that a user defined fixed url is valid
+     *
+     * @param specNode
+     * @param processedFixedUrls
+     * @return
+     */
+    protected boolean validateFixedUrl(final SpecNode specNode, final Set<String> processedFixedUrls) {
+        boolean valid = true;
+
+        if (!ProcessorConstants.VALID_FIXED_URL_PATTERN.matcher(specNode.getFixedUrl()).matches()) {
+            log.error(format(ProcessorConstants.ERROR_FIXED_URL_NOT_VALID, specNode.getLineNumber(), specNode.getText()));
+            valid = false;
+        } else if (processedFixedUrls.contains(specNode.getFixedUrl())) {
+            log.error(format(ProcessorConstants.ERROR_FIXED_URL_NOT_UNIQUE, specNode.getLineNumber(), specNode.getFixedUrl(),
+                    specNode.getText()));
+            valid = false;
+        }
 
         return valid;
     }
@@ -1673,6 +1732,12 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                     }
                 }
             }
+        }
+
+        // Check that the common content doesn't ahve a fixed url and if it does then print a warning
+        if (!isNullOrEmpty(commonContent.getFixedUrl())) {
+            log.warn(format(ProcessorConstants.WARN_FIXED_URL_WILL_BE_IGNORED_MSG, commonContent.getLineNumber(), commonContent.getText()));
+            commonContent.setFixedUrl(null);
         }
 
         // Check for known common content and warn the user if it's not known
@@ -1915,7 +1980,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                 && (topicNode.getTopicType() == TopicType.NORMAL || topicNode.getTopicType() == TopicType.INITIAL_CONTENT)) {
             final SpecTopic specTopic = (SpecTopic) topicNode;
             // Validate the title matches for normal topics
-            final String topicTitle = getTopicTitleWithConditions(specTopic, topic);
+            final String topicTitle = ContentSpecUtilities.getTopicTitleWithConditions(specTopic, topic);
             if (!specTopic.getTitle().equals(topicTitle)) {
                 if (processingOptions.isStrictTitles()) {
                     final String topicTitleMsg = "Topic " + topicNode.getId() + ": " + topicTitle;
@@ -2013,34 +2078,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         }
 
         return valid;
-    }
-
-    /**
-     * Gets a Topics title with conditional statements applied
-     *
-     * @param specTopic The SpecTopic of the topic to get the title for.
-     * @param topic     The actual topic to get the non-processed title from.
-     * @return The processed title that has the conditions applied.
-     */
-    private String getTopicTitleWithConditions(final SpecTopic specTopic, final BaseTopicWrapper<?> topic) {
-        final String condition = specTopic.getConditionStatement(true);
-        if (condition != null) {
-            try {
-                final Document doc = XMLUtilities.convertStringToDocument("<title>" + topic.getTitle() + "</title>");
-
-                // Process the condition on the title
-                DocBookUtilities.processConditions(condition, doc);
-
-                // Return the processed title
-                return XMLUtilities.convertNodeToString(doc, false);
-            } catch (Exception e) {
-                log.debug(e.getMessage());
-            }
-
-            return topic.getTitle();
-        } else {
-            return topic.getTitle();
-        }
     }
 
     /**

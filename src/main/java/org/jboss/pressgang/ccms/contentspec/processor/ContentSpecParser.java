@@ -1673,6 +1673,8 @@ public class ContentSpecParser {
                         }
                     } else if (temp[0].equalsIgnoreCase("URL") && node instanceof SpecNode) {
                         ((SpecNode) node).addSourceUrl(ProcessorUtilities.replaceEscapeChars(temp[1]));
+                    } else if (temp[0].equalsIgnoreCase("Fixed URL") && node instanceof SpecNode) {
+                        ((SpecNode) node).setFixedUrl(ProcessorUtilities.replaceEscapeChars(temp[1]));
                     } else {
                         throw new ParsingException(format(ProcessorConstants.ERROR_INVALID_ATTRIBUTE_MSG, lineNumber, originalInput));
                     }

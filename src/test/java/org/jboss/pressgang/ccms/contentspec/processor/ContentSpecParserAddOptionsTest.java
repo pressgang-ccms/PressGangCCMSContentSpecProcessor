@@ -295,7 +295,8 @@ public class ContentSpecParserAddOptionsTest extends ContentSpecParserTest {
         assertThat(logger.getLogMessages().size(), is(1));
         assertThat(logger.getLogMessages().get(0).toString(),
                 containsString("Line " + lineNumber + ": Invalid Content Specification! Unknown attribute found. " +
-                        "\"condition\", \"Description\", \"URL\" and \"Writer\" are currently the only supported attributes."));
+                        "\"condition\", \"Description\", \"Fixed URL\", \"URL\" and \"Writer\" are currently the only supported " +
+                        "attributes"));
     }
 
     @Test
