@@ -1988,9 +1988,11 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                             "Specified: " + specTopic.getTitle(), topicTitleMsg));
                     valid = false;
                 } else {
-                    final String topicTitleMsg = "Topic " + topicNode.getId() + ": " + topicTitle;
-                    log.warn(format(ProcessorConstants.WARN_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
-                            "Specified: " + specTopic.getTitle(), topicTitleMsg));
+                    if (processingOptions.isPrintChangeWarnings()) {
+                        final String topicTitleMsg = "Topic " + topicNode.getId() + ": " + topicTitle;
+                        log.warn(format(ProcessorConstants.WARN_TOPIC_TITLES_NONMATCH_MSG, specTopic.getLineNumber(),
+                                "Specified: " + specTopic.getTitle(), topicTitleMsg));
+                    }
                     specTopic.setTitle(topicTitle);
                 }
             }
