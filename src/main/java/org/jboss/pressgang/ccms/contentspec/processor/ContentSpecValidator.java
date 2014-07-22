@@ -52,6 +52,7 @@ import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptio
 import org.jboss.pressgang.ccms.contentspec.sort.NullNumberSort;
 import org.jboss.pressgang.ccms.contentspec.sort.TopicNodeLineNumberComparator;
 import org.jboss.pressgang.ccms.contentspec.utils.ContentSpecUtilities;
+import org.jboss.pressgang.ccms.contentspec.utils.CustomTopicXMLValidator;
 import org.jboss.pressgang.ccms.contentspec.utils.EntityUtilities;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
@@ -1999,8 +2000,9 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
             if (topicNode.getTopicType() == TopicType.INITIAL_CONTENT) {
                 // Make sure the topics XML can be used as front matter content
-                if (!validateInitialContentTopicXML(specTopic, topic)) {
-                    valid = false;
+                if (!CustomTopicXMLValidator.doesTopicHaveValidXMLForInitialContent(specTopic, topic)) {
+                    log.warn(format(ProcessorConstants.WARN_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT, specTopic.getLineNumber(),
+                            specTopic.getText()));
                 }
             }
         }
@@ -2077,62 +2079,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
             valid = false;
         } else if (!validateExistingTopicTags(topicNode, topic)) {
             valid = false;
-        }
-
-        return valid;
-    }
-
-    /**
-     * Checks a topics XML to make sure it has content that can be used as front matter for a level.
-     *
-     * @param specTopic The SpecTopic of the topic to check the XML for.
-     * @param topic     The actual topic to check the XML from.
-     * @return True if the XML can be used, otherwise false.
-     */
-    private boolean validateInitialContentTopicXML(final SpecTopic specTopic, final BaseTopicWrapper<?> topic) {
-        boolean valid = true;
-        final InitialContent initialContent = (InitialContent) specTopic.getParent();
-        final int numSpecTopics = initialContent.getNumberOfSpecTopics() + initialContent.getNumberOfCommonContents();
-        final boolean isOnlyChild = initialContent.getParent().getNumberOfChildLevels() == 1
-                && initialContent.getParent().getNumberOfSpecTopics() == 0
-                && initialContent.getParent().getNumberOfCommonContents() == 0
-                && numSpecTopics == 1;
-        if (numSpecTopics >= 1) {
-            final String condition = specTopic.getConditionStatement(true);
-            try {
-                final Document doc = XMLUtilities.convertStringToDocument(topic.getXml());
-
-                // Process the conditions to remove anything that isn't used
-                DocBookUtilities.processConditions(condition, doc);
-
-                /*
-                 * We need to make sure the following rules apply for initial text:
-                 * - Nested sections aren't used
-                 * - <simplesect> and <refentry> can only be used if the topic is an only child
-                 * - <info>/<sectioninfo> can only be used in the first child topic and the initial content doesn't have an info topic
-                 */
-                final List<org.w3c.dom.Node> invalidElements = XMLUtilities.getDirectChildNodes(doc.getDocumentElement(), "section");
-                final List<org.w3c.dom.Node> invalidElementsIfMultipleChildren = XMLUtilities.getDirectChildNodes(doc.getDocumentElement(),
-                        "refentry", "simplesect");
-                final List<org.w3c.dom.Node> invalidInfoElements = XMLUtilities.getDirectChildNodes(doc.getDocumentElement(), "info",
-                        "sectioninfo");
-                if (numSpecTopics > 1 && invalidElements.size() > 0) {
-                    log.error(format(ProcessorConstants.ERROR_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT, specTopic.getLineNumber(),
-                            specTopic.getText()));
-                    valid = false;
-                } else if (!isOnlyChild && invalidElementsIfMultipleChildren.size() > 0) {
-                    log.error(format(ProcessorConstants.ERROR_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT, specTopic.getLineNumber(),
-                            specTopic.getText()));
-                    valid = false;
-                } else if ((initialContent.getFirstSpecNode() != specTopic && invalidInfoElements.size() > 0)
-                        || (initialContent.getParent().getInfoTopic() != null && invalidInfoElements.size() > 0)) {
-                    log.error(format(ProcessorConstants.ERROR_TOPIC_WITH_INFO_CANNOT_BE_USED_AS_INITIAL_CONTENT, specTopic.getLineNumber(),
-                            specTopic.getText()));
-                    valid = false;
-                }
-            } catch (Exception e) {
-                log.debug(e.getMessage());
-            }
         }
 
         return valid;

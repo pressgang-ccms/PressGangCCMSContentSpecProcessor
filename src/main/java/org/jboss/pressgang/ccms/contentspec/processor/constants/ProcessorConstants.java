@@ -307,10 +307,6 @@ public class ProcessorConstants {
             "Topic." + CSLINE_MSG;
     public static final String ERROR_INFO_TOPIC_TYPE_INCORRECT = LINE + INVALID_TOPIC + " The Topic specified is not an Info " +
             "Topic." + CSLINE_MSG;
-    public static final String ERROR_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT = LINE + INVALID_TOPIC + " The Topic specified has content that" +
-            " cannot be used in the initial content of a Chapter/Preface/Section/Appendix/Part." + CSLINE_MSG;
-    public static final String ERROR_TOPIC_WITH_INFO_CANNOT_BE_USED_AS_INITIAL_CONTENT = LINE + INVALID_TOPIC + " The Topic specified has" +
-            " <info> content and as such cannot be used as " + CSConstants.LEVEL_INITIAL_CONTENT + "." + CSLINE_MSG;
     public static final String ERROR_TOPIC_DOESNT_MATCH_FORMAT_MSG = LINE + INVALID_TOPIC + " The topic specified isn't compatible with " +
             "the \"%s\" format, which is required by the Content Specification." + CSLINE_MSG;
     public static final String ERROR_TOPIC_DOESNT_MATCH_LOCALE_MSG = LINE + INVALID_TOPIC + " The topic specified is a different locale " +
@@ -357,6 +353,8 @@ public class ProcessorConstants {
             "however it cannot be used in PressGang and as such will be removed when building.";
     public static final String WARN_FIXED_URL_WILL_BE_IGNORED_MSG = LINE + "The node has a Fixed URL specified, " +
             "however this type of node cannot contain Fixed URL's, as such it has been removed." + CSLINE_MSG;
+    public static final String WARN_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT = LINE + "The Topic specified currently has content that" +
+            " cannot be used in the initial content of a Chapter/Preface/Section/Appendix/Part." + CSLINE_MSG;
 
     // Common Content
     public static final String WARN_IGNORE_COMMON_CONTENT_INFO_MSG = LINE + "All types, descriptions, " +
