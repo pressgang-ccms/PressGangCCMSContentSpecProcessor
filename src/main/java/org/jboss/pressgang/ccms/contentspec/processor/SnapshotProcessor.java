@@ -75,8 +75,7 @@ public class SnapshotProcessor implements ShutdownAbleApp {
 
         // Set the fixed urls for the content spec
         if (processingOptions.isAddFixedUrls()) {
-            final boolean missingUrlsOnly = !processingOptions.isUpdateRevisions();
-            FixedURLGenerator.generateFixedUrls(contentSpec, missingUrlsOnly, serverSettings.getEntities().getFixedUrlPropertyTagId());
+            FixedURLGenerator.generateFixedUrls(contentSpec, true, serverSettings.getEntities().getFixedUrlPropertyTagId());
         }
     }
 
