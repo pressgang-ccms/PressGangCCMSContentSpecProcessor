@@ -333,8 +333,8 @@ public class ProcessorConstants {
             "" + "1 or 2! So debug will be off by default.";
     public static final String WARN_IGNORE_INFO_MSG = LINE + "All descriptions, tags, source urls and writers will be ignored for " +
             "existing Topics." + CSLINE_MSG;
-    public static final String WARN_IGNORE_DUP_INFO_MSG = LINE + "All types, descriptions, source urls and writers will be ignored for " +
-            "existing Topics." + CSLINE_MSG;
+    public static final String WARN_IGNORE_DUP_INFO_MSG = LINE + "All types, descriptions, fixed urls, source urls and writers will be " +
+            "ignored for existing Topics." + CSLINE_MSG;
     public static final String WARN_INTERNAL_TOPIC_MSG = LINE + "The topic is an internal-only topic and contains sensitive information. " +
             "Ensure you are not publishing this publicly." + CSLINE_MSG;
     public static final String WARN_CS_NO_SUBTITLE_MSG = "No Subtitle specified, so a default will be used instead.";
@@ -355,6 +355,8 @@ public class ProcessorConstants {
             "however this type of node cannot contain Fixed URL's, as such it has been removed." + CSLINE_MSG;
     public static final String WARN_TOPIC_CANNOT_BE_USED_AS_INITIAL_CONTENT = LINE + "The Topic specified currently has content that" +
             " cannot be used in the initial content of a Chapter/Preface/Section/Appendix/Part." + CSLINE_MSG;
+    public static final String WARN_IGNORE_COMMON_CONTENT_ATTRIBUTES_MSG = LINE + "All types, descriptions, " +
+            "fixed urls, source urls and writers will be ignored for Common Content." + CSLINE_MSG;
 
     // Common Content
     public static final String WARN_IGNORE_COMMON_CONTENT_INFO_MSG = LINE + "All types, descriptions, " +

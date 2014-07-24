@@ -77,6 +77,7 @@ public class ContentSpecParser {
     private static final Pattern SQUARE_BRACKET_PATTERN = Pattern.compile(format(ProcessorConstants.BRACKET_NAMED_PATTERN, '[', ']'));
     private static final Pattern RELATION_ID_LONG_PATTERN = Pattern.compile(ProcessorConstants.RELATION_ID_LONG_PATTERN);
     private static final Pattern FILE_ID_LONG_PATTERN = Pattern.compile(ProcessorConstants.FILE_ID_LONG_PATTERN);
+    private static final Pattern COMMON_CONTENT_PATTERN = Pattern.compile("^.*\\[\\s*(?i)Common\\s+Content.*$");
 
     /**
      * An Enumerator used to specify the parsing mode of the Parser.
@@ -507,7 +508,7 @@ public class ContentSpecParser {
      * @return True if the line is a common content node, otherwise false.
      */
     protected boolean isCommonContentLine(String line) {
-        return line.trim().matches("^.*\\[\\s*(?i)Common\\s+Content\\s*\\].*$");
+        return COMMON_CONTENT_PATTERN.matcher(line.trim()).matches();
     }
 
     /**
@@ -949,6 +950,12 @@ public class ContentSpecParser {
         // Create the common content
         final CommonContent commonContent = new CommonContent(title, lineNumber, line);
         commonContent.setUniqueId("L" + lineNumber + "-CommonContent");
+
+        // Check that no attributes were defined
+        final String[] baseAttributes = variableMap.get(ParserType.NONE);
+        if (baseAttributes.length > 1) {
+            log.warn(format(ProcessorConstants.WARN_IGNORE_COMMON_CONTENT_ATTRIBUTES_MSG, lineNumber, line));
+        }
 
         // Throw an error for relationships
         variableMap.remove(ParserType.NONE);
