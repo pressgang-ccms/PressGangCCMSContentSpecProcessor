@@ -15,7 +15,7 @@ public class ProcessorConstants {
      */
     public static final double MIN_MATCH_SIMILARITY = 0.8;
 
-    public static final Pattern VALID_FIXED_URL_PATTERN = Pattern.compile("^[^\\d\\s][\\S]*$");
+    public static final Pattern VALID_FIXED_URL_PATTERN = Pattern.compile("^[\\p{L}_:][\\p{L}\\p{Nd}\\p{Nl}_:\\-\\.]*$");
 
     public static final String RELEASE_CATEGORY_NAME = "Release";
     public static final String ASSIGNED_WRITER_CATEGORY_NAME = "Assigned Writer";
