@@ -144,6 +144,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         boolean editing = false;
         if (mode == ContentSpecParser.ParsingMode.EDITED) {
             editing = true;
+        } else if (mode == ContentSpecParser.ParsingMode.EITHER && contentSpec.getId() != null) {
+            editing = true;
         }
 
         final ProcessorData processorData = new ProcessorData();
@@ -400,7 +402,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             mergeAndSaveContentSpec(providerFactory, processorData, !edit);
         } catch (ProcessingException e) {
             LOG.debug("", e);
-            if (providerFactory.isRollbackSupported()) {
+            if (providerFactory.isTransactionsSupported()) {
                 providerFactory.rollback();
             } else {
                 // Clean up the data that was created
@@ -416,7 +418,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             return false;
         } catch (Exception e) {
             LOG.error("", e);
-            if (providerFactory.isRollbackSupported()) {
+            if (providerFactory.isTransactionsSupported()) {
                 providerFactory.rollback();
             } else {
                 // Clean up the data that was created
@@ -1521,7 +1523,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
                         foundNodeEntity = nodeEntity;
                     } else if (childNode instanceof CommonContent && doesCommonContentMatch((CommonContent) childNode, nodeEntity,
                             foundNodeEntity != null)) {
-                            foundNodeEntity = nodeEntity;
+                        foundNodeEntity = nodeEntity;
                     } else if (childNode instanceof KeyValueNode && doesMetaDataMatch((KeyValueNode<?>) childNode, nodeEntity)) {
                         foundNodeEntity = nodeEntity;
                     } else if (childNode instanceof File && doesFileMatch((File) childNode, nodeEntity)) {
@@ -2258,8 +2260,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
         if (commonContent.getUniqueId() != null && commonContent.getUniqueId().matches("^\\d.*")) {
             return commonContent.getUniqueId().equals(Integer.toString(node.getId()));
         } else if (matchContent) {
-            return StringUtilities.similarDamerauLevenshtein(commonContent.getTitle(), node.getTitle()) >= ProcessorConstants
-                    .MIN_MATCH_SIMILARITY;
+            return StringUtilities.similarDamerauLevenshtein(commonContent.getTitle(),
+                    node.getTitle()) >= ProcessorConstants.MIN_MATCH_SIMILARITY;
         } else {
             // Check the parent has the same name
             if (commonContent.getParent() != null) {
