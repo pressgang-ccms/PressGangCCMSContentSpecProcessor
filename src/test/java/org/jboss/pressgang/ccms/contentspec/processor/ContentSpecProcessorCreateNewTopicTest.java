@@ -46,6 +46,7 @@ import net.sf.ipsedixit.annotation.ArbitraryString;
 import net.sf.ipsedixit.core.StringType;
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
+import org.jboss.pressgang.ccms.wrapper.LocaleWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInTopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
@@ -53,6 +54,7 @@ import org.jboss.pressgang.ccms.wrapper.TopicSourceURLWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.CollectionWrapper;
 import org.jboss.pressgang.ccms.wrapper.collection.UpdateableCollectionWrapper;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
 import org.mockito.Mock;
@@ -73,8 +75,14 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
     @Mock UpdateableCollectionWrapper<PropertyTagInTopicWrapper> propertyTagCollection;
     @Mock UpdateableCollectionWrapper<TopicSourceURLWrapper> topicSourceURLCollection;
     @Mock TagWrapper writerTag;
+    @Mock LocaleWrapper localeWrapper;
 
     private String locale = "en-US";
+
+    @Before
+    public void setUpEntities() {
+        when(localeWrapper.getValue()).thenReturn(locale);
+    }
 
     @Test
     public void shouldCreateSpecTopic() {
@@ -89,7 +97,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, localeWrapper);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Creating a topic should not have thrown an exception");
@@ -121,7 +129,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, localeWrapper);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -155,7 +163,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, localeWrapper);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -184,7 +192,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
 
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, localeWrapper);
             fail("Creating a topic should have thrown an exception");
         } catch (Exception e) {
             // Then there should be a log message about the error
@@ -238,7 +246,7 @@ public class ContentSpecProcessorCreateNewTopicTest extends ContentSpecProcessor
         // and the doctype is set
         verify(topic, times(1)).setXmlFormat(anyInt());
         // and the locale is set
-        verify(topic, times(1)).setLocale(DEFAULT_LOCALE);
+        verify(topic, times(1)).setLocale(localeWrapper);
         // and the topic had the properties set
         verify(topic, atLeast(1)).setProperties(eq(propertyTagCollection));
         // and the topic had the CSP property tag set

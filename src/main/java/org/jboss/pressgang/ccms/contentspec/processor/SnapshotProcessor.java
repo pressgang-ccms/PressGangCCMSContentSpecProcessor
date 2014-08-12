@@ -70,7 +70,7 @@ public class SnapshotProcessor implements ShutdownAbleApp {
         topicProvider = factory.getProvider(TopicProvider.class);
 
         serverSettings = factory.getProvider(ServerSettingsProvider.class).getServerSettings();
-        defaultLocale = serverSettings.getDefaultLocale();
+        defaultLocale = serverSettings.getDefaultLocale().getValue();
     }
 
     /**

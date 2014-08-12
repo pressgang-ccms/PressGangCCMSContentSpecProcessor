@@ -67,6 +67,7 @@ import org.jboss.pressgang.ccms.provider.CSInfoNodeProvider;
 import org.jboss.pressgang.ccms.provider.CSNodeProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
+import org.jboss.pressgang.ccms.provider.LocaleProvider;
 import org.jboss.pressgang.ccms.provider.PropertyTagProvider;
 import org.jboss.pressgang.ccms.provider.ServerSettingsProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
@@ -79,6 +80,7 @@ import org.jboss.pressgang.ccms.wrapper.CSInfoNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.CSRelatedNodeWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
+import org.jboss.pressgang.ccms.wrapper.LocaleWrapper;
 import org.jboss.pressgang.ccms.wrapper.LogMessageWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInTopicWrapper;
@@ -385,7 +387,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         try {
             final ContentSpec contentSpec = processorData.contentSpec;
-            final String locale = contentSpec.getLocale() == null ? serverSettings.getDefaultLocale() : contentSpec.getLocale();
+            final LocaleWrapper locale = contentSpec.getLocale() == null ?
+                    EntityUtilities.findLocaleFromString(providerFactory.getProvider(LocaleProvider.class), contentSpec.getLocale())
+                    : serverSettings.getDefaultLocale();
             final List<ITopicNode> topicNodes = contentSpec.getAllTopicNodes();
 
             // Create the duplicate topic map
@@ -457,7 +461,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
     }
 
     protected void createOrUpdateTopics(final List<? extends ITopicNode> specTopics, final TopicPool topics,
-            final ProcessorData processorData, final String contentSpecLocale) throws ProcessingException {
+            final ProcessorData processorData, final LocaleWrapper contentSpecLocale) throws ProcessingException {
         // Create the new topic entities
         for (final ITopicNode specTopic : specTopics) {
 
@@ -519,7 +523,7 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
      * @throws ProcessingException
      */
     protected TopicWrapper createTopicEntity(final DataProviderFactory providerFactory, final ITopicNode topicNode,
-            final String docBookVersion, final String locale) throws ProcessingException {
+            final String docBookVersion, final LocaleWrapper locale) throws ProcessingException {
         LOG.debug("Processing topic: {}", topicNode.getText());
 
         // Duplicates reference another new or cloned topic and should not have a different new/updated underlying topic
@@ -1057,7 +1061,9 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             contentSpecEntity = contentSpecProvider.newContentSpec();
 
             // setup the basic values
-            final String locale = contentSpec.getLocale() == null ? serverSettings.getDefaultLocale() : contentSpec.getLocale();
+            final LocaleWrapper locale = contentSpec.getLocale() == null ?
+                    EntityUtilities.findLocaleFromString(providerFactory.getProvider(LocaleProvider.class), contentSpec.getLocale())
+                    : serverSettings.getDefaultLocale();
             contentSpecEntity.setLocale(locale);
 
             if (processorData.getUsername() != null) {

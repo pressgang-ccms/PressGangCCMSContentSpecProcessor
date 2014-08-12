@@ -26,9 +26,12 @@ import org.jboss.pressgang.ccms.contentspec.processor.structures.ProcessingOptio
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLogger;
 import org.jboss.pressgang.ccms.contentspec.utils.logging.ErrorLoggerManager;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
+import org.jboss.pressgang.ccms.provider.LocaleProvider;
 import org.jboss.pressgang.ccms.provider.ServerSettingsProvider;
+import org.jboss.pressgang.ccms.wrapper.LocaleWrapper;
 import org.jboss.pressgang.ccms.wrapper.ServerEntitiesWrapper;
 import org.jboss.pressgang.ccms.wrapper.ServerSettingsWrapper;
+import org.jboss.pressgang.ccms.wrapper.mocks.CollectionWrapperMock;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -48,10 +51,12 @@ public class ContentSpecValidatorTest extends BaseUnitTest {
 
     @Mock DataProviderFactory dataProviderFactory;
     @Mock ServerSettingsProvider serverSettingsProvider;
+    @Mock LocaleProvider localeProvider;
     @Mock ServerSettingsWrapper serverSettings;
     @Mock ServerEntitiesWrapper serverEntities;
     @Mock ErrorLoggerManager loggerManager;
     @Mock ProcessingOptions processingOptions;
+    @Mock LocaleWrapper defaultLocaleWrapper;
 
     protected ErrorLogger logger;
     protected ContentSpecValidator validator;
@@ -62,6 +67,7 @@ public class ContentSpecValidatorTest extends BaseUnitTest {
         when(loggerManager.getLogger(ContentSpecValidator.class)).thenReturn(logger);
 
         when(dataProviderFactory.getProvider(ServerSettingsProvider.class)).thenReturn(serverSettingsProvider);
+        when(dataProviderFactory.getProvider(LocaleProvider.class)).thenReturn(localeProvider);
         when(serverSettingsProvider.getServerSettings()).thenReturn(serverSettings);
         when(serverSettings.getEntities()).thenReturn(serverEntities);
         when(serverEntities.getCspIdPropertyTagId()).thenReturn(CSP_PROPERTY_ID);
@@ -70,7 +76,13 @@ public class ContentSpecValidatorTest extends BaseUnitTest {
         when(serverEntities.getTypeCategoryId()).thenReturn(TYPE_CATEGORY_ID);
         when(serverEntities.getWriterCategoryId()).thenReturn(WRITER_CATEGORY_ID);
         when(serverEntities.getRocBook45DTDBlobConstantId()).thenReturn(ROCBOOK_DTD_ID);
+        when(serverSettings.getDefaultLocale()).thenReturn(defaultLocaleWrapper);
 
-        this.validator = new ContentSpecValidator(dataProviderFactory, loggerManager, processingOptions);
+        final CollectionWrapperMock<LocaleWrapper> locales = new CollectionWrapperMock<LocaleWrapper>();
+        locales.addItem(defaultLocaleWrapper);
+        when(localeProvider.getLocales()).thenReturn(locales);
+        when(defaultLocaleWrapper.getValue()).thenReturn("en-US");
+
+        validator = new ContentSpecValidator(dataProviderFactory, loggerManager, processingOptions);
     }
 }

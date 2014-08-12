@@ -80,6 +80,7 @@ import org.jboss.pressgang.ccms.provider.CategoryProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.provider.FileProvider;
+import org.jboss.pressgang.ccms.provider.LocaleProvider;
 import org.jboss.pressgang.ccms.provider.ServerSettingsProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TextContentSpecProvider;
@@ -95,6 +96,7 @@ import org.jboss.pressgang.ccms.wrapper.BlobConstantWrapper;
 import org.jboss.pressgang.ccms.wrapper.CategoryWrapper;
 import org.jboss.pressgang.ccms.wrapper.ContentSpecWrapper;
 import org.jboss.pressgang.ccms.wrapper.FileWrapper;
+import org.jboss.pressgang.ccms.wrapper.LocaleWrapper;
 import org.jboss.pressgang.ccms.wrapper.ServerEntitiesWrapper;
 import org.jboss.pressgang.ccms.wrapper.ServerSettingsWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
@@ -125,6 +127,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private final CategoryProvider categoryProvider;
     private final FileProvider fileProvider;
     private final BlobConstantProvider blobConstantProvider;
+    private final LocaleProvider localeProvider;
     private final ErrorLogger log;
     private final ProcessingOptions processingOptions;
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
@@ -158,12 +161,13 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         textContentSpecProvider = factory.getProvider(TextContentSpecProvider.class);
         fileProvider = factory.getProvider(FileProvider.class);
         blobConstantProvider = factory.getProvider(BlobConstantProvider.class);
+        localeProvider = factory.getProvider(LocaleProvider.class);
         log = loggerManager.getLogger(ContentSpecValidator.class);
         this.processingOptions = processingOptions;
 
         serverSettings = factory.getProvider(ServerSettingsProvider.class).getServerSettings();
         serverEntities = serverSettings.getEntities();
-        defaultLocale = serverSettings.getDefaultLocale();
+        defaultLocale = serverSettings.getDefaultLocale().getValue();
     }
 
     /**
@@ -713,6 +717,15 @@ public class ContentSpecValidator implements ShutdownAbleApp {
                         valid = false;
                     }
                 }
+            }
+        }
+
+        // Check that the content spec locale is valid
+        if (!isNullOrEmpty(contentSpec.getLocale())) {
+            final LocaleWrapper locale = EntityUtilities.findLocaleFromString(localeProvider, contentSpec.getLocale());
+            if (locale == null) {
+                log.error(ProcessorConstants.ERROR_CS_INVALID_LOCALE_MSG);
+                valid = false;
             }
         }
 
@@ -2088,7 +2101,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // Check the languages match
         final String locale = contentSpec.getLocale() == null ? defaultLocale : contentSpec.getLocale();
-        if (locale != null && !locale.equals(topic.getLocale())) {
+        if (locale != null && topic.getLocale() != null && !locale.equals(topic.getLocale().getValue())) {
             log.error(format(ProcessorConstants.ERROR_TOPIC_DOESNT_MATCH_LOCALE_MSG, topicNode.getLineNumber(), topicNode.getText()));
             valid = false;
         }

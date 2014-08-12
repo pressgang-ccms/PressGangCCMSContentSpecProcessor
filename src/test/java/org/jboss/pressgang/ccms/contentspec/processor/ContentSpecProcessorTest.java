@@ -38,6 +38,7 @@ import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TopicProvider;
 import org.jboss.pressgang.ccms.provider.TopicSourceURLProvider;
 import org.jboss.pressgang.ccms.wrapper.CSNodeWrapper;
+import org.jboss.pressgang.ccms.wrapper.LocaleWrapper;
 import org.jboss.pressgang.ccms.wrapper.ServerEntitiesWrapper;
 import org.jboss.pressgang.ccms.wrapper.ServerSettingsWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
@@ -71,6 +72,7 @@ public class ContentSpecProcessorTest extends BaseUnitTest {
     @Mock TagProvider tagProvider;
     @Mock ContentSpecProvider contentSpecProvider;
     @Mock CSNodeProvider contentSpecNodeProvider;
+    @Mock LocaleWrapper defaultLocale;
 
     protected ErrorLogger logger;
     protected ContentSpecProcessor processor;
@@ -90,7 +92,8 @@ public class ContentSpecProcessorTest extends BaseUnitTest {
         when(providerFactory.getProvider(ServerSettingsProvider.class)).thenReturn(serverSettingsProvider);
         when(serverSettingsProvider.getServerSettings()).thenReturn(serverSettings);
         when(serverSettings.getEntities()).thenReturn(serverEntities);
-        when(serverSettings.getDefaultLocale()).thenReturn(DEFAULT_LOCALE);
+        when(serverSettings.getDefaultLocale()).thenReturn(defaultLocale);
+        when(defaultLocale.getValue()).thenReturn(DEFAULT_LOCALE);
         when(serverEntities.getCspIdPropertyTagId()).thenReturn(CSP_PROPERTY_ID);
         when(serverEntities.getAddedByPropertyTagId()).thenReturn(ADDED_BY_PROPERTY_TAG_ID);
         when(serverEntities.getWriterCategoryId()).thenReturn(WRITER_CATEGORY_ID);

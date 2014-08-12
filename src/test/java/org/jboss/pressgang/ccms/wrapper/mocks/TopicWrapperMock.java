@@ -22,6 +22,7 @@ package org.jboss.pressgang.ccms.wrapper.mocks;
 import java.util.Date;
 import java.util.List;
 
+import org.jboss.pressgang.ccms.wrapper.LocaleWrapper;
 import org.jboss.pressgang.ccms.wrapper.PropertyTagInTopicWrapper;
 import org.jboss.pressgang.ccms.wrapper.TagWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicSourceURLWrapper;
@@ -40,7 +41,7 @@ public class TopicWrapperMock implements TopicWrapper {
     private Integer revision;
     private String title;
     private String xml;
-    private String locale;
+    private LocaleWrapper locale;
     private CollectionWrapper<TagWrapper> tags;
     private UpdateableCollectionWrapper<TopicSourceURLWrapper> sourceUrls;
     private CollectionWrapper<TopicWrapper> incomingTopics;
@@ -130,12 +131,12 @@ public class TopicWrapperMock implements TopicWrapper {
     }
 
     @Override
-    public String getLocale() {
+    public LocaleWrapper getLocale() {
         return locale;
     }
 
     @Override
-    public void setLocale(String locale) {
+    public void setLocale(LocaleWrapper locale) {
         this.locale = locale;
     }
 

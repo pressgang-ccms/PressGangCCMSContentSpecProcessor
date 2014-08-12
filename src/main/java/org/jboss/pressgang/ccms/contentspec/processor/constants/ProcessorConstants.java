@@ -98,6 +98,7 @@ public class ProcessorConstants {
             + "Topics.";
 
     // Content Spec Errors
+    public static final String ERROR_CS_INVALID_LOCALE_MSG = INVALID_CS + " The locale specified doesn't exist or cannot be used.";
     public static final String ERROR_CS_INVALID_ID_MSG = INVALID_CS + " The specified ID doesn't exist in the database.";
     public static final String ERROR_CS_NO_TITLE_MSG = INVALID_CS + " No Title.";
     public static final String ERROR_CS_INVALID_TITLE_MSG = INVALID_CS + " Invalid Title. The title can only contain plus (+), " +

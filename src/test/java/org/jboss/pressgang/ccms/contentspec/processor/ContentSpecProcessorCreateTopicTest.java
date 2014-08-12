@@ -24,15 +24,25 @@ import static com.natpryce.makeiteasy.MakeItEasy.make;
 import static com.natpryce.makeiteasy.MakeItEasy.with;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.when;
 
 import org.jboss.pressgang.ccms.contentspec.SpecTopic;
 import org.jboss.pressgang.ccms.contentspec.test.makers.shared.SpecTopicMaker;
+import org.jboss.pressgang.ccms.wrapper.LocaleWrapper;
 import org.jboss.pressgang.ccms.wrapper.TopicWrapper;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 
 public class ContentSpecProcessorCreateTopicTest extends ContentSpecProcessorTest {
+    @Mock LocaleWrapper localeWrapper;
 
     private String locale = "en-US";
+
+    @Before
+    public void setUpEntities() {
+        when(localeWrapper.getValue()).thenReturn(locale);
+    }
 
     @Test
     public void shouldReturnNullWhenSpecTopicIsDuplicate() {
@@ -42,7 +52,7 @@ public class ContentSpecProcessorCreateTopicTest extends ContentSpecProcessorTes
         // When creating the topic
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, localeWrapper);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
@@ -59,7 +69,7 @@ public class ContentSpecProcessorCreateTopicTest extends ContentSpecProcessorTes
         // When creating the topic
         TopicWrapper topic = null;
         try {
-            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, locale);
+            topic = processor.createTopicEntity(providerFactory, specTopic, DOCBOOK_45, localeWrapper);
         } catch (Exception e) {
             fail("Creating a topic should not have thrown an exception");
         }
