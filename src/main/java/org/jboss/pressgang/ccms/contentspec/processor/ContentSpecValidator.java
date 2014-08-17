@@ -80,7 +80,6 @@ import org.jboss.pressgang.ccms.provider.CategoryProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
 import org.jboss.pressgang.ccms.provider.FileProvider;
-import org.jboss.pressgang.ccms.provider.LocaleProvider;
 import org.jboss.pressgang.ccms.provider.ServerSettingsProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
 import org.jboss.pressgang.ccms.provider.TextContentSpecProvider;
@@ -127,7 +126,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
     private final CategoryProvider categoryProvider;
     private final FileProvider fileProvider;
     private final BlobConstantProvider blobConstantProvider;
-    private final LocaleProvider localeProvider;
     private final ErrorLogger log;
     private final ProcessingOptions processingOptions;
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
@@ -161,7 +159,6 @@ public class ContentSpecValidator implements ShutdownAbleApp {
         textContentSpecProvider = factory.getProvider(TextContentSpecProvider.class);
         fileProvider = factory.getProvider(FileProvider.class);
         blobConstantProvider = factory.getProvider(BlobConstantProvider.class);
-        localeProvider = factory.getProvider(LocaleProvider.class);
         log = loggerManager.getLogger(ContentSpecValidator.class);
         this.processingOptions = processingOptions;
 
@@ -722,7 +719,7 @@ public class ContentSpecValidator implements ShutdownAbleApp {
 
         // Check that the content spec locale is valid
         if (!isNullOrEmpty(contentSpec.getLocale())) {
-            final LocaleWrapper locale = EntityUtilities.findLocaleFromString(localeProvider, contentSpec.getLocale());
+            final LocaleWrapper locale = EntityUtilities.findLocaleFromString(serverSettings.getLocales(), contentSpec.getLocale());
             if (locale == null) {
                 log.error(ProcessorConstants.ERROR_CS_INVALID_LOCALE_MSG);
                 valid = false;

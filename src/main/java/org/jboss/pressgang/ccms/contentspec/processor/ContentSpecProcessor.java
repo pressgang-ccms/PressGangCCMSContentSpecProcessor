@@ -67,7 +67,6 @@ import org.jboss.pressgang.ccms.provider.CSInfoNodeProvider;
 import org.jboss.pressgang.ccms.provider.CSNodeProvider;
 import org.jboss.pressgang.ccms.provider.ContentSpecProvider;
 import org.jboss.pressgang.ccms.provider.DataProviderFactory;
-import org.jboss.pressgang.ccms.provider.LocaleProvider;
 import org.jboss.pressgang.ccms.provider.PropertyTagProvider;
 import org.jboss.pressgang.ccms.provider.ServerSettingsProvider;
 import org.jboss.pressgang.ccms.provider.TagProvider;
@@ -387,8 +386,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
 
         try {
             final ContentSpec contentSpec = processorData.contentSpec;
-            final LocaleWrapper locale = contentSpec.getLocale() == null ?
-                    EntityUtilities.findLocaleFromString(providerFactory.getProvider(LocaleProvider.class), contentSpec.getLocale())
+            final LocaleWrapper locale = contentSpec.getLocale() != null ?
+                    EntityUtilities.findLocaleFromString(serverSettings.getLocales(), contentSpec.getLocale())
                     : serverSettings.getDefaultLocale();
             final List<ITopicNode> topicNodes = contentSpec.getAllTopicNodes();
 
@@ -1061,8 +1060,8 @@ public class ContentSpecProcessor implements ShutdownAbleApp {
             contentSpecEntity = contentSpecProvider.newContentSpec();
 
             // setup the basic values
-            final LocaleWrapper locale = contentSpec.getLocale() == null ?
-                    EntityUtilities.findLocaleFromString(providerFactory.getProvider(LocaleProvider.class), contentSpec.getLocale())
+            final LocaleWrapper locale = contentSpec.getLocale() != null ?
+                    EntityUtilities.findLocaleFromString(serverSettings.getLocales(), contentSpec.getLocale())
                     : serverSettings.getDefaultLocale();
             contentSpecEntity.setLocale(locale);
 
